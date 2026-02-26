@@ -48,17 +48,24 @@ export async function streamMessage({ message, model, onToken }) {
     buffer = lines.pop() || '';
 
     for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith('data:')) {
+      const token = parseSseDataLine(line);
+      if (token === null) {
         continue;
       }
-      const token = trimmed.slice(5).trimStart();
-      if (token === '[DONE]') {
+      if (token.trim() === '[DONE]') {
         return;
       }
       onToken(token);
     }
   }
+}
+
+function parseSseDataLine(line) {
+  const normalized = line.endsWith('\r') ? line.slice(0, -1) : line;
+  if (!normalized.startsWith('data:')) {
+    return null;
+  }
+  return normalized.slice(5);
 }
 
 async function safeParseJson(response) {
