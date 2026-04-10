@@ -10,10 +10,22 @@ React Frontend -> Spring Boot Backend -> Ollama REST API -> Local LLM
 
 ```text
 llm-pet-project/
-├── frontend/
 ├── backend/
+│   ├── src/
+│   ├── pom.xml
+│   └── README.md
+├── frontend/
+│   ├── src/
+│   └── package.json
 ├── scripts/
+│   ├── reports/
+│   ├── tests/
+│   ├── Makefile
+│   └── README.md
 ├── mcp/
+│   ├── src/
+│   ├── package.json
+│   └── README.md
 ├── docker-compose.yml
 └── README.md
 ```
