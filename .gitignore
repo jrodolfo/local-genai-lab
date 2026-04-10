@@ -15,5 +15,20 @@ backend/target/
 frontend/node_modules/
 frontend/dist/
 
+# MCP
+mcp/node_modules/
+mcp/dist/
+
 # Env
 .env
+
+# Scripts
+scripts/reports/**
+!scripts/reports/
+!scripts/reports/.gitkeep
+!scripts/reports/audit/
+!scripts/reports/audit/.gitkeep
+!scripts/reports/s3-cloudwatch/
+!scripts/reports/s3-cloudwatch/.gitkeep
+
+notes.txt

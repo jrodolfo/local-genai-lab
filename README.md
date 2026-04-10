@@ -12,6 +12,8 @@ React Frontend -> Spring Boot Backend -> Ollama REST API -> Local LLM
 llm-pet-project/
 ├── frontend/
 ├── backend/
+├── scripts/
+├── mcp/
 ├── docker-compose.yml
 └── README.md
 ```
@@ -23,6 +25,7 @@ llm-pet-project/
 - Maven 3.9+
 - Node 20+
 - Docker + Docker Compose (optional)
+- AWS CLI v2 + `jq` (for the optional local MCP server that wraps the shell scripts)
 
 ## 1. Pull and Run a Model in Ollama
 
@@ -88,6 +91,14 @@ docker compose up --build
 - Backend: `http://localhost:8080`
 
 Compose uses `host.docker.internal:11434` so backend container can reach host Ollama.
+
+## 5. Local MCP Server
+
+The repository also contains a local MCP server under [`mcp/`](./mcp) that wraps the shell tools under [`scripts/`](./scripts).
+
+It is intentionally separate from the Spring backend so shell execution and report access stay isolated from the chat API.
+
+See [`mcp/README.md`](./mcp/README.md) for setup and usage.
 
 ## Environment Variables (Backend)
 
