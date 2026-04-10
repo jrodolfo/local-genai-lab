@@ -1,5 +1,11 @@
 # llm-pet-project
 
+![java](https://img.shields.io/badge/java-21+-f89820)
+![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
+![react](https://img.shields.io/badge/react-frontend-61dafb)
+![ollama](https://img.shields.io/badge/ollama-local%20llm-222222)
+![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
+
 Proof-of-concept app to chat with local LLMs via Ollama, with optional local MCP-backed tooling for AWS audit and report workflows.
 
 Architecture:
@@ -194,3 +200,14 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Add prompt templates/system prompts
 - Add metrics and tracing
 - Support multiple model providers
+
+## Contact
+
+For issues or inquiries, feel free to contact the maintainer:
+
+- Name: Rod Oliveira
+- Role: Software Developer
+- Email: jrodolfo@gmail.com
+- GitHub: https://github.com/jrodolfo
+- LinkedIn: https://www.linkedin.com/in/rodoliveira
+- Webpage: https://jrodolfo.net

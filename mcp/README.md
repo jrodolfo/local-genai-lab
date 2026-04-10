@@ -1,5 +1,10 @@
 # MCP Server
 
+![node](https://img.shields.io/badge/node-20+-5fa04e)
+![typescript](https://img.shields.io/badge/typescript-mcp%20server-3178c6)
+![mcp](https://img.shields.io/badge/mcp-stdio-0a7ea4)
+![aws](https://img.shields.io/badge/aws-local%20tools-a1662f)
+
 Local Model Context Protocol server for the `llm-pet-project` repository.
 
 It wraps the sibling shell tools in [`../scripts`](../scripts) and exposes a small allowlist of explicit tools instead of arbitrary shell access.

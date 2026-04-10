@@ -1,5 +1,10 @@
 # Backend
 
+![java](https://img.shields.io/badge/java-21+-f89820)
+![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
+![ollama](https://img.shields.io/badge/ollama-chat%20proxy-222222)
+![mcp](https://img.shields.io/badge/mcp-optional%20integration-0a7ea4)
+
 Spring Boot API that proxies requests to Ollama.
 
 ## Run
