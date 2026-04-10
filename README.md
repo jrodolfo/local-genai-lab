@@ -1,10 +1,14 @@
 # llm-pet-project
 
-Proof-of-concept app to chat with local LLMs via Ollama.
+Proof-of-concept app to chat with local LLMs via Ollama, with optional local MCP-backed tooling for AWS audit and report workflows.
 
 Architecture:
 
 React Frontend -> Spring Boot Backend -> Ollama REST API -> Local LLM
+
+Optional tool path:
+
+Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report files
 
 ## Project Structure
 
@@ -37,7 +41,8 @@ llm-pet-project/
 - Maven 3.9+
 - Node 20+
 - Docker + Docker Compose (optional)
-- AWS CLI v2 + `jq` (for the optional local MCP server that wraps the shell scripts)
+- AWS CLI v2 + `jq` + valid AWS credentials
+  Required only for the optional local MCP server and the shell-based AWS audit/report tools.
 
 ## 1. Pull and Run a Model in Ollama
 
@@ -81,6 +86,14 @@ Response:
 
 Streaming endpoint: `POST /api/chat/stream` (SSE).
 
+Optional MCP-backed tool endpoints:
+
+- `GET /api/tools`
+- `POST /api/tools/aws-region-audit`
+- `POST /api/tools/s3-cloudwatch-report`
+- `GET /api/tools/reports`
+- `POST /api/tools/reports/read`
+
 ## 3. Run Frontend (React)
 
 ```bash
@@ -91,7 +104,51 @@ npm run dev
 
 Frontend runs on `http://localhost:5173`.
 
-## 4. Run with Docker Compose
+## 4. Run the Local MCP Server
+
+The repository includes a separate local MCP server under [`mcp/`](./mcp) that wraps the shell tools under [`scripts/`](./scripts).
+
+Build it first:
+
+```bash
+cd mcp
+npm install
+npm run build
+```
+
+Run it directly:
+
+```bash
+cd mcp
+npm start
+```
+
+Or let the backend launch it as a subprocess by enabling MCP when starting Spring Boot:
+
+```bash
+cd backend
+MCP_ENABLED=true mvn spring-boot:run
+```
+
+The MCP server is intentionally separate from the Spring backend so shell execution and report access stay isolated from the chat API.
+
+## 5. Shell Tools
+
+The [`scripts/`](./scripts) directory contains the imported shell-based AWS tooling and its local tests.
+
+Useful entrypoints:
+
+```bash
+cd scripts
+make help
+make test
+make audit
+make s3-cloudwatch BUCKET=example.com
+```
+
+See [`scripts/README.md`](./scripts/README.md) for the script-specific options and report formats.
+
+## 6. Run with Docker Compose
 
 Keep Ollama running on the host machine first. Then:
 
@@ -103,14 +160,6 @@ docker compose up --build
 - Backend: `http://localhost:8080`
 
 Compose uses `host.docker.internal:11434` so backend container can reach host Ollama.
-
-## 5. Local MCP Server
-
-The repository also contains a local MCP server under [`mcp/`](./mcp) that wraps the shell tools under [`scripts/`](./scripts).
-
-It is intentionally separate from the Spring backend so shell execution and report access stay isolated from the chat API.
-
-See [`mcp/README.md`](./mcp/README.md) for setup and usage.
 
 ## Environment Variables (Backend)
 
@@ -124,6 +173,13 @@ See [`mcp/README.md`](./mcp/README.md) for setup and usage.
 - `MCP_ARG_1` (default: `dist/index.js`)
 - `MCP_STARTUP_TIMEOUT_SECONDS` (default: `10`)
 - `MCP_TOOL_TIMEOUT_SECONDS` (default: `120`)
+
+## Notes
+
+- The default chat flow does not require MCP.
+- The backend can call MCP tools only when `MCP_ENABLED=true`.
+- The MCP server uses local `stdio` transport and is designed for private, local execution.
+- The `scripts/reports/` tree contains generated local artifacts and is intentionally reused by both the shell tools and the MCP wrappers.
 
 ## Notes for 70B Models
 
