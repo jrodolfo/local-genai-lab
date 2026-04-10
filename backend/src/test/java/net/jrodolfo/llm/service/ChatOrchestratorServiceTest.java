@@ -72,6 +72,40 @@ class ChatOrchestratorServiceTest {
         assertFalse(ollamaService.generateCalled);
     }
 
+    @Test
+    void clarificationRequestReturnsImmediateClarificationResponse() {
+        FakeOllamaService ollamaService = new FakeOllamaService();
+        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
+                ollamaService,
+                new FakeMcpService(),
+                new ChatToolRouterService()
+        );
+
+        ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b");
+
+        assertTrue(response.response().contains("I can run the S3 CloudWatch report, but I need the bucket name."));
+        assertNotNull(response.tool());
+        assertEquals("clarification-needed", response.tool().status());
+        assertFalse(ollamaService.generateCalled);
+    }
+
+    @Test
+    void ambiguousLatestReportRequestReturnsClarificationResponse() {
+        FakeOllamaService ollamaService = new FakeOllamaService();
+        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
+                ollamaService,
+                new FakeMcpService(),
+                new ChatToolRouterService()
+        );
+
+        ChatResponse response = orchestrator.chat("read the latest report", "llama3:8b");
+
+        assertTrue(response.response().contains("latest audit report or the latest s3 cloudwatch report"));
+        assertNotNull(response.tool());
+        assertEquals("clarification-needed", response.tool().status());
+        assertFalse(ollamaService.generateCalled);
+    }
+
     private static final class FakeOllamaService extends OllamaService {
         private String lastPrompt;
         private boolean generateCalled;

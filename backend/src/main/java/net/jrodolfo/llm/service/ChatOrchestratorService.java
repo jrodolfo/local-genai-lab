@@ -39,6 +39,20 @@ public class ChatOrchestratorService {
 
     public PreparedChat prepareChat(String message, String model) {
         ChatToolRouterService.ToolDecision decision = toolRouterService.route(message);
+        if (decision.needsClarification()) {
+            ChatToolMetadata metadata = new ChatToolMetadata(
+                    true,
+                    toolNameForDecision(decision),
+                    "clarification-needed",
+                    decision.clarification()
+            );
+            return PreparedChat.forImmediateResponse(new ChatResponse(
+                    decision.clarification(),
+                    ollamaService.resolveModel(model),
+                    metadata
+            ));
+        }
+
         if (!decision.shouldUseTool()) {
             return PreparedChat.forPrompt(message, ollamaService.resolveModel(model), null);
         }
