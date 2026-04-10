@@ -106,6 +106,12 @@ See [`mcp/README.md`](./mcp/README.md) for setup and usage.
 - `OLLAMA_DEFAULT_MODEL` (default: `codellama:70b`)
 - `OLLAMA_CONNECT_TIMEOUT_SECONDS` (default: `10`)
 - `OLLAMA_READ_TIMEOUT_SECONDS` (default: `240`)
+- `MCP_ENABLED` (default: `false`)
+- `MCP_COMMAND` (default: `node`)
+- `MCP_WORKING_DIRECTORY` (default: `../mcp`)
+- `MCP_ARG_1` (default: `dist/index.js`)
+- `MCP_STARTUP_TIMEOUT_SECONDS` (default: `10`)
+- `MCP_TOOL_TIMEOUT_SECONDS` (default: `120`)
 
 ## Notes for 70B Models
 
