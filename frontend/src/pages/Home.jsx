@@ -24,6 +24,17 @@ function Home() {
     );
   };
 
+  const updateLastAssistantTool = (tool) => {
+    setMessages((current) =>
+      current.map((message, index) => {
+        if (index !== current.length - 1 || message.role !== 'assistant') {
+          return message;
+        }
+        return { ...message, tool };
+      })
+    );
+  };
+
   const handleSend = async ({ message, model, streaming }) => {
     setError('');
     setLoading(true);
@@ -38,6 +49,9 @@ function Home() {
         await streamMessage({
           message,
           model,
+          onMetadata: (toolMetadata) => {
+            updateLastAssistantTool(toolMetadata);
+          },
           onToken: (token) => {
             updateLastAssistant((current) => current + token);
           }

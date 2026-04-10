@@ -17,7 +17,7 @@ export async function sendMessage({ message, model }) {
   return response.json();
 }
 
-export async function streamMessage({ message, model, onToken }) {
+export async function streamMessage({ message, model, onToken, onMetadata }) {
   const response = await fetch('/api/chat/stream', {
     method: 'POST',
     headers: JSON_HEADERS,
@@ -44,28 +44,59 @@ export async function streamMessage({ message, model, onToken }) {
     }
 
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+    const chunks = buffer.split('\n\n');
+    buffer = chunks.pop() || '';
 
-    for (const line of lines) {
-      const token = parseSseDataLine(line);
-      if (token === null) {
+    for (const chunk of chunks) {
+      const event = parseSseEvent(chunk);
+      if (!event) {
         continue;
       }
-      if (token.trim() === '[DONE]') {
+
+      if (event.type === 'metadata') {
+        if (onMetadata) {
+          onMetadata(event.data);
+        }
+        continue;
+      }
+
+      if (event.data.trim() === '[DONE]') {
         return;
       }
-      onToken(token);
+
+      onToken(event.data);
     }
   }
 }
 
-function parseSseDataLine(line) {
-  const normalized = line.endsWith('\r') ? line.slice(0, -1) : line;
-  if (!normalized.startsWith('data:')) {
+function parseSseEvent(chunk) {
+  const lines = chunk.split('\n');
+  let eventName = 'message';
+  const dataLines = [];
+
+  for (const line of lines) {
+    const normalized = line.endsWith('\r') ? line.slice(0, -1) : line;
+    if (normalized.startsWith('event:')) {
+      eventName = normalized.slice(6).trim();
+    } else if (normalized.startsWith('data:')) {
+      dataLines.push(normalized.slice(5));
+    }
+  }
+
+  if (dataLines.length === 0) {
     return null;
   }
-  return normalized.slice(5);
+
+  const payload = dataLines.join('\n');
+  if (eventName === 'metadata') {
+    try {
+      return { type: 'metadata', data: JSON.parse(payload) };
+    } catch {
+      return null;
+    }
+  }
+
+  return { type: 'message', data: payload };
 }
 
 async function safeParseJson(response) {

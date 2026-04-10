@@ -1,8 +1,10 @@
 package net.jrodolfo.llm.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
+import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import net.jrodolfo.llm.service.OllamaService;
 import jakarta.validation.Valid;
@@ -26,10 +28,16 @@ public class ChatController {
 
     private final ChatOrchestratorService chatOrchestratorService;
     private final OllamaService ollamaService;
+    private final ObjectMapper objectMapper;
 
-    public ChatController(ChatOrchestratorService chatOrchestratorService, OllamaService ollamaService) {
+    public ChatController(
+            ChatOrchestratorService chatOrchestratorService,
+            OllamaService ollamaService,
+            ObjectMapper objectMapper
+    ) {
         this.chatOrchestratorService = chatOrchestratorService;
         this.ollamaService = ollamaService;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping
@@ -43,7 +51,20 @@ public class ChatController {
 
         CompletableFuture.runAsync(() -> {
             try {
-                ollamaService.streamChat(request.message(), request.model(), token -> sendData(emitter, token));
+                ChatOrchestratorService.PreparedChat preparedChat = chatOrchestratorService.prepareChat(request.message(), request.model());
+
+                if (preparedChat.toolMetadata() != null) {
+                    sendMetadata(emitter, preparedChat.toolMetadata());
+                }
+
+                if (preparedChat.immediateResponse() != null) {
+                    sendData(emitter, preparedChat.immediateResponse().response());
+                    sendData(emitter, "[DONE]");
+                    emitter.complete();
+                    return;
+                }
+
+                ollamaService.streamChat(preparedChat.prompt(), preparedChat.model(), token -> sendData(emitter, token));
                 sendData(emitter, "[DONE]");
                 emitter.complete();
             } catch (Exception ex) {
@@ -65,6 +86,16 @@ public class ChatController {
             emitter.send(SseEmitter.event().data(token));
         } catch (IOException ex) {
             throw new OllamaClientException("Failed to stream token to client.", ex);
+        }
+    }
+
+    private void sendMetadata(SseEmitter emitter, ChatToolMetadata toolMetadata) {
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("metadata")
+                    .data(objectMapper.writeValueAsString(toolMetadata)));
+        } catch (IOException ex) {
+            throw new OllamaClientException("Failed to stream metadata to client.", ex);
         }
     }
 }

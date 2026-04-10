@@ -30,16 +30,24 @@ public class ChatOrchestratorService {
     }
 
     public ChatResponse chat(String message, String model) {
+        PreparedChat preparedChat = prepareChat(message, model);
+        if (preparedChat.immediateResponse() != null) {
+            return preparedChat.immediateResponse();
+        }
+        return ollamaService.chat(preparedChat.prompt(), preparedChat.model(), preparedChat.toolMetadata());
+    }
+
+    public PreparedChat prepareChat(String message, String model) {
         ChatToolRouterService.ToolDecision decision = toolRouterService.route(message);
         if (!decision.shouldUseTool()) {
-            return ollamaService.chat(message, model);
+            return PreparedChat.forPrompt(message, ollamaService.resolveModel(model), null);
         }
 
         try {
             ToolExecution execution = executeTool(decision);
             String augmentedPrompt = buildAugmentedPrompt(message, execution);
             ChatToolMetadata metadata = new ChatToolMetadata(true, execution.toolName(), "success", execution.summary());
-            return ollamaService.chat(augmentedPrompt, model, metadata);
+            return PreparedChat.forPrompt(augmentedPrompt, ollamaService.resolveModel(model), metadata);
         } catch (IllegalArgumentException | McpClientException ex) {
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
@@ -47,11 +55,12 @@ public class ChatOrchestratorService {
                     "failed",
                     ex.getMessage()
             );
-            return new ChatResponse(
+            ChatResponse fallbackResponse = new ChatResponse(
                     buildFailureMessage(decision, ex.getMessage()),
                     ollamaService.resolveModel(model),
                     metadata
             );
+            return PreparedChat.forImmediateResponse(fallbackResponse);
         }
     }
 
@@ -182,5 +191,20 @@ public class ChatOrchestratorService {
             Map<String, Object> result,
             String summary
     ) {
+    }
+
+    public record PreparedChat(
+            String prompt,
+            String model,
+            ChatToolMetadata toolMetadata,
+            ChatResponse immediateResponse
+    ) {
+        static PreparedChat forPrompt(String prompt, String model, ChatToolMetadata toolMetadata) {
+            return new PreparedChat(prompt, model, toolMetadata, null);
+        }
+
+        static PreparedChat forImmediateResponse(ChatResponse response) {
+            return new PreparedChat(null, response.model(), response.tool(), response);
+        }
     }
 }
