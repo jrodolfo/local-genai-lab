@@ -122,6 +122,19 @@
   padding: 10px;
 }
 
+.pending-tool-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.92rem;
+}
+
 .chat-window {
   min-height: 420px;
   max-height: 55vh;

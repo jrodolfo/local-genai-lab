@@ -4,6 +4,7 @@ public record ChatResponse(
         String response,
         String model,
         ChatToolMetadata tool,
-        String sessionId
+        String sessionId,
+        PendingToolCallResponse pendingTool
 ) {
 }

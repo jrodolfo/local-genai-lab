@@ -9,6 +9,7 @@ public record ChatSessionDetailResponse(
         String model,
         Instant createdAt,
         Instant updatedAt,
-        List<ChatSessionMessageResponse> messages
+        List<ChatSessionMessageResponse> messages,
+        PendingToolCallResponse pendingTool
 ) {
 }

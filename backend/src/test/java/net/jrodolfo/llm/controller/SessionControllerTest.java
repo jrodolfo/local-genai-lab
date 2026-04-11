@@ -5,6 +5,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.model.ChatSession;
+import net.jrodolfo.llm.model.PendingToolCall;
+import net.jrodolfo.llm.service.ChatToolRouterService;
 import net.jrodolfo.llm.service.ChatSessionService;
 import net.jrodolfo.llm.service.FileChatSessionStore;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +70,30 @@ class SessionControllerTest {
     }
 
     @Test
+    void getSessionIncludesPendingToolWhenPresent() throws Exception {
+        saveSession(
+                "session-1",
+                "check bucket metrics",
+                Instant.parse("2026-04-10T10:00:00Z"),
+                new PendingToolCall(
+                        ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT,
+                        null,
+                        null,
+                        null,
+                        7,
+                        "s3 cloudwatch metrics request",
+                        List.of(),
+                        List.of("bucket")
+                )
+        );
+
+        mockMvc.perform(get("/api/sessions/session-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingTool.toolName").value("s3_cloudwatch_report"))
+                .andExpect(jsonPath("$.pendingTool.missingFields[0]").value("bucket"));
+    }
+
+    @Test
     void deleteSessionRemovesFile() throws Exception {
         saveSession("session-1", "run aws audit", Instant.parse("2026-04-10T10:00:00Z"));
 
@@ -86,6 +112,10 @@ class SessionControllerTest {
     }
 
     private void saveSession(String sessionId, String userMessage, Instant timestamp) {
+        saveSession(sessionId, userMessage, timestamp, null);
+    }
+
+    private void saveSession(String sessionId, String userMessage, Instant timestamp, PendingToolCall pendingToolCall) {
         ChatSession session = new ChatSession(
                 sessionId,
                 "llama3:8b",
@@ -100,7 +130,7 @@ class SessionControllerTest {
                                 timestamp.plusSeconds(30)
                         )
                 ),
-                null
+                pendingToolCall
         );
         sessionStore.save(session);
     }

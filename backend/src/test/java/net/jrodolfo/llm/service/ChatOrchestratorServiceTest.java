@@ -35,13 +35,7 @@ class ChatOrchestratorServiceTest {
     void noToolRequestFallsBackToRegularChatAndPersistsSession() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse response = orchestrator.chat("explain recursion", "llama3:8b", null);
 
@@ -60,13 +54,7 @@ class ChatOrchestratorServiceTest {
     void followUpRequestIncludesConversationHistory() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse firstResponse = orchestrator.chat("explain recursion", "llama3:8b", null);
         ChatResponse secondResponse = orchestrator.chat("give me an example", "llama3:8b", firstResponse.sessionId());
@@ -81,13 +69,7 @@ class ChatOrchestratorServiceTest {
     void auditRequestUsesToolAddsMetadataAndPersistsAssistantToolState() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b", null);
 
@@ -105,13 +87,7 @@ class ChatOrchestratorServiceTest {
     void toolFailureReturnsExplicitFailureResponseAndPersistsIt() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new ErrorMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new ErrorMcpService(), sessionStore);
 
         ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b", null);
 
@@ -128,13 +104,7 @@ class ChatOrchestratorServiceTest {
     void clarificationRequestReturnsImmediateClarificationResponse() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b", null);
 
@@ -152,13 +122,7 @@ class ChatOrchestratorServiceTest {
     void ambiguousLatestReportRequestReturnsClarificationResponse() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse response = orchestrator.chat("read the latest report", "llama3:8b", null);
 
@@ -176,13 +140,7 @@ class ChatOrchestratorServiceTest {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
         FakeMcpService mcpService = new FakeMcpService();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                mcpService,
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, mcpService, sessionStore);
 
         ChatResponse clarification = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b", null);
         ChatResponse followUp = orchestrator.chat("jrodolfo.net", "llama3:8b", clarification.sessionId());
@@ -198,13 +156,7 @@ class ChatOrchestratorServiceTest {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
         FakeMcpService mcpService = new FakeMcpService();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                mcpService,
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, mcpService, sessionStore);
 
         ChatResponse clarification = orchestrator.chat("read the latest report", "llama3:8b", null);
         ChatResponse followUp = orchestrator.chat("audit", "llama3:8b", clarification.sessionId());
@@ -219,13 +171,7 @@ class ChatOrchestratorServiceTest {
     void unrelatedFollowUpFallsBackToRegularChat() {
         FakeOllamaService ollamaService = new FakeOllamaService();
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                ollamaService,
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(ollamaService, new FakeMcpService(), sessionStore);
 
         ChatResponse clarification = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b", null);
         ChatResponse followUp = orchestrator.chat("explain recursion", "llama3:8b", clarification.sessionId());
@@ -238,13 +184,7 @@ class ChatOrchestratorServiceTest {
     @Test
     void completePreparedChatPersistsStreamedAssistantResponse() {
         FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
-                new FakeOllamaService(),
-                new FakeMcpService(),
-                new ChatToolRouterService(),
-                new ChatMemoryService(sessionStore),
-                new ChatPromptBuilder(new ObjectMapper())
-        );
+        ChatOrchestratorService orchestrator = newOrchestrator(new FakeOllamaService(), new FakeMcpService(), sessionStore);
 
         ChatOrchestratorService.PreparedChat preparedChat = orchestrator.prepareChat("explain recursion", "llama3:8b", null);
         var persistedSession = orchestrator.completePreparedChat(preparedChat, "streamed response");
@@ -258,6 +198,21 @@ class ChatOrchestratorServiceTest {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString()));
+    }
+
+    private ChatOrchestratorService newOrchestrator(
+            FakeOllamaService ollamaService,
+            McpService mcpService,
+            FileChatSessionStore sessionStore
+    ) {
+        return new ChatOrchestratorService(
+                ollamaService,
+                mcpService,
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore),
+                new ChatPromptBuilder(new ObjectMapper()),
+                new ChatSessionService(sessionStore)
+        );
     }
 
     private static final class FakeOllamaService extends OllamaService {
@@ -275,9 +230,20 @@ class ChatOrchestratorServiceTest {
 
         @Override
         public ChatResponse chat(String message, String model, net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata, String sessionId) {
+            return chat(message, model, toolMetadata, sessionId, null);
+        }
+
+        @Override
+        public ChatResponse chat(
+                String message,
+                String model,
+                net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata,
+                String sessionId,
+                net.jrodolfo.llm.dto.PendingToolCallResponse pendingTool
+        ) {
             this.lastPrompt = message;
             this.generateCalled = true;
-            return new ChatResponse("plain response", resolveModel(model), toolMetadata, sessionId);
+            return new ChatResponse("plain response", resolveModel(model), toolMetadata, sessionId, pendingTool);
         }
     }
 

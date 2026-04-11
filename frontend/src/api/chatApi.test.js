@@ -24,6 +24,11 @@ describe('chatApi', () => {
         response: 'Answer',
         model: 'llama3:8b',
         sessionId: 'session-123',
+        pendingTool: {
+          toolName: 's3_cloudwatch_report',
+          reason: 's3 cloudwatch metrics request',
+          missingFields: ['bucket']
+        },
         tool: {
           used: true,
           name: 'aws_region_audit'
@@ -35,13 +40,14 @@ describe('chatApi', () => {
 
     expect(result.response).toBe('Answer');
     expect(result.sessionId).toBe('session-123');
+    expect(result.pendingTool.toolName).toBe('s3_cloudwatch_report');
     expect(result.tool.name).toBe('aws_region_audit');
   });
 
   it('streams metadata before tokens', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       createStreamResponse([
-        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"}}\n\n',
+        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"},"pendingTool":{"toolName":"s3_cloudwatch_report","reason":"s3 cloudwatch metrics request","missingFields":["bucket"]}}\n\n',
         'data: Hello\n\n',
         'data:world\n\n',
         'data:[DONE]\n\n'
@@ -61,6 +67,7 @@ describe('chatApi', () => {
     expect(metadataEvents).toHaveLength(1);
     expect(metadataEvents[0].sessionId).toBe('session-123');
     expect(metadataEvents[0].tool.name).toBe('aws_region_audit');
+    expect(metadataEvents[0].pendingTool.toolName).toBe('s3_cloudwatch_report');
     expect(tokens).toEqual([' Hello', 'world']);
   });
 

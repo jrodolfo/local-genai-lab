@@ -3,8 +3,10 @@ package net.jrodolfo.llm.service;
 import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ChatSessionSummaryResponse;
+import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.ChatSessionMessage;
+import net.jrodolfo.llm.model.PendingToolCall;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
@@ -58,7 +60,8 @@ public class ChatSessionService {
                 session.model(),
                 session.createdAt(),
                 session.updatedAt(),
-                session.messages().stream().map(this::toMessageResponse).toList()
+                session.messages().stream().map(this::toMessageResponse).toList(),
+                toPendingToolResponse(session.pendingToolCall())
         );
     }
 
@@ -68,6 +71,18 @@ public class ChatSessionService {
                 message.content(),
                 message.tool(),
                 message.timestamp()
+        );
+    }
+
+    public PendingToolCallResponse toPendingToolResponse(PendingToolCall pendingToolCall) {
+        if (pendingToolCall == null) {
+            return null;
+        }
+
+        return new PendingToolCallResponse(
+                toolNameForDecision(pendingToolCall.type()),
+                pendingToolCall.reason(),
+                pendingToolCall.missingFields()
         );
     }
 
@@ -89,5 +104,15 @@ public class ChatSessionService {
             return normalized;
         }
         return normalized.substring(0, TITLE_MAX_LENGTH - 1) + "…";
+    }
+
+    private String toolNameForDecision(ChatToolRouterService.DecisionType type) {
+        return switch (type) {
+            case LIST_REPORTS -> "list_recent_reports";
+            case READ_LATEST_REPORT -> "read_report_summary";
+            case AWS_REGION_AUDIT -> "aws_region_audit";
+            case S3_CLOUDWATCH_REPORT -> "s3_cloudwatch_report";
+            case NONE -> "none";
+        };
     }
 }

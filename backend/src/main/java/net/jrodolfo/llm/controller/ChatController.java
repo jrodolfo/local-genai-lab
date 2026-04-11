@@ -59,7 +59,8 @@ public class ChatController {
 
                 sendMetadata(emitter, new ChatStreamMetadata(
                         preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().sessionId() : preparedChat.session().sessionId(),
-                        preparedChat.toolMetadata()
+                        preparedChat.toolMetadata(),
+                        preparedChat.pendingTool()
                 ));
 
                 if (preparedChat.immediateResponse() != null) {

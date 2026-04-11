@@ -5,6 +5,7 @@ import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ListReportsRequest;
+import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
 import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
 import net.jrodolfo.llm.model.ChatSession;
@@ -22,19 +23,22 @@ public class ChatOrchestratorService {
     private final ChatToolRouterService toolRouterService;
     private final ChatMemoryService chatMemoryService;
     private final ChatPromptBuilder chatPromptBuilder;
+    private final ChatSessionService chatSessionService;
 
     public ChatOrchestratorService(
             OllamaService ollamaService,
             McpService mcpService,
             ChatToolRouterService toolRouterService,
             ChatMemoryService chatMemoryService,
-            ChatPromptBuilder chatPromptBuilder
+            ChatPromptBuilder chatPromptBuilder,
+            ChatSessionService chatSessionService
     ) {
         this.ollamaService = ollamaService;
         this.mcpService = mcpService;
         this.toolRouterService = toolRouterService;
         this.chatMemoryService = chatMemoryService;
         this.chatPromptBuilder = chatPromptBuilder;
+        this.chatSessionService = chatSessionService;
     }
 
     public ChatResponse chat(String message, String model, String sessionId) {
@@ -46,7 +50,8 @@ public class ChatOrchestratorService {
                 preparedChat.prompt(),
                 preparedChat.model(),
                 preparedChat.toolMetadata(),
-                preparedChat.session().sessionId()
+                preparedChat.session().sessionId(),
+                preparedChat.pendingTool()
         );
         chatMemoryService.finishTurn(preparedChat.session(), response.response(), response.tool());
         return response;
@@ -70,7 +75,8 @@ public class ChatOrchestratorService {
                     decision.clarification(),
                     resolvedModel,
                     metadata,
-                    persistedSession.sessionId()
+                    persistedSession.sessionId(),
+                    toPendingToolResponse(pendingToolCall)
             ));
         }
 
@@ -111,7 +117,8 @@ public class ChatOrchestratorService {
                     buildFailureMessage(decision, ex.getMessage()),
                     resolvedModel,
                     metadata,
-                    persistedSession.sessionId()
+                    persistedSession.sessionId(),
+                    null
             );
             return PreparedChat.forImmediateResponse(fallbackResponse);
         }
@@ -171,6 +178,10 @@ public class ChatOrchestratorService {
             );
             default -> null;
         };
+    }
+
+    private PendingToolCallResponse toPendingToolResponse(PendingToolCall pendingToolCall) {
+        return chatSessionService.toPendingToolResponse(pendingToolCall);
     }
 
     private ToolExecution executeTool(ChatToolRouterService.ToolDecision decision) {
@@ -304,15 +315,21 @@ public class ChatOrchestratorService {
             String prompt,
             String model,
             ChatToolMetadata toolMetadata,
+            PendingToolCallResponse pendingTool,
             ChatSession session,
             ChatResponse immediateResponse
     ) {
-        static PreparedChat forPrompt(String prompt, String model, ChatToolMetadata toolMetadata, ChatSession session) {
-            return new PreparedChat(prompt, model, toolMetadata, session, null);
+        static PreparedChat forPrompt(
+                String prompt,
+                String model,
+                ChatToolMetadata toolMetadata,
+                ChatSession session
+        ) {
+            return new PreparedChat(prompt, model, toolMetadata, null, session, null);
         }
 
         static PreparedChat forImmediateResponse(ChatResponse response) {
-            return new PreparedChat(null, response.model(), response.tool(), null, response);
+            return new PreparedChat(null, response.model(), response.tool(), response.pendingTool(), null, response);
         }
     }
 }

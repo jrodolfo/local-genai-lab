@@ -126,6 +126,7 @@ The UI now includes a local session sidebar where you can:
 - start a new chat
 - reopen a saved session
 - delete a saved session
+- see when a chat is waiting for missing tool input, such as a bucket name
 
 ## 4. Run the Local MCP Server
 

@@ -8,6 +8,7 @@ import './Home.css';
 function Home() {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  const [pendingTool, setPendingTool] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -53,6 +54,7 @@ function Home() {
 
   const startNewChat = () => {
     setSessionId(null);
+    setPendingTool(null);
     setMessages([]);
     setError('');
   };
@@ -63,6 +65,7 @@ function Home() {
     try {
       const payload = await getSession(targetSessionId);
       setSessionId(payload.sessionId);
+      setPendingTool(payload.pendingTool || null);
       setMessages(
         payload.messages.map((message, index) => ({
           id: `${payload.sessionId}-${index}-${message.timestamp || index}`,
@@ -103,6 +106,7 @@ function Home() {
       if (!streaming) {
         const payload = await sendMessage({ message, model, sessionId });
         setSessionId((current) => payload.sessionId || current);
+        setPendingTool(payload.pendingTool || null);
         addMessage('assistant', payload.response || '(No response)', payload.tool || null);
         await loadSessions();
       } else {
@@ -113,6 +117,7 @@ function Home() {
           sessionId,
           onMetadata: (metadata) => {
             setSessionId((current) => metadata?.sessionId || current);
+            setPendingTool(metadata?.pendingTool || null);
             updateLastAssistantTool(metadata?.tool || null);
           },
           onToken: (token) => {
@@ -176,6 +181,15 @@ function Home() {
         </header>
 
         {error ? <div className="error-banner">{error}</div> : null}
+
+        {pendingTool ? (
+          <div className="pending-tool-banner">
+            <strong>awaiting input for tool:</strong> {pendingTool.toolName}
+            {pendingTool.missingFields?.length ? (
+              <span>missing: {pendingTool.missingFields.join(', ')}</span>
+            ) : null}
+          </div>
+        ) : null}
 
         <ChatWindow messages={messages} />
 

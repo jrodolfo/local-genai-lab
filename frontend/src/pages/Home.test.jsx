@@ -26,6 +26,7 @@ describe('Home', () => {
       model: 'llama3:8b',
       createdAt: '2026-04-10T10:00:00Z',
       updatedAt: '2026-04-10T10:01:00Z',
+      pendingTool: null,
       messages: [
         { role: 'user', content: 'run aws audit', tool: null, timestamp: '2026-04-10T10:00:00Z' },
         {
@@ -44,6 +45,11 @@ describe('Home', () => {
       response: 'Audit complete.',
       model: 'llama3:8b',
       sessionId: 'session-123',
+      pendingTool: {
+        toolName: 's3_cloudwatch_report',
+        reason: 's3 cloudwatch metrics request',
+        missingFields: ['bucket']
+      },
       tool: {
         used: true,
         name: 'aws_region_audit',
@@ -61,12 +67,19 @@ describe('Home', () => {
 
     expect(await screen.findByText('Audit complete.')).toBeInTheDocument();
     expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
+    expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
+    expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
   });
 
   it('renders streamed provenance before tokens complete', async () => {
     streamMessage.mockImplementation(async ({ onMetadata, onToken }) => {
       onMetadata({
         sessionId: 'session-123',
+        pendingTool: {
+          toolName: 'read_report_summary',
+          reason: 'latest report lookup',
+          missingFields: ['reportType']
+        },
         tool: {
           used: true,
           name: 'read_report_summary',
@@ -89,6 +102,8 @@ describe('Home', () => {
     });
 
     expect(screen.getByText(/used tool: read_report_summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
+    expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
   });
 
   it('loads and opens an existing session from the sidebar', async () => {
@@ -115,6 +130,49 @@ describe('Home', () => {
     expect(getSession).toHaveBeenCalledWith('session-1');
   });
 
+  it('shows pending tool state when a loaded session includes it', async () => {
+    getSession.mockResolvedValue({
+      sessionId: 'session-1',
+      title: 'check bucket metrics',
+      model: 'llama3:8b',
+      createdAt: '2026-04-10T10:00:00Z',
+      updatedAt: '2026-04-10T10:01:00Z',
+      pendingTool: {
+        toolName: 's3_cloudwatch_report',
+        reason: 's3 cloudwatch metrics request',
+        missingFields: ['bucket']
+      },
+      messages: [
+        { role: 'user', content: 'check bucket metrics', tool: null, timestamp: '2026-04-10T10:00:00Z' },
+        {
+          role: 'assistant',
+          content: 'I can run the S3 CloudWatch report, but I need the bucket name.',
+          tool: { used: true, name: 's3_cloudwatch_report', status: 'clarification-needed', summary: 'Need bucket.' },
+          timestamp: '2026-04-10T10:01:00Z'
+        }
+      ]
+    });
+    listSessions.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        title: 'check bucket metrics',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('check bucket metrics');
+    await user.click(sessionTitle.closest('button'));
+
+    expect(await screen.findByText(/awaiting input for tool:/i)).toBeInTheDocument();
+    expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
+  });
+
   it('starts a new chat by clearing the current conversation', async () => {
     listSessions.mockResolvedValue([
       {
@@ -137,6 +195,7 @@ describe('Home', () => {
     await user.click(screen.getByRole('button', { name: /new chat/i }));
 
     expect(screen.queryByText('Audit complete.')).not.toBeInTheDocument();
+    expect(screen.queryByText(/awaiting input for tool:/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Ask something to start a conversation./i)).toBeInTheDocument();
   });
 
