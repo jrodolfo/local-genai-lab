@@ -55,8 +55,8 @@ llm-pet-project/
 ## 1. Pull and Run a Model in Ollama
 
 ```bash
-ollama pull codellama:70b
-ollama run codellama:70b
+ollama pull llama3:8b
+ollama run llama3:8b
 ```
 
 Ollama API must be available at `http://localhost:11434`.
@@ -79,7 +79,7 @@ Request:
 ```json
 {
   "message": "Explain recursion",
-  "model": "codellama:70b",
+  "model": "llama3:8b",
   "sessionId": "optional-existing-session-id"
 }
 ```
@@ -89,7 +89,7 @@ Response:
 ```json
 {
   "response": "...",
-  "model": "codellama:70b",
+  "model": "llama3:8b",
   "sessionId": "generated-or-reused-session-id",
   "tool": null
 }
@@ -190,7 +190,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 ## Environment Variables (Backend)
 
 - `OLLAMA_BASE_URL` (default: `http://localhost:11434`)
-- `OLLAMA_DEFAULT_MODEL` (default: `codellama:70b`)
+- `OLLAMA_DEFAULT_MODEL` (default: `llama3:8b`)
 - `OLLAMA_CONNECT_TIMEOUT_SECONDS` (default: `10`)
 - `OLLAMA_READ_TIMEOUT_SECONDS` (default: `240`)
 - `APP_MODEL_PROVIDER` (default: `ollama`)
@@ -217,6 +217,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 
 ## Notes for 70B Models
 
+- `codellama:70b` is an optional heavier model for code-focused experiments, not the recommended first-run default.
 - 70B 4-bit models can be memory intensive.
 - Keep other heavy apps closed while testing.
 - Increase backend read timeout if generation is slow.

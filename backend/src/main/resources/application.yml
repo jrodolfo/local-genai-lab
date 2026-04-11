@@ -13,7 +13,7 @@ app:
 
 ollama:
   base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
-  default-model: ${OLLAMA_DEFAULT_MODEL:codellama:70b}
+  default-model: ${OLLAMA_DEFAULT_MODEL:llama3:8b}
   connect-timeout-seconds: ${OLLAMA_CONNECT_TIMEOUT_SECONDS:10}
   read-timeout-seconds: ${OLLAMA_READ_TIMEOUT_SECONDS:240}
 

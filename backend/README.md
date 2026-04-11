@@ -32,7 +32,7 @@ mvn spring-boot:run
 ```json
 {
   "message": "Explain recursion",
-  "model": "codellama:70b",
+  "model": "llama3:8b",
   "sessionId": "optional-existing-session-id"
 }
 ```
@@ -61,6 +61,7 @@ MCP_ENABLED=true mvn spring-boot:run
 Relevant environment variables:
 
 - `APP_MODEL_PROVIDER` default: `ollama`
+- `OLLAMA_DEFAULT_MODEL` default: `llama3:8b`
 - `MCP_ENABLED`
 - `MCP_COMMAND` default: `node`
 - `MCP_WORKING_DIRECTORY` default: `../mcp`
