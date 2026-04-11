@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sendMessage, streamMessage } from '../api/chatApi';
+import { deleteSession, getSession, listSessions } from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
 import InputBox from '../components/InputBox';
 import './Home.css';
@@ -7,8 +8,13 @@ import './Home.css';
 function Home() {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    loadSessions();
+  }, []);
 
   const addMessage = (role, content, tool = null) => {
     setMessages((current) => [...current, { id: crypto.randomUUID(), role, content, tool }]);
@@ -36,6 +42,58 @@ function Home() {
     );
   };
 
+  async function loadSessions() {
+    try {
+      const payload = await listSessions();
+      setSessions(payload);
+    } catch (err) {
+      setError(err.message || 'Failed to load sessions.');
+    }
+  }
+
+  const startNewChat = () => {
+    setSessionId(null);
+    setMessages([]);
+    setError('');
+  };
+
+  const openSession = async (targetSessionId) => {
+    setError('');
+    setLoading(true);
+    try {
+      const payload = await getSession(targetSessionId);
+      setSessionId(payload.sessionId);
+      setMessages(
+        payload.messages.map((message, index) => ({
+          id: `${payload.sessionId}-${index}-${message.timestamp || index}`,
+          role: message.role,
+          content: message.content,
+          tool: message.tool || null
+        }))
+      );
+    } catch (err) {
+      setError(err.message || 'Failed to load session.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeSession = async (targetSessionId) => {
+    setError('');
+    setLoading(true);
+    try {
+      await deleteSession(targetSessionId);
+      setSessions((current) => current.filter((session) => session.sessionId !== targetSessionId));
+      if (sessionId === targetSessionId) {
+        startNewChat();
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to delete session.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSend = async ({ message, model, streaming }) => {
     setError('');
     setLoading(true);
@@ -46,6 +104,7 @@ function Home() {
         const payload = await sendMessage({ message, model, sessionId });
         setSessionId((current) => payload.sessionId || current);
         addMessage('assistant', payload.response || '(No response)', payload.tool || null);
+        await loadSessions();
       } else {
         addMessage('assistant', '');
         await streamMessage({
@@ -60,6 +119,7 @@ function Home() {
             updateLastAssistant((current) => current + token);
           }
         });
+        await loadSessions();
       }
     } catch (err) {
       setError(err.message || 'Something went wrong.');
@@ -71,7 +131,45 @@ function Home() {
 
   return (
     <main className="home-page">
-      <section className="chat-card">
+      <section className="chat-layout">
+        <aside className="session-sidebar">
+          <div className="session-sidebar-header">
+            <h2>Sessions</h2>
+            <button type="button" onClick={startNewChat} disabled={loading}>
+              New chat
+            </button>
+          </div>
+          <div className="session-list">
+            {sessions.length === 0 ? <p className="session-empty">No saved chats yet.</p> : null}
+            {sessions.map((session) => (
+              <div
+                key={session.sessionId}
+                className={`session-item ${session.sessionId === sessionId ? 'active' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="session-open"
+                  onClick={() => openSession(session.sessionId)}
+                  disabled={loading}
+                >
+                  <span className="session-title">{session.title}</span>
+                  <span className="session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                </button>
+                <button
+                  type="button"
+                  className="session-delete"
+                  onClick={() => removeSession(session.sessionId)}
+                  disabled={loading}
+                  aria-label={`Delete session ${session.title}`}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        </aside>
+
+        <section className="chat-card">
         <header>
           <h1>LLM Pet Project</h1>
           <p>React + Spring Boot + Ollama</p>
@@ -82,6 +180,7 @@ function Home() {
         <ChatWindow messages={messages} />
 
         <InputBox disabled={loading} onSend={handleSend} />
+        </section>
       </section>
     </main>
   );

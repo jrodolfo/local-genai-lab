@@ -105,6 +105,12 @@ Optional MCP-backed tool endpoints:
 - `GET /api/tools/reports`
 - `POST /api/tools/reports/read`
 
+Session endpoints:
+
+- `GET /api/sessions`
+- `GET /api/sessions/{sessionId}`
+- `DELETE /api/sessions/{sessionId}`
+
 ## 3. Run Frontend (React)
 
 ```bash
@@ -114,6 +120,12 @@ npm run dev
 ```
 
 Frontend runs on `http://localhost:5173`.
+
+The UI now includes a local session sidebar where you can:
+
+- start a new chat
+- reopen a saved session
+- delete a saved session
 
 ## 4. Run the Local MCP Server
 
@@ -194,6 +206,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - The `scripts/reports/` tree contains generated local artifacts and is intentionally reused by both the shell tools and the MCP wrappers.
 - Conversation history is stored locally as JSON files under [`data/sessions/`](./data/sessions).
 - The frontend reuses the returned `sessionId` automatically so follow-up prompts keep local context.
+- Session titles in the sidebar are derived from the first user message in each stored session.
 
 ## Notes for 70B Models
 

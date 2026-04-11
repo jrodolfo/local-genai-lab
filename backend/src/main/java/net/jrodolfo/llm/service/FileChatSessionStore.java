@@ -9,7 +9,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Service
 public class FileChatSessionStore {
@@ -42,6 +45,39 @@ public class FileChatSessionStore {
             return session;
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to save chat session: " + session.sessionId(), ex);
+        }
+    }
+
+    public List<ChatSession> findAll() {
+        if (!Files.exists(sessionsDirectory)) {
+            return List.of();
+        }
+
+        try (Stream<Path> paths = Files.list(sessionsDirectory)) {
+            return paths
+                    .filter(path -> path.getFileName().toString().endsWith(".json"))
+                    .sorted(Comparator.comparing(Path::getFileName))
+                    .map(this::readSession)
+                    .toList();
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Failed to list chat sessions.", ex);
+        }
+    }
+
+    public boolean deleteById(String sessionId) {
+        Path sessionPath = resolveSessionPath(sessionId);
+        try {
+            return Files.deleteIfExists(sessionPath);
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Failed to delete chat session: " + sessionId, ex);
+        }
+    }
+
+    private ChatSession readSession(Path sessionPath) {
+        try {
+            return objectMapper.readValue(sessionPath.toFile(), ChatSession.class);
+        } catch (IOException ex) {
+            throw new UncheckedIOException("Failed to read chat session: " + sessionPath.getFileName(), ex);
         }
     }
 

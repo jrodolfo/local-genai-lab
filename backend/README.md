@@ -18,6 +18,9 @@ mvn spring-boot:run
 
 - `POST /api/chat`
 - `POST /api/chat/stream` (SSE)
+- `GET /api/sessions`
+- `GET /api/sessions/{sessionId}`
+- `DELETE /api/sessions/{sessionId}`
 - `GET /api/tools`
 - `POST /api/tools/aws-region-audit`
 - `POST /api/tools/s3-cloudwatch-report`
@@ -67,6 +70,8 @@ Relevant environment variables:
 ## Local Conversation Memory
 
 Chat sessions are stored locally as JSON files under `../data/sessions` by default.
+
+The backend exposes a small local session API so the frontend can list, reopen, and delete stored chats.
 
 Relevant environment variable:
 
