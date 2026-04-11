@@ -81,6 +81,7 @@ That pending state can also be surfaced in the chat UI as an informational hint.
 Session files also store generated local `title` and `summary` metadata for easier sidebar browsing.
 Tool routing can run in `rules`, `llm`, or `hybrid` mode, with `hybrid` using the LLM planner first and falling back to the rule-based router when the planner output is invalid.
 Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed decisions, and fallback usage while tuning the planner locally.
+The backend test suite includes a fixture-driven planner evaluation pass and prints a compact summary of tool-use, clarification, and fallback cases.
 
 Relevant environment variable:
 

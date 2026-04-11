@@ -219,6 +219,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
 - The backend can use session memory to complete tool clarifications across turns, for example asking for a missing bucket name and using your next reply to run the pending tool call.
 - Fixture-based planner evaluation cases live in [`backend/src/test/resources/tool-decision-evaluation-fixtures.json`](/Users/jrodolfo/workspace/ai/llm/llm-pet-project/backend/src/test/resources/tool-decision-evaluation-fixtures.json).
+- The backend test suite now prints a compact planner evaluation summary from the fixture set so routing regressions are easier to spot.
 
 ## Notes for 70B Models
 

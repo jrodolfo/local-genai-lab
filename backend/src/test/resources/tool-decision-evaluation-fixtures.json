@@ -59,5 +59,45 @@
     "expectedClarification": false,
     "expectedFallbackUsed": false,
     "expectedBucket": "jrodolfo.net"
+  },
+  {
+    "name": "planner markdown json still parses",
+    "mode": "hybrid",
+    "message": "show my recent audit reports",
+    "plannerResponse": "```json\n{\"action\":\"use_tool\",\"toolName\":\"list_recent_reports\",\"arguments\":{\"reportType\":\"audit\"},\"missingFields\":[],\"reason\":\"The user wants recent audit reports.\"}\n```",
+    "expectedType": "LIST_REPORTS",
+    "expectedUseTool": true,
+    "expectedClarification": false,
+    "expectedFallbackUsed": false
+  },
+  {
+    "name": "planner use tool without bucket becomes clarification",
+    "mode": "hybrid",
+    "message": "show cloudwatch metrics for my bucket",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"s3_cloudwatch_report\",\"arguments\":{\"days\":14},\"missingFields\":[],\"reason\":\"The user wants an S3 metrics report.\"}",
+    "expectedType": "S3_CLOUDWATCH_REPORT",
+    "expectedUseTool": false,
+    "expectedClarification": true,
+    "expectedFallbackUsed": false
+  },
+  {
+    "name": "planner ambiguous latest report becomes clarification",
+    "mode": "hybrid",
+    "message": "read the latest report",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"read_report_summary\",\"arguments\":{\"reportType\":\"all\"},\"missingFields\":[],\"reason\":\"The user wants the most recent report.\"}",
+    "expectedType": "READ_LATEST_REPORT",
+    "expectedUseTool": false,
+    "expectedClarification": true,
+    "expectedFallbackUsed": false
+  },
+  {
+    "name": "unsupported tool falls back to safe none",
+    "mode": "hybrid",
+    "message": "what is the weather in halifax today",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"weather_lookup\",\"arguments\":{\"location\":\"Halifax\"},\"missingFields\":[],\"reason\":\"The user wants weather.\"}",
+    "expectedType": "NONE",
+    "expectedUseTool": false,
+    "expectedClarification": false,
+    "expectedFallbackUsed": true
   }
 ]

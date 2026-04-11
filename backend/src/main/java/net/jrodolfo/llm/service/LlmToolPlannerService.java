@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 public class LlmToolPlannerService {
 
     private static final Pattern REGION_PATTERN = Pattern.compile("\\b(af|ap|ca|eu|il|me|sa|us)-[a-z]+-\\d\\b");
+    private static final Pattern BUCKET_PATTERN = Pattern.compile("^[a-z0-9][a-z0-9.-]{1,253}[a-z0-9]$");
     private static final List<String> AUDIT_SERVICES = List.of(
             "sts", "aws-config", "s3", "ec2", "elbv2", "rds", "lambda",
             "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "logs", "tagging"
@@ -189,7 +190,7 @@ public class LlmToolPlannerService {
             String reason = normalizedReason(textValue(root.get("reason")));
 
             if ("clarification_needed".equals(action)) {
-                return Optional.of(new ChatToolRouterService.ToolDecision(
+                return Optional.of(applyGuardrails(new ChatToolRouterService.ToolDecision(
                         type,
                         reportType,
                         bucket,
@@ -198,14 +199,14 @@ public class LlmToolPlannerService {
                         reason,
                         services,
                         clarificationFor(type, missingFields)
-                ));
+                )));
             }
 
             if (!"use_tool".equals(action)) {
                 return Optional.empty();
             }
 
-            return Optional.of(new ChatToolRouterService.ToolDecision(
+            return Optional.of(applyGuardrails(new ChatToolRouterService.ToolDecision(
                     type,
                     reportType,
                     bucket,
@@ -213,7 +214,7 @@ public class LlmToolPlannerService {
                     days,
                     reason,
                     services
-            ));
+            )));
         } catch (Exception ex) {
             return Optional.empty();
         }
@@ -323,6 +324,61 @@ public class LlmToolPlannerService {
 
     private String normalizedReason(String reason) {
         return reason == null ? "llm tool planning decision" : reason;
+    }
+
+    private ChatToolRouterService.ToolDecision applyGuardrails(ChatToolRouterService.ToolDecision decision) {
+        if (decision.type() == ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT) {
+            if (decision.bucket() == null || !looksLikeBucket(decision.bucket())) {
+                return new ChatToolRouterService.ToolDecision(
+                        ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT,
+                        null,
+                        null,
+                        decision.region(),
+                        decision.days(),
+                        decision.reason(),
+                        decision.services(),
+                        clarificationFor(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, List.of("bucket"))
+                );
+            }
+        }
+
+        if (decision.type() == ChatToolRouterService.DecisionType.READ_LATEST_REPORT) {
+            if (decision.reportType() == null || "all".equals(decision.reportType())) {
+                return new ChatToolRouterService.ToolDecision(
+                        ChatToolRouterService.DecisionType.READ_LATEST_REPORT,
+                        null,
+                        null,
+                        null,
+                        null,
+                        decision.reason(),
+                        decision.services(),
+                        clarificationFor(ChatToolRouterService.DecisionType.READ_LATEST_REPORT, List.of("reportType"))
+                );
+            }
+        }
+
+        if (decision.type() == ChatToolRouterService.DecisionType.LIST_REPORTS) {
+            String normalizedReportType = decision.reportType() == null ? "all" : decision.reportType();
+            return new ChatToolRouterService.ToolDecision(
+                    ChatToolRouterService.DecisionType.LIST_REPORTS,
+                    normalizedReportType,
+                    null,
+                    null,
+                    null,
+                    decision.reason(),
+                    List.of(),
+                    decision.clarification()
+            );
+        }
+
+        return decision;
+    }
+
+    private boolean looksLikeBucket(String bucket) {
+        if (bucket == null) {
+            return false;
+        }
+        return BUCKET_PATTERN.matcher(bucket.trim().toLowerCase(Locale.ROOT)).matches();
     }
 
     public record PlanningResult(
