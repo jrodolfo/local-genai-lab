@@ -27,7 +27,8 @@ llm-pet-project/
 │   └── README.md
 ├── frontend/
 │   ├── src/
-│   └── package.json
+│   ├── package.json
+│   └── README.md
 ├── scripts/
 │   ├── reports/
 │   ├── tests/
