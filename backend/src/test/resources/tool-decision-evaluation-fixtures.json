@@ -44,6 +44,16 @@
     "expectedFallbackUsed": false
   },
   {
+    "name": "live miss plain recursion question must not become report lookup",
+    "mode": "hybrid",
+    "message": "explain recursion using a simple example",
+    "plannerResponse": "{\n  \"action\": \"use_tool\",\n  \"toolName\": \"list_recent_reports\",\n  \"arguments\": {},\n  \"missingFields\": [],\n  \"reason\": \"Supported tool for report listing\"\n}",
+    "expectedType": "NONE",
+    "expectedUseTool": false,
+    "expectedClarification": false,
+    "expectedFallbackUsed": false
+  },
+  {
     "name": "pending follow-up resolves missing bucket",
     "mode": "hybrid",
     "message": "jrodolfo.net",

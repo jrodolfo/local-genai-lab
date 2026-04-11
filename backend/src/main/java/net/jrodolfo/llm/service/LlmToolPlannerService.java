@@ -86,7 +86,7 @@ public class LlmToolPlannerService {
                 """.formatted(String.join(", ", AUDIT_SERVICES), message.trim());
 
         String rawResponse = chatModelProvider.chat(plannerPrompt, model, null, null, null).response();
-        return new PlanningResult(rawResponse, parseDecision(rawResponse));
+        return new PlanningResult(rawResponse, parseDecision(rawResponse, message, true));
     }
 
     public Optional<ChatToolRouterService.ToolDecision> resolvePending(PendingToolCall pendingToolCall, String message, String model) {
@@ -155,10 +155,10 @@ public class LlmToolPlannerService {
         );
 
         String rawResponse = chatModelProvider.chat(plannerPrompt, model, null, null, null).response();
-        return new PlanningResult(rawResponse, parseDecision(rawResponse));
+        return new PlanningResult(rawResponse, parseDecision(rawResponse, message, false));
     }
 
-    private Optional<ChatToolRouterService.ToolDecision> parseDecision(String rawResponse) {
+    private Optional<ChatToolRouterService.ToolDecision> parseDecision(String rawResponse, String originalMessage, boolean strictIntentChecks) {
         String json = extractJsonObject(rawResponse);
         if (json == null) {
             return Optional.empty();
@@ -199,7 +199,7 @@ public class LlmToolPlannerService {
                         reason,
                         services,
                         clarificationFor(type, missingFields)
-                )));
+                ), originalMessage, strictIntentChecks));
             }
 
             if (!"use_tool".equals(action)) {
@@ -214,7 +214,7 @@ public class LlmToolPlannerService {
                     days,
                     reason,
                     services
-            )));
+            ), originalMessage, strictIntentChecks));
         } catch (Exception ex) {
             return Optional.empty();
         }
@@ -326,7 +326,15 @@ public class LlmToolPlannerService {
         return reason == null ? "llm tool planning decision" : reason;
     }
 
-    private ChatToolRouterService.ToolDecision applyGuardrails(ChatToolRouterService.ToolDecision decision) {
+    private ChatToolRouterService.ToolDecision applyGuardrails(
+            ChatToolRouterService.ToolDecision decision,
+            String originalMessage,
+            boolean strictIntentChecks
+    ) {
+        if (strictIntentChecks && isUnexpectedReportDecision(decision, originalMessage)) {
+            return ChatToolRouterService.ToolDecision.none();
+        }
+
         if (decision.type() == ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT) {
             if (decision.bucket() == null || !looksLikeBucket(decision.bucket())) {
                 return new ChatToolRouterService.ToolDecision(
@@ -379,6 +387,19 @@ public class LlmToolPlannerService {
             return false;
         }
         return BUCKET_PATTERN.matcher(bucket.trim().toLowerCase(Locale.ROOT)).matches();
+    }
+
+    private boolean isUnexpectedReportDecision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
+        if (originalMessage == null) {
+            return false;
+        }
+        if (decision.type() != ChatToolRouterService.DecisionType.LIST_REPORTS
+                && decision.type() != ChatToolRouterService.DecisionType.READ_LATEST_REPORT) {
+            return false;
+        }
+
+        String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
+        return !normalizedMessage.contains("report");
     }
 
     public record PlanningResult(
