@@ -7,7 +7,7 @@
 ![ollama](https://img.shields.io/badge/ollama-local%20llm-222222)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Proof-of-concept app to chat with local LLMs via Ollama, with optional local MCP-backed tooling for AWS audit and report workflows.
+Proof-of-concept app to chat with local LLMs via Ollama, with optional local MCP-backed tooling for AWS audit and report workflows and local JSON-backed conversation memory.
 
 Architecture:
 
@@ -78,7 +78,8 @@ Request:
 ```json
 {
   "message": "Explain recursion",
-  "model": "codellama:70b"
+  "model": "codellama:70b",
+  "sessionId": "optional-existing-session-id"
 }
 ```
 
@@ -87,11 +88,14 @@ Response:
 ```json
 {
   "response": "...",
-  "model": "codellama:70b"
+  "model": "codellama:70b",
+  "sessionId": "generated-or-reused-session-id",
+  "tool": null
 }
 ```
 
 Streaming endpoint: `POST /api/chat/stream` (SSE).
+The streaming path emits an initial `metadata` event that can include the active `sessionId` and optional tool provenance before token events begin.
 
 Optional MCP-backed tool endpoints:
 
@@ -180,6 +184,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - `MCP_ARG_1` (default: `dist/index.js`)
 - `MCP_STARTUP_TIMEOUT_SECONDS` (default: `10`)
 - `MCP_TOOL_TIMEOUT_SECONDS` (default: `120`)
+- `APP_STORAGE_SESSIONS_DIRECTORY` (default: `../data/sessions`)
 
 ## Notes
 
@@ -187,6 +192,8 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - The backend can call MCP tools only when `MCP_ENABLED=true`.
 - The MCP server uses local `stdio` transport and is designed for private, local execution.
 - The `scripts/reports/` tree contains generated local artifacts and is intentionally reused by both the shell tools and the MCP wrappers.
+- Conversation history is stored locally as JSON files under [`data/sessions/`](./data/sessions).
+- The frontend reuses the returned `sessionId` automatically so follow-up prompts keep local context.
 
 ## Notes for 70B Models
 
@@ -196,9 +203,8 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 
 ## Next Enhancements
 
-- Persist conversation history on backend
 - Add authentication
-- Add prompt templates/system prompts
+- Improve prompt templates/system prompts
 - Add metrics and tracing
 - Support multiple model providers
 

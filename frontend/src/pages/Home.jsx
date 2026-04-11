@@ -6,6 +6,7 @@ import './Home.css';
 
 function Home() {
   const [messages, setMessages] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -42,15 +43,18 @@ function Home() {
 
     try {
       if (!streaming) {
-        const payload = await sendMessage({ message, model });
+        const payload = await sendMessage({ message, model, sessionId });
+        setSessionId((current) => payload.sessionId || current);
         addMessage('assistant', payload.response || '(No response)', payload.tool || null);
       } else {
         addMessage('assistant', '');
         await streamMessage({
           message,
           model,
-          onMetadata: (toolMetadata) => {
-            updateLastAssistantTool(toolMetadata);
+          sessionId,
+          onMetadata: (metadata) => {
+            setSessionId((current) => metadata?.sessionId || current);
+            updateLastAssistantTool(metadata?.tool || null);
           },
           onToken: (token) => {
             updateLastAssistant((current) => current + token);

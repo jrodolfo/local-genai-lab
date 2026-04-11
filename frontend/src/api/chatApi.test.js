@@ -23,6 +23,7 @@ describe('chatApi', () => {
       json: async () => ({
         response: 'Answer',
         model: 'llama3:8b',
+        sessionId: 'session-123',
         tool: {
           used: true,
           name: 'aws_region_audit'
@@ -33,13 +34,14 @@ describe('chatApi', () => {
     const result = await sendMessage({ message: 'run audit', model: 'llama3:8b' });
 
     expect(result.response).toBe('Answer');
+    expect(result.sessionId).toBe('session-123');
     expect(result.tool.name).toBe('aws_region_audit');
   });
 
   it('streams metadata before tokens', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       createStreamResponse([
-        'event: metadata\ndata: {"used":true,"name":"aws_region_audit","status":"success","summary":"done"}\n\n',
+        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"}}\n\n',
         'data: Hello\n\n',
         'data:world\n\n',
         'data:[DONE]\n\n'
@@ -57,7 +59,8 @@ describe('chatApi', () => {
     });
 
     expect(metadataEvents).toHaveLength(1);
-    expect(metadataEvents[0].name).toBe('aws_region_audit');
+    expect(metadataEvents[0].sessionId).toBe('session-123');
+    expect(metadataEvents[0].tool.name).toBe('aws_region_audit');
     expect(tokens).toEqual([' Hello', 'world']);
   });
 

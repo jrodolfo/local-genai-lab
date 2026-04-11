@@ -1,8 +1,10 @@
 package net.jrodolfo.llm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.client.McpClient;
 import net.jrodolfo.llm.client.McpClientException;
+import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.config.McpProperties;
 import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
@@ -11,65 +13,110 @@ import net.jrodolfo.llm.dto.McpToolInvocationResponse;
 import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
 import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatOrchestratorServiceTest {
 
+    @TempDir
+    Path tempDir;
+
     @Test
-    void noToolRequestFallsBackToRegularChat() {
+    void noToolRequestFallsBackToRegularChatAndPersistsSession() {
         FakeOllamaService ollamaService = new FakeOllamaService();
+        FileChatSessionStore sessionStore = newSessionStore();
         ChatOrchestratorService orchestrator = new ChatOrchestratorService(
                 ollamaService,
                 new FakeMcpService(),
-                new ChatToolRouterService()
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore)
         );
 
-        ChatResponse response = orchestrator.chat("explain recursion", "llama3:8b");
+        ChatResponse response = orchestrator.chat("explain recursion", "llama3:8b", null);
 
         assertEquals("plain response", response.response());
-        assertEquals("explain recursion", ollamaService.lastPrompt);
-        assertEquals(null, response.tool());
+        assertTrue(ollamaService.lastPrompt.contains("<current_user_message>"));
+        assertNull(response.tool());
+        assertNotNull(response.sessionId());
+
+        var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
+        assertEquals(2, storedSession.messages().size());
+        assertEquals("user", storedSession.messages().get(0).role());
+        assertEquals("assistant", storedSession.messages().get(1).role());
     }
 
     @Test
-    void auditRequestUsesToolAndAddsMetadata() {
+    void followUpRequestIncludesConversationHistory() {
         FakeOllamaService ollamaService = new FakeOllamaService();
+        FileChatSessionStore sessionStore = newSessionStore();
         ChatOrchestratorService orchestrator = new ChatOrchestratorService(
                 ollamaService,
                 new FakeMcpService(),
-                new ChatToolRouterService()
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore)
         );
 
-        ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b");
+        ChatResponse firstResponse = orchestrator.chat("explain recursion", "llama3:8b", null);
+        ChatResponse secondResponse = orchestrator.chat("give me an example", "llama3:8b", firstResponse.sessionId());
+
+        assertEquals(firstResponse.sessionId(), secondResponse.sessionId());
+        assertTrue(ollamaService.lastPrompt.contains("<conversation_history>"));
+        assertTrue(ollamaService.lastPrompt.contains("user: explain recursion"));
+        assertTrue(ollamaService.lastPrompt.contains("assistant: plain response"));
+    }
+
+    @Test
+    void auditRequestUsesToolAddsMetadataAndPersistsAssistantToolState() {
+        FakeOllamaService ollamaService = new FakeOllamaService();
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
+                ollamaService,
+                new FakeMcpService(),
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore)
+        );
+
+        ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b", null);
 
         assertNotNull(response.tool());
         assertTrue(response.tool().used());
         assertEquals("aws_region_audit", response.tool().name());
-        assertTrue(ollamaService.lastPrompt.contains("Tool name:\naws_region_audit"));
+        assertTrue(ollamaService.lastPrompt.contains("<tool_context>"));
+        assertTrue(ollamaService.lastPrompt.contains("tool_name: aws_region_audit"));
+
+        var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
+        assertEquals("aws_region_audit", storedSession.messages().get(1).tool().name());
     }
 
     @Test
-    void toolFailureReturnsExplicitFailureResponse() {
+    void toolFailureReturnsExplicitFailureResponseAndPersistsIt() {
         FakeOllamaService ollamaService = new FakeOllamaService();
+        FileChatSessionStore sessionStore = newSessionStore();
         ChatOrchestratorService orchestrator = new ChatOrchestratorService(
                 ollamaService,
                 new ErrorMcpService(),
-                new ChatToolRouterService()
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore)
         );
 
-        ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b");
+        ChatResponse response = orchestrator.chat("run aws audit for us-east-2 sts", "llama3:8b", null);
 
         assertTrue(response.response().contains("I tried to use the local tool"));
         assertNotNull(response.tool());
         assertEquals("failed", response.tool().status());
         assertFalse(ollamaService.generateCalled);
+
+        var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
+        assertEquals("failed", storedSession.messages().get(1).tool().status());
     }
 
     @Test
@@ -78,15 +125,17 @@ class ChatOrchestratorServiceTest {
         ChatOrchestratorService orchestrator = new ChatOrchestratorService(
                 ollamaService,
                 new FakeMcpService(),
-                new ChatToolRouterService()
+                new ChatToolRouterService(),
+                new ChatMemoryService(newSessionStore())
         );
 
-        ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b");
+        ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "llama3:8b", null);
 
         assertTrue(response.response().contains("I can run the S3 CloudWatch report, but I need the bucket name."));
         assertNotNull(response.tool());
         assertEquals("clarification-needed", response.tool().status());
         assertFalse(ollamaService.generateCalled);
+        assertNotNull(response.sessionId());
     }
 
     @Test
@@ -95,15 +144,40 @@ class ChatOrchestratorServiceTest {
         ChatOrchestratorService orchestrator = new ChatOrchestratorService(
                 ollamaService,
                 new FakeMcpService(),
-                new ChatToolRouterService()
+                new ChatToolRouterService(),
+                new ChatMemoryService(newSessionStore())
         );
 
-        ChatResponse response = orchestrator.chat("read the latest report", "llama3:8b");
+        ChatResponse response = orchestrator.chat("read the latest report", "llama3:8b", null);
 
         assertTrue(response.response().contains("latest audit report or the latest s3 cloudwatch report"));
         assertNotNull(response.tool());
         assertEquals("clarification-needed", response.tool().status());
         assertFalse(ollamaService.generateCalled);
+    }
+
+    @Test
+    void completePreparedChatPersistsStreamedAssistantResponse() {
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = new ChatOrchestratorService(
+                new FakeOllamaService(),
+                new FakeMcpService(),
+                new ChatToolRouterService(),
+                new ChatMemoryService(sessionStore)
+        );
+
+        ChatOrchestratorService.PreparedChat preparedChat = orchestrator.prepareChat("explain recursion", "llama3:8b", null);
+        var persistedSession = orchestrator.completePreparedChat(preparedChat, "streamed response");
+
+        assertEquals(2, persistedSession.messages().size());
+        assertEquals("streamed response", persistedSession.messages().get(1).content());
+        assertEquals(persistedSession.sessionId(), sessionStore.findById(persistedSession.sessionId()).orElseThrow().sessionId());
+    }
+
+    private FileChatSessionStore newSessionStore() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString()));
     }
 
     private static final class FakeOllamaService extends OllamaService {
@@ -120,10 +194,10 @@ class ChatOrchestratorServiceTest {
         }
 
         @Override
-        public ChatResponse chat(String message, String model, net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata) {
+        public ChatResponse chat(String message, String model, net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata, String sessionId) {
             this.lastPrompt = message;
             this.generateCalled = true;
-            return new ChatResponse("plain response", resolveModel(model), toolMetadata);
+            return new ChatResponse("plain response", resolveModel(model), toolMetadata, sessionId);
         }
     }
 

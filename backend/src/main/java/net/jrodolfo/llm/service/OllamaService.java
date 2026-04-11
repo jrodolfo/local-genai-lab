@@ -17,14 +17,18 @@ public class OllamaService {
     }
 
     public ChatResponse chat(String message, String model) {
-        return chat(message, model, null);
+        return chat(message, model, null, null);
     }
 
     public ChatResponse chat(String message, String model, ChatToolMetadata toolMetadata) {
+        return chat(message, model, toolMetadata, null);
+    }
+
+    public ChatResponse chat(String message, String model, ChatToolMetadata toolMetadata, String sessionId) {
         String normalizedMessage = message.trim();
         String resolvedModel = ollamaClient.resolveModel(model);
         String response = ollamaClient.generate(normalizedMessage, resolvedModel);
-        return new ChatResponse(response, resolvedModel, toolMetadata);
+        return new ChatResponse(response, resolvedModel, toolMetadata, sessionId);
     }
 
     public void streamChat(String message, String model, Consumer<String> tokenConsumer) {

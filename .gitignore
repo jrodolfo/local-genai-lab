@@ -22,6 +22,11 @@ mcp/dist/
 # Env
 .env
 
+# Local chat memory
+data/sessions/**
+!data/sessions/
+!data/sessions/.gitkeep
+
 # Scripts
 scripts/reports/**
 !scripts/reports/

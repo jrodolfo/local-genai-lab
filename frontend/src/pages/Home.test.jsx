@@ -18,6 +18,7 @@ describe('Home', () => {
     sendMessage.mockResolvedValue({
       response: 'Audit complete.',
       model: 'llama3:8b',
+      sessionId: 'session-123',
       tool: {
         used: true,
         name: 'aws_region_audit',
@@ -40,10 +41,13 @@ describe('Home', () => {
   it('renders streamed provenance before tokens complete', async () => {
     streamMessage.mockImplementation(async ({ onMetadata, onToken }) => {
       onMetadata({
-        used: true,
-        name: 'read_report_summary',
-        status: 'success',
-        summary: 'Read audit report.'
+        sessionId: 'session-123',
+        tool: {
+          used: true,
+          name: 'read_report_summary',
+          status: 'success',
+          summary: 'Read audit report.'
+        }
       });
       onToken('Latest ');
       onToken('report ready.');
