@@ -212,7 +212,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - The default chat flow does not require MCP.
 - The backend now uses a model-provider abstraction and currently supports both `ollama` and `bedrock`.
 - `ollama` remains the default provider for local development.
-- The first Bedrock implementation supports normal chat requests; Bedrock streaming is not implemented yet.
+- The Bedrock provider now supports both normal chat requests and the `/api/chat/stream` SSE path.
 - Tool routing is now LLM-assisted by default in `hybrid` mode, with the older rule-based router kept as a fallback.
 - Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed planner decisions, and fallback usage during local evaluation.
 - The backend can call MCP tools only when `MCP_ENABLED=true`.
@@ -238,7 +238,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Add authentication
 - Improve prompt templates/system prompts
 - Add metrics and tracing
-- Add Bedrock streaming support
+- Enrich Bedrock response metadata in chat responses
 
 ## Contact
 

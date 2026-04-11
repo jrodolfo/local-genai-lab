@@ -95,10 +95,10 @@ Required configuration:
 - `BEDROCK_REGION`
 - `BEDROCK_MODEL_ID`
 
-Current limitation:
+Bedrock now supports both:
 
-- normal chat is supported
-- streaming chat is not implemented yet for the Bedrock provider
+- normal chat through `POST /api/chat`
+- streaming chat through `POST /api/chat/stream`
 
 Relevant environment variable:
 

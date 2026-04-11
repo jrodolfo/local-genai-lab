@@ -35,7 +35,9 @@ public class BedrockChatModelProvider implements ChatModelProvider {
 
     @Override
     public void streamChat(String message, String model, Consumer<String> tokenConsumer) {
-        throw new ModelProviderException("Streaming is not yet implemented for the 'bedrock' provider.");
+        String normalizedMessage = message.trim();
+        String resolvedModel = resolveModel(model);
+        bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
     }
 
     @Override
