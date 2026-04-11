@@ -331,8 +331,12 @@ public class LlmToolPlannerService {
             String originalMessage,
             boolean strictIntentChecks
     ) {
-        if (strictIntentChecks && isUnexpectedReportDecision(decision, originalMessage)) {
-            return ChatToolRouterService.ToolDecision.none();
+        if (strictIntentChecks) {
+            if (isUnexpectedReportDecision(decision, originalMessage)
+                    || isUnexpectedS3Decision(decision, originalMessage)
+                    || isUnexpectedAuditDecision(decision, originalMessage)) {
+                return ChatToolRouterService.ToolDecision.none();
+            }
         }
 
         if (decision.type() == ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT) {
@@ -399,7 +403,37 @@ public class LlmToolPlannerService {
         }
 
         String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
-        return !normalizedMessage.contains("report");
+        boolean mentionsReport = normalizedMessage.contains("report");
+        boolean mentionsReportIntent = normalizedMessage.contains("read")
+                || normalizedMessage.contains("show")
+                || normalizedMessage.contains("open")
+                || normalizedMessage.contains("latest")
+                || normalizedMessage.contains("recent")
+                || normalizedMessage.contains("list");
+        return !(mentionsReport && mentionsReportIntent);
+    }
+
+    private boolean isUnexpectedS3Decision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
+        if (originalMessage == null || decision.type() != ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT) {
+            return false;
+        }
+
+        String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
+        boolean mentionsBucket = normalizedMessage.contains("bucket");
+        boolean mentionsMetrics = normalizedMessage.contains("metric") || normalizedMessage.contains("metrics");
+        boolean mentionsCloudwatch = normalizedMessage.contains("cloudwatch");
+        boolean mentionsReport = normalizedMessage.contains("report");
+
+        return !(mentionsCloudwatch || mentionsMetrics || (mentionsBucket && mentionsReport));
+    }
+
+    private boolean isUnexpectedAuditDecision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
+        if (originalMessage == null || decision.type() != ChatToolRouterService.DecisionType.AWS_REGION_AUDIT) {
+            return false;
+        }
+
+        String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
+        return !normalizedMessage.contains("audit");
     }
 
     public record PlanningResult(

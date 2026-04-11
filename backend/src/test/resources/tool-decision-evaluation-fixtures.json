@@ -109,5 +109,35 @@
     "expectedUseTool": false,
     "expectedClarification": false,
     "expectedFallbackUsed": true
+  },
+  {
+    "name": "bucket discussion without metrics must stay plain chat",
+    "mode": "hybrid",
+    "message": "how do buckets work in aws s3?",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"s3_cloudwatch_report\",\"arguments\":{\"bucket\":\"example-bucket\"},\"missingFields\":[],\"reason\":\"The user is asking about s3 buckets.\"}",
+    "expectedType": "NONE",
+    "expectedUseTool": false,
+    "expectedClarification": false,
+    "expectedFallbackUsed": false
+  },
+  {
+    "name": "aws concept question must not become audit",
+    "mode": "hybrid",
+    "message": "explain sts in aws",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"aws_region_audit\",\"arguments\":{\"region\":\"us-east-2\",\"services\":[\"sts\"]},\"missingFields\":[],\"reason\":\"The user mentioned sts in aws.\"}",
+    "expectedType": "NONE",
+    "expectedUseTool": false,
+    "expectedClarification": false,
+    "expectedFallbackUsed": false
+  },
+  {
+    "name": "report quality discussion must stay plain chat",
+    "mode": "hybrid",
+    "message": "what makes a good engineering report?",
+    "plannerResponse": "{\"action\":\"use_tool\",\"toolName\":\"read_report_summary\",\"arguments\":{\"reportType\":\"audit\"},\"missingFields\":[],\"reason\":\"The user mentioned report.\"}",
+    "expectedType": "NONE",
+    "expectedUseTool": false,
+    "expectedClarification": false,
+    "expectedFallbackUsed": false
   }
 ]

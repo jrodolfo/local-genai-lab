@@ -256,7 +256,16 @@ class ChatOrchestratorServiceTest {
         ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "hybrid");
 
         ChatResponse clarification = orchestrator.chat("check s3 cloudwatch metrics for the last 7 days", "llama3:8b", null);
-        chatModelProvider.nextPlannerResponse = """
+        chatModelProvider.enqueuePlannerResponse("""
+                {
+                  "action": "none",
+                  "toolName": null,
+                  "arguments": {},
+                  "missingFields": [],
+                  "reason": "The follow-up message alone is not enough to infer a standalone tool."
+                }
+                """);
+        chatModelProvider.enqueuePlannerResponse("""
                 {
                   "action": "use_tool",
                   "toolName": "s3_cloudwatch_report",
@@ -267,7 +276,7 @@ class ChatOrchestratorServiceTest {
                   "missingFields": [],
                   "reason": "Follow-up provides the missing bucket."
                 }
-                """;
+                """);
 
         ChatResponse followUp = orchestrator.chat("jrodolfo.net", "llama3:8b", clarification.sessionId());
 
@@ -308,6 +317,7 @@ class ChatOrchestratorServiceTest {
         private boolean generateCalled;
         private String nextPlannerResponse;
         private int plannerCalls;
+        private final java.util.ArrayDeque<String> plannerResponses = new java.util.ArrayDeque<>();
 
         @Override
         public ChatResponse chat(
@@ -319,10 +329,15 @@ class ChatOrchestratorServiceTest {
         ) {
             if (message.contains("<tool_planning_request>")) {
                 this.plannerCalls++;
-                String plannerResponse = nextPlannerResponse != null
-                        ? nextPlannerResponse
-                        : "{\"action\":\"none\",\"toolName\":null,\"arguments\":{},\"missingFields\":[],\"reason\":\"No supported tool is required.\"}";
-                this.nextPlannerResponse = null;
+                String plannerResponse;
+                if (!plannerResponses.isEmpty()) {
+                    plannerResponse = plannerResponses.removeFirst();
+                } else if (nextPlannerResponse != null) {
+                    plannerResponse = nextPlannerResponse;
+                    nextPlannerResponse = null;
+                } else {
+                    plannerResponse = "{\"action\":\"none\",\"toolName\":null,\"arguments\":{},\"missingFields\":[],\"reason\":\"No supported tool is required.\"}";
+                }
                 return new ChatResponse(plannerResponse, resolveModel(model), null, null, null);
             }
             this.lastPrompt = message;
@@ -338,6 +353,10 @@ class ChatOrchestratorServiceTest {
         @Override
         public String resolveModel(String model) {
             return (model == null || model.isBlank()) ? "llama3:8b" : model;
+        }
+
+        private void enqueuePlannerResponse(String plannerResponse) {
+            this.plannerResponses.addLast(plannerResponse);
         }
     }
 
