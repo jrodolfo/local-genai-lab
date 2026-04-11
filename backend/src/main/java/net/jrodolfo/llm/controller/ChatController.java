@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jrodolfo.llm.client.ModelProviderException;
 import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
@@ -88,6 +89,12 @@ public class ChatController {
 
     @ExceptionHandler(OllamaClientException.class)
     public ResponseEntity<Map<String, String>> handleOllamaError(OllamaClientException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ModelProviderException.class)
+    public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", ex.getMessage()));
     }

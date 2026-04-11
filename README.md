@@ -4,10 +4,11 @@
 ![java](https://img.shields.io/badge/java-21+-f89820)
 ![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
 ![react](https://img.shields.io/badge/react-frontend-61dafb)
-![ollama](https://img.shields.io/badge/ollama-current%20provider-222222)
+![ollama](https://img.shields.io/badge/ollama-default%20provider-222222)
+![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Proof-of-concept app to chat with local LLMs through a backend model-provider layer, currently implemented with Ollama, with optional local MCP-backed tooling for AWS audit and report workflows and local JSON-backed conversation memory.
+Proof-of-concept app to chat with local LLMs through a backend model-provider layer, with Ollama as the default provider and Amazon Bedrock as an optional provider, plus optional local MCP-backed tooling for AWS audit and report workflows and local JSON-backed conversation memory.
 
 Architecture:
 
@@ -194,6 +195,8 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - `OLLAMA_CONNECT_TIMEOUT_SECONDS` (default: `10`)
 - `OLLAMA_READ_TIMEOUT_SECONDS` (default: `240`)
 - `APP_MODEL_PROVIDER` (default: `ollama`)
+- `BEDROCK_REGION` (default: `us-east-1`)
+- `BEDROCK_MODEL_ID` (default: empty)
 - `APP_TOOLS_ROUTING_MODE` (default: `hybrid`)
 - `APP_TOOLS_LOG_PLANNER` (default: `false`)
 - `MCP_ENABLED` (default: `false`)
@@ -207,7 +210,9 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 ## Notes
 
 - The default chat flow does not require MCP.
-- The backend now uses a model-provider abstraction and currently ships with the `ollama` provider.
+- The backend now uses a model-provider abstraction and currently supports both `ollama` and `bedrock`.
+- `ollama` remains the default provider for local development.
+- The first Bedrock implementation supports normal chat requests; Bedrock streaming is not implemented yet.
 - Tool routing is now LLM-assisted by default in `hybrid` mode, with the older rule-based router kept as a fallback.
 - Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed planner decisions, and fallback usage during local evaluation.
 - The backend can call MCP tools only when `MCP_ENABLED=true`.
@@ -233,7 +238,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Add authentication
 - Improve prompt templates/system prompts
 - Add metrics and tracing
-- Support multiple model providers
+- Add Bedrock streaming support
 
 ## Contact
 

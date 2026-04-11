@@ -20,6 +20,10 @@ ollama:
   connect-timeout-seconds: ${OLLAMA_CONNECT_TIMEOUT_SECONDS:10}
   read-timeout-seconds: ${OLLAMA_READ_TIMEOUT_SECONDS:240}
 
+bedrock:
+  region: ${BEDROCK_REGION:us-east-1}
+  model-id: ${BEDROCK_MODEL_ID:}
+
 mcp:
   enabled: ${MCP_ENABLED:false}
   command: ${MCP_COMMAND:node}

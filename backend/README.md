@@ -3,10 +3,11 @@
 [![ci](https://github.com/jrodolfo/llm-pet-project/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jrodolfo/llm-pet-project/actions/workflows/ci.yml)
 ![java](https://img.shields.io/badge/java-21+-f89820)
 ![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
-![ollama](https://img.shields.io/badge/ollama-current%20provider-222222)
+![ollama](https://img.shields.io/badge/ollama-default%20provider-222222)
+![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
 ![mcp](https://img.shields.io/badge/mcp-optional%20integration-0a7ea4)
 
-Spring Boot API that routes chat through a model-provider abstraction, currently backed by Ollama, orchestrates optional local MCP tools, and persists local JSON chat sessions.
+Spring Boot API that routes chat through a model-provider abstraction, supports Ollama and Amazon Bedrock, orchestrates optional local MCP tools, and persists local JSON chat sessions.
 
 ## Run
 
@@ -62,6 +63,8 @@ Relevant environment variables:
 
 - `APP_MODEL_PROVIDER` default: `ollama`
 - `OLLAMA_DEFAULT_MODEL` default: `llama3:8b`
+- `BEDROCK_REGION` default: `us-east-1`
+- `BEDROCK_MODEL_ID` default: empty
 - `APP_TOOLS_ROUTING_MODE` default: `hybrid`
 - `APP_TOOLS_LOG_PLANNER` default: `false`
 - `MCP_ENABLED`
@@ -82,6 +85,20 @@ Session files also store generated local `title` and `summary` metadata for easi
 Tool routing can run in `rules`, `llm`, or `hybrid` mode, with `hybrid` using the LLM planner first and falling back to the rule-based router when the planner output is invalid.
 Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed decisions, and fallback usage while tuning the planner locally.
 The backend test suite includes a fixture-driven planner evaluation pass and prints a compact summary of tool-use, clarification, and fallback cases.
+
+## Bedrock Provider
+
+Set `APP_MODEL_PROVIDER=bedrock` to use Amazon Bedrock instead of Ollama.
+
+Required configuration:
+
+- `BEDROCK_REGION`
+- `BEDROCK_MODEL_ID`
+
+Current limitation:
+
+- normal chat is supported
+- streaming chat is not implemented yet for the Bedrock provider
 
 Relevant environment variable:
 
