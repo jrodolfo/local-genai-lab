@@ -10,16 +10,21 @@ vi.mock('../api/chatApi', () => ({
 vi.mock('../api/sessionApi', () => ({
   listSessions: vi.fn(),
   getSession: vi.fn(),
-  deleteSession: vi.fn()
+  deleteSession: vi.fn(),
+  exportSession: vi.fn()
 }));
 
 import { sendMessage, streamMessage } from '../api/chatApi';
-import { deleteSession, getSession, listSessions } from '../api/sessionApi';
+import { deleteSession, exportSession, getSession, listSessions } from '../api/sessionApi';
 
 describe('Home', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    exportSession.mockResolvedValue({
+      blob: new Blob(['{"sessionId":"session-1"}'], { type: 'application/json' }),
+      filename: 'session-1.json'
+    });
     listSessions.mockResolvedValue([]);
     getSession.mockResolvedValue({
       sessionId: 'session-1',
@@ -319,6 +324,40 @@ describe('Home', () => {
       expect(screen.queryByText('run aws audit')).not.toBeInTheDocument();
     });
     expect(deleteSession).toHaveBeenCalledWith('session-1');
+  });
+
+  it('exports a session from the sidebar', async () => {
+    listSessions.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]);
+    if (!window.URL.createObjectURL) {
+      window.URL.createObjectURL = () => 'blob:test';
+    }
+    if (!window.URL.revokeObjectURL) {
+      window.URL.revokeObjectURL = () => {};
+    }
+    const createObjectUrlSpy = vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:test');
+    const revokeObjectUrlSpy = vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('run aws audit')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Export session run aws audit/i }));
+
+    expect(exportSession).toHaveBeenCalledWith('session-1');
+    expect(createObjectUrlSpy).toHaveBeenCalled();
+    expect(clickSpy).toHaveBeenCalled();
+    expect(revokeObjectUrlSpy).toHaveBeenCalledWith('blob:test');
   });
 
   it('renders session summaries in the sidebar', async () => {

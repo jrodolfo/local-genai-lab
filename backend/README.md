@@ -21,6 +21,7 @@ mvn spring-boot:run
 - `POST /api/chat/stream` (SSE)
 - `GET /api/sessions`
 - `GET /api/sessions/{sessionId}`
+- `GET /api/sessions/{sessionId}/export`
 - `DELETE /api/sessions/{sessionId}`
 - `GET /api/tools`
 - `POST /api/tools/aws-region-audit`
@@ -81,6 +82,7 @@ Relevant environment variables:
 Chat sessions are stored locally as JSON files under `../data/sessions` by default.
 
 The backend exposes a small local session API so the frontend can list, reopen, and delete stored chats.
+It also supports JSON export of a stored session through `GET /api/sessions/{sessionId}/export`.
 It also keeps pending tool clarification state in the session so a short follow-up reply can complete a previously blocked tool request.
 That pending state can also be surfaced in the chat UI as an informational hint.
 Session files also store generated local `title` and `summary` metadata for easier sidebar browsing.

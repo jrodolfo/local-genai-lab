@@ -5,6 +5,7 @@ import net.jrodolfo.llm.dto.ChatSessionSummaryResponse;
 import net.jrodolfo.llm.service.ChatSessionNotFoundException;
 import net.jrodolfo.llm.service.ChatSessionService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -34,6 +35,15 @@ public class SessionController {
     @GetMapping("/{sessionId}")
     public ChatSessionDetailResponse getSession(@PathVariable String sessionId) {
         return chatSessionService.getSession(sessionId);
+    }
+
+    @GetMapping("/{sessionId}/export")
+    public ResponseEntity<ChatSessionDetailResponse> exportSession(@PathVariable String sessionId) {
+        ChatSessionDetailResponse session = chatSessionService.getSession(sessionId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Content-Disposition", "attachment; filename=\"" + session.sessionId() + ".json\"")
+                .body(session);
     }
 
     @DeleteMapping("/{sessionId}")

@@ -99,6 +99,21 @@ class SessionControllerTest {
     }
 
     @Test
+    void exportSessionReturnsJsonAttachment() throws Exception {
+        saveSession("session-1", "run aws audit", Instant.parse("2026-04-10T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions/session-1/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value("session-1"))
+                .andExpect(jsonPath("$.messages[1].metadata.provider").value("bedrock"))
+                .andExpect(jsonPath("$.messages[1].tool.name").value("aws_region_audit"))
+                .andExpect(jsonPath("$.summary").value("done"))
+                .andExpect(jsonPath("$.pendingTool").doesNotExist())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", "attachment; filename=\"session-1.json\""));
+    }
+
+    @Test
     void deleteSessionRemovesFile() throws Exception {
         saveSession("session-1", "run aws audit", Instant.parse("2026-04-10T10:00:00Z"));
 

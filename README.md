@@ -115,6 +115,7 @@ Session endpoints:
 
 - `GET /api/sessions`
 - `GET /api/sessions/{sessionId}`
+- `GET /api/sessions/{sessionId}/export`
 - `DELETE /api/sessions/{sessionId}`
 
 ## 3. Run Frontend (React)
@@ -131,6 +132,7 @@ The UI now includes a local session sidebar where you can:
 
 - start a new chat
 - reopen a saved session
+- export a saved session as JSON
 - delete a saved session
 - see when a chat is waiting for missing tool input, such as a bucket name
 - browse automatically generated session titles and summaries
@@ -228,6 +230,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Streamed replies can now also attach final provider metadata to the assistant message in the UI when the backend emits a completion metadata event.
 - Session titles in the sidebar are derived from the first user message in each stored session.
 - Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
+- Session exports include saved messages, tool metadata, provider metadata, timestamps, and pending-tool state when present.
 - The backend can use session memory to complete tool clarifications across turns, for example asking for a missing bucket name and using your next reply to run the pending tool call.
 - Fixture-based planner evaluation cases live in [`backend/src/test/resources/tool-decision-evaluation-fixtures.json`](/Users/jrodolfo/workspace/ai/llm/llm-pet-project/backend/src/test/resources/tool-decision-evaluation-fixtures.json).
 - The backend test suite now prints a compact planner evaluation summary from the fixture set so routing regressions are easier to spot.

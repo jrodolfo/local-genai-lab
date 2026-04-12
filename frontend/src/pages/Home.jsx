@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { sendMessage, streamMessage } from '../api/chatApi';
-import { deleteSession, getSession, listSessions } from '../api/sessionApi';
+import { deleteSession, exportSession, getSession, listSessions } from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
 import InputBox from '../components/InputBox';
 import './Home.css';
@@ -114,6 +114,26 @@ function Home() {
     }
   };
 
+  const downloadSession = async (targetSessionId) => {
+    setError('');
+    setLoading(true);
+    try {
+      const { blob, filename } = await exportSession(targetSessionId);
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      setError(err.message || 'Failed to export session.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSend = async ({ message, model, streaming }) => {
     setError('');
     setLoading(true);
@@ -177,6 +197,15 @@ function Home() {
                   <span className="session-title">{session.title}</span>
                   {session.summary ? <span className="session-summary">{session.summary}</span> : null}
                   <span className="session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                </button>
+                <button
+                  type="button"
+                  className="session-export"
+                  onClick={() => downloadSession(session.sessionId)}
+                  disabled={loading}
+                  aria-label={`Export session ${session.title}`}
+                >
+                  Export
                 </button>
                 <button
                   type="button"
