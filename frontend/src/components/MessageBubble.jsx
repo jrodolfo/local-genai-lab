@@ -1,7 +1,7 @@
-function MessageBubble({ role, content, tool, metadata }) {
+function MessageBubble({ role, content, tool, metadata, showTechnicalDetails = false }) {
   const isUser = role === 'user';
   const showTool = !isUser && tool?.used;
-  const showMetadata = !isUser && metadata && (metadata.provider || metadata.modelId);
+  const showMetadata = !isUser && showTechnicalDetails && metadata && (metadata.provider || metadata.modelId);
 
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>

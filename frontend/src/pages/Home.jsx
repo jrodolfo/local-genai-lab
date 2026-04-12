@@ -5,6 +5,8 @@ import ChatWindow from '../components/ChatWindow';
 import InputBox from '../components/InputBox';
 import './Home.css';
 
+const DEBUG_MODE_STORAGE_KEY = 'llm-pet-project.debug-mode';
+
 function Home() {
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
@@ -12,10 +14,20 @@ function Home() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.localStorage.getItem(DEBUG_MODE_STORAGE_KEY) === 'true';
+  });
 
   useEffect(() => {
     loadSessions();
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(DEBUG_MODE_STORAGE_KEY, String(showTechnicalDetails));
+  }, [showTechnicalDetails]);
 
   const addMessage = (role, content, tool = null, metadata = null) => {
     setMessages((current) => [...current, { id: crypto.randomUUID(), role, content, tool, metadata }]);
@@ -182,8 +194,18 @@ function Home() {
 
         <section className="chat-card">
         <header>
-          <h1>LLM Pet Project</h1>
-          <p>React + Spring Boot + Ollama</p>
+          <div>
+            <h1>LLM Pet Project</h1>
+            <p>React + Spring Boot + Ollama</p>
+          </div>
+          <label className="debug-toggle">
+            <input
+              type="checkbox"
+              checked={showTechnicalDetails}
+              onChange={(event) => setShowTechnicalDetails(event.target.checked)}
+            />
+            <span>show technical details</span>
+          </label>
         </header>
 
         {error ? <div className="error-banner">{error}</div> : null}
@@ -197,7 +219,7 @@ function Home() {
           </div>
         ) : null}
 
-        <ChatWindow messages={messages} />
+        <ChatWindow messages={messages} showTechnicalDetails={showTechnicalDetails} />
 
         <InputBox disabled={loading} onSend={handleSend} />
         </section>

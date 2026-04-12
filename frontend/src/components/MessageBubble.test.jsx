@@ -28,6 +28,7 @@ describe('MessageBubble', () => {
         role="assistant"
         content="Done."
         tool={null}
+        showTechnicalDetails
         metadata={{
           provider: 'bedrock',
           modelId: 'amazon.nova-lite-v1:0',
@@ -48,6 +49,24 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/tokens: 12 in \/ 34 out \/ 46 total/i)).toBeInTheDocument();
     expect(screen.getByText(/duration: 412 ms/i)).toBeInTheDocument();
     expect(screen.getByText(/provider latency: 321 ms/i)).toBeInTheDocument();
+  });
+
+  it('hides provider metadata when technical details are disabled', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content="Done."
+        tool={null}
+        showTechnicalDetails={false}
+        metadata={{
+          provider: 'bedrock',
+          modelId: 'amazon.nova-lite-v1:0'
+        }}
+      />
+    );
+
+    expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
   });
 
   it('does not render provenance for assistant messages without tool metadata', () => {

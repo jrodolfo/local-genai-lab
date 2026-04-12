@@ -19,6 +19,7 @@ import { deleteSession, getSession, listSessions } from '../api/sessionApi';
 describe('Home', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     listSessions.mockResolvedValue([]);
     getSession.mockResolvedValue({
       sessionId: 'session-1',
@@ -84,8 +85,8 @@ describe('Home', () => {
 
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
     expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
-    expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
-    expect(screen.getByText(/tokens: \? in \/ \? out \/ 46 total/i)).toBeInTheDocument();
+    expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tokens: \? in \/ \? out \/ 46 total/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
   });
@@ -142,7 +143,7 @@ describe('Home', () => {
     });
 
     expect(screen.getByText(/used tool: read_report_summary/i)).toBeInTheDocument();
-    expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
+    expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
   });
@@ -169,8 +170,59 @@ describe('Home', () => {
 
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
     expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
-    expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
+    expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(getSession).toHaveBeenCalledWith('session-1');
+  });
+
+  it('shows provider metadata when technical details are enabled', async () => {
+    window.localStorage.setItem('llm-pet-project.debug-mode', 'true');
+    sendMessage.mockResolvedValue({
+      response: 'Audit complete.',
+      model: 'llama3:8b',
+      sessionId: 'session-123',
+      pendingTool: null,
+      tool: {
+        used: true,
+        name: 'aws_region_audit',
+        status: 'success',
+        summary: 'AWS audit completed.'
+      },
+      metadata: {
+        provider: 'bedrock',
+        modelId: 'amazon.nova-lite-v1:0',
+        totalTokens: 46,
+        durationMs: 412
+      }
+    });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(screen.getByRole('checkbox', { name: /show technical details/i })).toBeChecked();
+
+    await user.click(screen.getByLabelText(/Streaming/i));
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
+    expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
+    expect(screen.getByText(/tokens: \? in \/ \? out \/ 46 total/i)).toBeInTheDocument();
+  });
+
+  it('toggles technical details on and off', async () => {
+    render(<Home />);
+    const user = userEvent.setup();
+    const toggle = screen.getByRole('checkbox', { name: /show technical details/i });
+
+    expect(toggle).not.toBeChecked();
+
+    await user.click(toggle);
+    expect(toggle).toBeChecked();
+    expect(window.localStorage.getItem('llm-pet-project.debug-mode')).toBe('true');
+
+    await user.click(toggle);
+    expect(toggle).not.toBeChecked();
+    expect(window.localStorage.getItem('llm-pet-project.debug-mode')).toBe('false');
   });
 
   it('shows pending tool state when a loaded session includes it', async () => {
