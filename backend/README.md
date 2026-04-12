@@ -19,6 +19,7 @@ mvn spring-boot:run
 
 - `http://localhost:8080/v3/api-docs`
 - `http://localhost:8080/swagger-ui/index.html`
+- `http://localhost:8080/actuator/health`
 
 ## Endpoints
 
@@ -87,6 +88,10 @@ Relevant environment variables:
 - `MCP_STARTUP_TIMEOUT_SECONDS`
 - `MCP_TOOL_TIMEOUT_SECONDS`
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `../scripts/reports`
+
+The backend now also exposes Spring Boot Actuator health locally through:
+
+- `GET /actuator/health`
 
 ## Local Conversation Memory
 

@@ -167,6 +167,18 @@ Show available targets:
 make help
 ```
 
+Check whether the local app stack is up:
+
+```bash
+make check-app
+```
+
+Optional overrides:
+
+```bash
+BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false make check-app
+```
+
 Run the S3 CloudWatch bucket report:
 
 ```bash

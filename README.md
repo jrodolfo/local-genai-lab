@@ -75,6 +75,7 @@ OpenAPI and Swagger UI:
 
 - `http://localhost:8080/v3/api-docs`
 - `http://localhost:8080/swagger-ui/index.html`
+- `http://localhost:8080/actuator/health`
 
 ### Backend API
 
@@ -188,9 +189,22 @@ Useful entrypoints:
 ```bash
 cd scripts
 make help
+make check-app
 make test
 make audit
 make s3-cloudwatch BUCKET=example.com
+```
+
+`make check-app` verifies:
+- backend health through `http://localhost:8080/actuator/health`
+- frontend availability through `http://localhost:5173`
+- Ollama availability through `http://localhost:11434/api/tags` by default
+
+Optional overrides:
+
+```bash
+cd scripts
+BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false make check-app
 ```
 
 See [`scripts/README.md`](./scripts/README.md) for the script-specific options and report formats.
@@ -226,6 +240,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - `MCP_STARTUP_TIMEOUT_SECONDS` (default: `10`)
 - `MCP_TOOL_TIMEOUT_SECONDS` (default: `120`)
 - `APP_STORAGE_SESSIONS_DIRECTORY` (default: `../data/sessions`)
+- The backend exposes a standard Spring Boot Actuator health endpoint at `/actuator/health`.
 
 ## Notes
 

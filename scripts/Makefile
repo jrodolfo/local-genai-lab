@@ -9,7 +9,7 @@ BUCKET ?=
 REGION ?=
 DAYS ?=
 
-.PHONY: help reports lint test audit s3-cloudwatch
+.PHONY: help reports lint test audit s3-cloudwatch check-app
 
 help:
 	@printf '%s\n' \
@@ -18,12 +18,18 @@ help:
 		'  make reports  Create the reports directory' \
 		'  make lint     Check Bash syntax for the shell scripts' \
 		'  make test     Run local shell tests without AWS access' \
+		'  make check-app  Verify backend, frontend, and optional Ollama health' \
 		'  make audit    Run the AWS regional audit report' \
 		'                Optional: make audit REGIONS="us-east-2"' \
 		'                Optional: make audit SERVICES="sagemaker ec2"' \
 		'  make s3-cloudwatch BUCKET=example.com' \
 		'                Optional: make s3-cloudwatch BUCKET=example.com REGION=us-east-2' \
-		'                Optional: make s3-cloudwatch BUCKET=example.com DAYS=30'
+		'                Optional: make s3-cloudwatch BUCKET=example.com DAYS=30' \
+		'  Optional env for make check-app:' \
+		'                BACKEND_URL=http://localhost:8080' \
+		'                FRONTEND_URL=http://localhost:5173' \
+		'                OLLAMA_URL=http://localhost:11434' \
+		'                CHECK_OLLAMA=true'
 
 reports:
 	@mkdir -p "$(REPORTS_DIR)"
@@ -31,10 +37,14 @@ reports:
 lint:
 	@bash -n "$(SCRIPT)"
 	@bash -n "$(S3_CLOUDWATCH_SCRIPT)"
+	@bash -n ./check-app.sh
 
 test:
 	@bash ./tests/test.sh
 	@bash ./tests/test-s3-cloudwatch.sh
+
+check-app:
+	@./check-app.sh
 
 audit: reports lint
 	@"$(SCRIPT)" \
