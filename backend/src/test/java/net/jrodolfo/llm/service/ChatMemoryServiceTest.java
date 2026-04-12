@@ -23,7 +23,7 @@ class ChatMemoryServiceTest {
 
     @Test
     void startAndFinishTurnPersistSessionMessages() {
-        ChatMemoryService memoryService = new ChatMemoryService(newSessionStore(), new ChatSessionMetadataService());
+        ChatMemoryService memoryService = new ChatMemoryService(newSessionStore(), new ChatSessionMetadataService(), new SessionIdPolicy());
 
         ChatSession started = memoryService.startTurn(null, "llama3:8b", "llama3:8b", "hello");
         ChatSession finished = memoryService.finishTurn(
@@ -49,7 +49,7 @@ class ChatMemoryServiceTest {
 
     @Test
     void historyBeforeLatestUserMessageExcludesCurrentPrompt() {
-        ChatMemoryService memoryService = new ChatMemoryService(newSessionStore(), new ChatSessionMetadataService());
+        ChatMemoryService memoryService = new ChatMemoryService(newSessionStore(), new ChatSessionMetadataService(), new SessionIdPolicy());
 
         ChatSession firstTurn = memoryService.finishTurn(
                 memoryService.startTurn("session-1", "llama3:8b", "llama3:8b", "first"),
@@ -71,6 +71,6 @@ class ChatMemoryServiceTest {
     private FileChatSessionStore newSessionStore() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()));
+        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()), new SessionIdPolicy());
     }
 }

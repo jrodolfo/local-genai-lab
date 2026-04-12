@@ -23,15 +23,18 @@ public class ChatSessionImportService {
     private final ObjectMapper objectMapper;
     private final FileChatSessionStore sessionStore;
     private final ChatSessionMetadataService chatSessionMetadataService;
+    private final SessionIdPolicy sessionIdPolicy;
 
     public ChatSessionImportService(
             ObjectMapper objectMapper,
             FileChatSessionStore sessionStore,
-            ChatSessionMetadataService chatSessionMetadataService
+            ChatSessionMetadataService chatSessionMetadataService,
+            SessionIdPolicy sessionIdPolicy
     ) {
         this.objectMapper = objectMapper;
         this.sessionStore = sessionStore;
         this.chatSessionMetadataService = chatSessionMetadataService;
+        this.sessionIdPolicy = sessionIdPolicy;
     }
 
     public ChatSessionImportResponse importSession(MultipartFile file) {
@@ -41,9 +44,12 @@ public class ChatSessionImportService {
 
         ChatSessionDetailResponse imported = parseImport(file);
         Instant now = Instant.now();
-        String requestedSessionId = hasText(imported.sessionId()) ? imported.sessionId().trim() : UUID.randomUUID().toString();
-        boolean idChanged = sessionStore.findById(requestedSessionId).isPresent();
-        String storedSessionId = idChanged ? UUID.randomUUID().toString() : requestedSessionId;
+        String requestedSessionId = normalizeImportedSessionId(imported.sessionId());
+        boolean idChanged = !requestedSessionId.equals(imported.sessionId()) || sessionStore.findById(requestedSessionId).isPresent();
+        String storedSessionId = requestedSessionId;
+        while (sessionStore.findById(storedSessionId).isPresent()) {
+            storedSessionId = UUID.randomUUID().toString();
+        }
 
         List<ChatSessionMessage> messages = normalizeMessages(imported.messages(), now);
         if (messages.isEmpty()) {
@@ -73,6 +79,16 @@ public class ChatSessionImportService {
                 idChanged,
                 saved.messages().size()
         );
+    }
+
+    private String normalizeImportedSessionId(String importedSessionId) {
+        if (!hasText(importedSessionId)) {
+            return UUID.randomUUID().toString();
+        }
+        if (!sessionIdPolicy.isValid(importedSessionId)) {
+            return UUID.randomUUID().toString();
+        }
+        return sessionIdPolicy.requireValid(importedSessionId);
     }
 
     private ChatSessionDetailResponse parseImport(MultipartFile file) {

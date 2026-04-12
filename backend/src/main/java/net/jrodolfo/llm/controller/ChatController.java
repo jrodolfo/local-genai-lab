@@ -15,6 +15,7 @@ import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatStreamMetadata;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
+import net.jrodolfo.llm.service.InvalidSessionIdException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -135,6 +136,13 @@ public class ChatController {
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidSessionIdException.class)
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
 

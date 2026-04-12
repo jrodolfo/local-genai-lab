@@ -160,6 +160,7 @@ The storage defaults are resolved from the project root so they stay stable whet
 - session sidebar with search and filters
 - JSON and Markdown export
 - JSON import with collision-safe session ids
+- backend-managed opaque session ids with strict validation
 
 ### Tools and Artifacts
 

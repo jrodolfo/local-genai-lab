@@ -122,6 +122,7 @@ Session support includes:
 - additional filters for `provider`, `toolUsage`, and `pending`
 - JSON and Markdown export
 - JSON import with collision-safe session ids
+- backend-managed opaque session ids with strict validation
 
 ## Tooling and Artifacts
 

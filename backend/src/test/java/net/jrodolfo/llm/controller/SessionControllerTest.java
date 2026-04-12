@@ -13,6 +13,7 @@ import net.jrodolfo.llm.service.ChatSessionImportService;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
 import net.jrodolfo.llm.service.ChatSessionService;
 import net.jrodolfo.llm.service.FileChatSessionStore;
+import net.jrodolfo.llm.service.SessionIdPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,11 +46,12 @@ class SessionControllerTest {
     void setUp() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        sessionStore = new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()));
+        SessionIdPolicy sessionIdPolicy = new SessionIdPolicy();
+        sessionStore = new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()), sessionIdPolicy);
         ChatSessionMetadataService metadataService = new ChatSessionMetadataService();
         ChatSessionService sessionService = new ChatSessionService(sessionStore, metadataService);
         ChatSessionExportService exportService = new ChatSessionExportService();
-        ChatSessionImportService importService = new ChatSessionImportService(objectMapper, sessionStore, metadataService);
+        ChatSessionImportService importService = new ChatSessionImportService(objectMapper, sessionStore, metadataService, sessionIdPolicy);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new SessionController(sessionService, exportService, importService))
@@ -369,6 +371,55 @@ class SessionControllerTest {
         mockMvc.perform(get("/api/sessions/missing"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Chat session not found: missing"));
+    }
+
+    @Test
+    void getSessionRejectsInvalidSessionId() throws Exception {
+        mockMvc.perform(get("/api/sessions/bad%2Fid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid session id."));
+    }
+
+    @Test
+    void exportSessionRejectsInvalidSessionId() throws Exception {
+        mockMvc.perform(get("/api/sessions/bad%2Fid/export"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid session id."));
+    }
+
+    @Test
+    void deleteSessionRejectsInvalidSessionId() throws Exception {
+        mockMvc.perform(delete("/api/sessions/bad%2Fid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Invalid session id."));
+    }
+
+    @Test
+    void importSessionReplacesUnsafeImportedSessionId() throws Exception {
+        String json = """
+                {
+                  "sessionId": "../secret",
+                  "title": "imported title",
+                  "summary": "imported summary",
+                  "model": "llama3:8b",
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "new content",
+                      "tool": null,
+                      "metadata": null,
+                      "timestamp": "2026-04-10T10:02:00Z"
+                    }
+                  ]
+                }
+                """;
+        MockMultipartFile file = new MockMultipartFile("file", "unsafe.json", "application/json", json.getBytes());
+
+        mockMvc.perform(multipart("/api/sessions/import").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").isNotEmpty())
+                .andExpect(jsonPath("$.sessionId").value(org.hamcrest.Matchers.not("../secret")))
+                .andExpect(jsonPath("$.idChanged").value(true));
     }
 
     private void saveSession(String sessionId, String userMessage, Instant timestamp) {

@@ -17,17 +17,17 @@ public class ChatMemoryService {
 
     private final FileChatSessionStore sessionStore;
     private final ChatSessionMetadataService chatSessionMetadataService;
+    private final SessionIdPolicy sessionIdPolicy;
 
-    public ChatMemoryService(FileChatSessionStore sessionStore, ChatSessionMetadataService chatSessionMetadataService) {
+    public ChatMemoryService(FileChatSessionStore sessionStore, ChatSessionMetadataService chatSessionMetadataService, SessionIdPolicy sessionIdPolicy) {
         this.sessionStore = sessionStore;
         this.chatSessionMetadataService = chatSessionMetadataService;
+        this.sessionIdPolicy = sessionIdPolicy;
     }
 
     public ChatSession startTurn(String requestedSessionId, String requestedModel, String resolvedModel, String userMessage) {
         Instant now = Instant.now();
-        String sessionId = requestedSessionId == null || requestedSessionId.isBlank()
-                ? UUID.randomUUID().toString()
-                : requestedSessionId.trim();
+        String sessionId = sessionIdPolicy.requireValidOrGenerate(requestedSessionId);
 
         ChatSession existingSession = sessionStore.findById(sessionId)
                 .map(session -> session.withUpdatedModel(resolvedModel))

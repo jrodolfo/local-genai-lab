@@ -19,10 +19,12 @@ public class FileChatSessionStore {
 
     private final ObjectMapper objectMapper;
     private final Path sessionsDirectory;
+    private final SessionIdPolicy sessionIdPolicy;
 
-    public FileChatSessionStore(ObjectMapper objectMapper, AppStorageProperties properties) {
+    public FileChatSessionStore(ObjectMapper objectMapper, AppStorageProperties properties, SessionIdPolicy sessionIdPolicy) {
         this.objectMapper = objectMapper;
         this.sessionsDirectory = properties.resolvedSessionsDirectory();
+        this.sessionIdPolicy = sessionIdPolicy;
     }
 
     public Optional<ChatSession> findById(String sessionId) {
@@ -82,6 +84,12 @@ public class FileChatSessionStore {
     }
 
     private Path resolveSessionPath(String sessionId) {
-        return sessionsDirectory.resolve(sessionId + ".json");
+        String safeSessionId = sessionIdPolicy.requireValid(sessionId);
+        Path normalizedRoot = sessionsDirectory.toAbsolutePath().normalize();
+        Path candidate = normalizedRoot.resolve(safeSessionId + ".json").normalize();
+        if (!candidate.startsWith(normalizedRoot)) {
+            throw new InvalidSessionIdException("Invalid session id.");
+        }
+        return candidate;
     }
 }

@@ -14,6 +14,7 @@ import net.jrodolfo.llm.service.ChatSessionImportException;
 import net.jrodolfo.llm.service.ChatSessionImportService;
 import net.jrodolfo.llm.service.ChatSessionNotFoundException;
 import net.jrodolfo.llm.service.ChatSessionService;
+import net.jrodolfo.llm.service.InvalidSessionIdException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -133,6 +134,12 @@ public class SessionController {
     @ExceptionHandler(ChatSessionImportException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleChatSessionImport(ChatSessionImportException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidSessionIdException.class)
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 }

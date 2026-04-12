@@ -296,7 +296,7 @@ class ChatOrchestratorServiceTest {
     private FileChatSessionStore newSessionStore() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()));
+        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()), new SessionIdPolicy());
     }
 
     private ChatOrchestratorService newOrchestrator(
@@ -314,7 +314,7 @@ class ChatOrchestratorServiceTest {
                         new LlmToolPlannerService(chatModelProvider, objectMapper),
                         new ChatToolRouterService()
                 ),
-                new ChatMemoryService(sessionStore, new ChatSessionMetadataService()),
+                new ChatMemoryService(sessionStore, new ChatSessionMetadataService(), new SessionIdPolicy()),
                 new ChatPromptBuilder(objectMapper),
                 new ChatSessionService(sessionStore, new ChatSessionMetadataService())
         );
