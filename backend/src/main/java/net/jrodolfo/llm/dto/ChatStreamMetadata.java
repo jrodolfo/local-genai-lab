@@ -3,6 +3,7 @@ package net.jrodolfo.llm.dto;
 public record ChatStreamMetadata(
         String sessionId,
         ChatToolMetadata tool,
-        PendingToolCallResponse pendingTool
+        PendingToolCallResponse pendingTool,
+        ModelProviderMetadata metadata
 ) {
 }

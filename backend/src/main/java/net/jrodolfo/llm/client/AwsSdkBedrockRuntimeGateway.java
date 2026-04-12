@@ -9,15 +9,18 @@ import software.amazon.awssdk.services.bedrockruntime.model.ContentBlockDeltaEve
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseResponse;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamRequest;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetrics;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamResponseHandler;
 import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole;
 import software.amazon.awssdk.services.bedrockruntime.model.Message;
 import software.amazon.awssdk.services.bedrockruntime.model.TokenUsage;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetadataEvent;
+import software.amazon.awssdk.services.bedrockruntime.model.MessageStopEvent;
 import software.amazon.awssdk.services.bedrockruntime.model.ValidationException;
 
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -37,7 +40,6 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
     @Override
     public ModelProviderReply converse(String prompt, String modelId) {
         try {
-            Instant requestedAt = Instant.now();
             long startedAt = System.currentTimeMillis();
             ConverseRequest request = buildConverseRequest(prompt, modelId);
             ConverseResponse response = bedrockRuntimeClient.converse(request);
@@ -70,14 +72,20 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
     }
 
     @Override
-    public void converseStream(String prompt, String modelId, Consumer<String> chunkConsumer) {
+    public ModelProviderMetadata converseStream(String prompt, String modelId, Consumer<String> chunkConsumer) {
         try {
             ConverseStreamRequest request = buildConverseStreamRequest(prompt, modelId);
             CompletableFuture<Void> completion = new CompletableFuture<>();
+            long startedAt = System.currentTimeMillis();
+            AtomicReference<String> stopReason = new AtomicReference<>();
+            AtomicReference<TokenUsage> usage = new AtomicReference<>();
+            AtomicReference<ConverseStreamMetrics> metrics = new AtomicReference<>();
 
             ConverseStreamResponseHandler handler = ConverseStreamResponseHandler.builder()
                     .subscriber(ConverseStreamResponseHandler.Visitor.builder()
                             .onContentBlockDelta(event -> forwardChunk(event, chunkConsumer))
+                            .onMessageStop(event -> captureStopReason(event, stopReason))
+                            .onMetadata(event -> captureMetadata(event, usage, metrics))
                             .build())
                     .onError(error -> completion.completeExceptionally(
                             new ModelProviderException("Failed to stream from Bedrock.", error)
@@ -96,6 +104,18 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
             });
 
             completion.join();
+            TokenUsage finalUsage = usage.get();
+            ConverseStreamMetrics finalMetrics = metrics.get();
+            return new ModelProviderMetadata(
+                    "bedrock",
+                    modelId,
+                    stopReason.get(),
+                    finalUsage != null ? finalUsage.inputTokens() : null,
+                    finalUsage != null ? finalUsage.outputTokens() : null,
+                    finalUsage != null ? finalUsage.totalTokens() : null,
+                    System.currentTimeMillis() - startedAt,
+                    finalMetrics != null ? finalMetrics.latencyMs() : null
+            );
         } catch (ValidationException ex) {
             throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
         } catch (CompletionException ex) {
@@ -137,6 +157,25 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
             return;
         }
         chunkConsumer.accept(event.delta().text());
+    }
+
+    private void captureStopReason(MessageStopEvent event, AtomicReference<String> stopReason) {
+        if (event.stopReason() != null) {
+            stopReason.set(event.stopReasonAsString());
+        }
+    }
+
+    private void captureMetadata(
+            ConverseStreamMetadataEvent event,
+            AtomicReference<TokenUsage> usage,
+            AtomicReference<ConverseStreamMetrics> metrics
+    ) {
+        if (event.usage() != null) {
+            usage.set(event.usage());
+        }
+        if (event.metrics() != null) {
+            metrics.set(event.metrics());
+        }
     }
 
     private Throwable unwrapCompletionException(Throwable throwable) {

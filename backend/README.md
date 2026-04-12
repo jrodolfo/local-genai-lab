@@ -40,6 +40,7 @@ mvn spring-boot:run
 
 The backend returns the active `sessionId` in chat responses so the frontend can continue the same local conversation.
 Normal chat responses also include optional provider metadata. For Bedrock, that metadata includes stop reason, token counts, total duration, and Bedrock latency when the runtime returns them.
+Streaming chat emits `metadata` SSE events at the start of the stream and can emit a final `metadata` event with provider details before `[DONE]`.
 
 ## Local MCP Integration
 

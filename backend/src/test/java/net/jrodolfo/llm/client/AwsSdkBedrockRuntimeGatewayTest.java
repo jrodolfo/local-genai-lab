@@ -7,11 +7,14 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseMetrics;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseOutput;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseResponse;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetadataEvent;
+import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetrics;
 import software.amazon.awssdk.services.bedrockruntime.model.ContentBlockDelta;
 import software.amazon.awssdk.services.bedrockruntime.model.ContentBlockDeltaEvent;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamRequest;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamResponseHandler;
 import software.amazon.awssdk.services.bedrockruntime.model.Message;
+import software.amazon.awssdk.services.bedrockruntime.model.MessageStopEvent;
 import software.amazon.awssdk.services.bedrockruntime.model.StopReason;
 import software.amazon.awssdk.services.bedrockruntime.model.TokenUsage;
 
@@ -102,6 +105,20 @@ class AwsSdkBedrockRuntimeGatewayTest {
         assertEquals("Failed to stream from Bedrock.", exception.getMessage());
     }
 
+    @Test
+    void converseStreamReturnsFinalMetadata() throws Exception {
+        AwsSdkBedrockRuntimeGateway gateway = new AwsSdkBedrockRuntimeGateway(syncClient(), asyncClient((request, handler) -> CompletableFuture.completedFuture(null)));
+        ModelProviderMetadata metadata = invokeConverseStreamWithCapturedMetadata(gateway);
+
+        assertEquals("bedrock", metadata.provider());
+        assertEquals("amazon.nova-lite-v1:0", metadata.modelId());
+        assertEquals("end_turn", metadata.stopReason());
+        assertEquals(7, metadata.inputTokens());
+        assertEquals(8, metadata.outputTokens());
+        assertEquals(15, metadata.totalTokens());
+        assertEquals(210L, metadata.providerLatencyMs());
+    }
+
     private BedrockRuntimeClient syncClient() {
         return syncClient(null);
     }
@@ -166,6 +183,48 @@ class AwsSdkBedrockRuntimeGatewayTest {
         );
         method.setAccessible(true);
         method.invoke(gateway, event, consumer);
+    }
+
+    private ModelProviderMetadata invokeConverseStreamWithCapturedMetadata(AwsSdkBedrockRuntimeGateway gateway) throws Exception {
+        java.util.concurrent.atomic.AtomicReference<String> stopReason = new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicReference<TokenUsage> usage = new java.util.concurrent.atomic.AtomicReference<>();
+        java.util.concurrent.atomic.AtomicReference<ConverseStreamMetrics> metrics = new java.util.concurrent.atomic.AtomicReference<>();
+
+        Method stopMethod = AwsSdkBedrockRuntimeGateway.class.getDeclaredMethod(
+                "captureStopReason",
+                MessageStopEvent.class,
+                java.util.concurrent.atomic.AtomicReference.class
+        );
+        stopMethod.setAccessible(true);
+        stopMethod.invoke(gateway, MessageStopEvent.builder().stopReason(StopReason.END_TURN).build(), stopReason);
+
+        Method metadataMethod = AwsSdkBedrockRuntimeGateway.class.getDeclaredMethod(
+                "captureMetadata",
+                ConverseStreamMetadataEvent.class,
+                java.util.concurrent.atomic.AtomicReference.class,
+                java.util.concurrent.atomic.AtomicReference.class
+        );
+        metadataMethod.setAccessible(true);
+        metadataMethod.invoke(
+                gateway,
+                ConverseStreamMetadataEvent.builder()
+                        .usage(TokenUsage.builder().inputTokens(7).outputTokens(8).totalTokens(15).build())
+                        .metrics(ConverseStreamMetrics.builder().latencyMs(210L).build())
+                        .build(),
+                usage,
+                metrics
+        );
+
+        return new ModelProviderMetadata(
+                "bedrock",
+                "amazon.nova-lite-v1:0",
+                stopReason.get(),
+                usage.get().inputTokens(),
+                usage.get().outputTokens(),
+                usage.get().totalTokens(),
+                null,
+                metrics.get().latencyMs()
+        );
     }
 
     @FunctionalInterface

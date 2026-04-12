@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.config.AppToolsProperties;
 import net.jrodolfo.llm.dto.ChatResponse;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import org.junit.jupiter.api.Test;
@@ -136,7 +137,7 @@ class ToolDecisionServiceEvaluationTest {
         }
 
         @Override
-        public void streamChat(String message, String model, Consumer<String> tokenConsumer) {
+        public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for evaluation tests.");
         }
 

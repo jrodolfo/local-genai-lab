@@ -11,6 +11,7 @@ import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ListReportsRequest;
 import net.jrodolfo.llm.dto.McpToolInvocationResponse;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
 import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
 import net.jrodolfo.llm.model.PendingToolCall;
@@ -346,7 +347,7 @@ class ChatOrchestratorServiceTest {
         }
 
         @Override
-        public void streamChat(String message, String model, java.util.function.Consumer<String> tokenConsumer) {
+        public ModelProviderMetadata streamChat(String message, String model, java.util.function.Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for this test.");
         }
 

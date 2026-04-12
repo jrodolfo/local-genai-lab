@@ -6,6 +6,7 @@ import net.jrodolfo.llm.client.ModelProviderException;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 
 import java.util.function.Consumer;
@@ -35,10 +36,10 @@ public class BedrockChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public void streamChat(String message, String model, Consumer<String> tokenConsumer) {
+    public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
         String normalizedMessage = message.trim();
         String resolvedModel = resolveModel(model);
-        bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
+        return bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
     }
 
     @Override

@@ -104,10 +104,31 @@ describe('Home', () => {
           name: 'read_report_summary',
           status: 'success',
           summary: 'Read audit report.'
-        }
+        },
+        metadata: null
       });
       onToken('Latest ');
       onToken('report ready.');
+      onMetadata({
+        sessionId: 'session-123',
+        pendingTool: {
+          toolName: 'read_report_summary',
+          reason: 'latest report lookup',
+          missingFields: ['reportType']
+        },
+        tool: {
+          used: true,
+          name: 'read_report_summary',
+          status: 'success',
+          summary: 'Read audit report.'
+        },
+        metadata: {
+          provider: 'bedrock',
+          modelId: 'amazon.nova-lite-v1:0',
+          totalTokens: 46,
+          durationMs: 412
+        }
+      });
     });
 
     render(<Home />);
@@ -121,6 +142,7 @@ describe('Home', () => {
     });
 
     expect(screen.getByText(/used tool: read_report_summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
   });

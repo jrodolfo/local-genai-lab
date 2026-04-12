@@ -53,11 +53,13 @@ class BedrockChatModelProviderTest {
         );
 
         List<String> chunks = new ArrayList<>();
-        provider.streamChat("hello", " ", chunks::add);
+        ModelProviderMetadata metadata = provider.streamChat("hello", " ", chunks::add);
 
         assertEquals("hello", gateway.lastStreamPrompt);
         assertEquals("amazon.nova-lite-v1:0", gateway.lastStreamModelId);
         assertEquals(List.of("bedrock", " stream"), chunks);
+        assertEquals("bedrock", metadata.provider());
+        assertEquals("amazon.nova-lite-v1:0", metadata.modelId());
     }
 
     private static final class FakeBedrockRuntimeGateway implements BedrockRuntimeGateway {
@@ -77,11 +79,12 @@ class BedrockChatModelProviderTest {
         }
 
         @Override
-        public void converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
+        public ModelProviderMetadata converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
             this.lastStreamPrompt = prompt;
             this.lastStreamModelId = modelId;
             chunkConsumer.accept("bedrock");
             chunkConsumer.accept(" stream");
+            return new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L);
         }
     }
 }

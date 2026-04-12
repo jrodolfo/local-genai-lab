@@ -101,7 +101,7 @@ Response:
 ```
 
 Streaming endpoint: `POST /api/chat/stream` (SSE).
-The streaming path emits an initial `metadata` event that can include the active `sessionId` and optional tool provenance before token events begin.
+The streaming path emits an initial `metadata` event that can include the active `sessionId` and optional tool provenance before token events begin, and it can emit a final `metadata` event with provider details before `[DONE]`.
 
 Optional MCP-backed tool endpoints:
 
@@ -225,6 +225,7 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Conversation history is stored locally as JSON files under [`data/sessions/`](./data/sessions).
 - The frontend reuses the returned `sessionId` automatically so follow-up prompts keep local context.
 - `POST /api/chat` responses now include optional provider metadata. For Bedrock this includes stop reason, token usage, duration, and provider latency when available.
+- Streamed replies can now also attach final provider metadata to the assistant message in the UI when the backend emits a completion metadata event.
 - Session titles in the sidebar are derived from the first user message in each stored session.
 - Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
 - The backend can use session memory to complete tool clarifications across turns, for example asking for a missing bucket name and using your next reply to run the pending tool call.

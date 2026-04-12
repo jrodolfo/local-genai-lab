@@ -38,10 +38,11 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public void streamChat(String message, String model, Consumer<String> tokenConsumer) {
+    public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
         String normalizedMessage = message.trim();
         String resolvedModel = ollamaClient.resolveModel(model);
         ollamaClient.streamGenerate(normalizedMessage, resolvedModel, tokenConsumer);
+        return new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null);
     }
 
     @Override

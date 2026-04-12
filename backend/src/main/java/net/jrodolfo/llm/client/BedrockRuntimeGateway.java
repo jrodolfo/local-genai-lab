@@ -6,5 +6,5 @@ public interface BedrockRuntimeGateway {
 
     ModelProviderReply converse(String prompt, String modelId);
 
-    void converseStream(String prompt, String modelId, Consumer<String> chunkConsumer);
+    net.jrodolfo.llm.dto.ModelProviderMetadata converseStream(String prompt, String modelId, Consumer<String> chunkConsumer);
 }

@@ -59,9 +59,10 @@ describe('chatApi', () => {
   it('streams metadata before tokens', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       createStreamResponse([
-        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"},"pendingTool":{"toolName":"s3_cloudwatch_report","reason":"s3 cloudwatch metrics request","missingFields":["bucket"]}}\n\n',
+        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"},"pendingTool":{"toolName":"s3_cloudwatch_report","reason":"s3 cloudwatch metrics request","missingFields":["bucket"]},"metadata":null}\n\n',
         'data: Hello\n\n',
         'data:world\n\n',
+        'event: metadata\ndata: {"sessionId":"session-123","tool":{"used":true,"name":"aws_region_audit","status":"success","summary":"done"},"pendingTool":null,"metadata":{"provider":"bedrock","modelId":"amazon.nova-lite-v1:0","totalTokens":46,"durationMs":412}}\n\n',
         'data:[DONE]\n\n'
       ])
     );
@@ -76,10 +77,12 @@ describe('chatApi', () => {
       onToken: (token) => tokens.push(token)
     });
 
-    expect(metadataEvents).toHaveLength(1);
+    expect(metadataEvents).toHaveLength(2);
     expect(metadataEvents[0].sessionId).toBe('session-123');
     expect(metadataEvents[0].tool.name).toBe('aws_region_audit');
     expect(metadataEvents[0].pendingTool.toolName).toBe('s3_cloudwatch_report');
+    expect(metadataEvents[1].metadata.provider).toBe('bedrock');
+    expect(metadataEvents[1].metadata.totalTokens).toBe(46);
     expect(tokens).toEqual([' Hello', 'world']);
   });
 

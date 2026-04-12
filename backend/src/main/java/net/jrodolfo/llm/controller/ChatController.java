@@ -61,7 +61,8 @@ public class ChatController {
                 sendMetadata(emitter, new ChatStreamMetadata(
                         preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().sessionId() : preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
-                        preparedChat.pendingTool()
+                        preparedChat.pendingTool(),
+                        preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().metadata() : null
                 ));
 
                 if (preparedChat.immediateResponse() != null) {
@@ -72,11 +73,17 @@ public class ChatController {
                 }
 
                 StringBuilder responseBuffer = new StringBuilder();
-                chatModelProvider.streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
+                var providerMetadata = chatModelProvider.streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
                     responseBuffer.append(token);
                     sendData(emitter, token);
                 });
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString());
+                sendMetadata(emitter, new ChatStreamMetadata(
+                        preparedChat.session().sessionId(),
+                        preparedChat.toolMetadata(),
+                        preparedChat.pendingTool(),
+                        providerMetadata
+                ));
                 sendData(emitter, "[DONE]");
                 emitter.complete();
             } catch (Exception ex) {
