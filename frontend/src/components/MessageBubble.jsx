@@ -1,6 +1,16 @@
 import ToolResultCard from './ToolResultCard';
 
-function MessageBubble({ role, content, tool, toolResult, metadata, showTechnicalDetails = false }) {
+function MessageBubble({
+  role,
+  content,
+  tool,
+  toolResult,
+  metadata,
+  showTechnicalDetails = false,
+  onPreviewArtifact,
+  onListArtifacts,
+  onCopyPath
+}) {
   const isUser = role === 'user';
   const showTool = !isUser && tool?.used;
   const showMetadata = !isUser && showTechnicalDetails && metadata && (metadata.provider || metadata.modelId);
@@ -17,7 +27,14 @@ function MessageBubble({ role, content, tool, toolResult, metadata, showTechnica
             {tool.summary ? <span>{tool.summary}</span> : null}
           </div>
         ) : null}
-        {showToolResult ? <ToolResultCard toolResult={toolResult} /> : null}
+        {showToolResult ? (
+          <ToolResultCard
+            toolResult={toolResult}
+            onPreviewArtifact={onPreviewArtifact}
+            onListArtifacts={onListArtifacts}
+            onCopyPath={onCopyPath}
+          />
+        ) : null}
         {showMetadata ? (
           <div className="provider-metadata">
             <span className="provider-metadata-title">technical details</span>

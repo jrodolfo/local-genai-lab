@@ -24,6 +24,8 @@ mvn spring-boot:run
 - `GET /api/sessions/{sessionId}/export`
 - `POST /api/sessions/import`
 - `DELETE /api/sessions/{sessionId}`
+- `GET /api/artifacts/files`
+- `GET /api/artifacts/preview`
 - `GET /api/tools`
 - `POST /api/tools/aws-region-audit`
 - `POST /api/tools/s3-cloudwatch-report`
@@ -44,6 +46,7 @@ The backend returns the active `sessionId` in chat responses so the frontend can
 Normal chat responses also include optional provider metadata. For Bedrock, that metadata includes stop reason, token counts, total duration, and Bedrock latency when the runtime returns them.
 Streaming chat emits `metadata` SSE events at the start of the stream and can emit a final `metadata` event with provider details before `[DONE]`.
 Supported MCP-backed tool executions can also attach a compact structured `toolResult` payload so the frontend can render report-oriented results as cards instead of only plain text.
+Those report-oriented cards can now drive read-only artifact interactions through `/api/artifacts/files` and `/api/artifacts/preview`.
 
 ## Local MCP Integration
 
@@ -78,6 +81,7 @@ Relevant environment variables:
 - `MCP_ARG_1` default: `dist/index.js`
 - `MCP_STARTUP_TIMEOUT_SECONDS`
 - `MCP_TOOL_TIMEOUT_SECONDS`
+- `APP_STORAGE_REPORTS_DIRECTORY` default: `../scripts/reports`
 
 ## Local Conversation Memory
 
@@ -95,6 +99,7 @@ Assistant messages can also persist structured `toolResult` data so reopened ses
 Tool routing can run in `rules`, `llm`, or `hybrid` mode, with `hybrid` using the LLM planner first and falling back to the rule-based router when the planner output is invalid.
 Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed decisions, and fallback usage while tuning the planner locally.
 The backend test suite includes a fixture-driven planner evaluation pass and prints a compact summary of tool-use, clarification, and fallback cases.
+Artifact preview access is read-only and constrained to the configured reports directory so the frontend cannot browse arbitrary local files.
 
 ## Bedrock Provider
 

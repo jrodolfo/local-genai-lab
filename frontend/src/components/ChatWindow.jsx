@@ -1,6 +1,6 @@
 import MessageBubble from './MessageBubble';
 
-function ChatWindow({ messages, showTechnicalDetails }) {
+function ChatWindow({ messages, showTechnicalDetails, onPreviewArtifact, onListArtifacts, onCopyPath }) {
   if (messages.length === 0) {
     return (
       <div className="chat-window empty-state">
@@ -20,6 +20,9 @@ function ChatWindow({ messages, showTechnicalDetails }) {
           toolResult={message.toolResult}
           metadata={message.metadata}
           showTechnicalDetails={showTechnicalDetails}
+          onPreviewArtifact={onPreviewArtifact}
+          onListArtifacts={onListArtifacts}
+          onCopyPath={onCopyPath}
         />
       ))}
     </div>

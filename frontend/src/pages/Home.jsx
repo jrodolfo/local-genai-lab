@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { listArtifacts, previewArtifact } from '../api/artifactApi';
 import { sendMessage, streamMessage } from '../api/chatApi';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
@@ -16,6 +17,9 @@ function Home() {
   const [sessionSearch, setSessionSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [artifactFiles, setArtifactFiles] = useState([]);
+  const [artifactPreview, setArtifactPreview] = useState(null);
+  const [artifactPanelTitle, setArtifactPanelTitle] = useState('');
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(() => {
     if (typeof window === 'undefined') {
       return false;
@@ -79,6 +83,9 @@ function Home() {
     setSessionId(null);
     setPendingTool(null);
     setMessages([]);
+    setArtifactFiles([]);
+    setArtifactPreview(null);
+    setArtifactPanelTitle('');
     setError('');
   };
 
@@ -114,6 +121,9 @@ function Home() {
       const payload = await getSession(targetSessionId);
       setSessionId(payload.sessionId);
       setPendingTool(payload.pendingTool || null);
+      setArtifactFiles([]);
+      setArtifactPreview(null);
+      setArtifactPanelTitle('');
       setMessages(
         payload.messages.map((message, index) => ({
           id: `${payload.sessionId}-${index}-${message.timestamp || index}`,
@@ -164,6 +174,43 @@ function Home() {
       setError(err.message || 'Failed to export session.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleListArtifacts = async (runDir, title = 'artifact files') => {
+    setError('');
+    setLoading(true);
+    try {
+      const payload = await listArtifacts(runDir);
+      setArtifactPanelTitle(title);
+      setArtifactFiles(payload);
+      setArtifactPreview(null);
+    } catch (err) {
+      setError(err.message || 'Failed to list artifact files.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePreviewArtifact = async (path, title = 'artifact preview') => {
+    setError('');
+    setLoading(true);
+    try {
+      const payload = await previewArtifact(path);
+      setArtifactPanelTitle(title);
+      setArtifactPreview(payload);
+    } catch (err) {
+      setError(err.message || 'Failed to preview artifact.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyPath = async (path) => {
+    try {
+      await navigator.clipboard.writeText(path);
+    } catch (err) {
+      setError(err.message || 'Failed to copy artifact path.');
     }
   };
 
@@ -316,7 +363,64 @@ function Home() {
           </div>
         ) : null}
 
-        <ChatWindow messages={messages} showTechnicalDetails={showTechnicalDetails} />
+        {artifactFiles.length > 0 || artifactPreview ? (
+          <section className="artifact-panel">
+            <div className="artifact-panel-header">
+              <div>
+                <strong>{artifactPanelTitle || 'artifact inspector'}</strong>
+                {artifactPreview?.relativePath ? <span>{artifactPreview.relativePath}</span> : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setArtifactFiles([]);
+                  setArtifactPreview(null);
+                  setArtifactPanelTitle('');
+                }}
+              >
+                Close
+              </button>
+            </div>
+            {artifactFiles.length > 0 ? (
+              <div className="artifact-file-list">
+                {artifactFiles.map((file) => (
+                  <div key={file.path} className="artifact-file-item">
+                    <span>{file.relativePath}</span>
+                    <div className="artifact-file-actions">
+                      {file.previewable ? (
+                        <button type="button" onClick={() => handlePreviewArtifact(file.path, 'artifact preview')}>
+                          Preview
+                        </button>
+                      ) : null}
+                      <button type="button" onClick={() => handleCopyPath(file.path)}>
+                        Copy path
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {artifactPreview ? (
+              <div className="artifact-preview">
+                <div className="artifact-preview-meta">
+                  <span>{artifactPreview.fileName}</span>
+                  <span>{artifactPreview.contentType}</span>
+                  <span>{artifactPreview.size} bytes</span>
+                  {artifactPreview.truncated ? <span>preview truncated</span> : null}
+                </div>
+                <pre>{artifactPreview.content}</pre>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        <ChatWindow
+          messages={messages}
+          showTechnicalDetails={showTechnicalDetails}
+          onPreviewArtifact={handlePreviewArtifact}
+          onListArtifacts={handleListArtifacts}
+          onCopyPath={handleCopyPath}
+        />
 
         <InputBox disabled={loading} onSend={handleSend} />
         </section>

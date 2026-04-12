@@ -35,7 +35,9 @@ describe('MessageBubble', () => {
             {
               report_type: 'audit',
               created_at: '2026-04-12T10:00:00Z',
-              run_dir: '/tmp/audit-1'
+              run_dir: '/tmp/audit-1',
+              summary_json: '/tmp/audit-1/summary.json',
+              report_txt: '/tmp/audit-1/report.txt'
             }
           ]
         }}
@@ -46,6 +48,10 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/type: all/i)).toBeInTheDocument();
     expect(screen.getByText(/^audit$/i)).toBeInTheDocument();
     expect(screen.getByText(/\/tmp\/audit-1/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /view summary/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /view report/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /list files/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copy run dir/i })).toBeInTheDocument();
   });
 
   it('renders provider metadata for assistant messages', () => {

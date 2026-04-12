@@ -110,6 +110,8 @@ Optional MCP-backed tool endpoints:
 - `POST /api/tools/s3-cloudwatch-report`
 - `GET /api/tools/reports`
 - `POST /api/tools/reports/read`
+- `GET /api/artifacts/files`
+- `GET /api/artifacts/preview`
 
 Session endpoints:
 
@@ -141,6 +143,7 @@ The UI now includes a local session sidebar where you can:
 - see when a chat is waiting for missing tool input, such as a bucket name
 - browse automatically generated session titles and summaries
 - view structured MCP report cards for supported tool results, such as recent reports, audit summaries, and S3 report summaries
+- preview saved report artifacts in-app and copy report or run-directory paths from supported report cards
 
 ## 4. Run the Local MCP Server
 
@@ -234,6 +237,8 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - `POST /api/chat` responses now include optional provider metadata. For Bedrock this includes stop reason, token usage, duration, and provider latency when available.
 - Streamed replies can now also attach final provider metadata to the assistant message in the UI when the backend emits a completion metadata event.
 - Supported MCP-backed report results now render as structured cards in the chat UI instead of only plain assistant text.
+- The artifact preview endpoints are read-only and limited to files under [`scripts/reports/`](./scripts/reports).
+- Supported report cards can now list files for a run directory, preview text or JSON artifacts in-app, and copy local artifact paths.
 - Session titles in the sidebar are derived from the first user message in each stored session.
 - Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
 - The session sidebar now supports local search over titles, summaries, and message content.

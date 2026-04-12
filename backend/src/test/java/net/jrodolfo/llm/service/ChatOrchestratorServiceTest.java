@@ -296,7 +296,7 @@ class ChatOrchestratorServiceTest {
     private FileChatSessionStore newSessionStore() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString()));
+        return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()));
     }
 
     private ChatOrchestratorService newOrchestrator(

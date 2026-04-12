@@ -7,6 +7,11 @@ vi.mock('../api/chatApi', () => ({
   streamMessage: vi.fn()
 }));
 
+vi.mock('../api/artifactApi', () => ({
+  listArtifacts: vi.fn(),
+  previewArtifact: vi.fn()
+}));
+
 vi.mock('../api/sessionApi', () => ({
   listSessions: vi.fn(),
   getSession: vi.fn(),
@@ -16,12 +21,19 @@ vi.mock('../api/sessionApi', () => ({
 }));
 
 import { sendMessage, streamMessage } from '../api/chatApi';
+import { listArtifacts, previewArtifact } from '../api/artifactApi';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 
 describe('Home', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: vi.fn().mockResolvedValue(undefined)
+      }
+    });
     exportSession.mockResolvedValue({
       blob: new Blob(['{"sessionId":"session-1"}'], { type: 'application/json' }),
       filename: 'session-1.json'
@@ -48,6 +60,15 @@ describe('Home', () => {
           role: 'assistant',
           content: 'Audit complete.',
           tool: { used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed.' },
+          toolResult: {
+            type: 'audit_summary',
+            runDir: '/tmp/audit-1',
+            summaryPath: '/tmp/audit-1/summary.json',
+            reportPath: '/tmp/audit-1/report.txt',
+            successCount: 10,
+            failureCount: 0,
+            skippedCount: 1
+          },
           metadata: {
             provider: 'bedrock',
             modelId: 'amazon.nova-lite-v1:0',
@@ -63,6 +84,24 @@ describe('Home', () => {
       ]
     });
     deleteSession.mockResolvedValue(undefined);
+    listArtifacts.mockResolvedValue([
+      {
+        name: 'report.txt',
+        path: '/tmp/audit-1/report.txt',
+        relativePath: 'audit/aws-audit-2026-04-10/report.txt',
+        size: 128,
+        previewable: true
+      }
+    ]);
+    previewArtifact.mockResolvedValue({
+      fileName: 'summary.json',
+      path: '/tmp/audit-1/summary.json',
+      relativePath: 'audit/aws-audit-2026-04-10/summary.json',
+      contentType: 'application/json',
+      size: 42,
+      truncated: false,
+      content: '{"success_count":10,"failure_count":0}'
+    });
   });
 
   it('renders provenance for non-streaming chat responses', async () => {
@@ -84,6 +123,9 @@ describe('Home', () => {
       toolResult: {
         type: 'audit_summary',
         accountId: '123456789012',
+        runDir: '/tmp/audit-1',
+        summaryPath: '/tmp/audit-1/summary.json',
+        reportPath: '/tmp/audit-1/report.txt',
         successCount: 10,
         failureCount: 0,
         skippedCount: 1
@@ -111,6 +153,68 @@ describe('Home', () => {
     expect(screen.queryByText(/tokens: \? in \/ \? out \/ 46 total/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
+  });
+
+  it('previews a structured report artifact from a tool result card', async () => {
+    sendMessage.mockResolvedValue({
+      response: 'Audit complete.',
+      model: 'llama3:8b',
+      sessionId: 'session-123',
+      pendingTool: null,
+      tool: {
+        used: true,
+        name: 'aws_region_audit',
+        status: 'success',
+        summary: 'AWS audit completed.'
+      },
+      toolResult: {
+        type: 'audit_summary',
+        runDir: '/tmp/audit-1',
+        summaryPath: '/tmp/audit-1/summary.json',
+        reportPath: '/tmp/audit-1/report.txt',
+        successCount: 10,
+        failureCount: 0,
+        skippedCount: 1
+      },
+      metadata: null
+    });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByLabelText(/Streaming/i));
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    await user.click(await screen.findByRole('button', { name: /view summary/i }));
+
+    expect(previewArtifact).toHaveBeenCalledWith('/tmp/audit-1/summary.json');
+    expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/summary\.json/i)).toBeInTheDocument();
+    expect(screen.getByText(/\{"success_count":10,"failure_count":0\}/i)).toBeInTheDocument();
+  });
+
+  it('lists artifact files from a structured report card', async () => {
+    listSessions.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+    await user.click(await screen.findByRole('button', { name: /list files/i }));
+
+    expect(listArtifacts).toHaveBeenCalledWith('/tmp/audit-1');
+    expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/report\.txt/i)).toBeInTheDocument();
   });
 
   it('renders streamed provenance before tokens complete', async () => {

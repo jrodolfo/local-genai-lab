@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Path;
 
 @Service
 public class ChatOrchestratorService {
@@ -353,6 +354,8 @@ public class ChatOrchestratorService {
                     "type", "report_summary",
                     "reportType", String.valueOf(result.getOrDefault("report_type", "report")),
                     "runDir", String.valueOf(result.getOrDefault("run_dir", "")),
+                    "summaryPath", artifactPath(result.get("run_dir"), "summary.json"),
+                    "reportPath", artifactPath(result.get("run_dir"), "report.txt"),
                     "reportPreview", String.valueOf(result.getOrDefault("report_preview", "")),
                     "summary", result.getOrDefault("summary", Map.of())
             );
@@ -360,17 +363,19 @@ public class ChatOrchestratorService {
                 Map<String, Object> summary = result.get("summary") instanceof Map<?, ?> map
                         ? (Map<String, Object>) map
                         : Map.of();
-                yield Map.of(
-                        "type", "audit_summary",
-                        "reportType", String.valueOf(result.getOrDefault("report_type", "audit")),
-                        "runDir", String.valueOf(result.getOrDefault("run_dir", "")),
-                        "accountId", String.valueOf(result.getOrDefault("account_id", "")),
-                        "selectedRegions", result.getOrDefault("selected_regions", List.of()),
-                        "selectedServices", result.getOrDefault("selected_services", List.of()),
-                        "successCount", summary.getOrDefault("success_count", 0),
-                        "failureCount", summary.getOrDefault("failure_count", 0),
-                        "skippedCount", summary.getOrDefault("skipped_count", 0),
-                        "failedSteps", result.getOrDefault("failed_steps", List.of())
+                yield Map.ofEntries(
+                        Map.entry("type", "audit_summary"),
+                        Map.entry("reportType", String.valueOf(result.getOrDefault("report_type", "audit"))),
+                        Map.entry("runDir", String.valueOf(result.getOrDefault("run_dir", ""))),
+                        Map.entry("summaryPath", artifactPath(result.get("run_dir"), "summary.json")),
+                        Map.entry("reportPath", artifactPath(result.get("run_dir"), "report.txt")),
+                        Map.entry("accountId", String.valueOf(result.getOrDefault("account_id", ""))),
+                        Map.entry("selectedRegions", result.getOrDefault("selected_regions", List.of())),
+                        Map.entry("selectedServices", result.getOrDefault("selected_services", List.of())),
+                        Map.entry("successCount", summary.getOrDefault("success_count", 0)),
+                        Map.entry("failureCount", summary.getOrDefault("failure_count", 0)),
+                        Map.entry("skippedCount", summary.getOrDefault("skipped_count", 0)),
+                        Map.entry("failedSteps", result.getOrDefault("failed_steps", List.of()))
                 );
             }
             case "s3_cloudwatch_report" -> {
@@ -382,6 +387,8 @@ public class ChatOrchestratorService {
                         "reportType", String.valueOf(result.getOrDefault("report_type", "s3_cloudwatch")),
                         "bucket", String.valueOf(summary.getOrDefault("bucket", result.getOrDefault("bucket", ""))),
                         "runDir", String.valueOf(result.getOrDefault("run_dir", "")),
+                        "summaryPath", artifactPath(result.get("run_dir"), "summary.json"),
+                        "reportPath", artifactPath(result.get("run_dir"), "report.txt"),
                         "successCount", summary.getOrDefault("success_count", 0),
                         "failureCount", summary.getOrDefault("failure_count", 0),
                         "skippedCount", summary.getOrDefault("skipped_count", 0)
@@ -389,6 +396,13 @@ public class ChatOrchestratorService {
             }
             default -> null;
         };
+    }
+
+    private static String artifactPath(Object runDir, String fileName) {
+        if (!(runDir instanceof String runDirValue) || runDirValue.isBlank()) {
+            return "";
+        }
+        return Path.of(runDirValue, fileName).toString();
     }
 
     public record PreparedChat(

@@ -45,7 +45,7 @@ class SessionControllerTest {
     void setUp() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        sessionStore = new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString()));
+        sessionStore = new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()));
         ChatSessionMetadataService metadataService = new ChatSessionMetadataService();
         ChatSessionService sessionService = new ChatSessionService(sessionStore, metadataService);
         ChatSessionExportService exportService = new ChatSessionExportService();
