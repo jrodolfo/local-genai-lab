@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class ChatSessionService {
@@ -23,8 +24,9 @@ public class ChatSessionService {
         this.chatSessionMetadataService = chatSessionMetadataService;
     }
 
-    public List<ChatSessionSummaryResponse> listSessions() {
+    public List<ChatSessionSummaryResponse> listSessions(String query) {
         return sessionStore.findAll().stream()
+                .filter(session -> matchesQuery(session, query))
                 .sorted(Comparator.comparing(ChatSession::updatedAt).reversed())
                 .map(this::toSummary)
                 .toList();
@@ -52,6 +54,26 @@ public class ChatSessionService {
                 session.updatedAt(),
                 session.messages().size()
         );
+    }
+
+    private boolean matchesQuery(ChatSession session, String query) {
+        if (query == null || query.isBlank()) {
+            return true;
+        }
+
+        String normalizedQuery = query.trim().toLowerCase(Locale.ROOT);
+        if (chatSessionMetadataService.fallbackTitle(session).toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+            return true;
+        }
+        if (chatSessionMetadataService.fallbackSummary(session).toLowerCase(Locale.ROOT).contains(normalizedQuery)) {
+            return true;
+        }
+
+        return session.messages().stream()
+                .map(ChatSessionMessage::content)
+                .filter(content -> content != null)
+                .map(content -> content.toLowerCase(Locale.ROOT))
+                .anyMatch(content -> content.contains(normalizedQuery));
     }
 
     private ChatSessionDetailResponse toDetail(ChatSession session) {

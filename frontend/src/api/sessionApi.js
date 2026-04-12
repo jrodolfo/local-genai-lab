@@ -6,8 +6,9 @@ async function parseJson(response) {
   }
 }
 
-export async function listSessions() {
-  const response = await fetch('/api/sessions');
+export async function listSessions(query = '') {
+  const search = query ? `?q=${encodeURIComponent(query)}` : '';
+  const response = await fetch(`/api/sessions${search}`);
   if (!response.ok) {
     const payload = await parseJson(response);
     throw new Error(payload.error || 'Failed to load sessions.');

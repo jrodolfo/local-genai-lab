@@ -83,6 +83,7 @@ Relevant environment variables:
 Chat sessions are stored locally as JSON files under `../data/sessions` by default.
 
 The backend exposes a small local session API so the frontend can list, reopen, and delete stored chats.
+`GET /api/sessions?q=bedrock` can filter that list by title, summary, or message content using a case-insensitive text match.
 It also supports export of a stored session through `GET /api/sessions/{sessionId}/export`.
 Use the default response for JSON, or `GET /api/sessions/{sessionId}/export?format=markdown` for a human-readable Markdown export.
 It also supports JSON import through `POST /api/sessions/import`. If the imported `sessionId` already exists locally, the backend generates a new one instead of overwriting the existing session.

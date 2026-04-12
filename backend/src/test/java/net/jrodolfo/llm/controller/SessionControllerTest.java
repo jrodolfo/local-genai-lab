@@ -75,6 +75,17 @@ class SessionControllerTest {
     }
 
     @Test
+    void listSessionsFiltersByQueryAcrossSessionContent() throws Exception {
+        saveSession("session-1", "bedrock latency question", Instant.parse("2026-04-10T10:00:00Z"));
+        saveSession("session-2", "run aws audit", Instant.parse("2026-04-11T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions").queryParam("q", "bedrock"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sessionId").value("session-1"))
+                .andExpect(jsonPath("$[1]").doesNotExist());
+    }
+
+    @Test
     void getSessionReturnsStoredMessages() throws Exception {
         saveSession("session-1", "run aws audit", Instant.parse("2026-04-10T10:00:00Z"));
 

@@ -13,6 +13,7 @@ function Home() {
   const [sessionId, setSessionId] = useState(null);
   const [pendingTool, setPendingTool] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [sessionSearch, setSessionSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(() => {
@@ -23,8 +24,12 @@ function Home() {
   });
 
   useEffect(() => {
-    loadSessions();
-  }, []);
+    const timerId = window.setTimeout(() => {
+      loadSessions(sessionSearch);
+    }, 250);
+
+    return () => window.clearTimeout(timerId);
+  }, [sessionSearch]);
 
   useEffect(() => {
     window.localStorage.setItem(DEBUG_MODE_STORAGE_KEY, String(showTechnicalDetails));
@@ -60,9 +65,9 @@ function Home() {
     );
   };
 
-  async function loadSessions() {
+  async function loadSessions(query = '') {
     try {
-      const payload = await listSessions();
+      const payload = await listSessions(query);
       setSessions(payload);
     } catch (err) {
       setError(err.message || 'Failed to load sessions.');
@@ -91,7 +96,8 @@ function Home() {
     setLoading(true);
     try {
       const payload = await importSession(file);
-      await loadSessions();
+      setSessionSearch('');
+      await loadSessions('');
       await openSession(payload.sessionId);
     } catch (err) {
       setError(err.message || 'Failed to import session.');
@@ -170,7 +176,7 @@ function Home() {
         setSessionId((current) => payload.sessionId || current);
         setPendingTool(payload.pendingTool || null);
         addMessage('assistant', payload.response || '(No response)', payload.tool || null, payload.metadata || null);
-        await loadSessions();
+        await loadSessions(sessionSearch);
       } else {
         addMessage('assistant', '');
         await streamMessage({
@@ -186,7 +192,7 @@ function Home() {
             updateLastAssistant((current) => current + token);
           }
         });
-        await loadSessions();
+        await loadSessions(sessionSearch);
       }
     } catch (err) {
       setError(err.message || 'Something went wrong.');
@@ -220,7 +226,16 @@ function Home() {
             </div>
           </div>
           <div className="session-list">
-            {sessions.length === 0 ? <p className="session-empty">No saved chats yet.</p> : null}
+            <input
+              type="search"
+              className="session-search"
+              placeholder="Search sessions"
+              value={sessionSearch}
+              onChange={(event) => setSessionSearch(event.target.value)}
+            />
+            {sessions.length === 0 ? (
+              <p className="session-empty">{sessionSearch ? 'No matching sessions.' : 'No saved chats yet.'}</p>
+            ) : null}
             {sessions.map((session) => (
               <div
                 key={session.sessionId}

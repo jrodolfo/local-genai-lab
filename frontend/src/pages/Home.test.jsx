@@ -425,6 +425,68 @@ describe('Home', () => {
     expect(screen.getByText(/Audit completed successfully for us-east-2 sts./i)).toBeInTheDocument();
   });
 
+  it('searches sessions through the backend query parameter', async () => {
+    listSessions
+      .mockResolvedValueOnce([
+        {
+          sessionId: 'session-1',
+          title: 'run aws audit',
+          summary: 'Audit complete.',
+          model: 'llama3:8b',
+          createdAt: '2026-04-10T10:00:00Z',
+          updatedAt: '2026-04-10T10:01:00Z',
+          messageCount: 2
+        }
+      ])
+      .mockResolvedValueOnce([
+        {
+          sessionId: 'session-2',
+          title: 'bedrock latency notes',
+          summary: 'Nova latency comparison.',
+          model: 'llama3:8b',
+          createdAt: '2026-04-11T10:00:00Z',
+          updatedAt: '2026-04-11T10:01:00Z',
+          messageCount: 2
+        }
+      ]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('run aws audit')).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText(/Search sessions/i), 'bedrock');
+
+    await waitFor(() => {
+      expect(listSessions).toHaveBeenLastCalledWith('bedrock');
+    });
+    expect(await screen.findByText('bedrock latency notes')).toBeInTheDocument();
+    expect(screen.queryByText('run aws audit')).not.toBeInTheDocument();
+  });
+
+  it('shows a no-match message when search returns no sessions', async () => {
+    listSessions.mockResolvedValueOnce([
+      {
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]).mockResolvedValueOnce([]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('run aws audit')).toBeInTheDocument();
+
+    await user.type(screen.getByPlaceholderText(/Search sessions/i), 'missing');
+
+    expect(await screen.findByText(/No matching sessions./i)).toBeInTheDocument();
+  });
+
   it('imports a json session and opens it', async () => {
     getSession.mockResolvedValueOnce({
       sessionId: 'imported-session',

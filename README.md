@@ -134,6 +134,7 @@ The UI now includes a local session sidebar where you can:
 - start a new chat
 - import a saved session from JSON
 - reopen a saved session
+- search saved sessions by title, summary, or message content
 - export a saved session as JSON
 - export a saved session as Markdown
 - delete a saved session
@@ -233,7 +234,9 @@ Compose uses `host.docker.internal:11434` so backend container can reach host Ol
 - Streamed replies can now also attach final provider metadata to the assistant message in the UI when the backend emits a completion metadata event.
 - Session titles in the sidebar are derived from the first user message in each stored session.
 - Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
+- The session sidebar now supports local search over titles, summaries, and message content.
 - Session exports include saved messages, tool metadata, provider metadata, timestamps, and pending-tool state when present.
+- `GET /api/sessions?q=bedrock` filters the local session list server-side using a case-insensitive text match.
 - `GET /api/sessions/{sessionId}/export` returns JSON by default and also supports `?format=markdown` for a human-readable study note export.
 - `POST /api/sessions/import` accepts a JSON session export and creates a local session, generating a new `sessionId` automatically if the imported one already exists.
 - The backend can use session memory to complete tool clarifications across turns, for example asking for a missing bucket name and using your next reply to run the pending tool call.
