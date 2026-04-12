@@ -8,15 +8,31 @@
 ![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Proof-of-concept app to chat with local LLMs through a backend model-provider layer, with Ollama as the default provider and Amazon Bedrock as an optional provider, plus optional local MCP-backed tooling for AWS audit and report workflows and local JSON-backed conversation memory.
+Local GenAI lab for chat, tool orchestration, session memory, and AWS-oriented report workflows. The app uses a React frontend and a Spring Boot backend, with Ollama as the default model provider, Amazon Bedrock as an optional provider, and a local MCP server for AWS audit and report tooling.
 
-Architecture:
+## What It Does
 
-React Frontend -> Spring Boot Backend -> Model Provider -> Ollama REST API -> Local LLM
+- chat through a backend model-provider abstraction
+- use Ollama by default and Amazon Bedrock optionally
+- persist local conversation sessions as JSON
+- resume, search, filter, import, export, and delete sessions
+- run local MCP-backed AWS audit and report tools
+- render structured report results and preview generated artifacts in-app
+- expose OpenAPI, Swagger UI, and backend health endpoints
+
+## Architecture
+
+Primary chat path:
+
+```text
+React Frontend -> Spring Boot Backend -> Model Provider -> Ollama or Bedrock
+```
 
 Optional tool path:
 
+```text
 Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report files
+```
 
 ## Project Structure
 
@@ -45,92 +61,42 @@ llm-pet-project/
 
 ## Prerequisites
 
-- macOS with Ollama installed and running
 - Java 21+
 - Maven 3.9+
 - Node 20+
-- Docker + Docker Compose (optional)
-- AWS CLI v2 + `jq` + valid AWS credentials
-  Required only for the optional local MCP server and the shell-based AWS audit/report tools.
+- Ollama installed locally for the default provider
+- Docker + Docker Compose, optional
+- AWS CLI v2 + `jq` + valid AWS credentials, only for AWS shell tools and local MCP-backed report flows
 
-## 1. Pull and Run a Model in Ollama
+## Quick Start
+
+### 1. Pull a local model
 
 ```bash
 ollama pull llama3:8b
 ollama run llama3:8b
 ```
 
-Ollama API must be available at `http://localhost:11434`.
+Ollama should be reachable at `http://localhost:11434`.
 
-## 2. Run Backend (Spring Boot)
+### 2. Start the backend
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-Backend runs on `http://localhost:8080`.
+Backend URLs:
 
-OpenAPI and Swagger UI:
+- API root: `http://localhost:8080`
+- OpenAPI: `http://localhost:8080/v3/api-docs`
+- Swagger UI: `http://localhost:8080/swagger-ui/index.html`
+- Health: `http://localhost:8080/actuator/health`
+- Info: `http://localhost:8080/actuator/info`
 
-- `http://localhost:8080/v3/api-docs`
-- `http://localhost:8080/swagger-ui/index.html`
-- `http://localhost:8080/actuator/health`
+`GET /actuator` redirects to `/actuator/health`. Swagger excludes `/actuator/**` so the generated API docs stay focused on the application API.
 
-The Swagger UI now excludes `/actuator/**` endpoints so the generated API docs stay focused on the application API.
-`GET /actuator` now redirects to `/actuator/health`, and `GET /actuator/info` returns backend/runtime details including an explicit MCP section with enablement, command, working directory, and configuration status.
-
-### Backend API
-
-`POST /api/chat`
-
-Request:
-
-```json
-{
-  "message": "Explain recursion",
-  "model": "llama3:8b",
-  "sessionId": "optional-existing-session-id"
-}
-```
-
-Response:
-
-```json
-{
-  "response": "...",
-  "model": "llama3:8b",
-  "sessionId": "generated-or-reused-session-id",
-  "tool": null,
-  "metadata": {
-    "provider": "ollama",
-    "modelId": "llama3:8b"
-  }
-}
-```
-
-Streaming endpoint: `POST /api/chat/stream` (SSE).
-The streaming path emits an initial `metadata` event that can include the active `sessionId` and optional tool provenance before token events begin, and it can emit a final `metadata` event with provider details before `[DONE]`.
-
-Optional MCP-backed tool endpoints:
-
-- `GET /api/tools`
-- `POST /api/tools/aws-region-audit`
-- `POST /api/tools/s3-cloudwatch-report`
-- `GET /api/tools/reports`
-- `POST /api/tools/reports/read`
-- `GET /api/artifacts/files`
-- `GET /api/artifacts/preview`
-
-Session endpoints:
-
-- `GET /api/sessions`
-- `GET /api/sessions/{sessionId}`
-- `GET /api/sessions/{sessionId}/export`
-- `POST /api/sessions/import`
-- `DELETE /api/sessions/{sessionId}`
-
-## 3. Run Frontend (React)
+### 3. Start the frontend
 
 ```bash
 cd frontend
@@ -138,28 +104,11 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`.
+Frontend URL:
 
-The UI now includes a local session sidebar where you can:
+- `http://localhost:5173`
 
-- start a new chat
-- import a saved session from JSON
-- reopen a saved session
-- search saved sessions by title, summary, or message content
-- filter saved sessions by provider, tool usage, and pending clarification state
-- export a saved session as JSON
-- export a saved session as Markdown
-- delete a saved session
-- see when a chat is waiting for missing tool input, such as a bucket name
-- browse automatically generated session titles and summaries
-- view structured MCP report cards for supported tool results, such as recent reports, audit summaries, and S3 report summaries
-- preview saved report artifacts in-app and copy report or run-directory paths from supported report cards
-
-## 4. Run the Local MCP Server
-
-The repository includes a separate local MCP server under [`mcp/`](./mcp) that wraps the shell tools under [`scripts/`](./scripts).
-
-Build it first:
+### 4. Optional: build the local MCP server
 
 ```bash
 cd mcp
@@ -167,27 +116,62 @@ npm install
 npm run build
 ```
 
-Run it directly:
+MCP is enabled by default in the backend. To run without it, set `MCP_ENABLED=false`.
+
+## Docker
+
+Keep Ollama running on the host first, then:
 
 ```bash
-cd mcp
-npm start
+docker compose up --build
 ```
 
-Or let the backend launch it as a subprocess by enabling MCP when starting Spring Boot:
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:8080`
 
-```bash
-cd backend
-MCP_ENABLED=true mvn spring-boot:run
-```
+## Configuration Overview
 
-The MCP server is intentionally separate from the Spring backend so shell execution and report access stay isolated from the chat API.
+The most important backend settings are:
 
-## 5. Shell Tools
+- `APP_MODEL_PROVIDER` default: `ollama`
+- `OLLAMA_DEFAULT_MODEL` default: `llama3:8b`
+- `BEDROCK_REGION` default: `us-east-1`
+- `BEDROCK_MODEL_ID` default: empty
+- `MCP_ENABLED` default: `true`
+- `APP_TOOLS_ROUTING_MODE` default: `hybrid`
+- `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
+- `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
 
-The [`scripts/`](./scripts) directory contains the imported shell-based AWS tooling and its local tests.
+The storage defaults are resolved from the project root so they stay stable whether the backend starts from `backend/` or the repository root.
 
-Useful entrypoints:
+## Main Features
+
+### Chat and Providers
+
+- normal and streaming chat endpoints
+- Ollama as the default provider
+- Amazon Bedrock as an optional provider
+- provider metadata in responses and saved session history
+
+### Sessions
+
+- local JSON-backed conversation memory
+- generated session titles and summaries
+- session sidebar with search and filters
+- JSON and Markdown export
+- JSON import with collision-safe session ids
+
+### Tools and Artifacts
+
+- local MCP-backed AWS audit and reporting flows
+- LLM-assisted tool routing with fallback
+- multi-turn clarification for missing tool inputs
+- structured report cards in the UI
+- read-only artifact preview and file listing under `scripts/reports/`
+
+## Shell Scripts
+
+The shell tooling lives under [`scripts/`](./scripts). Useful entrypoints:
 
 ```bash
 cd scripts
@@ -198,106 +182,22 @@ make audit
 make s3-cloudwatch BUCKET=example.com
 ```
 
-`make check-app` verifies:
-- backend health through `http://localhost:8080/actuator/health`
-- frontend availability through `http://localhost:5173`
-- Ollama availability through `http://localhost:11434/api/tags` by default
+`make check-app` verifies backend, frontend, and Ollama availability with sensible local defaults.
 
-Optional overrides:
+## Documentation Map
 
-```bash
-cd scripts
-BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false make check-app
-```
+- [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
+- [frontend/README.md](./frontend/README.md): frontend-specific details
+- [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
+- [mcp/README.md](./mcp/README.md): local MCP server details
 
-See [`scripts/README.md`](./scripts/README.md) for the script-specific options and report formats.
+## Notes for Heavier Models
 
-## 6. Run with Docker Compose
-
-Keep Ollama running on the host machine first. Then:
-
-```bash
-docker compose up --build
-```
-
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8080`
-
-Compose uses `host.docker.internal:11434` so backend container can reach host Ollama.
-
-## Environment Variables (Backend)
-
-- `OLLAMA_BASE_URL` (default: `http://localhost:11434`)
-- `OLLAMA_DEFAULT_MODEL` (default: `llama3:8b`)
-- `OLLAMA_CONNECT_TIMEOUT_SECONDS` (default: `10`)
-- `OLLAMA_READ_TIMEOUT_SECONDS` (default: `240`)
-- `APP_MODEL_PROVIDER` (default: `ollama`)
-- `BEDROCK_REGION` (default: `us-east-1`)
-- `BEDROCK_MODEL_ID` (default: empty)
-- `APP_TOOLS_ROUTING_MODE` (default: `hybrid`)
-- `APP_TOOLS_LOG_PLANNER` (default: `false`)
-- `MCP_ENABLED` (default: `true`)
-- `MCP_COMMAND` (default: `node`)
-- `MCP_WORKING_DIRECTORY` (default: `../mcp`)
-- `MCP_ARG_1` (default: `dist/index.js`)
-- `MCP_STARTUP_TIMEOUT_SECONDS` (default: `10`)
-- `MCP_TOOL_TIMEOUT_SECONDS` (default: `120`)
-- `APP_STORAGE_SESSIONS_DIRECTORY` (default: `data/sessions`)
-- `APP_STORAGE_REPORTS_DIRECTORY` (default: `scripts/reports`)
-- The backend exposes a Spring Boot Actuator health endpoint at `/actuator/health` with app-specific checks for the active model provider, MCP configuration, and local storage directories.
-- The default storage paths are resolved from the project root so they remain stable whether the app is started from `backend/` or from the repository root.
-
-## Notes
-
-- The default chat flow does not require MCP.
-- The backend now uses a model-provider abstraction and currently supports both `ollama` and `bedrock`.
-- `ollama` remains the default provider for local development.
-- The Bedrock provider now supports both normal chat requests and the `/api/chat/stream` SSE path.
-- Tool routing is now LLM-assisted by default in `hybrid` mode, with the older rule-based router kept as a fallback.
-- Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed planner decisions, and fallback usage during local evaluation.
-- MCP is enabled by default. Set `MCP_ENABLED=false` only when you want to run the backend without MCP tool integration.
-- The MCP server uses local `stdio` transport and is designed for private, local execution.
-- The `scripts/reports/` tree contains generated local artifacts and is intentionally reused by both the shell tools and the MCP wrappers.
-- Conversation history is stored locally as JSON files under [`data/sessions/`](./data/sessions).
-- The frontend reuses the returned `sessionId` automatically so follow-up prompts keep local context.
-- `POST /api/chat` responses now include optional provider metadata. For Bedrock this includes stop reason, token usage, duration, and provider latency when available.
-- Streamed replies can now also attach final provider metadata to the assistant message in the UI when the backend emits a completion metadata event.
-- Supported MCP-backed report results now render as structured cards in the chat UI instead of only plain assistant text.
-- The artifact preview endpoints are read-only and limited to files under [`scripts/reports/`](./scripts/reports).
-- Supported report cards can now list files for a run directory, preview text or JSON artifacts in-app, and copy local artifact paths.
-- Session titles in the sidebar are derived from the first user message in each stored session.
-- Session summaries are generated locally from the saved conversation so the sidebar is easier to scan.
-- The session sidebar now supports local search over titles, summaries, and message content.
-- Session exports include saved messages, tool metadata, provider metadata, timestamps, and pending-tool state when present.
-- `GET /api/sessions?query=bedrock` filters the local session list server-side using a case-insensitive text match.
-- `GET /api/sessions?query=audit&provider=bedrock&toolUsage=used&pending=true` combines text search with provider, tool-usage, and pending-state filters.
-- `GET /api/sessions/{sessionId}/export` returns JSON by default and also supports `?format=markdown` for a human-readable study note export.
-- `POST /api/sessions/import` accepts a JSON session export and creates a local session, generating a new `sessionId` automatically if the imported one already exists.
-- The backend can use session memory to complete tool clarifications across turns, for example asking for a missing bucket name and using your next reply to run the pending tool call.
-- Fixture-based planner evaluation cases live in [`backend/src/test/resources/tool-decision-evaluation-fixtures.json`](/Users/jrodolfo/workspace/ai/llm/llm-pet-project/backend/src/test/resources/tool-decision-evaluation-fixtures.json).
-- The backend test suite now prints a compact planner evaluation summary from the fixture set so routing regressions are easier to spot.
-
-## Notes for 70B Models
-
-- `codellama:70b` is an optional heavier model for code-focused experiments, not the recommended first-run default.
-- 70B 4-bit models can be memory intensive.
-- Keep other heavy apps closed while testing.
-- Increase backend read timeout if generation is slow.
-
-## Next Enhancements
-
-- Add authentication
-- Improve prompt templates/system prompts
-- Add metrics and tracing
-- Surface provider metadata in the frontend when useful
+- `codellama:70b` is optional and not the recommended first-run default
+- larger local models can be much slower and more memory intensive
+- if you use a heavier model, you may need to raise backend read timeouts
 
 ## Contact
 
-For issues or inquiries, feel free to contact the maintainer:
-
-- Name: Rod Oliveira
-- Role: Software Developer
-- Email: jrodolfo@gmail.com
 - GitHub: https://github.com/jrodolfo
-- LinkedIn: https://www.linkedin.com/in/rodoliveira
 - Webpage: https://jrodolfo.net
