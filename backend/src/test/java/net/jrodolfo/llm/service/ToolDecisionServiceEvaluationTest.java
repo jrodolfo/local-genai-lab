@@ -144,7 +144,7 @@ class ToolDecisionServiceEvaluationTest {
         }
 
         @Override
-        public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
+        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for evaluation tests.");
         }
 

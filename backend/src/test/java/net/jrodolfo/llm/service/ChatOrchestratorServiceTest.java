@@ -355,7 +355,7 @@ class ChatOrchestratorServiceTest {
         }
 
         @Override
-        public ModelProviderMetadata streamChat(String message, String model, java.util.function.Consumer<String> tokenConsumer) {
+        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(String message, String model, java.util.function.Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for this test.");
         }
 

@@ -23,8 +23,11 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AwsSdkBedrockRuntimeGatewayTest {
@@ -96,13 +99,14 @@ class AwsSdkBedrockRuntimeGatewayTest {
 
         AwsSdkBedrockRuntimeGateway gateway = new AwsSdkBedrockRuntimeGateway(syncClient(), asyncClient);
 
-        ModelProviderException exception = assertThrows(
-                ModelProviderException.class,
+        CompletionException exception = assertThrows(
+                CompletionException.class,
                 () -> gateway.converseStream("prompt", "amazon.nova-lite-v1:0", chunk -> {
-                })
+                }).join()
         );
 
-        assertEquals("Failed to stream from Bedrock.", exception.getMessage());
+        assertEquals(ModelProviderException.class, exception.getCause().getClass());
+        assertEquals("Failed to stream from Bedrock.", exception.getCause().getMessage());
     }
 
     @Test
@@ -117,6 +121,38 @@ class AwsSdkBedrockRuntimeGatewayTest {
         assertEquals(8, metadata.outputTokens());
         assertEquals(15, metadata.totalTokens());
         assertEquals(210L, metadata.providerLatencyMs());
+    }
+
+    @Test
+    void converseStreamCanDeliverChunkBeforeMetadataFutureCompletes() {
+        CompletableFuture<Void> remoteCompletion = new CompletableFuture<>();
+        AtomicBoolean consumerCalled = new AtomicBoolean(false);
+        BedrockRuntimeAsyncClient asyncClient = asyncClient((request, handler) -> remoteCompletion);
+
+        AwsSdkBedrockRuntimeGateway gateway = new AwsSdkBedrockRuntimeGateway(syncClient(), asyncClient);
+
+        CompletableFuture<ModelProviderMetadata> metadataFuture = gateway.converseStream(
+                "prompt",
+                "amazon.nova-lite-v1:0",
+                chunk -> consumerCalled.set(true)
+        );
+
+        try {
+            invokeForwardChunk(
+                    gateway,
+                    ContentBlockDeltaEvent.builder()
+                            .delta(ContentBlockDelta.builder().text("hello").build())
+                            .build(),
+                    chunk -> consumerCalled.set(true)
+            );
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+
+        assertEquals(true, consumerCalled.get());
+        assertFalse(metadataFuture.isDone());
+
+        remoteCompletion.complete(null);
     }
 
     private BedrockRuntimeClient syncClient() {

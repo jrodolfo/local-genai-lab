@@ -103,10 +103,11 @@ public class ChatController {
                 }
 
                 StringBuilder responseBuffer = new StringBuilder();
-                var providerMetadata = chatModelProvider.streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
+                var streamingResult = chatModelProvider.streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
                     responseBuffer.append(token);
                     sendData(emitter, token);
                 });
+                var providerMetadata = streamingResult.completion().join();
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString(), providerMetadata);
                 sendMetadata(emitter, new ChatStreamMetadata(
                         preparedChat.session().sessionId(),

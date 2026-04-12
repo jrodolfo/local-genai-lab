@@ -19,7 +19,7 @@ public interface ChatModelProvider {
             PendingToolCallResponse pendingTool
     );
 
-    ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer);
+    StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer);
 
     String resolveModel(String model);
 }

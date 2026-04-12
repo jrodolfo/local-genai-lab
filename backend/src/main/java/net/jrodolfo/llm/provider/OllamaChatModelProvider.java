@@ -7,6 +7,7 @@ import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class OllamaChatModelProvider implements ChatModelProvider {
@@ -41,11 +42,13 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
+    public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
         String normalizedMessage = message.trim();
         String resolvedModel = ollamaClient.resolveModel(model);
         ollamaClient.streamGenerate(normalizedMessage, resolvedModel, tokenConsumer);
-        return new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null);
+        return new StreamingChatResult(CompletableFuture.completedFuture(
+                new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null)
+        ));
     }
 
     @Override

@@ -72,14 +72,14 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
     }
 
     @Override
-    public ModelProviderMetadata converseStream(String prompt, String modelId, Consumer<String> chunkConsumer) {
+    public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, Consumer<String> chunkConsumer) {
         try {
             ConverseStreamRequest request = buildConverseStreamRequest(prompt, modelId);
-            CompletableFuture<Void> completion = new CompletableFuture<>();
             long startedAt = System.currentTimeMillis();
             AtomicReference<String> stopReason = new AtomicReference<>();
             AtomicReference<TokenUsage> usage = new AtomicReference<>();
             AtomicReference<ConverseStreamMetrics> metrics = new AtomicReference<>();
+            CompletableFuture<ModelProviderMetadata> metadataFuture = new CompletableFuture<>();
 
             ConverseStreamResponseHandler handler = ConverseStreamResponseHandler.builder()
                     .subscriber(ConverseStreamResponseHandler.Visitor.builder()
@@ -87,43 +87,37 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                             .onMessageStop(event -> captureStopReason(event, stopReason))
                             .onMetadata(event -> captureMetadata(event, usage, metrics))
                             .build())
-                    .onError(error -> completion.completeExceptionally(
+                    .onError(error -> metadataFuture.completeExceptionally(
                             new ModelProviderException("Failed to stream from Bedrock.", error)
                     ))
-                    .onComplete(() -> completion.complete(null))
+                    .onComplete(() -> {
+                        TokenUsage finalUsage = usage.get();
+                        ConverseStreamMetrics finalMetrics = metrics.get();
+                        metadataFuture.complete(new ModelProviderMetadata(
+                                "bedrock",
+                                modelId,
+                                stopReason.get(),
+                                finalUsage != null ? finalUsage.inputTokens() : null,
+                                finalUsage != null ? finalUsage.outputTokens() : null,
+                                finalUsage != null ? finalUsage.totalTokens() : null,
+                                System.currentTimeMillis() - startedAt,
+                                finalMetrics != null ? finalMetrics.latencyMs() : null
+                        ));
+                    })
                     .build();
 
             CompletableFuture<Void> streamFuture = bedrockRuntimeAsyncClient.converseStream(request, handler);
             streamFuture.whenComplete((ignored, throwable) -> {
                 if (throwable != null) {
-                    completion.completeExceptionally(new ModelProviderException(
+                    metadataFuture.completeExceptionally(new ModelProviderException(
                             "Failed to stream from Bedrock.",
                             unwrapCompletionException(throwable)
                     ));
                 }
             });
-
-            completion.join();
-            TokenUsage finalUsage = usage.get();
-            ConverseStreamMetrics finalMetrics = metrics.get();
-            return new ModelProviderMetadata(
-                    "bedrock",
-                    modelId,
-                    stopReason.get(),
-                    finalUsage != null ? finalUsage.inputTokens() : null,
-                    finalUsage != null ? finalUsage.outputTokens() : null,
-                    finalUsage != null ? finalUsage.totalTokens() : null,
-                    System.currentTimeMillis() - startedAt,
-                    finalMetrics != null ? finalMetrics.latencyMs() : null
-            );
+            return metadataFuture;
         } catch (ValidationException ex) {
             throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
-        } catch (CompletionException ex) {
-            Throwable cause = unwrapCompletionException(ex);
-            if (cause instanceof ModelProviderException modelProviderException) {
-                throw modelProviderException;
-            }
-            throw new ModelProviderException("Failed to stream from Bedrock.", cause);
         } catch (SdkException ex) {
             throw new ModelProviderException("Failed to stream from Bedrock.", ex);
         } catch (RuntimeException ex) {

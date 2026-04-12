@@ -10,8 +10,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BedrockChatModelProviderTest {
@@ -53,13 +55,33 @@ class BedrockChatModelProviderTest {
         );
 
         List<String> chunks = new ArrayList<>();
-        ModelProviderMetadata metadata = provider.streamChat("hello", " ", chunks::add);
+        StreamingChatResult result = provider.streamChat("hello", " ", chunks::add);
+        ModelProviderMetadata metadata = result.completion().join();
 
         assertEquals("hello", gateway.lastStreamPrompt);
         assertEquals("amazon.nova-lite-v1:0", gateway.lastStreamModelId);
         assertEquals(List.of("bedrock", " stream"), chunks);
         assertEquals("bedrock", metadata.provider());
         assertEquals("amazon.nova-lite-v1:0", metadata.modelId());
+    }
+
+    @Test
+    void streamChatCanEmitChunksBeforeCompletionMetadataIsReady() {
+        DelayedBedrockRuntimeGateway gateway = new DelayedBedrockRuntimeGateway();
+        BedrockChatModelProvider provider = new BedrockChatModelProvider(
+                gateway,
+                new BedrockProperties("us-east-1", "amazon.nova-lite-v1:0")
+        );
+
+        List<String> chunks = new ArrayList<>();
+        StreamingChatResult result = provider.streamChat("hello", " ", chunks::add);
+
+        assertEquals(List.of("bedrock"), chunks);
+        assertFalse(result.completion().isDone());
+
+        gateway.finish();
+
+        assertEquals("bedrock", result.completion().join().provider());
     }
 
     private static final class FakeBedrockRuntimeGateway implements BedrockRuntimeGateway {
@@ -79,12 +101,33 @@ class BedrockChatModelProviderTest {
         }
 
         @Override
-        public ModelProviderMetadata converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
+        public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
             this.lastStreamPrompt = prompt;
             this.lastStreamModelId = modelId;
             chunkConsumer.accept("bedrock");
             chunkConsumer.accept(" stream");
-            return new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L);
+            return CompletableFuture.completedFuture(
+                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L)
+            );
+        }
+    }
+
+    private static final class DelayedBedrockRuntimeGateway implements BedrockRuntimeGateway {
+        private final CompletableFuture<ModelProviderMetadata> completion = new CompletableFuture<>();
+
+        @Override
+        public ModelProviderReply converse(String prompt, String modelId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
+            chunkConsumer.accept("bedrock");
+            return completion;
+        }
+
+        void finish() {
+            completion.complete(new ModelProviderMetadata("bedrock", "amazon.nova-lite-v1:0", "end_turn", 1, 2, 3, 4L, 5L));
         }
     }
 }

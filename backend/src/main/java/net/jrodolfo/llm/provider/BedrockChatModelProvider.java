@@ -38,10 +38,10 @@ public class BedrockChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public ModelProviderMetadata streamChat(String message, String model, Consumer<String> tokenConsumer) {
+    public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
         String normalizedMessage = message.trim();
         String resolvedModel = resolveModel(model);
-        return bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
+        return new StreamingChatResult(bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer));
     }
 
     @Override
