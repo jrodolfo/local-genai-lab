@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -67,6 +69,21 @@ class ArtifactControllerTest {
                 .andExpect(jsonPath("$.fileName").value("report.txt"))
                 .andExpect(jsonPath("$.contentType").value("text/plain"))
                 .andExpect(jsonPath("$.content").value(containsString("audit report")));
+    }
+
+    @Test
+    void previewTruncatesLargeFilesWithoutChangingResponseShape() throws Exception {
+        String largeContent = IntStream.range(0, 25_000)
+                .mapToObj(index -> "a")
+                .collect(Collectors.joining());
+        Files.writeString(runDir.resolve("large.log"), largeContent);
+
+        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", "audit/aws-audit-2026-04-12_15-00-00/large.log"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fileName").value("large.log"))
+                .andExpect(jsonPath("$.truncated").value(true))
+                .andExpect(jsonPath("$.content").isString())
+                .andExpect(jsonPath("$.content", org.hamcrest.Matchers.hasLength(20_000)));
     }
 
     @Test

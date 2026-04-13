@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,6 +24,7 @@ import java.util.stream.Stream;
 public class ChatArtifactService {
 
     private static final int MAX_PREVIEW_CHARACTERS = 20_000;
+    private static final int PREVIEW_BUFFER_SIZE = 4_096;
     private static final Set<String> PREVIEWABLE_EXTENSIONS = Set.of(
             ".json", ".txt", ".log", ".md", ".yaml", ".yml", ".stderr", ".out"
     );
@@ -66,11 +68,7 @@ public class ChatArtifactService {
         }
 
         try {
-            String content = Files.readString(resolvedPath, StandardCharsets.UTF_8);
-            boolean truncated = content.length() > MAX_PREVIEW_CHARACTERS;
-            if (truncated) {
-                content = content.substring(0, MAX_PREVIEW_CHARACTERS);
-            }
+            PreviewContent previewContent = readPreviewContent(resolvedPath);
             FileTime lastModified = Files.getLastModifiedTime(resolvedPath);
             String relativePath = reportsDirectory.relativize(resolvedPath).toString();
             return new ArtifactPreviewResponse(
@@ -80,12 +78,35 @@ public class ChatArtifactService {
                     contentTypeFor(resolvedPath),
                     Files.size(resolvedPath),
                     Instant.ofEpochMilli(lastModified.toMillis()),
-                    truncated,
-                    content
+                    previewContent.truncated(),
+                    previewContent.content()
             );
         } catch (IOException ex) {
             throw new UncheckedIOException("Failed to preview artifact: " + path, ex);
         }
+    }
+
+    private PreviewContent readPreviewContent(Path path) throws IOException {
+        StringBuilder builder = new StringBuilder(Math.min(MAX_PREVIEW_CHARACTERS, PREVIEW_BUFFER_SIZE));
+        char[] buffer = new char[PREVIEW_BUFFER_SIZE];
+        boolean truncated = false;
+
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            while (builder.length() < MAX_PREVIEW_CHARACTERS + 1) {
+                int read = reader.read(buffer);
+                if (read == -1) {
+                    break;
+                }
+                builder.append(buffer, 0, read);
+                if (builder.length() > MAX_PREVIEW_CHARACTERS) {
+                    truncated = true;
+                    builder.setLength(MAX_PREVIEW_CHARACTERS);
+                    break;
+                }
+            }
+        }
+
+        return new PreviewContent(builder.toString(), truncated);
     }
 
     private ArtifactFileResponse toArtifactFileResponse(Path path) {
@@ -135,5 +156,8 @@ public class ChatArtifactService {
             return "text/markdown";
         }
         return "text/plain";
+    }
+
+    private record PreviewContent(String content, boolean truncated) {
     }
 }
