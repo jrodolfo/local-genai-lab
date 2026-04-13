@@ -8,9 +8,16 @@
 ![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Local-first GenAI lab for building and testing tool-assisted chat workflows, not just a chatbot UI. It combines a React frontend, a Spring Boot orchestration backend, local and managed model providers, persistent session memory, and MCP-backed AWS tooling in one full-stack repository.
+Local-first GenAI lab for building and testing tool-assisted chat workflows.
+Not just a chatbot UI.
 
-Why it is interesting:
+This project combines a React frontend, a Spring Boot orchestration backend, local and managed model providers, persistent session memory, and MCP-backed AWS tooling in one full-stack repository.
+
+## Why This Matters
+
+Most LLM demos stop at chat. This project explores how to connect models to real systems.
+
+It focuses on:
 
 - tool-assisted chat with backend-side orchestration instead of direct frontend-to-model calls
 - provider abstraction with Ollama by default and Amazon Bedrock as an optional runtime
@@ -19,6 +26,14 @@ Why it is interesting:
 - structured report rendering, artifact preview, streaming responses, and API observability
 
 ## Architecture
+
+High-level interaction flows:
+
+```text
+React -> Spring Boot -> Ollama / Bedrock
+                   |
+                   -> MCP -> Shell Scripts -> AWS CLI -> Reports
+```
 
 Primary chat path:
 
