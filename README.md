@@ -8,17 +8,15 @@
 ![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Local GenAI lab for chat, tool orchestration, session memory, and AWS-oriented report workflows. The app uses a React frontend and a Spring Boot backend, with Ollama as the default model provider, Amazon Bedrock as an optional provider, and a local MCP server for AWS audit and report tooling.
+Local-first GenAI lab for building and testing tool-assisted chat workflows, not just a chatbot UI. It combines a React frontend, a Spring Boot orchestration backend, local and managed model providers, persistent session memory, and MCP-backed AWS tooling in one full-stack repository.
 
-## What It Does
+Why it is interesting:
 
-- chat through a backend model-provider abstraction
-- use Ollama by default and Amazon Bedrock optionally
-- persist local conversation sessions as JSON
-- resume, search, filter, import, export, and delete sessions
-- run local MCP-backed AWS audit and report tools
-- render structured report results and preview generated artifacts in-app
-- expose OpenAPI, Swagger UI, and backend health endpoints
+- tool-assisted chat with backend-side orchestration instead of direct frontend-to-model calls
+- provider abstraction with Ollama by default and Amazon Bedrock as an optional runtime
+- persistent session memory with resume, search, filter, import, and export flows
+- MCP-backed local tool execution for AWS audits, reports, and artifact generation
+- structured report rendering, artifact preview, streaming responses, and API observability
 
 ## Architecture
 
