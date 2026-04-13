@@ -113,6 +113,7 @@ Sessions are stored locally as JSON files.
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
 
 Those defaults are resolved from the repository root, so the backend reports the correct local paths even when started from different working directories.
+`APP_STORAGE_REPORTS_DIRECTORY` may also be set to an absolute path outside the repository.
 
 Session support includes:
 
@@ -132,6 +133,12 @@ The backend supports:
 - multi-turn clarification for missing tool inputs
 - structured `toolResult` payloads for supported report flows
 - read-only artifact preview under the configured reports directory
+
+Artifact path contract:
+
+- the configured reports directory can be repo-local or an absolute external directory
+- `GET /api/artifacts/files` and `GET /api/artifacts/preview` accept only paths relative to that configured reports directory
+- absolute request paths are rejected intentionally to keep artifact reads bounded to the configured root
 
 Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed decisions, and fallback usage during local tuning.
 

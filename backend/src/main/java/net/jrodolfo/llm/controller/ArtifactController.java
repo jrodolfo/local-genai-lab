@@ -38,7 +38,7 @@ public class ArtifactController {
             @ApiResponse(responseCode = "404", description = "Artifact directory not found.")
     })
     public List<ArtifactFileResponse> listFiles(
-            @Parameter(description = "Absolute or reports-root-relative run directory path.", required = true)
+            @Parameter(description = "Run directory path relative to the configured reports directory.", required = true)
             @RequestParam String runDir
     ) {
         return chatArtifactService.listFiles(runDir);
@@ -52,7 +52,7 @@ public class ArtifactController {
             @ApiResponse(responseCode = "404", description = "Artifact file not found.")
     })
     public ArtifactPreviewResponse preview(
-            @Parameter(description = "Absolute or reports-root-relative artifact file path.", required = true)
+            @Parameter(description = "Artifact file path relative to the configured reports directory.", required = true)
             @RequestParam String path
     ) {
         return chatArtifactService.previewFile(path);

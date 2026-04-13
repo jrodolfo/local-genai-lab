@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
@@ -72,7 +73,7 @@ class ChatControllerTest {
         private int completePreparedChatCalls;
 
         private TestOrchestrator() {
-            super(null, null, null, null, null, null);
+            super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
             ChatSession session = ChatSession.create("session-1", "llama3:8b", Instant.parse("2026-04-12T00:00:00Z"));
             this.preparedChat = new PreparedChat("prompt", "llama3:8b", null, null, null, session, null);
         }

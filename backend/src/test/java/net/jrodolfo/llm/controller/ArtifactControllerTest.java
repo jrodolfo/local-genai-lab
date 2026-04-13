@@ -51,28 +51,34 @@ class ArtifactControllerTest {
 
     @Test
     void listFilesReturnsFilesUnderRunDirectory() throws Exception {
-        mockMvc.perform(get("/api/artifacts/files").queryParam("runDir", runDir.toString()))
+        mockMvc.perform(get("/api/artifacts/files").queryParam("runDir", "audit/aws-audit-2026-04-12_15-00-00"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").exists())
                 .andExpect(jsonPath("$[?(@.name == 'report.txt')]").isArray())
-                .andExpect(jsonPath("$[?(@.name == 'summary.json')]").isArray());
+                .andExpect(jsonPath("$[?(@.name == 'summary.json')]").isArray())
+                .andExpect(jsonPath("$[?(@.path == 'audit/aws-audit-2026-04-12_15-00-00/report.txt')]").isArray());
     }
 
     @Test
     void previewReturnsArtifactContent() throws Exception {
-        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", runDir.resolve("report.txt").toString()))
+        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", "audit/aws-audit-2026-04-12_15-00-00/report.txt"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.path").value("audit/aws-audit-2026-04-12_15-00-00/report.txt"))
                 .andExpect(jsonPath("$.fileName").value("report.txt"))
                 .andExpect(jsonPath("$.contentType").value("text/plain"))
                 .andExpect(jsonPath("$.content").value(containsString("audit report")));
     }
 
     @Test
-    void previewRejectsPathTraversalOutsideReportsDirectory() throws Exception {
-        Path outside = tempDir.resolve("outside.txt");
-        Files.writeString(outside, "nope");
+    void previewRejectsAbsolutePaths() throws Exception {
+        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", runDir.resolve("report.txt").toString()))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("must be relative")));
+    }
 
-        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", outside.toString()))
+    @Test
+    void previewRejectsPathTraversalOutsideReportsDirectory() throws Exception {
+        mockMvc.perform(get("/api/artifacts/preview").queryParam("path", "../outside.txt"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("outside the allowed reports directory")));
     }

@@ -147,6 +147,7 @@ The most important backend settings are:
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
 
 The storage defaults are resolved from the project root so they stay stable whether the backend starts from `backend/` or the repository root.
+You can also point `APP_STORAGE_REPORTS_DIRECTORY` to an absolute path outside the repository if you want report artifacts stored elsewhere.
 
 ## Main Features
 
@@ -174,6 +175,12 @@ The storage defaults are resolved from the project root so they stay stable whet
 - multi-turn clarification for missing tool inputs
 - structured report cards in the UI
 - read-only artifact preview and file listing under `scripts/reports/`
+
+Artifact API note:
+
+- the configured reports directory may be inside or outside the repository
+- artifact endpoints accept only paths relative to that configured reports directory
+- absolute artifact paths are rejected intentionally so the backend keeps a strict read-only boundary
 
 ## Shell Scripts
 

@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.service;
 
 import net.jrodolfo.llm.client.McpClientException;
+import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
@@ -26,6 +27,7 @@ public class ChatOrchestratorService {
     private final ChatMemoryService chatMemoryService;
     private final ChatPromptBuilder chatPromptBuilder;
     private final ChatSessionService chatSessionService;
+    private final Path reportsDirectory;
 
     public ChatOrchestratorService(
             ChatModelProvider chatModelProvider,
@@ -33,7 +35,8 @@ public class ChatOrchestratorService {
             ToolDecisionService toolDecisionService,
             ChatMemoryService chatMemoryService,
             ChatPromptBuilder chatPromptBuilder,
-            ChatSessionService chatSessionService
+            ChatSessionService chatSessionService,
+            AppStorageProperties appStorageProperties
     ) {
         this.chatModelProvider = chatModelProvider;
         this.mcpService = mcpService;
@@ -41,6 +44,7 @@ public class ChatOrchestratorService {
         this.chatMemoryService = chatMemoryService;
         this.chatPromptBuilder = chatPromptBuilder;
         this.chatSessionService = chatSessionService;
+        this.reportsDirectory = appStorageProperties.resolvedReportsDirectory().toAbsolutePath().normalize();
     }
 
     public ChatResponse chat(String message, String model, String sessionId) {
@@ -111,7 +115,7 @@ public class ChatOrchestratorService {
                     )
             );
             ChatToolMetadata metadata = new ChatToolMetadata(true, execution.toolName(), "success", execution.summary());
-            return PreparedChat.forPrompt(augmentedPrompt, resolvedModel, metadata, execution.toolResult(), clearedSession);
+            return PreparedChat.forPrompt(augmentedPrompt, resolvedModel, metadata, execution.toolResult(reportsDirectory), clearedSession);
         } catch (IllegalArgumentException | McpClientException ex) {
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
@@ -337,25 +341,25 @@ public class ChatOrchestratorService {
             Map<String, Object> result,
             String summary
     ) {
-        Map<String, Object> toolResult() {
-            return structuredToolResult(toolName, result);
+        Map<String, Object> toolResult(Path reportsDirectory) {
+            return structuredToolResult(toolName, result, reportsDirectory);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, Object> structuredToolResult(String toolName, Map<String, Object> result) {
+    private static Map<String, Object> structuredToolResult(String toolName, Map<String, Object> result, Path reportsDirectory) {
         return switch (toolName) {
             case "list_recent_reports" -> Map.of(
                     "type", "report_list",
                     "reportType", String.valueOf(result.getOrDefault("report_type", "all")),
-                    "reports", result.getOrDefault("reports", List.of())
+                    "reports", relativizeReports(result.getOrDefault("reports", List.of()), reportsDirectory)
             );
             case "read_report_summary" -> Map.of(
                     "type", "report_summary",
                     "reportType", String.valueOf(result.getOrDefault("report_type", "report")),
-                    "runDir", String.valueOf(result.getOrDefault("run_dir", "")),
-                    "summaryPath", artifactPath(result.get("run_dir"), "summary.json"),
-                    "reportPath", artifactPath(result.get("run_dir"), "report.txt"),
+                    "runDir", artifactRelativePath(result.getOrDefault("run_dir", ""), reportsDirectory),
+                    "summaryPath", artifactPath(result.get("run_dir"), "summary.json", reportsDirectory),
+                    "reportPath", artifactPath(result.get("run_dir"), "report.txt", reportsDirectory),
                     "reportPreview", String.valueOf(result.getOrDefault("report_preview", "")),
                     "summary", result.getOrDefault("summary", Map.of())
             );
@@ -366,16 +370,16 @@ public class ChatOrchestratorService {
                 yield Map.ofEntries(
                         Map.entry("type", "audit_summary"),
                         Map.entry("reportType", String.valueOf(result.getOrDefault("report_type", "audit"))),
-                        Map.entry("runDir", String.valueOf(result.getOrDefault("run_dir", ""))),
-                        Map.entry("summaryPath", artifactPath(result.get("run_dir"), "summary.json")),
-                        Map.entry("reportPath", artifactPath(result.get("run_dir"), "report.txt")),
+                        Map.entry("runDir", artifactRelativePath(result.getOrDefault("run_dir", ""), reportsDirectory)),
+                        Map.entry("summaryPath", artifactPath(result.get("run_dir"), "summary.json", reportsDirectory)),
+                        Map.entry("reportPath", artifactPath(result.get("run_dir"), "report.txt", reportsDirectory)),
                         Map.entry("accountId", String.valueOf(result.getOrDefault("account_id", ""))),
                         Map.entry("selectedRegions", result.getOrDefault("selected_regions", List.of())),
                         Map.entry("selectedServices", result.getOrDefault("selected_services", List.of())),
                         Map.entry("successCount", summary.getOrDefault("success_count", 0)),
                         Map.entry("failureCount", summary.getOrDefault("failure_count", 0)),
                         Map.entry("skippedCount", summary.getOrDefault("skipped_count", 0)),
-                        Map.entry("failedSteps", result.getOrDefault("failed_steps", List.of()))
+                        Map.entry("failedSteps", relativizeFailedSteps(result.getOrDefault("failed_steps", List.of()), reportsDirectory))
                 );
             }
             case "s3_cloudwatch_report" -> {
@@ -386,9 +390,9 @@ public class ChatOrchestratorService {
                         "type", "s3_report_summary",
                         "reportType", String.valueOf(result.getOrDefault("report_type", "s3_cloudwatch")),
                         "bucket", String.valueOf(summary.getOrDefault("bucket", result.getOrDefault("bucket", ""))),
-                        "runDir", String.valueOf(result.getOrDefault("run_dir", "")),
-                        "summaryPath", artifactPath(result.get("run_dir"), "summary.json"),
-                        "reportPath", artifactPath(result.get("run_dir"), "report.txt"),
+                        "runDir", artifactRelativePath(result.getOrDefault("run_dir", ""), reportsDirectory),
+                        "summaryPath", artifactPath(result.get("run_dir"), "summary.json", reportsDirectory),
+                        "reportPath", artifactPath(result.get("run_dir"), "report.txt", reportsDirectory),
                         "successCount", summary.getOrDefault("success_count", 0),
                         "failureCount", summary.getOrDefault("failure_count", 0),
                         "skippedCount", summary.getOrDefault("skipped_count", 0)
@@ -398,11 +402,70 @@ public class ChatOrchestratorService {
         };
     }
 
-    private static String artifactPath(Object runDir, String fileName) {
+    private static String artifactPath(Object runDir, String fileName, Path reportsDirectory) {
         if (!(runDir instanceof String runDirValue) || runDirValue.isBlank()) {
             return "";
         }
-        return Path.of(runDirValue, fileName).toString();
+        return artifactRelativePath(Path.of(runDirValue, fileName).toString(), reportsDirectory);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object relativizeReports(Object reportsValue, Path reportsDirectory) {
+        if (!(reportsValue instanceof List<?> reports)) {
+            return List.of();
+        }
+        return reports.stream()
+                .map(report -> {
+                    if (!(report instanceof Map<?, ?> map)) {
+                        return report;
+                    }
+                    Map<String, Object> reportMap = (Map<String, Object>) map;
+                    return reportMap.entrySet().stream()
+                            .collect(java.util.stream.Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    entry -> "run_dir".equals(entry.getKey())
+                                            ? artifactRelativePath(entry.getValue(), reportsDirectory)
+                                            : entry.getValue()
+                            ));
+                })
+                .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object relativizeFailedSteps(Object failedStepsValue, Path reportsDirectory) {
+        if (!(failedStepsValue instanceof List<?> failedSteps)) {
+            return List.of();
+        }
+        return failedSteps.stream()
+                .map(step -> {
+                    if (!(step instanceof Map<?, ?> map)) {
+                        return step;
+                    }
+                    Map<String, Object> stepMap = (Map<String, Object>) map;
+                    return stepMap.entrySet().stream()
+                            .collect(java.util.stream.Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    entry -> "stderr_path".equals(entry.getKey())
+                                            ? artifactRelativePath(entry.getValue(), reportsDirectory)
+                                            : entry.getValue()
+                            ));
+                })
+                .toList();
+    }
+
+    private static String artifactRelativePath(Object pathValue, Path reportsDirectory) {
+        if (!(pathValue instanceof String rawPath) || rawPath.isBlank()) {
+            return "";
+        }
+        Path candidate = Path.of(rawPath);
+        if (!candidate.isAbsolute()) {
+            return candidate.normalize().toString();
+        }
+        Path normalized = candidate.toAbsolutePath().normalize();
+        if (!normalized.startsWith(reportsDirectory)) {
+            return "";
+        }
+        return reportsDirectory.relativize(normalized).toString();
     }
 
     public record PreparedChat(

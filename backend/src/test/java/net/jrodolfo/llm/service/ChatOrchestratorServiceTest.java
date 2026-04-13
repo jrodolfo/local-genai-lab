@@ -316,7 +316,8 @@ class ChatOrchestratorServiceTest {
                 ),
                 new ChatMemoryService(sessionStore, new ChatSessionMetadataService(), new SessionIdPolicy()),
                 new ChatPromptBuilder(objectMapper),
-                new ChatSessionService(sessionStore, new ChatSessionMetadataService())
+                new ChatSessionService(sessionStore, new ChatSessionMetadataService()),
+                new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString())
         );
     }
 

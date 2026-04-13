@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record ArtifactFileResponse(
         @Schema(description = "File name.", example = "summary.json")
         String name,
-        @Schema(description = "Absolute artifact path under the configured reports directory.")
+        @Schema(description = "Artifact path relative to the configured reports directory.")
         String path,
         @Schema(description = "Artifact path relative to the configured reports directory.")
         String relativePath,

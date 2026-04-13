@@ -30,7 +30,7 @@ public class ChatArtifactService {
     private final Path reportsDirectory;
 
     public ChatArtifactService(AppStorageProperties properties) {
-        this.reportsDirectory = properties.resolvedReportsDirectory();
+        this.reportsDirectory = properties.resolvedReportsDirectory().toAbsolutePath().normalize();
     }
 
     public List<ArtifactFileResponse> listFiles(String runDir) {
@@ -72,9 +72,10 @@ public class ChatArtifactService {
                 content = content.substring(0, MAX_PREVIEW_CHARACTERS);
             }
             FileTime lastModified = Files.getLastModifiedTime(resolvedPath);
+            String relativePath = reportsDirectory.relativize(resolvedPath).toString();
             return new ArtifactPreviewResponse(
-                    resolvedPath.toString(),
-                    reportsDirectory.relativize(resolvedPath).toString(),
+                    relativePath,
+                    relativePath,
                     resolvedPath.getFileName().toString(),
                     contentTypeFor(resolvedPath),
                     Files.size(resolvedPath),
@@ -89,10 +90,11 @@ public class ChatArtifactService {
 
     private ArtifactFileResponse toArtifactFileResponse(Path path) {
         try {
+            String relativePath = reportsDirectory.relativize(path).toString();
             return new ArtifactFileResponse(
                     path.getFileName().toString(),
-                    path.toString(),
-                    reportsDirectory.relativize(path).toString(),
+                    relativePath,
+                    relativePath,
                     Files.size(path),
                     isPreviewable(path)
             );
@@ -102,10 +104,16 @@ public class ChatArtifactService {
     }
 
     private Path resolveWithinReports(String requestedPath) {
+        if (requestedPath == null || requestedPath.isBlank()) {
+            throw new ArtifactAccessException(HttpStatus.BAD_REQUEST, "Artifact path must not be blank.");
+        }
+
         Path candidate = Path.of(requestedPath);
-        Path resolved = candidate.isAbsolute()
-                ? candidate.toAbsolutePath().normalize()
-                : reportsDirectory.resolve(candidate).toAbsolutePath().normalize();
+        if (candidate.isAbsolute()) {
+            throw new ArtifactAccessException(HttpStatus.BAD_REQUEST, "Artifact path must be relative to the reports directory.");
+        }
+
+        Path resolved = reportsDirectory.resolve(candidate).toAbsolutePath().normalize();
 
         if (resolved.startsWith(reportsDirectory)) {
             return resolved;
