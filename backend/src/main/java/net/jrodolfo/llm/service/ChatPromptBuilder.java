@@ -68,6 +68,11 @@ public class ChatPromptBuilder {
         builder.append("\n<response_rules>\n");
         builder.append("- Answer the current user message directly.\n");
         builder.append("- If tool output is present, ground your answer in it.\n");
+        builder.append("- If tool output is present, summarize what the tool already completed instead of refusing or redirecting.\n");
+        builder.append("- When the tool output includes counts, regions, services, bucket names, or artifact paths, prefer those concrete facts.\n");
+        builder.append("- Do not claim inability or lack of access when tool output is already available in the prompt.\n");
+        builder.append("- Do not mention generic safety, privacy, or policy concerns unless the tool output itself requires it.\n");
+        builder.append("- If artifacts were generated, mention the relevant run directory or artifact path when it helps the user.\n");
         builder.append("- Do not invent missing facts.\n");
         builder.append("- If the context is incomplete or ambiguous, say so explicitly.\n");
         builder.append("</response_rules>\n");

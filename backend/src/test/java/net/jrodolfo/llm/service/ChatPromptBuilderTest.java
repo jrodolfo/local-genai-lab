@@ -49,6 +49,8 @@ class ChatPromptBuilderTest {
         assertTrue(prompt.contains("tool_result_json:"));
         assertTrue(prompt.contains("\"success_count\" : 3"));
         assertTrue(prompt.contains("<response_rules>"));
+        assertTrue(prompt.contains("summarize what the tool already completed instead of refusing or redirecting"));
+        assertTrue(prompt.contains("Do not claim inability or lack of access when tool output is already available in the prompt."));
     }
 
     @Test
