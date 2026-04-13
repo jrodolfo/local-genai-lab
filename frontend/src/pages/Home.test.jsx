@@ -184,7 +184,7 @@ describe('Home', () => {
     await user.click(screen.getByRole('button', { name: /send/i }));
 
     expect(screen.getByRole('button', { name: /working/i })).toBeDisabled();
-    expect(screen.getByText(/Waiting for response/i)).toBeInTheDocument();
+    expect(screen.getByText(/Waiting for response\.\.\./i)).toBeInTheDocument();
 
     resolveRequest({
       response: 'Audit complete.',

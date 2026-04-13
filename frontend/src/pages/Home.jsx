@@ -21,6 +21,8 @@ function Home() {
   const [pendingOnly, setPendingOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [loadingStartedAt, setLoadingStartedAt] = useState(null);
+  const [loadingElapsedSeconds, setLoadingElapsedSeconds] = useState(0);
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
   const [activeProvider, setActiveProvider] = useState('ollama');
@@ -53,6 +55,21 @@ function Home() {
   useEffect(() => {
     window.localStorage.setItem(DEBUG_MODE_STORAGE_KEY, String(showTechnicalDetails));
   }, [showTechnicalDetails]);
+
+  useEffect(() => {
+    if (!loadingStartedAt) {
+      setLoadingElapsedSeconds(0);
+      return undefined;
+    }
+
+    const updateElapsed = () => {
+      setLoadingElapsedSeconds(Math.max(0, Math.floor((Date.now() - loadingStartedAt) / 1000)));
+    };
+
+    updateElapsed();
+    const intervalId = window.setInterval(updateElapsed, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [loadingStartedAt]);
 
   useEffect(() => {
     loadAvailableModels();
@@ -268,6 +285,7 @@ function Home() {
     setError('');
     setLoading(true);
     setLoadingMessage(streaming ? 'Waiting for streamed response...' : 'Waiting for response...');
+    setLoadingStartedAt(Date.now());
     addMessage('user', message);
 
     try {
@@ -318,8 +336,13 @@ function Home() {
     } finally {
       setLoading(false);
       setLoadingMessage('');
+      setLoadingStartedAt(null);
     }
   };
+
+  const loadingStatusMessage = loadingMessage
+    ? `${loadingMessage} ${formatElapsedTime(loadingElapsedSeconds)}`
+    : '';
 
   return (
     <main className="home-page">
@@ -518,7 +541,7 @@ function Home() {
 
         <InputBox
           disabled={loading || modelsLoading}
-          loadingMessage={loadingMessage || (modelsLoading ? 'Loading available models...' : '')}
+          loadingMessage={loading ? loadingStatusMessage : modelsLoading ? 'Loading available models...' : ''}
           statusMessage={
             !modelsLoading && !modelsLoadFailed && availableModels.length === 0
               ? activeProvider === 'ollama'
@@ -535,6 +558,19 @@ function Home() {
       </section>
     </main>
   );
+}
+
+function formatElapsedTime(totalSeconds) {
+  const seconds = Math.max(0, totalSeconds || 0);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (hours > 0) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  }
+
+  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
 export default Home;
