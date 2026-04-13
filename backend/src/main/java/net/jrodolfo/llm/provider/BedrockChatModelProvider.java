@@ -41,7 +41,8 @@ public class BedrockChatModelProvider implements ChatModelProvider {
     public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
         String normalizedMessage = message.trim();
         String resolvedModel = resolveModel(model);
-        return new StreamingChatResult(bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer));
+        var completion = bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
+        return new StreamingChatResult(completion, () -> completion.cancel(true));
     }
 
     @Override

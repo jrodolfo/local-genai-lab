@@ -107,6 +107,11 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                     .build();
 
             CompletableFuture<Void> streamFuture = bedrockRuntimeAsyncClient.converseStream(request, handler);
+            metadataFuture.whenComplete((ignored, throwable) -> {
+                if (metadataFuture.isCancelled()) {
+                    streamFuture.cancel(true);
+                }
+            });
             streamFuture.whenComplete((ignored, throwable) -> {
                 if (throwable != null) {
                     metadataFuture.completeExceptionally(new ModelProviderException(

@@ -46,9 +46,12 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         String normalizedMessage = message.trim();
         String resolvedModel = ollamaClient.resolveModel(model);
         ollamaClient.streamGenerate(normalizedMessage, resolvedModel, tokenConsumer);
-        return new StreamingChatResult(CompletableFuture.completedFuture(
-                new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null)
-        ));
+        return new StreamingChatResult(
+                CompletableFuture.completedFuture(
+                        new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null)
+                ),
+                () -> { }
+        );
     }
 
     @Override

@@ -20,6 +20,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,24 +31,33 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/api/chat")
 @Tag(name = "chat", description = "Normal and streaming chat endpoints.")
 public class ChatController {
 
+    private static final long STREAM_TIMEOUT_MS = 10 * 60 * 1000L;
+
     private final ChatOrchestratorService chatOrchestratorService;
     private final ChatModelProvider chatModelProvider;
     private final ObjectMapper objectMapper;
+    private final Executor chatStreamingExecutor;
 
     public ChatController(
             ChatOrchestratorService chatOrchestratorService,
             ChatModelProvider chatModelProvider,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Qualifier("chatStreamingExecutor") Executor chatStreamingExecutor
     ) {
         this.chatOrchestratorService = chatOrchestratorService;
         this.chatModelProvider = chatModelProvider;
         this.objectMapper = objectMapper;
+        this.chatStreamingExecutor = chatStreamingExecutor;
     }
 
     @PostMapping
@@ -77,9 +87,35 @@ public class ChatController {
             @ApiResponse(responseCode = "502", description = "Provider or MCP integration failed.")
     })
     public SseEmitter stream(@Valid @RequestBody ChatRequest request) {
-        SseEmitter emitter = new SseEmitter(0L);
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MS);
+        stream(request, emitter);
+        return emitter;
+    }
 
-        CompletableFuture.runAsync(() -> {
+    void stream(ChatRequest request, SseEmitter emitter) {
+        AtomicBoolean streamClosed = new AtomicBoolean(false);
+        AtomicBoolean streamAborted = new AtomicBoolean(false);
+        AtomicReference<CompletableFuture<?>> taskReference = new AtomicReference<>();
+        AtomicReference<net.jrodolfo.llm.provider.StreamingChatResult> streamingResultReference = new AtomicReference<>();
+
+        Runnable cancelStream = () -> {
+            streamClosed.set(true);
+            streamAborted.set(true);
+            net.jrodolfo.llm.provider.StreamingChatResult streamingResult = streamingResultReference.get();
+            if (streamingResult != null) {
+                streamingResult.cancelStream();
+            }
+            CompletableFuture<?> task = taskReference.get();
+            if (task != null) {
+                task.cancel(true);
+            }
+        };
+
+        emitter.onCompletion(cancelStream);
+        emitter.onTimeout(cancelStream);
+        emitter.onError(error -> cancelStream.run());
+
+        CompletableFuture<Void> task = CompletableFuture.runAsync(() -> {
             try {
                 ChatOrchestratorService.PreparedChat preparedChat = chatOrchestratorService.prepareChat(
                         request.message(),
@@ -87,48 +123,83 @@ public class ChatController {
                         request.sessionId()
                 );
 
-                sendEvent(emitter, ChatStreamEvent.start(
+                if (!sendEvent(emitter, streamClosed, ChatStreamEvent.start(
                         preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().sessionId() : preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
                         preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().metadata() : null
-                ));
+                ))) {
+                    streamAborted.set(true);
+                    return;
+                }
 
                 if (preparedChat.immediateResponse() != null) {
-                    sendEvent(emitter, ChatStreamEvent.delta(preparedChat.immediateResponse().response()));
-                    sendEvent(emitter, ChatStreamEvent.complete(
+                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(preparedChat.immediateResponse().response()))) {
+                        streamAborted.set(true);
+                        return;
+                    }
+                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
                             preparedChat.immediateResponse().sessionId(),
                             preparedChat.immediateResponse().tool(),
                             preparedChat.immediateResponse().toolResult(),
                             preparedChat.immediateResponse().pendingTool(),
                             preparedChat.immediateResponse().metadata()
-                    ));
-                    emitter.complete();
+                    ))) {
+                        streamAborted.set(true);
+                        return;
+                    }
+                    completeEmitter(emitter, streamClosed);
                     return;
                 }
 
                 StringBuilder responseBuffer = new StringBuilder();
                 var streamingResult = chatModelProvider.streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
+                    if (streamClosed.get()) {
+                        throw new StreamAbortedException();
+                    }
                     responseBuffer.append(token);
-                    sendEvent(emitter, ChatStreamEvent.delta(token));
+                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(token))) {
+                        throw new StreamAbortedException();
+                    }
                 });
+                streamingResultReference.set(streamingResult);
+                if (streamClosed.get()) {
+                    streamAborted.set(true);
+                    streamingResult.cancelStream();
+                    return;
+                }
                 var providerMetadata = streamingResult.completion().join();
+                if (streamClosed.get()) {
+                    streamAborted.set(true);
+                    return;
+                }
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString(), providerMetadata);
-                sendEvent(emitter, ChatStreamEvent.complete(
+                if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
                         preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
                         providerMetadata
-                ));
-                emitter.complete();
+                ))) {
+                    streamAborted.set(true);
+                    return;
+                }
+                completeEmitter(emitter, streamClosed);
+            } catch (StreamAbortedException ex) {
+                streamAborted.set(true);
             } catch (Exception ex) {
-                emitter.completeWithError(ex);
+                Throwable cause = unwrapCompletionException(ex);
+                if (!streamClosed.get()) {
+                    emitter.completeWithError(cause);
+                }
+            } finally {
+                if (streamAborted.get()) {
+                    completeEmitter(emitter, streamClosed);
+                }
             }
-        });
-
-        return emitter;
+        }, chatStreamingExecutor);
+        taskReference.set(task);
     }
 
     @ExceptionHandler(OllamaClientException.class)
@@ -152,13 +223,37 @@ public class ChatController {
                 .body(Map.of("error", ex.getMessage()));
     }
 
-    private void sendEvent(SseEmitter emitter, ChatStreamEvent event) {
+    private boolean sendEvent(SseEmitter emitter, AtomicBoolean streamClosed, ChatStreamEvent event) {
+        if (streamClosed.get()) {
+            return false;
+        }
         try {
             emitter.send(SseEmitter.event()
                     .name("chat")
                     .data(objectMapper.writeValueAsString(event)));
+            return true;
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to stream chat event to client.", ex);
+            streamClosed.set(true);
+            return false;
+        } catch (IllegalStateException ex) {
+            streamClosed.set(true);
+            return false;
         }
+    }
+
+    private void completeEmitter(SseEmitter emitter, AtomicBoolean streamClosed) {
+        if (streamClosed.compareAndSet(false, true)) {
+            emitter.complete();
+        }
+    }
+
+    private Throwable unwrapCompletionException(Throwable throwable) {
+        if (throwable instanceof CompletionException completionException && completionException.getCause() != null) {
+            return completionException.getCause();
+        }
+        return throwable;
+    }
+
+    private static final class StreamAbortedException extends RuntimeException {
     }
 }
