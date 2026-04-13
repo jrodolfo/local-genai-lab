@@ -159,6 +159,7 @@ describe('Home', () => {
     const user = userEvent.setup();
 
     expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('llama3:8b');
+    expect(screen.getByText(/provider: Ollama/i)).toBeInTheDocument();
     await user.click(screen.getByLabelText(/Streaming/i));
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
     await user.click(screen.getByRole('button', { name: /send/i }));
@@ -171,6 +172,19 @@ describe('Home', () => {
     expect(screen.queryByText(/tokens: \? in \/ \? out \/ 46 total/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
+  });
+
+  it('shows the active provider in the header for bedrock mode', async () => {
+    listAvailableModels.mockResolvedValue({
+      provider: 'bedrock',
+      defaultModel: 'us.amazon.nova-pro-v1:0',
+      models: ['us.amazon.nova-pro-v1:0', 'us.amazon.nova-lite-v1:0']
+    });
+
+    render(<Home />);
+
+    expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('us.amazon.nova-pro-v1:0');
+    expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
   });
 
   it('shows a clear waiting message while a non-streaming request is in flight', async () => {

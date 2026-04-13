@@ -449,7 +449,7 @@ function Home() {
                   disabled={loading}
                   aria-label={`Export markdown session ${session.title}`}
                 >
-                  Export MD
+                  Export Markdown
                 </button>
                 <button
                   type="button"
@@ -469,7 +469,7 @@ function Home() {
         <header>
           <div>
             <h1>Local GenAI Lab</h1>
-            <p>React + Spring Boot + Ollama / Bedrock</p>
+            <p>{`React + Spring Boot + provider: ${formatProviderName(activeProvider)}`}</p>
           </div>
           <label className="debug-toggle">
             <input
@@ -584,6 +584,19 @@ function formatElapsedTime(totalSeconds) {
   }
 
   return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+}
+
+function formatProviderName(provider) {
+  if (!provider) {
+    return 'unknown';
+  }
+  if (provider.toLowerCase() === 'ollama') {
+    return 'Ollama';
+  }
+  if (provider.toLowerCase() === 'bedrock') {
+    return 'Bedrock';
+  }
+  return provider;
 }
 
 export default Home;
