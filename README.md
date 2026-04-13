@@ -25,13 +25,19 @@ Local GenAI lab for chat, tool orchestration, session memory, and AWS-oriented r
 Primary chat path:
 
 ```text
-React Frontend -> Spring Boot Backend -> Model Provider -> Ollama or Bedrock
+React Frontend -> Spring Boot Backend -> Ollama or Bedrock
 ```
 
-Optional tool path:
+Tool-assisted chat path:
 
 ```text
-Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report files
+React Frontend -> Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report files -> Spring Boot Backend -> Ollama or Bedrock
+```
+
+Immediate backend response path:
+
+```text
+React Frontend -> Spring Boot Backend -> clarification or tool-failure response
 ```
 
 ## Project Structure
