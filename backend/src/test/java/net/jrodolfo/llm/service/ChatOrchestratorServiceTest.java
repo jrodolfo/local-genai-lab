@@ -293,6 +293,44 @@ class ChatOrchestratorServiceTest {
         assertEquals(3, chatModelProvider.plannerCalls);
     }
 
+    @Test
+    void hybridModeFallsBackToRuleBasedPendingResolutionWhenPlannerRepeatsClarification() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextPlannerResponse = """
+                {
+                  "action": "clarification_needed",
+                  "toolName": "s3_cloudwatch_report",
+                  "arguments": {
+                    "days": 7
+                  },
+                  "missingFields": ["bucket"],
+                  "reason": "Bucket metrics request missing the bucket name."
+                }
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "hybrid");
+
+        ChatResponse clarification = orchestrator.chat("check s3 cloudwatch metrics for the last 7 days", "llama3:8b", null);
+        chatModelProvider.enqueuePlannerResponse("""
+                {
+                  "action": "clarification_needed",
+                  "toolName": "s3_cloudwatch_report",
+                  "arguments": {
+                    "days": 7
+                  },
+                  "missingFields": ["bucket"],
+                  "reason": "The follow-up still does not provide the bucket."
+                }
+                """);
+
+        ChatResponse followUp = orchestrator.chat("jrodolfo.net", "llama3:8b", clarification.sessionId());
+
+        assertEquals("jrodolfo.net", mcpService.lastS3Request.bucket());
+        assertEquals("success", followUp.tool().status());
+        assertNull(sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall());
+    }
+
     private FileChatSessionStore newSessionStore() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());

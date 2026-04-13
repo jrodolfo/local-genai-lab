@@ -97,12 +97,21 @@ public class ToolDecisionService {
             default -> {
                 LlmToolPlannerService.PlanningResult planningResult =
                         llmToolPlannerService.resolvePendingDetailed(pendingToolCall, message, model);
-                ChatToolRouterService.ToolDecision finalDecision = planningResult.parsedDecision()
-                        .orElseGet(() -> ruleBasedRouter.resolvePending(pendingToolCall, message));
+                ChatToolRouterService.ToolDecision rulesDecision = ruleBasedRouter.resolvePending(pendingToolCall, message);
+                ChatToolRouterService.ToolDecision finalDecision;
+                boolean fallbackUsed = planningResult.parsedDecision().isEmpty();
+
+                if (rulesDecision.shouldUseTool()) {
+                    finalDecision = rulesDecision;
+                    fallbackUsed = planningResult.parsedDecision().isEmpty()
+                            || !planningResult.parsedDecision().orElse(ChatToolRouterService.ToolDecision.none()).shouldUseTool();
+                } else {
+                    finalDecision = planningResult.parsedDecision().orElse(rulesDecision);
+                }
                 yield new DecisionTrace(
                         "hybrid",
                         true,
-                        planningResult.parsedDecision().isEmpty(),
+                        fallbackUsed,
                         planningResult.rawResponse(),
                         planningResult.parsedDecision().orElse(null),
                         finalDecision
