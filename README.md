@@ -136,6 +136,8 @@ Frontend URL:
 
 - `http://localhost:5173`
 
+The frontend model selector now loads from the backend's `/api/models` endpoint. For Ollama, the UI only offers locally installed models. If no local models are installed, the UI shows a clear pull hint instead of failing only after submit.
+
 ### 4. Optional: build the local MCP server
 
 ```bash
@@ -182,6 +184,7 @@ You can also point `APP_STORAGE_REPORTS_DIRECTORY` to an absolute path outside t
 - Amazon Bedrock as an optional provider
 - provider metadata in responses and saved session history
 - typed JSON SSE events for streaming chat
+- provider-aware model discovery for the frontend selector
 
 Observed model behavior:
 

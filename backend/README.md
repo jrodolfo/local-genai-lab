@@ -28,6 +28,7 @@ mvn spring-boot:run
 
 - `POST /api/chat`
 - `POST /api/chat/stream`
+- `GET /api/models`
 - `GET /api/sessions`
 - `GET /api/sessions/{sessionId}`
 - `GET /api/sessions/{sessionId}/export`
@@ -67,6 +68,11 @@ Relevant settings:
 - `BEDROCK_MODEL_ID` default: empty
 
 Bedrock supports both normal chat and streaming chat.
+
+`GET /api/models` exposes provider-aware model options for the UI:
+
+- `ollama`: returns installed local models from Ollama plus the configured default model
+- `bedrock`: returns the configured Bedrock model id as the available option
 
 When a tool call succeeds, the backend still sends the enriched prompt to the selected model. It does not bypass the model or replace the final wording with a deterministic backend template by default. That means different models can still produce noticeably different final answers even when they receive the same grounded tool context.
 

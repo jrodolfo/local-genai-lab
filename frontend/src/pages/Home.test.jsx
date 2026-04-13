@@ -7,6 +7,10 @@ vi.mock('../api/chatApi', () => ({
   streamMessage: vi.fn()
 }));
 
+vi.mock('../api/modelApi', () => ({
+  listAvailableModels: vi.fn()
+}));
+
 vi.mock('../api/artifactApi', () => ({
   listArtifacts: vi.fn(),
   previewArtifact: vi.fn()
@@ -21,6 +25,7 @@ vi.mock('../api/sessionApi', () => ({
 }));
 
 import { sendMessage, streamMessage } from '../api/chatApi';
+import { listAvailableModels } from '../api/modelApi';
 import { listArtifacts, previewArtifact } from '../api/artifactApi';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 
@@ -33,6 +38,11 @@ describe('Home', () => {
       value: {
         writeText: vi.fn().mockResolvedValue(undefined)
       }
+    });
+    listAvailableModels.mockResolvedValue({
+      provider: 'ollama',
+      defaultModel: 'llama3:8b',
+      models: ['llama3:8b', 'mistral:7b', 'codellama:70b']
     });
     exportSession.mockResolvedValue({
       blob: new Blob(['{"sessionId":"session-1"}'], { type: 'application/json' }),
@@ -141,6 +151,7 @@ describe('Home', () => {
     render(<Home />);
     const user = userEvent.setup();
 
+    expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('llama3:8b');
     await user.click(screen.getByLabelText(/Streaming/i));
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
     await user.click(screen.getByRole('button', { name: /send/i }));
@@ -167,6 +178,7 @@ describe('Home', () => {
     render(<Home />);
     const user = userEvent.setup();
 
+    await screen.findByRole('combobox', { name: /model/i });
     await user.click(screen.getByLabelText(/Streaming/i));
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
     await user.click(screen.getByRole('button', { name: /send/i }));
@@ -216,6 +228,7 @@ describe('Home', () => {
     render(<Home />);
     const user = userEvent.setup();
 
+    await screen.findByRole('combobox', { name: /model/i });
     await user.click(screen.getByLabelText(/Streaming/i));
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
     await user.click(screen.getByRole('button', { name: /send/i }));
@@ -249,6 +262,19 @@ describe('Home', () => {
 
     expect(listArtifacts).toHaveBeenCalledWith('/tmp/audit-1');
     expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/report\.txt/i)).toBeInTheDocument();
+  });
+
+  it('shows a clear empty state when no local ollama models are installed', async () => {
+    listAvailableModels.mockResolvedValue({
+      provider: 'ollama',
+      defaultModel: 'llama3:8b',
+      models: []
+    });
+
+    render(<Home />);
+
+    expect(await screen.findByText(/No Ollama models are installed locally/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
   });
 
   it('renders streamed provenance before tokens complete', async () => {
@@ -297,6 +323,7 @@ describe('Home', () => {
     render(<Home />);
     const user = userEvent.setup();
 
+    await screen.findByRole('combobox', { name: /model/i });
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'read the latest audit report');
     await user.click(screen.getByRole('button', { name: /send/i }));
 

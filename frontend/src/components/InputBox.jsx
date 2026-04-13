@@ -1,28 +1,39 @@
 import { useState } from 'react';
 
-const MODEL_OPTIONS = ['llama3:8b', 'mistral:7b', 'codellama:70b'];
-
-function InputBox({ disabled, loadingMessage = '', onSend }) {
+function InputBox({
+  disabled,
+  loadingMessage = '',
+  statusMessage = '',
+  models = [],
+  selectedModel = '',
+  onModelChange,
+  onSend
+}) {
   const [message, setMessage] = useState('');
-  const [model, setModel] = useState(MODEL_OPTIONS[0]);
   const [streaming, setStreaming] = useState(true);
+  const sendDisabled = disabled || !selectedModel;
 
   const submit = (event) => {
     event.preventDefault();
     const trimmed = message.trim();
-    if (!trimmed) {
+    if (!trimmed || !selectedModel) {
       return;
     }
 
-    onSend({ message: trimmed, model, streaming });
+    onSend({ message: trimmed, model: selectedModel, streaming });
     setMessage('');
   };
 
   return (
     <form className="input-box" onSubmit={submit}>
       <div className="controls-row">
-        <select value={model} onChange={(event) => setModel(event.target.value)} disabled={disabled}>
-          {MODEL_OPTIONS.map((option) => (
+        <select
+          aria-label="Model"
+          value={selectedModel}
+          onChange={(event) => onModelChange(event.target.value)}
+          disabled={sendDisabled}
+        >
+          {models.map((option) => (
             <option key={option} value={option}>
               {option}
             </option>
@@ -34,7 +45,7 @@ function InputBox({ disabled, loadingMessage = '', onSend }) {
             type="checkbox"
             checked={streaming}
             onChange={(event) => setStreaming(event.target.checked)}
-            disabled={disabled}
+            disabled={sendDisabled}
           />
           Streaming
         </label>
@@ -46,13 +57,14 @@ function InputBox({ disabled, loadingMessage = '', onSend }) {
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Type your prompt..."
           rows={3}
-          disabled={disabled}
+          disabled={sendDisabled}
         />
-        <button type="submit" disabled={disabled || !message.trim()}>
+        <button type="submit" disabled={sendDisabled || !message.trim()}>
           {disabled ? 'Working...' : 'Send'}
         </button>
       </div>
       {disabled && loadingMessage ? <p className="input-status">{loadingMessage}</p> : null}
+      {!disabled && statusMessage ? <p className="input-status">{statusMessage}</p> : null}
     </form>
   );
 }

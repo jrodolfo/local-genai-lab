@@ -16,6 +16,7 @@ Default local URL:
 ## What It Does
 
 - sends normal and streaming chat requests to the backend
+- loads the model selector dynamically from backend-provided available models
 - keeps the active `sessionId` across turns
 - shows a session sidebar with search and filters
 - supports session import, export, delete, and resume
@@ -33,6 +34,7 @@ It uses:
 
 - `/api/chat`
 - `/api/chat/stream`
+- `/api/models`
 - `/api/sessions`
 - `/api/artifacts/*`
 - `/api/tools/*`
@@ -41,4 +43,5 @@ It uses:
 
 - the UI is session-oriented; reopened sessions restore saved messages and metadata
 - technical details are hidden by default and can be enabled from the UI
+- if no Ollama models are installed locally, the composer shows a pull hint and disables sending
 - streamed replies can enrich the final assistant message with provider metadata when the backend emits completion metadata

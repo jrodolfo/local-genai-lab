@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listArtifacts, previewArtifact } from '../api/artifactApi';
 import { sendMessage, streamMessage } from '../api/chatApi';
+import { listAvailableModels } from '../api/modelApi';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
 import InputBox from '../components/InputBox';
@@ -20,6 +21,11 @@ function Home() {
   const [pendingOnly, setPendingOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [availableModels, setAvailableModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [activeProvider, setActiveProvider] = useState('ollama');
+  const [modelsLoading, setModelsLoading] = useState(true);
+  const [modelsLoadFailed, setModelsLoadFailed] = useState(false);
   const [error, setError] = useState('');
   const [artifactFiles, setArtifactFiles] = useState([]);
   const [artifactPreview, setArtifactPreview] = useState(null);
@@ -47,6 +53,10 @@ function Home() {
   useEffect(() => {
     window.localStorage.setItem(DEBUG_MODE_STORAGE_KEY, String(showTechnicalDetails));
   }, [showTechnicalDetails]);
+
+  useEffect(() => {
+    loadAvailableModels();
+  }, []);
 
   const addMessage = (role, content, tool = null, toolResult = null, metadata = null) => {
     setMessages((current) => [...current, { id: crypto.randomUUID(), role, content, tool, toolResult, metadata }]);
@@ -85,6 +95,34 @@ function Home() {
       setSessions(payload);
     } catch (err) {
       setError(err.message || 'Failed to load sessions.');
+    }
+  }
+
+  async function loadAvailableModels() {
+    try {
+      setModelsLoading(true);
+      setModelsLoadFailed(false);
+      const payload = await listAvailableModels();
+      const models = Array.isArray(payload.models) ? payload.models : [];
+      const defaultModel = payload.defaultModel && models.includes(payload.defaultModel) ? payload.defaultModel : '';
+      setActiveProvider(payload.provider || 'ollama');
+      setAvailableModels(models);
+      setSelectedModel((current) => {
+        if (current && models.includes(current)) {
+          return current;
+        }
+        if (defaultModel) {
+          return defaultModel;
+        }
+        return models[0] || '';
+      });
+    } catch (err) {
+      setModelsLoadFailed(true);
+      setError(err.message || 'Failed to load available models.');
+      setAvailableModels([]);
+      setSelectedModel('');
+    } finally {
+      setModelsLoading(false);
     }
   }
 
@@ -478,7 +516,21 @@ function Home() {
           onCopyPath={handleCopyPath}
         />
 
-        <InputBox disabled={loading} loadingMessage={loadingMessage} onSend={handleSend} />
+        <InputBox
+          disabled={loading || modelsLoading}
+          loadingMessage={loadingMessage || (modelsLoading ? 'Loading available models...' : '')}
+          statusMessage={
+            !modelsLoading && !modelsLoadFailed && availableModels.length === 0
+              ? activeProvider === 'ollama'
+                ? 'No Ollama models are installed locally. Run ollama pull llama3:8b and refresh.'
+                : 'No models are configured for the active provider.'
+              : ''
+          }
+          models={availableModels}
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          onSend={handleSend}
+        />
         </section>
       </section>
     </main>

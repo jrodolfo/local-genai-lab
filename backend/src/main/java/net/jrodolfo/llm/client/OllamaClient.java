@@ -11,8 +11,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -87,6 +89,41 @@ public class OllamaClient {
             throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
         } catch (IOException ex) {
             throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
+        }
+    }
+
+    public List<String> listModels() {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(properties.baseUrl() + "/api/tags"))
+                    .timeout(Duration.ofSeconds(properties.readTimeoutSeconds()))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 400) {
+                throw new OllamaClientException("Ollama model list request failed with status " + response.statusCode() + ".");
+            }
+
+            JsonNode payload = objectMapper.readTree(response.body());
+            JsonNode modelsNode = payload.get("models");
+            if (modelsNode == null || !modelsNode.isArray()) {
+                return List.of();
+            }
+
+            List<String> models = new ArrayList<>();
+            for (JsonNode modelNode : modelsNode) {
+                JsonNode nameNode = modelNode.get("name");
+                if (nameNode != null && !nameNode.asText().isBlank()) {
+                    models.add(nameNode.asText());
+                }
+            }
+            return models;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new OllamaClientException("Failed to call Ollama model list endpoint.", ex);
+        } catch (IOException ex) {
+            throw new OllamaClientException("Failed to call Ollama model list endpoint.", ex);
         }
     }
 
