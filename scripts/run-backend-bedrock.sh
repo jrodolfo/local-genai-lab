@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BACKEND_DIR="${REPO_ROOT}/backend"
 
 BEDROCK_REGION="${BEDROCK_REGION:-us-east-2}"
-BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-amazon.nova-pro-v1:0}"
+BEDROCK_MODEL_ID="${BEDROCK_MODEL_ID:-us.amazon.nova-pro-v1:0}"
 MCP_ENABLED="${MCP_ENABLED:-true}"
 
 printf '%s\n' \

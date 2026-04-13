@@ -47,7 +47,7 @@ Defaults:
 
 - provider: `bedrock`
 - region: `us-east-2`
-- model: `amazon.nova-pro-v1:0`
+- model: `us.amazon.nova-pro-v1:0`
 - `MCP_ENABLED=true`
 
 Requirements:
@@ -55,6 +55,7 @@ Requirements:
 - valid AWS credentials available to the backend process
 - Bedrock model access enabled in your AWS account
 - the selected region supports the configured model
+- for Nova Pro, use an inference profile id such as `us.amazon.nova-pro-v1:0` rather than the base model id `amazon.nova-pro-v1:0`
 
 Common credential paths:
 

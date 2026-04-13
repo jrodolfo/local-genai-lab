@@ -21,7 +21,7 @@ help:
 		'  make check-app  Verify backend, frontend, and optional Ollama health' \
 		'  make run-backend-ollama  Start backend with the Ollama provider' \
 		'  make run-backend-bedrock Start backend with Bedrock provider' \
-		'                Optional: BEDROCK_REGION=us-east-2 BEDROCK_MODEL_ID=amazon.nova-pro-v1:0' \
+		'                Optional: BEDROCK_REGION=us-east-2 BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0' \
 		'  make audit    Run the AWS regional audit report' \
 		'                Optional: make audit REGIONS="us-east-2"' \
 		'                Optional: make audit SERVICES="sagemaker ec2"' \

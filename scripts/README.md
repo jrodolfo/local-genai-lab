@@ -210,8 +210,10 @@ make run-backend-bedrock
 Bedrock helper defaults:
 
 - `BEDROCK_REGION=us-east-2`
-- `BEDROCK_MODEL_ID=amazon.nova-pro-v1:0`
+- `BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0`
 - `MCP_ENABLED=true`
+
+For Nova Pro, use the inference profile id rather than the base model id.
 
 Override them when needed:
 
