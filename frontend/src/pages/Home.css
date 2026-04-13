@@ -247,9 +247,90 @@
   border-color: #bfdbfe;
 }
 
-.message-bubble p {
+.message-markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message-paragraph {
   margin: 0;
   white-space: pre-wrap;
+}
+
+.message-heading {
+  margin: 0;
+  color: #0f172a;
+}
+
+.message-heading-1,
+.message-heading-2,
+.message-heading-3 {
+  font-size: 1rem;
+}
+
+.message-heading-4,
+.message-heading-5,
+.message-heading-6 {
+  font-size: 0.92rem;
+}
+
+.message-rule {
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-top: 1px solid #dbe2ea;
+}
+
+.message-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.message-list li {
+  white-space: pre-wrap;
+}
+
+.message-code-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.message-code-language {
+  font-size: 0.76rem;
+  color: #526072;
+  text-transform: lowercase;
+}
+
+.message-code-block pre {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow: auto;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.message-code-block code,
+.message-paragraph code,
+.message-list code,
+.message-heading code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.message-paragraph code,
+.message-list code,
+.message-heading code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .tool-provenance {

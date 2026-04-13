@@ -26,12 +26,44 @@ describe('MessageBubble', () => {
     render(
       <MessageBubble
         role="assistant"
-        content={'1. **Preparation**: Use `Fibonacci` as the example.'}
+        content={'Use **Fibonacci** with `int` values.'}
       />
     );
 
-    expect(screen.getByText('Preparation')).toContainHTML('<strong>Preparation</strong>');
-    expect(screen.getByText('Fibonacci')).toContainHTML('<code>Fibonacci</code>');
+    expect(screen.getByText('Fibonacci')).toContainHTML('<strong>Fibonacci</strong>');
+    expect(screen.getByText('int')).toContainHTML('<code>int</code>');
+  });
+
+  it('renders block markdown for headings, lists, rules, and fenced code blocks', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content={`### Recursion
+
+1. Base case
+2. Recursive case
+
+---
+
+- Trees
+- Graphs
+
+\`\`\`python
+def factorial(n):
+    return 1 if n == 0 else n * factorial(n - 1)
+\`\`\``}
+      />
+    );
+
+    expect(screen.getByRole('heading', { level: 3, name: 'Recursion' })).toBeInTheDocument();
+    expect(screen.getAllByRole('list')).toHaveLength(2);
+    expect(screen.getByText('Base case')).toBeInTheDocument();
+    expect(screen.getByText('Recursive case')).toBeInTheDocument();
+    expect(screen.getByText('Trees')).toBeInTheDocument();
+    expect(screen.getByText('Graphs')).toBeInTheDocument();
+    expect(screen.getByText(/def factorial\(n\):/i)).toBeInTheDocument();
+    expect(screen.getByText('python')).toBeInTheDocument();
+    expect(document.querySelector('.message-rule')).not.toBeNull();
   });
 
   it('renders structured report results for supported tool payloads', () => {

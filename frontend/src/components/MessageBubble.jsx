@@ -20,7 +20,9 @@ function MessageBubble({
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
       <div className="message-bubble">
-        <p>{renderInlineMarkdown(content)}</p>
+        <div className="message-markdown">
+          {renderMarkdownBlocks(content)}
+        </div>
         {showTool ? (
           <div className="tool-provenance">
             <span>used tool: {tool.name}</span>
@@ -59,6 +61,136 @@ function MessageBubble({
       </div>
     </div>
   );
+}
+
+function renderMarkdownBlocks(content = '') {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const blocks = [];
+  let index = 0;
+  let key = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    if (trimmed.startsWith('```')) {
+      const language = trimmed.slice(3).trim();
+      const codeLines = [];
+      index += 1;
+      while (index < lines.length && !lines[index].trim().startsWith('```')) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length && lines[index].trim().startsWith('```')) {
+        index += 1;
+      }
+      blocks.push(
+        <div key={`code-block-${key++}`} className="message-code-block">
+          {language ? <span className="message-code-language">{language}</span> : null}
+          <pre><code>{codeLines.join('\n')}</code></pre>
+        </div>
+      );
+      continue;
+    }
+
+    if (/^-{3,}$/.test(trimmed)) {
+      blocks.push(<hr key={`rule-${key++}`} className="message-rule" />);
+      index += 1;
+      continue;
+    }
+
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    if (headingMatch) {
+      const level = Math.min(6, headingMatch[1].length);
+      const HeadingTag = `h${level}`;
+      blocks.push(
+        <HeadingTag key={`heading-${key++}`} className={`message-heading message-heading-${level}`}>
+          {renderInlineMarkdown(headingMatch[2])}
+        </HeadingTag>
+      );
+      index += 1;
+      continue;
+    }
+
+    const orderedMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (orderedMatch) {
+      const items = [];
+      while (index < lines.length) {
+        const current = lines[index].trim();
+        const match = current.match(/^(\d+)\.\s+(.+)$/);
+        if (!match) {
+          break;
+        }
+        items.push(match[2]);
+        index += 1;
+      }
+      blocks.push(
+        <ol key={`ol-${key++}`} className="message-list message-list-ordered">
+          {items.map((item, itemIndex) => (
+            <li key={`ol-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.+)$/);
+    if (unorderedMatch) {
+      const items = [];
+      while (index < lines.length) {
+        const current = lines[index].trim();
+        const match = current.match(/^[-*]\s+(.+)$/);
+        if (!match) {
+          break;
+        }
+        items.push(match[1]);
+        index += 1;
+      }
+      blocks.push(
+        <ul key={`ul-${key++}`} className="message-list message-list-unordered">
+          {items.map((item, itemIndex) => (
+            <li key={`ul-item-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    const paragraphLines = [line];
+    index += 1;
+    while (index < lines.length) {
+      const current = lines[index];
+      const currentTrimmed = current.trim();
+      if (
+        !currentTrimmed ||
+        currentTrimmed.startsWith('```') ||
+        /^-{3,}$/.test(currentTrimmed) ||
+        /^(#{1,6})\s+(.+)$/.test(currentTrimmed) ||
+        /^(\d+)\.\s+(.+)$/.test(currentTrimmed) ||
+        /^[-*]\s+(.+)$/.test(currentTrimmed)
+      ) {
+        break;
+      }
+      paragraphLines.push(current);
+      index += 1;
+    }
+    blocks.push(
+      <p key={`paragraph-${key++}`} className="message-paragraph">
+        {renderInlineMarkdown(paragraphLines.join('\n'))}
+      </p>
+    );
+  }
+
+  if (blocks.length === 0) {
+    return <p className="message-paragraph">{renderInlineMarkdown(content)}</p>;
+  }
+
+  return blocks;
 }
 
 function renderInlineMarkdown(content = '') {
