@@ -111,9 +111,11 @@ Ollama should be reachable at `http://localhost:11434`.
 ### 2. Start the backend
 
 ```bash
-cd backend
-mvn spring-boot:run
+cd scripts
+./run-backend-ollama.sh
 ```
+
+If you want Bedrock instead of Ollama, use `./run-backend-bedrock.sh` and see [docs/providers.md](./docs/providers.md).
 
 Backend URLs:
 
