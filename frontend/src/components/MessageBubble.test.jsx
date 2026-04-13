@@ -22,6 +22,18 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/AWS audit completed./i)).toBeInTheDocument();
   });
 
+  it('renders simple inline markdown in assistant messages', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content={'1. **Preparation**: Use `Fibonacci` as the example.'}
+      />
+    );
+
+    expect(screen.getByText('Preparation')).toContainHTML('<strong>Preparation</strong>');
+    expect(screen.getByText('Fibonacci')).toContainHTML('<code>Fibonacci</code>');
+  });
+
   it('renders structured report results for supported tool payloads', () => {
     render(
       <MessageBubble

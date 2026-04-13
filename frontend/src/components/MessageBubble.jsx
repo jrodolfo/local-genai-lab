@@ -20,7 +20,7 @@ function MessageBubble({
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
       <div className="message-bubble">
-        <p>{content}</p>
+        <p>{renderInlineMarkdown(content)}</p>
         {showTool ? (
           <div className="tool-provenance">
             <span>used tool: {tool.name}</span>
@@ -59,6 +59,39 @@ function MessageBubble({
       </div>
     </div>
   );
+}
+
+function renderInlineMarkdown(content = '') {
+  const parts = [];
+  const pattern = /(\*\*[^*\n][\s\S]*?\*\*|`[^`\n]+`)/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = pattern.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(content.slice(lastIndex, match.index));
+    }
+
+    const token = match[0];
+    if (token.startsWith('**') && token.endsWith('**')) {
+      const boldText = token.slice(2, -2);
+      parts.push(<strong key={`bold-${key++}`}>{boldText}</strong>);
+    } else if (token.startsWith('`') && token.endsWith('`')) {
+      const codeText = token.slice(1, -1);
+      parts.push(<code key={`code-${key++}`}>{codeText}</code>);
+    } else {
+      parts.push(token);
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < content.length) {
+    parts.push(content.slice(lastIndex));
+  }
+
+  return parts;
 }
 
 export default MessageBubble;
