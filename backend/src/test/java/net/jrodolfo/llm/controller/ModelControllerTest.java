@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.jrodolfo.llm.client.ModelDiscoveryException;
 import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.service.AvailableModelsService;
@@ -50,9 +51,21 @@ class ModelControllerTest {
                 .andExpect(jsonPath("$.error").value("ollama unavailable"));
     }
 
+    @Test
+    void bedrockDiscoveryErrorsMapToBadGateway() throws Exception {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new ModelController(new BedrockErrorAvailableModelsService()))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
+                .build();
+
+        mockMvc.perform(get("/api/models"))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.error").value("bedrock unavailable"));
+    }
+
     private static final class FakeAvailableModelsService extends AvailableModelsService {
         private FakeAvailableModelsService() {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
@@ -63,12 +76,23 @@ class ModelControllerTest {
 
     private static final class ErrorAvailableModelsService extends AvailableModelsService {
         private ErrorAvailableModelsService() {
-            super(null, null, null, null);
+            super(null, null, null, null, null);
         }
 
         @Override
         public AvailableModelsResponse getAvailableModels() {
             throw new OllamaClientException("ollama unavailable");
+        }
+    }
+
+    private static final class BedrockErrorAvailableModelsService extends AvailableModelsService {
+        private BedrockErrorAvailableModelsService() {
+            super(null, null, null, null, null);
+        }
+
+        @Override
+        public AvailableModelsResponse getAvailableModels() {
+            throw new ModelDiscoveryException("bedrock unavailable");
         }
     }
 }

@@ -2,6 +2,7 @@ package net.jrodolfo.llm.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import net.jrodolfo.llm.client.ModelDiscoveryException;
 import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.service.AvailableModelsService;
@@ -26,7 +27,7 @@ public class ModelController {
     }
 
     @GetMapping
-    @Operation(summary = "List available models", description = "Returns provider-aware model options the frontend can safely offer. Ollama returns installed local models; Bedrock returns the configured model id.")
+    @Operation(summary = "List available models", description = "Returns provider-aware model options the frontend can safely offer. Ollama returns installed local models; Bedrock returns discovered inference profiles when available and otherwise falls back to the configured model id.")
     public AvailableModelsResponse listAvailableModels() {
         return availableModelsService.getAvailableModels();
     }
@@ -34,6 +35,12 @@ public class ModelController {
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaClientException(OllamaClientException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ModelDiscoveryException.class)
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, String>> handleModelDiscoveryException(ModelDiscoveryException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
     }
 }

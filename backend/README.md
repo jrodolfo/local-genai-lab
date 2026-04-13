@@ -77,7 +77,7 @@ For local provider switching without memorizing JVM flags, use the helper script
 `GET /api/models` exposes provider-aware model options for the UI:
 
 - `ollama`: returns installed local models from Ollama plus the configured default model
-- `bedrock`: returns the configured Bedrock model id as the available option
+- `bedrock`: returns discovered Bedrock inference profiles when available and falls back to the configured model id if discovery fails
 
 When a tool call succeeds, the backend still sends the enriched prompt to the selected model. It does not bypass the model or replace the final wording with a deterministic backend template by default. That means different models can still produce noticeably different final answers even when they receive the same grounded tool context.
 

@@ -1,12 +1,16 @@
 package net.jrodolfo.llm.service;
 
+import net.jrodolfo.llm.client.BedrockCatalogClient;
+import net.jrodolfo.llm.client.ModelDiscoveryException;
 import net.jrodolfo.llm.client.OllamaClient;
 import net.jrodolfo.llm.config.AppModelProperties;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -17,27 +21,31 @@ public class AvailableModelsService {
     private final OllamaProperties ollamaProperties;
     private final BedrockProperties bedrockProperties;
     private final OllamaClient ollamaClient;
+    private final BedrockCatalogClient bedrockCatalogClient;
 
     public AvailableModelsService(
             AppModelProperties appModelProperties,
             OllamaProperties ollamaProperties,
             BedrockProperties bedrockProperties,
-            OllamaClient ollamaClient
+            OllamaClient ollamaClient,
+            @Nullable BedrockCatalogClient bedrockCatalogClient
     ) {
         this.appModelProperties = appModelProperties;
         this.ollamaProperties = ollamaProperties;
         this.bedrockProperties = bedrockProperties;
         this.ollamaClient = ollamaClient;
+        this.bedrockCatalogClient = bedrockCatalogClient;
     }
 
     public AvailableModelsResponse getAvailableModels() {
         String provider = normalizeProvider(appModelProperties.provider());
         if ("bedrock".equals(provider)) {
-            String modelId = normalizeModel(bedrockProperties.modelId());
+            List<String> models = resolveBedrockModels();
+            String modelId = resolveDefaultBedrockModel(models);
             return new AvailableModelsResponse(
                     "bedrock",
                     modelId,
-                    modelId == null ? List.of() : List.of(modelId)
+                    models
             );
         }
 
@@ -47,6 +55,36 @@ public class AvailableModelsService {
                 normalizeModel(ollamaProperties.defaultModel()),
                 models
         );
+    }
+
+    private List<String> resolveBedrockModels() {
+        String configuredModelId = normalizeModel(bedrockProperties.modelId());
+        LinkedHashSet<String> models = new LinkedHashSet<>();
+        try {
+            if (bedrockCatalogClient != null) {
+                models.addAll(bedrockCatalogClient.listInferenceProfiles());
+            }
+        } catch (ModelDiscoveryException ex) {
+            if (configuredModelId != null) {
+                return List.of(configuredModelId);
+            }
+            throw ex;
+        }
+        if (configuredModelId != null) {
+            models.add(configuredModelId);
+        }
+        return List.copyOf(new ArrayList<>(models));
+    }
+
+    private String resolveDefaultBedrockModel(List<String> models) {
+        String configuredModelId = normalizeModel(bedrockProperties.modelId());
+        if (configuredModelId != null && models.contains(configuredModelId)) {
+            return configuredModelId;
+        }
+        if (!models.isEmpty()) {
+            return models.getFirst();
+        }
+        return configuredModelId;
     }
 
     private String normalizeProvider(String provider) {

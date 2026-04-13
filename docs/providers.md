@@ -95,5 +95,5 @@ cd scripts
 
 - the frontend model selector is provider-aware
 - for `ollama`, the UI only offers models installed locally
-- for `bedrock`, the backend exposes the configured Bedrock model id
+- for `bedrock`, the backend tries to list available inference profiles in the configured region and falls back to the configured model id if discovery is unavailable
 - successful MCP/tool execution still enriches prompts before the backend calls the active provider
