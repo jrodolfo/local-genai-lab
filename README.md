@@ -30,10 +30,19 @@ It focuses on:
 High-level interaction flows:
 
 ```text
-React -> Spring Boot -> Ollama / Bedrock
-                   |
-                   -> MCP -> Shell Scripts -> AWS CLI -> Reports
+React -> Spring Boot
+          |-> MCP -> Shell Scripts -> AWS CLI -> Report artifacts
+          |-> Prompt enrichment with tool result -> Ollama / Bedrock
 ```
+
+In the successful tool-assisted path, the backend:
+
+1. receives the user message
+2. decides a tool is needed
+3. calls the MCP-backed tool
+4. gets structured tool output back
+5. builds an augmented prompt with that tool context
+6. sends that enriched prompt to Ollama or Bedrock
 
 Primary chat path:
 
@@ -44,7 +53,7 @@ React Frontend -> Spring Boot Backend -> Ollama or Bedrock
 Tool-assisted chat path:
 
 ```text
-React Frontend -> Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report files -> Spring Boot Backend -> Ollama or Bedrock
+React Frontend -> Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report artifacts -> Spring Boot Backend prompt enrichment -> Ollama or Bedrock
 ```
 
 Immediate backend response path:
