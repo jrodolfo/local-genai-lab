@@ -174,6 +174,7 @@ The most important backend settings are:
 
 The storage defaults are resolved from the project root so they stay stable whether the backend starts from `backend/` or the repository root.
 You can also point `APP_STORAGE_REPORTS_DIRECTORY` to an absolute path outside the repository if you want report artifacts stored elsewhere.
+Provider switching details and helper startup scripts live in [docs/providers.md](./docs/providers.md).
 
 ## Main Features
 
@@ -237,6 +238,7 @@ make s3-cloudwatch BUCKET=example.com
 - [frontend/README.md](./frontend/README.md): frontend-specific details
 - [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
 - [mcp/README.md](./mcp/README.md): local MCP server details
+- [docs/providers.md](./docs/providers.md): switching between Ollama and Bedrock
 
 ## Current Scope
 

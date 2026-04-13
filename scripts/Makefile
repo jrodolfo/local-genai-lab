@@ -9,7 +9,7 @@ BUCKET ?=
 REGION ?=
 DAYS ?=
 
-.PHONY: help reports lint test audit s3-cloudwatch check-app
+.PHONY: help reports lint test audit s3-cloudwatch check-app run-backend-ollama run-backend-bedrock
 
 help:
 	@printf '%s\n' \
@@ -19,6 +19,9 @@ help:
 		'  make lint     Check Bash syntax for the shell scripts' \
 		'  make test     Run local shell tests without AWS access' \
 		'  make check-app  Verify backend, frontend, and optional Ollama health' \
+		'  make run-backend-ollama  Start backend with the Ollama provider' \
+		'  make run-backend-bedrock Start backend with Bedrock provider' \
+		'                Optional: BEDROCK_REGION=us-east-2 BEDROCK_MODEL_ID=amazon.nova-pro-v1:0' \
 		'  make audit    Run the AWS regional audit report' \
 		'                Optional: make audit REGIONS="us-east-2"' \
 		'                Optional: make audit SERVICES="sagemaker ec2"' \
@@ -38,6 +41,8 @@ lint:
 	@bash -n "$(SCRIPT)"
 	@bash -n "$(S3_CLOUDWATCH_SCRIPT)"
 	@bash -n ./check-app.sh
+	@bash -n ./run-backend-ollama.sh
+	@bash -n ./run-backend-bedrock.sh
 
 test:
 	@bash ./tests/test.sh
@@ -45,6 +50,12 @@ test:
 
 check-app:
 	@./check-app.sh
+
+run-backend-ollama:
+	@./run-backend-ollama.sh
+
+run-backend-bedrock:
+	@./run-backend-bedrock.sh
 
 audit: reports lint
 	@"$(SCRIPT)" \

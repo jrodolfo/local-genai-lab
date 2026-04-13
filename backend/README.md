@@ -69,6 +69,11 @@ Relevant settings:
 
 Bedrock supports both normal chat and streaming chat.
 
+For local provider switching without memorizing JVM flags, use the helper scripts documented in [../docs/providers.md](../docs/providers.md):
+
+- [`../scripts/run-backend-ollama.sh`](../scripts/run-backend-ollama.sh)
+- [`../scripts/run-backend-bedrock.sh`](../scripts/run-backend-bedrock.sh)
+
 `GET /api/models` exposes provider-aware model options for the UI:
 
 - `ollama`: returns installed local models from Ollama plus the configured default model

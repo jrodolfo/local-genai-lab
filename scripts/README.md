@@ -13,6 +13,7 @@ The directory includes:
 - a focused S3 CloudWatch report generator for one bucket
 - local shell tests
 - a smoke-check script for the local frontend/backend/Ollama stack
+- helper scripts for starting the backend with `ollama` or `bedrock`
 
 It is designed for a practical cleanup workflow:
 - compare resources across one or more regions
@@ -68,6 +69,8 @@ Key files:
 - `aws-region-audit-report.sh`: regional AWS audit report generator
 - `aws-s3-cloudwatch-report.sh`: focused S3 CloudWatch report generator for one bucket
 - `check-app.sh`: local stack smoke-check script
+- `run-backend-ollama.sh`: start the backend with the Ollama provider
+- `run-backend-bedrock.sh`: start the backend with Bedrock defaults
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests
 - `.github/workflows/ci.yml`: GitHub Actions CI workflow
@@ -191,6 +194,32 @@ The smoke check uses these defaults:
 - `FRONTEND_URL=http://localhost:5173`
 - `OLLAMA_URL=http://localhost:11434`
 - `CHECK_OLLAMA=true`
+
+Start the backend in Ollama mode:
+
+```bash
+make run-backend-ollama
+```
+
+Start the backend in Bedrock mode:
+
+```bash
+make run-backend-bedrock
+```
+
+Bedrock helper defaults:
+
+- `BEDROCK_REGION=us-east-2`
+- `BEDROCK_MODEL_ID=amazon.nova-pro-v1:0`
+- `MCP_ENABLED=true`
+
+Override them when needed:
+
+```bash
+BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 make run-backend-bedrock
+```
+
+For the full provider workflow and verification steps, see [../docs/providers.md](../docs/providers.md).
 
 Run the S3 CloudWatch bucket report:
 
