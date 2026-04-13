@@ -204,6 +204,21 @@ make s3-cloudwatch BUCKET=example.com
 - [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
 - [mcp/README.md](./mcp/README.md): local MCP server details
 
+## Current Scope
+
+- single-user, local-first GenAI lab for hands-on learning and AWS Generative AI Developer Professional exam preparation
+- optimized for correctness, inspectability, and local workflow clarity rather than multi-user scale
+- intended to run on a developer machine with local Ollama, optional Bedrock access, and optional MCP-backed AWS tooling
+
+## Known Limitations
+
+- not designed as a multi-tenant or internet-facing production service
+- MCP tool execution currently uses short-lived local subprocesses, which is acceptable for this local lab but not tuned for shared high-concurrency use
+- backend health/readiness is backend-only; whole-stack local checks still belong to `scripts/check-app.sh`
+- artifact access is intentionally read-only and bounded to the configured reports directory
+- Bedrock and AWS tool flows depend on your local AWS credentials and runtime environment being configured correctly
+- some operational choices favor simple local behavior over production-style resilience, especially around local process orchestration and developer-machine assumptions
+
 ## Notes for Heavier Models
 
 - `codellama:70b` is optional and not the recommended first-run default

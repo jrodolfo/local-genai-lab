@@ -157,6 +157,14 @@ Set `APP_TOOLS_LOG_PLANNER=true` to log raw planner output, parsed decisions, an
 - MCP enablement and resolved working directory
 - resolved storage paths
 
+## Scope and Limits
+
+- this backend is intended for a single-user local lab, not a shared production deployment
+- health/readiness focuses on backend-local dependencies and cheap checks, not full end-to-end environment validation
+- MCP execution favors simple local subprocess orchestration over long-lived process pooling
+- artifact access is intentionally read-only and constrained to the configured reports root
+- local AWS credentials, Ollama state, and developer-machine filesystem layout remain part of the runtime contract
+
 ## Notes
 
 - normal chat responses can include provider metadata
