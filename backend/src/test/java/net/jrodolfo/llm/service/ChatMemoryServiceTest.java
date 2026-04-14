@@ -31,7 +31,7 @@ class ChatMemoryServiceTest {
                 "hi there",
                 new ChatToolMetadata(true, "list_recent_reports", "success", "Found 1 report."),
                 Map.of("type", "report_list", "reports", java.util.List.of()),
-                new ModelProviderMetadata("bedrock", "amazon.nova-lite-v1:0", "end_turn", 1, 2, 3, 10L, 9L),
+                new ModelProviderMetadata("bedrock", "amazon.nova-lite-v1:0", "end_turn", 1, 2, 3, 10L, 9L, null, null),
                 started.pendingToolCall()
         );
 

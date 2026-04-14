@@ -40,7 +40,7 @@ public class OllamaChatModelProvider implements ChatModelProvider {
                 toolResult,
                 sessionId,
                 pendingTool,
-                new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null)
+                new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null, null, null)
         );
     }
 
@@ -56,7 +56,7 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         long durationMs = elapsedMillis(startedAt);
         return new StreamingChatResult(
                 CompletableFuture.completedFuture(
-                        new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null)
+                        new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null, null, null)
                 ),
                 () -> { }
         );

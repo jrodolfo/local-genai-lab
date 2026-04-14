@@ -57,13 +57,13 @@ class ModelProviderConfigTest {
 
         @Override
         public ModelProviderReply converse(String prompt, String modelId) {
-            return new ModelProviderReply("ok", new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null));
+            return new ModelProviderReply("ok", new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null, null, null));
         }
 
         @Override
         public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
             return CompletableFuture.completedFuture(
-                    new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null)
+                    new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null, null, null)
             );
         }
     }

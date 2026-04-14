@@ -13,6 +13,7 @@ import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatStreamEvent;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import net.jrodolfo.llm.service.InvalidSessionIdException;
@@ -71,7 +72,17 @@ public class ChatController {
             @ApiResponse(responseCode = "502", description = "Provider or MCP integration failed.")
     })
     public ChatResponse chat(@Valid @RequestBody ChatRequest request) {
-        return chatOrchestratorService.chat(request.message(), request.model(), request.sessionId());
+        long startedAt = System.nanoTime();
+        ChatResponse response = chatOrchestratorService.chat(request.message(), request.model(), request.sessionId());
+        return new ChatResponse(
+                response.response(),
+                response.model(),
+                response.tool(),
+                response.toolResult(),
+                response.sessionId(),
+                response.pendingTool(),
+                withBackendDuration(response.metadata(), elapsedMillis(startedAt))
+        );
     }
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -96,6 +107,7 @@ public class ChatController {
     }
 
     void stream(ChatRequest request, SseEmitter emitter) {
+        long startedAt = System.nanoTime();
         AtomicBoolean streamClosed = new AtomicBoolean(false);
         AtomicBoolean streamAborted = new AtomicBoolean(false);
         AtomicReference<CompletableFuture<?>> taskReference = new AtomicReference<>();
@@ -147,7 +159,7 @@ public class ChatController {
                             preparedChat.immediateResponse().tool(),
                             preparedChat.immediateResponse().toolResult(),
                             preparedChat.immediateResponse().pendingTool(),
-                            preparedChat.immediateResponse().metadata()
+                            withBackendDuration(preparedChat.immediateResponse().metadata(), elapsedMillis(startedAt))
                     ))) {
                         streamAborted.set(true);
                         return;
@@ -183,7 +195,7 @@ public class ChatController {
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
-                        providerMetadata
+                        withBackendDuration(providerMetadata, elapsedMillis(startedAt))
                 ))) {
                     streamAborted.set(true);
                     return;
@@ -258,6 +270,28 @@ public class ChatController {
             return completionException.getCause();
         }
         return throwable;
+    }
+
+    private ModelProviderMetadata withBackendDuration(ModelProviderMetadata metadata, long backendDurationMs) {
+        if (metadata == null) {
+            return null;
+        }
+        return new ModelProviderMetadata(
+                metadata.provider(),
+                metadata.modelId(),
+                metadata.stopReason(),
+                metadata.inputTokens(),
+                metadata.outputTokens(),
+                metadata.totalTokens(),
+                metadata.durationMs(),
+                metadata.providerLatencyMs(),
+                backendDurationMs,
+                metadata.uiWaitMs()
+        );
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 
     private static final class StreamAbortedException extends RuntimeException {

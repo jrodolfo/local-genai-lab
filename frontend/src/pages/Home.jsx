@@ -118,6 +118,20 @@ function Home() {
     );
   };
 
+  const applyUiWaitToLastAssistant = (uiWaitMs) => {
+    setMessages((current) =>
+      current.map((message, index) => {
+        if (index !== current.length - 1 || message.role !== 'assistant') {
+          return message;
+        }
+        return {
+          ...message,
+          metadata: mergeProviderMetadata(message.metadata, { uiWaitMs })
+        };
+      })
+    );
+  };
+
   async function loadSessions(filters = {}) {
     try {
       const payload = await listSessions(filters);
@@ -294,6 +308,7 @@ function Home() {
   };
 
   const handleSend = async ({ message, model, streaming }) => {
+    const requestStartedAt = Date.now();
     setError('');
     setLoading(true);
     setLoadingMessage(streaming ? 'Waiting for streamed response...' : 'Waiting for response...');
@@ -305,13 +320,20 @@ function Home() {
         const payload = await sendMessage({ message, model, sessionId });
         setSessionId((current) => payload.sessionId || current);
         setPendingTool(payload.pendingTool || null);
-        addMessage('assistant', payload.response || '(No response)', payload.tool || null, payload.toolResult || null, payload.metadata || null);
+        addMessage(
+          'assistant',
+          payload.response || '(No response)',
+          payload.tool || null,
+          payload.toolResult || null,
+          payload.metadata || null
+        );
         await loadSessions({
           query: sessionSearch,
           provider: providerFilter,
           toolUsage: toolUsageFilter,
           pending: pendingOnly
         });
+        applyUiWaitToLastAssistant(Date.now() - requestStartedAt);
       } else {
         addMessage('assistant', '');
         await streamMessage({
@@ -341,6 +363,7 @@ function Home() {
           toolUsage: toolUsageFilter,
           pending: pendingOnly
         });
+        applyUiWaitToLastAssistant(Date.now() - requestStartedAt);
       }
     } catch (err) {
       setError(err.message || 'Something went wrong.');
@@ -583,6 +606,15 @@ function Home() {
       </section>
     </main>
   );
+}
+
+function mergeProviderMetadata(existingMetadata, updates) {
+  const merged = {
+    ...(existingMetadata || {}),
+    ...(updates || {})
+  };
+
+  return Object.values(merged).some((value) => value != null) ? merged : null;
 }
 
 function formatElapsedTime(totalSeconds) {

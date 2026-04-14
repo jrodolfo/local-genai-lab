@@ -101,7 +101,7 @@ class ChatControllerTest {
         public StreamingChatResult streamChat(ProviderPrompt message, String model, Consumer<String> tokenConsumer) {
             tokenConsumer.accept("chunk-1");
             return new StreamingChatResult(
-                    CompletableFuture.completedFuture(new ModelProviderMetadata("ollama", model, null, null, null, null, null, null)),
+                    CompletableFuture.completedFuture(new ModelProviderMetadata("ollama", model, null, null, null, null, null, null, null, null)),
                     () -> { }
             );
         }

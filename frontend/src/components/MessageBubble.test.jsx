@@ -118,7 +118,9 @@ def factorial(n):
           outputTokens: 34,
           totalTokens: 46,
           durationMs: 412,
-          providerLatencyMs: 321
+          providerLatencyMs: 321,
+          backendDurationMs: 450,
+          uiWaitMs: 490
         }}
       />
     );
@@ -129,8 +131,10 @@ def factorial(n):
     expect(screen.getByText(/model: amazon.nova-lite-v1:0/i)).toBeInTheDocument();
     expect(screen.getByText(/stop reason: end_turn/i)).toBeInTheDocument();
     expect(screen.getByText(/tokens: 12 in \/ 34 out \/ 46 total/i)).toBeInTheDocument();
-    expect(screen.getByText(/duration: 412 ms/i)).toBeInTheDocument();
+    expect(screen.getByText(/provider duration: 412 ms/i)).toBeInTheDocument();
     expect(screen.getByText(/provider latency: 321 ms/i)).toBeInTheDocument();
+    expect(screen.getByText(/backend total: 450 ms/i)).toBeInTheDocument();
+    expect(screen.getByText(/ui wait: 490 ms/i)).toBeInTheDocument();
   });
 
   it('hides provider metadata when technical details are disabled', () => {

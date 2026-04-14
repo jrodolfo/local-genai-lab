@@ -96,7 +96,7 @@ class BedrockChatModelProviderTest {
             this.lastModelId = modelId;
             return new ModelProviderReply(
                     "bedrock response",
-                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 10, 20, 30, 400L, 390L)
+                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 10, 20, 30, 400L, 390L, null, null)
             );
         }
 
@@ -107,7 +107,7 @@ class BedrockChatModelProviderTest {
             chunkConsumer.accept("bedrock");
             chunkConsumer.accept(" stream");
             return CompletableFuture.completedFuture(
-                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L)
+                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L, null, null)
             );
         }
     }
@@ -127,7 +127,7 @@ class BedrockChatModelProviderTest {
         }
 
         void finish() {
-            completion.complete(new ModelProviderMetadata("bedrock", "amazon.nova-lite-v1:0", "end_turn", 1, 2, 3, 4L, 5L));
+            completion.complete(new ModelProviderMetadata("bedrock", "amazon.nova-lite-v1:0", "end_turn", 1, 2, 3, 4L, 5L, null, null));
         }
     }
 }

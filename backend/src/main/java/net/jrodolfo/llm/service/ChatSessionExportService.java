@@ -91,10 +91,16 @@ public class ChatSessionExportService {
                     .append(" total\n");
         }
         if (metadata.durationMs() != null) {
-            markdown.append("- duration: ").append(metadata.durationMs()).append(" ms\n");
+            markdown.append("- provider duration: ").append(metadata.durationMs()).append(" ms\n");
         }
         if (metadata.providerLatencyMs() != null) {
             markdown.append("- provider latency: ").append(metadata.providerLatencyMs()).append(" ms\n");
+        }
+        if (metadata.backendDurationMs() != null) {
+            markdown.append("- backend total: ").append(metadata.backendDurationMs()).append(" ms\n");
+        }
+        if (metadata.uiWaitMs() != null) {
+            markdown.append("- ui wait: ").append(metadata.uiWaitMs()).append(" ms\n");
         }
     }
 

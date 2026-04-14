@@ -61,7 +61,9 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                     response.usage() != null ? response.usage().outputTokens() : null,
                     response.usage() != null ? response.usage().totalTokens() : null,
                     System.currentTimeMillis() - startedAt,
-                    response.metrics() != null ? response.metrics().latencyMs() : null
+                    response.metrics() != null ? response.metrics().latencyMs() : null,
+                    null,
+                    null
             );
             return new ModelProviderReply(output, metadata);
         } catch (ValidationException ex) {
@@ -101,7 +103,9 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                                 finalUsage != null ? finalUsage.outputTokens() : null,
                                 finalUsage != null ? finalUsage.totalTokens() : null,
                                 System.currentTimeMillis() - startedAt,
-                                finalMetrics != null ? finalMetrics.latencyMs() : null
+                                finalMetrics != null ? finalMetrics.latencyMs() : null,
+                                null,
+                                null
                         ));
                     })
                     .build();

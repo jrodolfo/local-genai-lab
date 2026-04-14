@@ -11,6 +11,8 @@ public record ModelProviderMetadata(
         Integer outputTokens,
         Integer totalTokens,
         Long durationMs,
-        Long providerLatencyMs
+        Long providerLatencyMs,
+        Long backendDurationMs,
+        Long uiWaitMs
 ) {
 }

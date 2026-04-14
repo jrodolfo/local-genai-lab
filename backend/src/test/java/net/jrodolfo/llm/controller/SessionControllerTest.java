@@ -451,7 +451,9 @@ class SessionControllerTest {
                                         2,
                                         3,
                                         100L,
-                                        90L
+                                        90L,
+                                        110L,
+                                        120L
                                 ),
                                 timestamp.plusSeconds(30)
                         )

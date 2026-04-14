@@ -207,7 +207,7 @@ class ChatOrchestratorServiceTest {
         var persistedSession = orchestrator.completePreparedChat(
                 preparedChat,
                 "streamed response",
-                new ModelProviderMetadata("ollama", "llama3:8b", null, null, null, null, null, null)
+                new ModelProviderMetadata("ollama", "llama3:8b", null, null, null, null, null, null, null, null)
         );
 
         assertEquals(2, persistedSession.messages().size());

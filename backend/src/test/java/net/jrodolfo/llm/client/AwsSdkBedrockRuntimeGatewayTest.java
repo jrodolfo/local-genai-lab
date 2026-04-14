@@ -282,7 +282,9 @@ class AwsSdkBedrockRuntimeGatewayTest {
                 usage.get().outputTokens(),
                 usage.get().totalTokens(),
                 null,
-                metrics.get().latencyMs()
+                metrics.get().latencyMs(),
+                null,
+                null
         );
     }
 

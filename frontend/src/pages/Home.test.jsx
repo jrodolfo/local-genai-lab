@@ -32,6 +32,10 @@ import { deleteSession, exportSession, getSession, importSession, listSessions }
 describe('Home', () => {
   let scrollToSpy;
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
@@ -94,7 +98,9 @@ describe('Home', () => {
             outputTokens: 34,
             totalTokens: 46,
             durationMs: 412,
-            providerLatencyMs: 321
+            providerLatencyMs: 321,
+            backendDurationMs: 450,
+            uiWaitMs: 490
           },
           timestamp: '2026-04-10T10:01:00Z'
         }
@@ -425,7 +431,8 @@ describe('Home', () => {
         provider: 'bedrock',
         modelId: 'amazon.nova-lite-v1:0',
         totalTokens: 46,
-        durationMs: 412
+        durationMs: 412,
+        backendDurationMs: 430
       }
     });
 
@@ -441,6 +448,9 @@ describe('Home', () => {
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
     expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
     expect(screen.getByText(/tokens: \? in \/ \? out \/ 46 total/i)).toBeInTheDocument();
+    expect(screen.getByText(/provider duration: 412 ms/i)).toBeInTheDocument();
+    expect(screen.getByText(/backend total: 430 ms/i)).toBeInTheDocument();
+    expect(screen.getByText(/ui wait: \d+ ms/i)).toBeInTheDocument();
   });
 
   it('toggles technical details on and off', async () => {

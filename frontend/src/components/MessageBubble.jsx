@@ -54,8 +54,10 @@ function MessageBubble({
                 tokens: {metadata.inputTokens ?? '?'} in / {metadata.outputTokens ?? '?'} out / {metadata.totalTokens ?? '?'} total
               </span>
             ) : null}
-            {metadata.durationMs != null ? <span>duration: {metadata.durationMs} ms</span> : null}
+            {metadata.durationMs != null ? <span>provider duration: {metadata.durationMs} ms</span> : null}
             {metadata.providerLatencyMs != null ? <span>provider latency: {metadata.providerLatencyMs} ms</span> : null}
+            {metadata.backendDurationMs != null ? <span>backend total: {metadata.backendDurationMs} ms</span> : null}
+            {metadata.uiWaitMs != null ? <span>ui wait: {metadata.uiWaitMs} ms</span> : null}
           </div>
         ) : null}
       </div>
