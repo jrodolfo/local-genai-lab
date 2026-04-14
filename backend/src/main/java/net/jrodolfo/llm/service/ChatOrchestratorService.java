@@ -12,6 +12,7 @@ import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPrompt;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -104,7 +105,7 @@ public class ChatOrchestratorService {
         try {
             ToolExecution execution = executeTool(decision);
             ChatSession clearedSession = session.withPendingToolCall(null);
-            String augmentedPrompt = buildConversationPrompt(
+            ProviderPrompt augmentedPrompt = buildConversationPrompt(
                     clearedSession,
                     message,
                     new ChatPromptBuilder.ToolContext(
@@ -249,12 +250,12 @@ public class ChatOrchestratorService {
         };
     }
 
-    private String buildConversationPrompt(ChatSession session, String currentUserMessage, ChatPromptBuilder.ToolContext toolContext) {
+    private ProviderPrompt buildConversationPrompt(ChatSession session, String currentUserMessage, ChatPromptBuilder.ToolContext toolContext) {
         List<net.jrodolfo.llm.model.ChatSessionMessage> history = chatMemoryService.historyBeforeLatestUserMessage(session);
         if (toolContext == null) {
-            return chatPromptBuilder.buildPlainChatPrompt(currentUserMessage, history);
+            return chatPromptBuilder.buildPlainChatProviderPrompt(currentUserMessage, history);
         }
-        return chatPromptBuilder.buildToolAssistedPrompt(currentUserMessage, history, toolContext);
+        return ProviderPrompt.forPrompt(chatPromptBuilder.buildToolAssistedPrompt(currentUserMessage, history, toolContext));
     }
 
     private String buildFailureMessage(ChatToolRouterService.ToolDecision decision, String errorMessage) {
@@ -469,7 +470,7 @@ public class ChatOrchestratorService {
     }
 
     public record PreparedChat(
-            String prompt,
+            ProviderPrompt prompt,
             String model,
             ChatToolMetadata toolMetadata,
             Map<String, Object> toolResult,
@@ -478,7 +479,7 @@ public class ChatOrchestratorService {
             ChatResponse immediateResponse
     ) {
         static PreparedChat forPrompt(
-                String prompt,
+                ProviderPrompt prompt,
                 String model,
                 ChatToolMetadata toolMetadata,
                 Map<String, Object> toolResult,

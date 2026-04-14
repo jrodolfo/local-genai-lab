@@ -3,6 +3,7 @@ package net.jrodolfo.llm.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.model.ChatSessionMessage;
+import net.jrodolfo.llm.provider.ProviderPrompt;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatPromptBuilderTest {
@@ -102,5 +104,23 @@ class ChatPromptBuilderTest {
         assertTrue(prompt.contains("Assistant: Recursion is when a function calls itself."));
         assertTrue(prompt.contains("User: now explain it using fibonacci and java"));
         assertFalse(prompt.contains("<assistant_instructions>"));
+    }
+
+    @Test
+    void buildsPlainProviderPromptWithRoleBasedMessages() {
+        ProviderPrompt prompt = promptBuilder.buildPlainChatProviderPrompt(
+                "now explain it using fibonacci and java",
+                List.of(
+                        new ChatSessionMessage("user", "explain recursion", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new ChatSessionMessage("assistant", "Recursion is when a function calls itself.", null, null, null, Instant.parse("2026-04-10T10:00:05Z"))
+                )
+        );
+
+        assertTrue(prompt.hasMessages());
+        assertEquals("system", prompt.messages().get(0).role());
+        assertEquals("user", prompt.messages().get(1).role());
+        assertEquals("assistant", prompt.messages().get(2).role());
+        assertEquals("user", prompt.messages().get(3).role());
+        assertTrue(prompt.prompt().contains("Conversation so far:"));
     }
 }

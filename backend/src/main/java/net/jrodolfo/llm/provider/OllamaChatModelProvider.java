@@ -20,16 +20,17 @@ public class OllamaChatModelProvider implements ChatModelProvider {
 
     @Override
     public ChatResponse chat(
-            String message,
+            ProviderPrompt prompt,
             String model,
             ChatToolMetadata toolMetadata,
             Map<String, Object> toolResult,
             String sessionId,
             PendingToolCallResponse pendingTool
     ) {
-        String normalizedMessage = message.trim();
         String resolvedModel = ollamaClient.resolveModel(model);
-        String response = ollamaClient.generate(normalizedMessage, resolvedModel);
+        String response = prompt.hasMessages()
+                ? ollamaClient.chat(prompt.messages(), resolvedModel)
+                : ollamaClient.generate(prompt.prompt().trim(), resolvedModel);
         return new ChatResponse(
                 response,
                 resolvedModel,
@@ -42,10 +43,13 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
-    public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
-        String normalizedMessage = message.trim();
+    public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         String resolvedModel = ollamaClient.resolveModel(model);
-        ollamaClient.streamGenerate(normalizedMessage, resolvedModel, tokenConsumer);
+        if (prompt.hasMessages()) {
+            ollamaClient.streamChat(prompt.messages(), resolvedModel, tokenConsumer);
+        } else {
+            ollamaClient.streamGenerate(prompt.prompt().trim(), resolvedModel, tokenConsumer);
+        }
         return new StreamingChatResult(
                 CompletableFuture.completedFuture(
                         new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, null, null)

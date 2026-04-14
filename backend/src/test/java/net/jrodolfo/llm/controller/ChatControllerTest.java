@@ -9,6 +9,7 @@ import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.provider.ChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import org.junit.jupiter.api.Test;
@@ -75,7 +76,7 @@ class ChatControllerTest {
         private TestOrchestrator() {
             super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
             ChatSession session = ChatSession.create("session-1", "llama3:8b", Instant.parse("2026-04-12T00:00:00Z"));
-            this.preparedChat = new PreparedChat("prompt", "llama3:8b", null, null, null, session, null);
+            this.preparedChat = new PreparedChat(ProviderPrompt.forPrompt("prompt"), "llama3:8b", null, null, null, session, null);
         }
 
         @Override
@@ -92,12 +93,12 @@ class ChatControllerTest {
 
     private static final class SynchronousStreamingProvider implements ChatModelProvider {
         @Override
-        public ChatResponse chat(String message, String model, ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, PendingToolCallResponse pendingTool) {
+        public ChatResponse chat(ProviderPrompt message, String model, ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, PendingToolCallResponse pendingTool) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
+        public StreamingChatResult streamChat(ProviderPrompt message, String model, Consumer<String> tokenConsumer) {
             tokenConsumer.accept("chunk-1");
             return new StreamingChatResult(
                     CompletableFuture.completedFuture(new ModelProviderMetadata("ollama", model, null, null, null, null, null, null)),
@@ -116,12 +117,12 @@ class ChatControllerTest {
         private final CountDownLatch cancelled = new CountDownLatch(1);
 
         @Override
-        public ChatResponse chat(String message, String model, ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, PendingToolCallResponse pendingTool) {
+        public ChatResponse chat(ProviderPrompt message, String model, ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, PendingToolCallResponse pendingTool) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
+        public StreamingChatResult streamChat(ProviderPrompt message, String model, Consumer<String> tokenConsumer) {
             streamStarted.countDown();
             return new StreamingChatResult(new CompletableFuture<>(), cancelled::countDown);
         }

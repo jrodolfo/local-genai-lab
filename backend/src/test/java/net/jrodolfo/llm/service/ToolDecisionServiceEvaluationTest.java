@@ -7,6 +7,7 @@ import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPrompt;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -133,7 +134,7 @@ class ToolDecisionServiceEvaluationTest {
 
         @Override
         public ChatResponse chat(
-                String message,
+                ProviderPrompt message,
                 String model,
                 net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata,
                 java.util.Map<String, Object> toolResult,
@@ -144,7 +145,7 @@ class ToolDecisionServiceEvaluationTest {
         }
 
         @Override
-        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
+        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(ProviderPrompt message, String model, Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for evaluation tests.");
         }
 

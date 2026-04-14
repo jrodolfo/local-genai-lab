@@ -3,6 +3,7 @@ package net.jrodolfo.llm.client;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.config.OllamaProperties;
+import net.jrodolfo.llm.provider.ProviderPromptMessage;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -57,6 +58,29 @@ public class OllamaClient {
         }
     }
 
+    public String chat(List<ProviderPromptMessage> messages, String model) {
+        try {
+            HttpRequest request = buildChatRequest(messages, model, false);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() >= 400) {
+                throw new OllamaClientException("Ollama chat request failed with status " + response.statusCode() + ": " + response.body());
+            }
+
+            JsonNode payload = objectMapper.readTree(response.body());
+            JsonNode textNode = payload.path("message").path("content");
+            if (textNode.isMissingNode()) {
+                throw new OllamaClientException("Ollama chat response did not contain 'message.content' field.");
+            }
+            return textNode.asText();
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new OllamaClientException("Failed to call Ollama chat endpoint.", ex);
+        } catch (IOException ex) {
+            throw new OllamaClientException("Failed to call Ollama chat endpoint.", ex);
+        }
+    }
+
     public void streamGenerate(String prompt, String model, Consumer<String> tokenConsumer) {
         try {
             HttpRequest request = buildGenerateRequest(prompt, model, true);
@@ -89,6 +113,41 @@ public class OllamaClient {
             throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
         } catch (IOException ex) {
             throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
+        }
+    }
+
+    public void streamChat(List<ProviderPromptMessage> messages, String model, Consumer<String> tokenConsumer) {
+        try {
+            HttpRequest request = buildChatRequest(messages, model, true);
+            HttpResponse<Stream<String>> response = httpClient.send(request, HttpResponse.BodyHandlers.ofLines());
+
+            if (response.statusCode() >= 400) {
+                throw new OllamaClientException("Ollama chat stream failed with status " + response.statusCode() + ".");
+            }
+
+            try (Stream<String> lines = response.body()) {
+                Iterator<String> iterator = lines.iterator();
+                while (iterator.hasNext()) {
+                    String line = iterator.next();
+                    if (line.isBlank()) {
+                        continue;
+                    }
+                    JsonNode chunk = objectMapper.readTree(line);
+                    JsonNode responseNode = chunk.path("message").path("content");
+                    if (!responseNode.isMissingNode()) {
+                        tokenConsumer.accept(responseNode.asText());
+                    }
+                    JsonNode doneNode = chunk.get("done");
+                    if (doneNode != null && doneNode.asBoolean()) {
+                        break;
+                    }
+                }
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new OllamaClientException("Failed to call Ollama chat stream endpoint.", ex);
+        } catch (IOException ex) {
+            throw new OllamaClientException("Failed to call Ollama chat stream endpoint.", ex);
         }
     }
 
@@ -135,6 +194,22 @@ public class OllamaClient {
 
         return HttpRequest.newBuilder()
                 .uri(URI.create(properties.baseUrl() + "/api/generate"))
+                .timeout(Duration.ofSeconds(properties.readTimeoutSeconds()))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))
+                .build();
+    }
+
+    private HttpRequest buildChatRequest(List<ProviderPromptMessage> messages, String model, boolean stream) throws IOException {
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", resolveModel(model));
+        body.put("stream", stream);
+        body.put("messages", messages.stream()
+                .map(message -> Map.of("role", message.role(), "content", message.content()))
+                .toList());
+
+        return HttpRequest.newBuilder()
+                .uri(URI.create(properties.baseUrl() + "/api/chat"))
                 .timeout(Duration.ofSeconds(properties.readTimeoutSeconds()))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(body)))

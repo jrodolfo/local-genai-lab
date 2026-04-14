@@ -16,6 +16,7 @@ import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
 import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPrompt;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -43,6 +44,10 @@ class ChatOrchestratorServiceTest {
         ChatResponse response = orchestrator.chat("explain recursion", "llama3:8b", null);
 
         assertEquals("plain response", response.response());
+        assertEquals(2, chatModelProvider.lastMessages.size());
+        assertEquals("system", chatModelProvider.lastMessages.get(0).role());
+        assertEquals("user", chatModelProvider.lastMessages.get(1).role());
+        assertEquals("explain recursion", chatModelProvider.lastMessages.get(1).content());
         assertTrue(chatModelProvider.lastPrompt.contains("User: explain recursion"));
         assertTrue(chatModelProvider.lastPrompt.contains("Assistant:"));
         assertFalse(chatModelProvider.lastPrompt.contains("<current_user_message>"));
@@ -66,6 +71,8 @@ class ChatOrchestratorServiceTest {
         ChatResponse secondResponse = orchestrator.chat("give me an example", "llama3:8b", firstResponse.sessionId());
 
         assertEquals(firstResponse.sessionId(), secondResponse.sessionId());
+        assertEquals("assistant", chatModelProvider.lastMessages.get(2).role());
+        assertEquals("plain response", chatModelProvider.lastMessages.get(2).content());
         assertTrue(chatModelProvider.lastPrompt.contains("Conversation so far:"));
         assertTrue(chatModelProvider.lastPrompt.contains("User: explain recursion"));
         assertTrue(chatModelProvider.lastPrompt.contains("Assistant: plain response"));
@@ -366,6 +373,7 @@ class ChatOrchestratorServiceTest {
 
     private static final class FakeChatModelProvider implements ChatModelProvider {
         private String lastPrompt;
+        private java.util.List<net.jrodolfo.llm.provider.ProviderPromptMessage> lastMessages = java.util.List.of();
         private boolean generateCalled;
         private String nextPlannerResponse;
         private int plannerCalls;
@@ -373,14 +381,14 @@ class ChatOrchestratorServiceTest {
 
         @Override
         public ChatResponse chat(
-                String message,
+                ProviderPrompt message,
                 String model,
                 net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata,
                 java.util.Map<String, Object> toolResult,
                 String sessionId,
                 net.jrodolfo.llm.dto.PendingToolCallResponse pendingTool
         ) {
-            if (message.contains("<tool_planning_request>")) {
+            if (message.prompt() != null && message.prompt().contains("<tool_planning_request>")) {
                 this.plannerCalls++;
                 String plannerResponse;
                 if (!plannerResponses.isEmpty()) {
@@ -393,13 +401,14 @@ class ChatOrchestratorServiceTest {
                 }
                 return new ChatResponse(plannerResponse, resolveModel(model), null, null, null, null, null);
             }
-            this.lastPrompt = message;
+            this.lastPrompt = message.prompt();
+            this.lastMessages = message.messages();
             this.generateCalled = true;
             return new ChatResponse("plain response", resolveModel(model), toolMetadata, toolResult, sessionId, pendingTool, null);
         }
 
         @Override
-        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(String message, String model, java.util.function.Consumer<String> tokenConsumer) {
+        public net.jrodolfo.llm.provider.StreamingChatResult streamChat(ProviderPrompt message, String model, java.util.function.Consumer<String> tokenConsumer) {
             throw new UnsupportedOperationException("Not needed for this test.");
         }
 

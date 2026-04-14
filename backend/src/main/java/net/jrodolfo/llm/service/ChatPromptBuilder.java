@@ -3,6 +3,8 @@ package net.jrodolfo.llm.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.model.ChatSessionMessage;
+import net.jrodolfo.llm.provider.ProviderPrompt;
+import net.jrodolfo.llm.provider.ProviderPromptMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,6 +37,28 @@ public class ChatPromptBuilder {
         builder.append("\nUser: ").append(currentUserMessage == null ? "" : currentUserMessage.trim()).append("\n");
         builder.append("Assistant:");
         return builder.toString();
+    }
+
+    public ProviderPrompt buildPlainChatProviderPrompt(String currentUserMessage, List<ChatSessionMessage> history) {
+        List<ProviderPromptMessage> messages = new java.util.ArrayList<>();
+        messages.add(new ProviderPromptMessage("system", """
+                You are a concise, factual assistant.
+                Answer the user's question directly.
+                Use prior conversation when it helps.
+                Do not invent missing facts.
+                If the context is incomplete or ambiguous, say so explicitly.
+                """.trim()));
+        if (history != null) {
+            for (ChatSessionMessage message : history) {
+                if (message.role() == null || message.content() == null || message.content().isBlank()) {
+                    continue;
+                }
+                String role = normalizeRole(message.role());
+                messages.add(new ProviderPromptMessage(role, message.content()));
+            }
+        }
+        messages.add(new ProviderPromptMessage("user", currentUserMessage == null ? "" : currentUserMessage.trim()));
+        return ProviderPrompt.forMessages(messages, buildPlainChatPrompt(currentUserMessage, history));
     }
 
     public String buildToolAssistedPrompt(String currentUserMessage, List<ChatSessionMessage> history, ToolContext toolContext) {
@@ -123,6 +147,13 @@ public class ChatPromptBuilder {
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private String normalizeRole(String role) {
+        if ("assistant".equalsIgnoreCase(role)) {
+            return "assistant";
+        }
+        return "user";
     }
 
     public record PromptContext(

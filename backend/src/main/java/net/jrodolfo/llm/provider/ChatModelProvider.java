@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 public interface ChatModelProvider {
 
     ChatResponse chat(
-            String message,
+            ProviderPrompt prompt,
             String model,
             ChatToolMetadata toolMetadata,
             Map<String, Object> toolResult,
@@ -19,7 +19,7 @@ public interface ChatModelProvider {
             PendingToolCallResponse pendingTool
     );
 
-    StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer);
+    StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer);
 
     String resolveModel(String model);
 }

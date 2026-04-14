@@ -26,7 +26,7 @@ class BedrockChatModelProviderTest {
                 new BedrockProperties("us-east-1", "amazon.nova-lite-v1:0")
         );
 
-        ChatResponse response = provider.chat("hello from bedrock", "   ", null, null, "session-1", null);
+        ChatResponse response = provider.chat(ProviderPrompt.forPrompt("hello from bedrock"), "   ", null, null, "session-1", null);
 
         assertEquals("amazon.nova-lite-v1:0", response.model());
         assertEquals("bedrock response", response.response());
@@ -55,7 +55,7 @@ class BedrockChatModelProviderTest {
         );
 
         List<String> chunks = new ArrayList<>();
-        StreamingChatResult result = provider.streamChat("hello", " ", chunks::add);
+        StreamingChatResult result = provider.streamChat(ProviderPrompt.forPrompt("hello"), " ", chunks::add);
         ModelProviderMetadata metadata = result.completion().join();
 
         assertEquals("hello", gateway.lastStreamPrompt);
@@ -74,7 +74,7 @@ class BedrockChatModelProviderTest {
         );
 
         List<String> chunks = new ArrayList<>();
-        StreamingChatResult result = provider.streamChat("hello", " ", chunks::add);
+        StreamingChatResult result = provider.streamChat(ProviderPrompt.forPrompt("hello"), " ", chunks::add);
 
         assertEquals(List.of("bedrock"), chunks);
         assertFalse(result.completion().isDone());

@@ -85,7 +85,7 @@ public class LlmToolPlannerService {
                 </tool_planning_request>
                 """.formatted(String.join(", ", AUDIT_SERVICES), message.trim());
 
-        String rawResponse = chatModelProvider.chat(plannerPrompt, model, null, null, null, null).response();
+        String rawResponse = chatModelProvider.chat(net.jrodolfo.llm.provider.ProviderPrompt.forPrompt(plannerPrompt), model, null, null, null, null).response();
         return new PlanningResult(rawResponse, parseDecision(rawResponse, message, true));
     }
 
@@ -154,7 +154,7 @@ public class LlmToolPlannerService {
                 message.trim()
         );
 
-        String rawResponse = chatModelProvider.chat(plannerPrompt, model, null, null, null, null).response();
+        String rawResponse = chatModelProvider.chat(net.jrodolfo.llm.provider.ProviderPrompt.forPrompt(plannerPrompt), model, null, null, null, null).response();
         return new PlanningResult(rawResponse, parseDecision(rawResponse, message, false));
     }
 

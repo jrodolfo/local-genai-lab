@@ -24,22 +24,22 @@ public class BedrockChatModelProvider implements ChatModelProvider {
 
     @Override
     public ChatResponse chat(
-            String message,
+            ProviderPrompt prompt,
             String model,
             ChatToolMetadata toolMetadata,
             Map<String, Object> toolResult,
             String sessionId,
             PendingToolCallResponse pendingTool
     ) {
-        String normalizedMessage = message.trim();
+        String normalizedMessage = prompt.prompt().trim();
         String resolvedModel = resolveModel(model);
         ModelProviderReply reply = bedrockRuntimeGateway.converse(normalizedMessage, resolvedModel);
         return new ChatResponse(reply.text(), resolvedModel, toolMetadata, toolResult, sessionId, pendingTool, reply.metadata());
     }
 
     @Override
-    public StreamingChatResult streamChat(String message, String model, Consumer<String> tokenConsumer) {
-        String normalizedMessage = message.trim();
+    public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
+        String normalizedMessage = prompt.prompt().trim();
         String resolvedModel = resolveModel(model);
         var completion = bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
         return new StreamingChatResult(completion, () -> completion.cancel(true));
