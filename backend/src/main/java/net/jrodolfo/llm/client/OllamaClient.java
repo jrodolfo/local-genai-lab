@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpTimeoutException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -52,9 +53,9 @@ public class OllamaClient {
             return textNode.asText();
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OllamaClientException("Failed to call Ollama non-stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("generate", ex), ex);
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to call Ollama non-stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("generate", ex), ex);
         }
     }
 
@@ -75,9 +76,9 @@ public class OllamaClient {
             return textNode.asText();
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OllamaClientException("Failed to call Ollama chat endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("chat", ex), ex);
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to call Ollama chat endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("chat", ex), ex);
         }
     }
 
@@ -110,9 +111,9 @@ public class OllamaClient {
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("generate stream", ex), ex);
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to call Ollama stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("generate stream", ex), ex);
         }
     }
 
@@ -145,9 +146,9 @@ public class OllamaClient {
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OllamaClientException("Failed to call Ollama chat stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("chat stream", ex), ex);
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to call Ollama chat stream endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("chat stream", ex), ex);
         }
     }
 
@@ -180,9 +181,9 @@ public class OllamaClient {
             return models;
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            throw new OllamaClientException("Failed to call Ollama model list endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("model list", ex), ex);
         } catch (IOException ex) {
-            throw new OllamaClientException("Failed to call Ollama model list endpoint.", ex);
+            throw new OllamaClientException(buildRequestFailureMessage("model list", ex), ex);
         }
     }
 
@@ -221,5 +222,17 @@ public class OllamaClient {
             return properties.defaultModel();
         }
         return model.trim();
+    }
+
+    private String buildRequestFailureMessage(String operation, Exception ex) {
+        if (ex instanceof HttpTimeoutException) {
+            return "Ollama " + operation + " request timed out after " + properties.readTimeoutSeconds()
+                    + "s. Check whether the model is still loading or increase OLLAMA_READ_TIMEOUT_SECONDS.";
+        }
+        String causeMessage = ex.getMessage();
+        if (causeMessage == null || causeMessage.isBlank()) {
+            return "Failed to call Ollama " + operation + " endpoint.";
+        }
+        return "Failed to call Ollama " + operation + " endpoint: " + causeMessage;
     }
 }

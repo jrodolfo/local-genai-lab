@@ -17,6 +17,8 @@ import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import net.jrodolfo.llm.service.InvalidSessionIdException;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ChatController {
 
     private static final long STREAM_TIMEOUT_MS = 10 * 60 * 1000L;
+    private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatOrchestratorService chatOrchestratorService;
     private final ChatModelProvider chatModelProvider;
@@ -205,6 +208,7 @@ public class ChatController {
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaError(OllamaClientException ex) {
+        log.error("Ollama request failed", ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", ex.getMessage()));
     }
@@ -212,6 +216,7 @@ public class ChatController {
     @ExceptionHandler(ModelProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
+        log.error("Model provider request failed", ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", ex.getMessage()));
     }
@@ -219,6 +224,7 @@ public class ChatController {
     @ExceptionHandler(InvalidSessionIdException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
+        log.warn("Invalid session id", ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
