@@ -1,4 +1,5 @@
 import type { AwsRegionAuditInput } from "../schemas/toolSchemas.js";
+import { awsRegionAuditResultSchema } from "../schemas/toolContracts.js";
 import { config } from "../config.js";
 import { runCommand } from "../services/processRunner.js";
 import { detectNewRunDirectory, listReportDirectories } from "../services/reportLocator.js";
@@ -38,7 +39,7 @@ export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
   const parsedReport = await parseReportBundle(runDir);
   const summary = parsedReport.summary as Record<string, unknown>;
 
-  return {
+  return awsRegionAuditResultSchema.parse({
     ok: execution.exitCode === 0 && !execution.timedOut,
     tool: "aws_region_audit",
     report_type: "audit",
@@ -46,5 +47,5 @@ export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
     execution,
     summary,
     report_preview: parsedReport.reportPreview,
-  };
+  });
 }

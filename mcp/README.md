@@ -18,6 +18,8 @@ It wraps the sibling shell tools in [`../scripts`](../scripts) and exposes a sma
 - `list_recent_reports`
 - `read_report_summary`
 
+Formal input/output contracts for these tools are documented in [TOOL_CONTRACTS.md](./TOOL_CONTRACTS.md).
+
 ## Requirements
 
 - Node 20+

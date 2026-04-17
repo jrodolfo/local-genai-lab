@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { ListRecentReportsInput } from "../schemas/toolSchemas.js";
+import { listRecentReportsResultSchema } from "../schemas/toolContracts.js";
 import { listReportDirectories, type ReportDirectory } from "../services/reportLocator.js";
 
 function toResponseShape(directory: ReportDirectory) {
@@ -27,10 +28,10 @@ export async function handleListRecentReports(input: ListRecentReportsInput) {
     .slice(0, input.limit)
     .map(toResponseShape);
 
-  return {
+  return listRecentReportsResultSchema.parse({
     ok: true,
     tool: "list_recent_reports",
     report_type: input.report_type,
     reports,
-  };
+  });
 }

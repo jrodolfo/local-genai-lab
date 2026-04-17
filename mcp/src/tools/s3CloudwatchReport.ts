@@ -1,4 +1,5 @@
 import type { S3CloudwatchReportInput } from "../schemas/toolSchemas.js";
+import { s3CloudwatchReportResultSchema } from "../schemas/toolContracts.js";
 import { config } from "../config.js";
 import { runCommand } from "../services/processRunner.js";
 import { detectNewRunDirectory, listReportDirectories } from "../services/reportLocator.js";
@@ -38,7 +39,7 @@ export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
   const parsedReport = await parseReportBundle(runDir);
   const summary = parsedReport.summary as Record<string, unknown>;
 
-  return {
+  return s3CloudwatchReportResultSchema.parse({
     ok: execution.exitCode === 0 && !execution.timedOut,
     tool: "s3_cloudwatch_report",
     report_type: "s3_cloudwatch",
@@ -46,5 +47,5 @@ export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
     execution,
     summary,
     report_preview: parsedReport.reportPreview,
-  };
+  });
 }

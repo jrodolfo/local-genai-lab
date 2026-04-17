@@ -9,6 +9,7 @@ import {
   readReportSummarySchema,
   s3CloudwatchReportSchema,
 } from "./schemas/toolSchemas.js";
+import { toolErrorSchema } from "./schemas/toolContracts.js";
 import { handleAwsRegionAudit } from "./tools/awsRegionAudit.js";
 import { handleListRecentReports } from "./tools/listReports.js";
 import { handleReadReportSummary } from "./tools/readReportSummary.js";
@@ -32,15 +33,17 @@ function formatToolResult<T extends Record<string, unknown>>(payload: T) {
   };
 }
 
-function formatToolError(error: unknown) {
+function formatToolError(tool: string, error: unknown) {
   const message = error instanceof Error ? error.message : "Unknown MCP tool error";
+  const payload = toolErrorSchema.parse({
+    ok: false,
+    tool,
+    error: message,
+  });
 
   return {
     isError: true,
-    structuredContent: {
-      ok: false,
-      error: message,
-    },
+    structuredContent: payload,
     content: [
       {
         type: "text" as const,
@@ -72,7 +75,7 @@ server.registerTool(
       const parsedInput = awsRegionAuditSchema.parse(arguments_);
       return formatToolResult(await handleAwsRegionAudit(parsedInput));
     } catch (error) {
-      return formatToolError(error);
+      return formatToolError("aws_region_audit", error);
     }
   },
 );
@@ -93,7 +96,7 @@ server.registerTool(
       const parsedInput = s3CloudwatchReportSchema.parse(arguments_);
       return formatToolResult(await handleS3CloudwatchReport(parsedInput));
     } catch (error) {
-      return formatToolError(error);
+      return formatToolError("s3_cloudwatch_report", error);
     }
   },
 );
@@ -113,7 +116,7 @@ server.registerTool(
       const parsedInput = listRecentReportsSchema.parse(arguments_);
       return formatToolResult(await handleListRecentReports(parsedInput));
     } catch (error) {
-      return formatToolError(error);
+      return formatToolError("list_recent_reports", error);
     }
   },
 );
@@ -133,7 +136,7 @@ server.registerTool(
       const parsedInput = readReportSummarySchema.parse(arguments_);
       return formatToolResult(await handleReadReportSummary(parsedInput));
     } catch (error) {
-      return formatToolError(error);
+      return formatToolError("read_report_summary", error);
     }
   },
 );
