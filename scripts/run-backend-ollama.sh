@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Starts the Spring Boot backend in Ollama mode using the repository's preferred local defaults.
+#
+# Override behavior with environment variables such as:
+#   MCP_ENABLED=false
+# The script keeps provider switching simple for daily local use.
 
 set -euo pipefail
 

@@ -14,6 +14,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Application-facing wrapper around the local MCP client.
+ *
+ * <p>This service isolates HTTP/controller code from MCP tool names and argument shapes while
+ * keeping the repository's MCP usage small and explicit.
+ */
 @Service
 public class McpService {
 

@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# Starts the Spring Boot backend in Bedrock mode with the preferred local defaults.
+#
+# Override behavior with environment variables such as:
+#   BEDROCK_REGION=us-east-2
+#   BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
+#   MCP_ENABLED=false
+# AWS credentials are resolved by the standard AWS SDK chain used by the backend.
 
 set -euo pipefail
 

@@ -39,6 +39,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * HTTP entrypoint for normal and streaming chat interactions.
+ *
+ * <p>The controller exposes a small transport contract and delegates tool routing, persistence,
+ * and provider selection to the orchestration and provider layers.
+ */
 @RestController
 @RequestMapping("/api/chat")
 @Tag(name = "chat", description = "Normal and streaming chat endpoints.")
@@ -106,6 +112,13 @@ public class ChatController {
         return emitter;
     }
 
+    /**
+     * Shared streaming workflow used by the HTTP endpoint and controller tests.
+     *
+     * <p>The method emits a typed start event, then either sends an immediate response for
+     * clarification/failure paths or streams provider deltas until completion. Aborted SSE streams
+     * are treated as client disconnects rather than provider failures.
+     */
     void stream(ChatRequest request, SseEmitter emitter) {
         long startedAt = System.nanoTime();
         AtomicBoolean streamClosed = new AtomicBoolean(false);
@@ -272,6 +285,10 @@ public class ChatController {
         return throwable;
     }
 
+    /**
+     * Preserves provider-reported metadata while adding backend-side elapsed time for the full
+     * request lifecycle.
+     */
     private ModelProviderMetadata withBackendDuration(ModelProviderMetadata metadata, long backendDurationMs) {
         if (metadata == null) {
             return null;

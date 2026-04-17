@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# Runs a multi-region AWS audit and writes structured artifacts under reports/audit.
+#
+# Inputs:
+#   - optional region list
+#   - optional service filter
+# Environment assumptions:
+#   - aws CLI is configured and authenticated
+#   - jq is optional but improves JSON formatting
+# Outputs:
+#   - report.txt summary
+#   - summary.json machine-readable result
+#   - per-step JSON/text/stderr artifacts
 set -uo pipefail
 
 DEFAULT_REGIONS=("us-east-1" "us-east-2")

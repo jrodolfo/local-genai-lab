@@ -24,6 +24,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * Bedrock runtime adapter backed by the AWS SDK v2 converse APIs.
+ *
+ * <p>The gateway keeps Bedrock-specific event handling out of the provider layer and converts both
+ * normal and streaming responses into the project's provider metadata model.
+ */
 public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
 
     private final BedrockRuntimeClient bedrockRuntimeClient;
@@ -111,6 +117,7 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                     .build();
 
             CompletableFuture<Void> streamFuture = bedrockRuntimeAsyncClient.converseStream(request, handler);
+            // Cancellation is driven by the controller when the SSE client disconnects.
             metadataFuture.whenComplete((ignored, throwable) -> {
                 if (metadataFuture.isCancelled()) {
                     streamFuture.cancel(true);

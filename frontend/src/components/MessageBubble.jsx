@@ -1,5 +1,7 @@
 import ToolResultCard from './ToolResultCard';
 
+// Assistant replies are stored as plain text. The frontend renders a small, safe Markdown subset
+// so model output stays readable without enabling raw HTML rendering.
 function MessageBubble({
   role,
   content,

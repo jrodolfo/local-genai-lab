@@ -21,6 +21,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+/**
+ * Thin HTTP client for the Ollama endpoints used by the backend.
+ *
+ * <p>The application uses {@code /api/chat} for role-based conversations and keeps
+ * {@code /api/generate} as a fallback for older flattened prompt flows.
+ */
 @Component
 public class OllamaClient {
 
@@ -205,6 +211,8 @@ public class OllamaClient {
         Map<String, Object> body = new HashMap<>();
         body.put("model", resolveModel(model));
         body.put("stream", stream);
+        // Preserve role boundaries so Ollama can treat plain chat like a real conversation instead
+        // of a single synthetic transcript blob.
         body.put("messages", messages.stream()
                 .map(message -> Map.of("role", message.role(), "content", message.content()))
                 .toList());

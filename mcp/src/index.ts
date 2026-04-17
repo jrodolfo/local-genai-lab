@@ -14,6 +14,12 @@ import { handleListRecentReports } from "./tools/listReports.js";
 import { handleReadReportSummary } from "./tools/readReportSummary.js";
 import { handleS3CloudwatchReport } from "./tools/s3CloudwatchReport.js";
 
+/**
+ * MCP server entrypoint.
+ *
+ * Tool registration stays close to the schemas and adapters that actually invoke the repository
+ * scripts so the backend can treat MCP as a small, explicit local capability surface.
+ */
 function formatToolResult<T extends Record<string, unknown>>(payload: T) {
   return {
     content: [
@@ -49,6 +55,8 @@ const server = new McpServer({
   version: "0.1.0",
 });
 
+// Each tool returns both text and structured content so the backend can show readable summaries
+// and still enrich prompts with machine-friendly results.
 server.registerTool(
   "aws_region_audit",
   {

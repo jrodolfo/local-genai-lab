@@ -19,6 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.nio.file.Path;
 
+/**
+ * Coordinates the backend chat lifecycle.
+ *
+ * <p>This service decides whether a turn should go directly to the active model provider, request
+ * more information from the user, execute an MCP-backed tool first, or return an immediate
+ * fallback after tool failure.
+ */
 @Service
 public class ChatOrchestratorService {
 
@@ -72,6 +79,12 @@ public class ChatOrchestratorService {
         return response;
     }
 
+    /**
+     * Prepares a chat turn before the controller chooses normal or streaming provider execution.
+     *
+     * <p>The result is either an immediate response for clarification/failure cases or a
+     * prompt-backed continuation that can be executed later.
+     */
     public PreparedChat prepareChat(String message, String model, String sessionId) {
         String resolvedModel = chatModelProvider.resolveModel(model);
         ChatSession session = chatMemoryService.startTurn(sessionId, model, resolvedModel, message);
@@ -169,6 +182,8 @@ public class ChatOrchestratorService {
             String model,
             ChatToolRouterService.ToolDecision routedDecision
     ) {
+        // Follow-up turns should try to complete an existing pending tool request before treating
+        // the new message as a completely fresh routing decision.
         if (session.pendingToolCall() == null) {
             return routedDecision;
         }
@@ -469,6 +484,12 @@ public class ChatOrchestratorService {
         return reportsDirectory.relativize(normalized).toString();
     }
 
+    /**
+     * Lightweight hand-off object between orchestration and provider execution.
+     *
+     * <p>An instance contains either an {@code immediateResponse} or the prompt/session state
+     * needed to execute and persist a model-backed reply.
+     */
     public record PreparedChat(
             ProviderPrompt prompt,
             String model,

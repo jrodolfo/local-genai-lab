@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+# Runs an S3 CloudWatch usage report for one bucket and writes artifacts under
+# reports/s3-cloudwatch.
+#
+# Inputs:
+#   - required bucket name
+#   - optional request region
+#   - optional lookback window in days
+# Environment assumptions:
+#   - aws CLI is configured and authenticated
+#   - jq is optional but improves JSON formatting
 set -uo pipefail
 
 BUCKET=""

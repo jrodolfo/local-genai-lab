@@ -10,6 +10,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+/**
+ * Chooses whether a user message should trigger an MCP-backed tool.
+ *
+ * <p>The routing strategy can be rule-only, planner-only, or hybrid. Hybrid mode uses the LLM
+ * planner when helpful but preserves deterministic rule-based behavior for a few bounded cases.
+ */
 @Service
 public class ToolDecisionService {
 
@@ -67,6 +73,8 @@ public class ToolDecisionService {
                 );
             }
             default -> {
+                // Plain conversational turns should not pay an LLM planning round-trip unless the
+                // message already looks tool-related.
                 if (shouldSkipPlannerForPlainChat(message)) {
                     yield new DecisionTrace(
                             "hybrid",
@@ -124,6 +132,8 @@ public class ToolDecisionService {
                 boolean fallbackUsed = planningResult.parsedDecision().isEmpty();
 
                 if (rulesDecision.shouldUseTool()) {
+                    // When a pending clarification can be satisfied deterministically, prefer that
+                    // over a planner response that keeps asking for already-supplied input.
                     finalDecision = rulesDecision;
                     fallbackUsed = planningResult.parsedDecision().isEmpty()
                             || !planningResult.parsedDecision().orElse(ChatToolRouterService.ToolDecision.none()).shouldUseTool();

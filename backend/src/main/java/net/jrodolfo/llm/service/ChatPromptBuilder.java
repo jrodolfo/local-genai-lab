@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Builds provider-facing prompts for plain chat and tool-assisted turns.
+ *
+ * <p>Plain chat uses lightweight role-based history where available. Tool-assisted turns use a
+ * more explicit grounded prompt so tool output can be summarized reliably by the selected model.
+ */
 @Service
 public class ChatPromptBuilder {
 
@@ -156,6 +162,9 @@ public class ChatPromptBuilder {
         return "user";
     }
 
+    /**
+     * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
+     */
     public record PromptContext(
             String currentUserMessage,
             List<ChatSessionMessage> history,
@@ -163,6 +172,9 @@ public class ChatPromptBuilder {
     ) {
     }
 
+    /**
+     * Structured tool facts forwarded into a tool-assisted prompt.
+     */
     public record ToolContext(
             String name,
             String reason,

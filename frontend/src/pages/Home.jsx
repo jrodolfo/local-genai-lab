@@ -41,6 +41,8 @@ function Home() {
   });
 
   useEffect(() => {
+    // Debounce list filtering so typing in the session search box does not trigger a backend
+    // request on every keystroke.
     const timerId = window.setTimeout(() => {
       loadSessions({
         query: sessionSearch,
@@ -81,6 +83,7 @@ function Home() {
     if (!chatWindow) {
       return;
     }
+    // Keep the latest prompt and streamed reply visible despite the fixed composer at the bottom.
     chatWindow.scrollTo({
       top: chatWindow.scrollHeight,
       behavior: 'auto'
@@ -150,6 +153,8 @@ function Home() {
       const defaultModel = payload.defaultModel && models.includes(payload.defaultModel) ? payload.defaultModel : '';
       setActiveProvider(payload.provider || 'ollama');
       setAvailableModels(models);
+      // Preserve the current selection when still valid; otherwise use the provider default or
+      // the first available model.
       setSelectedModel((current) => {
         if (current && models.includes(current)) {
           return current;

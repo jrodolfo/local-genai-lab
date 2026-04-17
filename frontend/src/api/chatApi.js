@@ -48,6 +48,8 @@ export async function streamMessage({ message, model, sessionId, onEvent }) {
     buffer = chunks.pop() || '';
 
     for (const chunk of chunks) {
+      // The backend emits a single named SSE event (`chat`) with typed JSON payloads. Ignore
+      // malformed or unrelated chunks rather than failing the whole stream.
       const event = parseSseEvent(chunk);
       if (!event) {
         continue;

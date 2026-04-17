@@ -14,6 +14,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+/**
+ * Resolves model options that the frontend can safely present for the active provider.
+ *
+ * <p>Ollama returns installed local models. Bedrock prefers discovered inference profiles but
+ * falls back to the configured model id so the UI remains usable when discovery fails.
+ */
 @Service
 public class AvailableModelsService {
 
@@ -65,6 +71,8 @@ public class AvailableModelsService {
                 models.addAll(bedrockCatalogClient.listInferenceProfiles());
             }
         } catch (ModelDiscoveryException ex) {
+            // Keep the selector functional even when the account cannot list inference profiles in
+            // the current region or lacks permission to do so.
             if (configuredModelId != null) {
                 return List.of(configuredModelId);
             }

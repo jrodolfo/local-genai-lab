@@ -1,4 +1,9 @@
 #!/bin/bash
+# Performs a lightweight local stack check for daily development use.
+#
+# This script distinguishes backend reachability from backend readiness, then checks the frontend
+# dev server and optionally the Ollama tags endpoint. It is broader than backend actuator health
+# because it validates the full local setup, not only the Spring Boot process.
 
 set -u
 

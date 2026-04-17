@@ -7,6 +7,8 @@ async function parseJson(response) {
 }
 
 export async function listAvailableModels() {
+  // The selector is provider-aware: Ollama returns installed local models and Bedrock returns
+  // discovered inference profiles or the configured fallback model id.
   const response = await fetch('/api/models');
   if (!response.ok) {
     const payload = await parseJson(response);
