@@ -15,6 +15,7 @@ function MessageBubble({
 }) {
   const isUser = role === 'user';
   const showTool = !isUser && tool?.used;
+  const showProviderSummary = !isUser && metadata && (metadata.provider || metadata.modelId);
   const showMetadata = !isUser && showTechnicalDetails && metadata && (metadata.provider || metadata.modelId);
   const showToolResult = !isUser && toolResult?.type;
   const showToolVarianceHint = !isUser && showTechnicalDetails && tool?.used && tool?.status === 'success';
@@ -25,6 +26,11 @@ function MessageBubble({
         <div className="message-markdown">
           {renderMarkdownBlocks(content)}
         </div>
+        {showProviderSummary ? (
+          <div className="message-provider-summary">
+            <span>{formatProviderSummary(metadata)}</span>
+          </div>
+        ) : null}
         {showTool ? (
           <div className="tool-provenance">
             <span>used tool: {tool.name}</span>
@@ -83,6 +89,28 @@ function formatDuration(totalMs) {
   parts.push(`${milliseconds} ms`);
 
   return parts.join(' ');
+}
+
+function formatProviderSummary(metadata = {}) {
+  const providerName = formatProviderName(metadata.provider);
+  if (providerName && metadata.modelId) {
+    return `${providerName} · ${metadata.modelId}`;
+  }
+  return providerName || metadata.modelId || '';
+}
+
+function formatProviderName(provider) {
+  if (!provider) {
+    return '';
+  }
+  const normalized = provider.toLowerCase();
+  if (normalized === 'ollama') {
+    return 'Ollama';
+  }
+  if (normalized === 'bedrock') {
+    return 'Bedrock';
+  }
+  return provider;
 }
 
 function renderMarkdownBlocks(content = '') {

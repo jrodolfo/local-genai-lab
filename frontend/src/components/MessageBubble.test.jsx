@@ -125,6 +125,7 @@ def factorial(n):
       />
     );
 
+    expect(screen.getByText(/Bedrock · amazon\.nova-lite-v1:0/i)).toBeInTheDocument();
     expect(screen.getByText(/technical details/i)).toBeInTheDocument();
     expect(screen.getByText(/tool completed successfully; final wording still depends on the selected model/i)).toBeInTheDocument();
     expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
@@ -156,6 +157,23 @@ def factorial(n):
     expect(screen.getByText(/ui wait: 1 m 24 s 661 ms/i)).toBeInTheDocument();
   });
 
+  it('shows provider and model by default on assistant messages', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content="Done."
+        showTechnicalDetails={false}
+        metadata={{
+          provider: 'ollama',
+          modelId: 'llama3:8b'
+        }}
+      />
+    );
+
+    expect(screen.getByText('Ollama · llama3:8b')).toBeInTheDocument();
+    expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
+  });
+
   it('hides provider metadata when technical details are disabled', () => {
     render(
       <MessageBubble
@@ -175,6 +193,7 @@ def factorial(n):
       />
     );
 
+    expect(screen.getByText(/Bedrock · amazon\.nova-lite-v1:0/i)).toBeInTheDocument();
     expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/tool completed successfully; final wording still depends on the selected model/i)).not.toBeInTheDocument();
@@ -209,5 +228,6 @@ def factorial(n):
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.queryByText(/used tool:/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bedrock · amazon\.nova-lite-v1:0/i)).not.toBeInTheDocument();
   });
 });
