@@ -51,23 +51,13 @@ RUN_SUFFIX=0
 ACCOUNT_ID="n/a"
 CALLER_ARN="n/a"
 CALLER_USER_ID="n/a"
-
-while [ -e "$OUTDIR" ]; do
-  RUN_SUFFIX=$((RUN_SUFFIX + 1))
-  OUTDIR="${BASE_OUTDIR}-${RUN_SUFFIX}"
-done
-
-TEXT_REPORT="$OUTDIR/report.txt"
-SUMMARY_JSON="$OUTDIR/summary.json"
-JSON_DIR="$OUTDIR/json"
-TEXT_DIR="$OUTDIR/text"
-STDERR_DIR="$OUTDIR/stderr"
-META_DIR="$OUTDIR/meta"
-STATUS_TSV="$META_DIR/status.tsv"
-
-mkdir -p "$OUTDIR" "$JSON_DIR" "$TEXT_DIR" "$STDERR_DIR" "$META_DIR"
-: > "$TEXT_REPORT"
-: > "$STATUS_TSV"
+TEXT_REPORT=""
+SUMMARY_JSON=""
+JSON_DIR=""
+TEXT_DIR=""
+STDERR_DIR=""
+META_DIR=""
+STATUS_TSV=""
 
 if command -v "$JQ_BIN" >/dev/null 2>&1; then
   HAS_JQ=1
@@ -263,6 +253,28 @@ parse_args() {
   if [ "$SERVICE_FILTER_ENABLED" -ne 1 ]; then
     SELECTED_SERVICES=("${ALL_SERVICES[@]}")
   fi
+}
+
+init_output() {
+  OUTDIR="$BASE_OUTDIR"
+  RUN_SUFFIX=0
+
+  while [ -e "$OUTDIR" ]; do
+    RUN_SUFFIX=$((RUN_SUFFIX + 1))
+    OUTDIR="${BASE_OUTDIR}-${RUN_SUFFIX}"
+  done
+
+  TEXT_REPORT="$OUTDIR/report.txt"
+  SUMMARY_JSON="$OUTDIR/summary.json"
+  JSON_DIR="$OUTDIR/json"
+  TEXT_DIR="$OUTDIR/text"
+  STDERR_DIR="$OUTDIR/stderr"
+  META_DIR="$OUTDIR/meta"
+  STATUS_TSV="$META_DIR/status.tsv"
+
+  mkdir -p "$OUTDIR" "$JSON_DIR" "$TEXT_DIR" "$STDERR_DIR" "$META_DIR"
+  : > "$TEXT_REPORT"
+  : > "$STATUS_TSV"
 }
 
 log_console() {
@@ -906,6 +918,7 @@ write_summary_json() {
 
 main() {
   parse_args "$@"
+  init_output
   log_console "Writing audit output to: $OUTDIR"
   log_console "Regions: ${REGIONS[*]}"
   log_console "Services: ${SELECTED_SERVICES[*]}"

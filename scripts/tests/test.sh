@@ -119,11 +119,31 @@ test_failed_service_is_recorded() {
   rm -rf "$tmp_dir"
 }
 
+test_invalid_service_does_not_create_outputs() {
+  local tmp_dir reports_dir
+
+  tmp_dir="$(mktemp -d)"
+  reports_dir="$tmp_dir/reports"
+
+  if REPORTS_DIR="$reports_dir" TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" "$SCRIPT_PATH" --services invalid >/dev/null 2>&1; then
+    printf 'expected invalid service invocation to fail\n' >&2
+    exit 1
+  fi
+
+  if [ -d "$reports_dir/aws-audit-2026-04-06_00-00-00" ]; then
+    printf 'audit output directory should not exist after argument validation failure\n' >&2
+    exit 1
+  fi
+
+  rm -rf "$tmp_dir"
+}
+
 main() {
   test_default_run_creates_outputs
   test_service_filter_records_skips
   test_unique_output_directories
   test_failed_service_is_recorded
+  test_invalid_service_does_not_create_outputs
   printf 'all tests passed\n'
 }
 

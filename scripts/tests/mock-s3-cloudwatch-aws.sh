@@ -7,6 +7,11 @@ metric_name=""
 bucket_name=""
 filter_id=""
 
+if [ -n "${MOCK_FAIL_CALL:-}" ] && [ "${service}:${command}" = "$MOCK_FAIL_CALL" ]; then
+  printf 'mock failure for call: %s:%s\n' "$service" "$command" >&2
+  exit 42
+fi
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --metric-name)

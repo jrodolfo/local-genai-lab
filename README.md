@@ -237,12 +237,13 @@ make audit
 make s3-cloudwatch BUCKET=example.com
 ```
 
-`make check-app` verifies backend, frontend, and Ollama availability with sensible local defaults.
+`make check-app` verifies backend health, backend model discovery, frontend reachability, and optional Ollama availability with sensible local defaults.
 
 ## Documentation Map
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas
+- [docs/troubleshooting.md](./docs/troubleshooting.md): common local runtime problems and practical fixes
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
 - [frontend/README.md](./frontend/README.md): frontend-specific details
 - [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks

@@ -12,7 +12,7 @@ The directory includes:
 - a regional AWS audit report generator
 - a focused S3 CloudWatch report generator for one bucket
 - local shell tests
-- a smoke-check script for the local frontend/backend/Ollama stack
+- a smoke-check script for the local frontend/backend/model-discovery/Ollama stack
 - helper scripts for starting the backend with `ollama` or `bedrock`
 
 It is designed for a practical cleanup workflow:
@@ -194,6 +194,11 @@ The smoke check uses these defaults:
 - `FRONTEND_URL=http://localhost:5173`
 - `OLLAMA_URL=http://localhost:11434`
 - `CHECK_OLLAMA=true`
+- `CHECK_MODELS=true`
+
+`check-app.sh` now checks `/api/models` as well, so it can distinguish “backend process is up” from “the UI can actually load usable models”.
+
+For common local runtime problems, see [../docs/troubleshooting.md](../docs/troubleshooting.md).
 
 Start the backend in Ollama mode:
 

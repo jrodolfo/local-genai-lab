@@ -11,6 +11,8 @@ BACKEND_URL="${BACKEND_URL:-http://localhost:8080}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:5173}"
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
 CHECK_OLLAMA="${CHECK_OLLAMA:-true}"
+CHECK_MODELS="${CHECK_MODELS:-true}"
+MODELS_URL="${MODELS_URL:-${BACKEND_URL}/api/models}"
 
 failures=0
 
@@ -67,6 +69,44 @@ check_backend() {
   fi
 }
 
+check_models() {
+  local body_file http_code response compact provider
+
+  if [ "$CHECK_MODELS" != "true" ]; then
+    print_status "models" "skipped" "CHECK_MODELS=${CHECK_MODELS}"
+    return
+  fi
+
+  body_file="$(mktemp)"
+  http_code="$(curl -sS -o "$body_file" -w "%{http_code}" "${MODELS_URL}" 2>/dev/null || true)"
+
+  if [ -z "$http_code" ] || [ "$http_code" = "000" ]; then
+    rm -f "$body_file"
+    print_status "models" "failed" "${MODELS_URL}"
+    failures=$((failures + 1))
+    return
+  fi
+
+  response="$(cat "$body_file")"
+  rm -f "$body_file"
+  compact="$(printf '%s' "$response" | tr -d '\n\r\t ')"
+  provider="$(printf '%s' "$compact" | sed -n 's/.*"provider":"\([^"]*\)".*/\1/p')"
+
+  if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+    print_status "models" "failed" "http=${http_code}"
+    failures=$((failures + 1))
+    return
+  fi
+
+  if printf '%s' "$compact" | grep -q '"models":\[\]'; then
+    print_status "models" "failed" "provider=${provider:-unknown}, no models available"
+    failures=$((failures + 1))
+    return
+  fi
+
+  print_status "models" "ok" "provider=${provider:-unknown}"
+}
+
 check_frontend() {
   if curl -fsS "${FRONTEND_URL}" >/dev/null 2>&1; then
     print_status "frontend" "ok" "${FRONTEND_URL}"
@@ -91,6 +131,7 @@ check_ollama() {
 }
 
 check_backend
+check_models
 check_frontend
 check_ollama
 

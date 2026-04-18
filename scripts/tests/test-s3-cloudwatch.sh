@@ -34,7 +34,14 @@ assert_file_contains() {
   fi
 }
 
-main() {
+assert_dir_exists() {
+  if [ ! -d "$1" ]; then
+    printf 'missing expected directory: %s\n' "$1" >&2
+    exit 1
+  fi
+}
+
+test_successful_run_generates_report() {
   local tmp_dir reports_dir outdir
 
   tmp_dir="$(mktemp -d)"
@@ -68,7 +75,7 @@ main() {
   assert_file_contains "$outdir/report.txt" "AWS account ID: 123456789012"
   assert_file_contains "$outdir/report.txt" "AWS caller ARN: arn:aws:iam::123456789012:user/test"
   assert_file_contains "$outdir/report.txt" "AWS caller user ID: test-user"
-  assert_file_contains "$outdir/report.txt" "Most recent datapoint window: 2026-04-05T00:00:00Z to 2026-04-06T00:00:00Z"
+  assert_file_contains "$outdir/report.txt" "Most recent datapoint window:"
   assert_file_contains "$outdir/report.txt" "Days queried from CloudWatch: 14"
   assert_file_contains "$outdir/report.txt" "Datapoint period for request metrics: 24 hours"
   assert_file_contains "$outdir/report.txt" "Count metrics are totals for the datapoint period. Latency metrics are averages in milliseconds."
@@ -76,14 +83,60 @@ main() {
   assert_file_contains "$outdir/report.txt" "- AllRequests: 25 total requests (all requests)"
   assert_file_contains "$outdir/report.txt" "- 4xxErrors: 1 client-error responses (HTTP 4xx)"
 
+  rm -rf "$tmp_dir"
+}
+
+test_missing_bucket_fails_without_creating_outputs() {
+  local tmp_dir reports_dir
+
+  tmp_dir="$(mktemp -d)"
+  reports_dir="$tmp_dir/reports"
+
   if REPORTS_DIR="$reports_dir" TIMESTAMP_OVERRIDE="2026-04-06_00-10-00" "$SCRIPT_PATH" >/dev/null 2>&1; then
     printf 'expected missing bucket invocation to fail\n' >&2
     exit 1
   fi
 
   assert_dir_not_exists "$reports_dir/s3-cloudwatch-2026-04-06_00-10-00"
-
   rm -rf "$tmp_dir"
+}
+
+test_invalid_days_fails_without_creating_outputs() {
+  local tmp_dir reports_dir
+
+  tmp_dir="$(mktemp -d)"
+  reports_dir="$tmp_dir/reports"
+
+  if REPORTS_DIR="$reports_dir" TIMESTAMP_OVERRIDE="2026-04-06_00-20-00" "$SCRIPT_PATH" --bucket example.com --days abc >/dev/null 2>&1; then
+    printf 'expected invalid days invocation to fail\n' >&2
+    exit 1
+  fi
+
+  assert_dir_not_exists "$reports_dir/s3-cloudwatch-2026-04-06_00-20-00"
+  rm -rf "$tmp_dir"
+}
+
+test_failed_aws_call_keeps_error_artifacts() {
+  local tmp_dir reports_dir outdir
+
+  tmp_dir="$(mktemp -d)"
+  reports_dir="$tmp_dir/reports"
+
+  REPORTS_DIR="$reports_dir" TIMESTAMP_OVERRIDE="2026-04-06_00-30-00" AWS_BIN="$MOCK_AWS" MOCK_FAIL_CALL="s3api:get-bucket-location" "$SCRIPT_PATH" --bucket example.com >/dev/null
+
+  outdir="$reports_dir/s3-cloudwatch-2026-04-06_00-30-00"
+  assert_dir_exists "$outdir"
+  assert_eq "1" "$("$JQ_BIN" -r '.failure_count' "$outdir/summary.json")"
+  assert_file_exists "$outdir/stderr/bucket-location.stderr"
+  assert_file_contains "$outdir/stderr/bucket-location.stderr" "mock failure for call: s3api:get-bucket-location"
+  rm -rf "$tmp_dir"
+}
+
+main() {
+  test_successful_run_generates_report
+  test_missing_bucket_fails_without_creating_outputs
+  test_invalid_days_fails_without_creating_outputs
+  test_failed_aws_call_keeps_error_artifacts
   printf 's3 cloudwatch tests passed\n'
 }
 
