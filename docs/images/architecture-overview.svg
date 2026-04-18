@@ -62,8 +62,8 @@
   <text class="small" x="835" y="475">typed local tool contracts</text>
 
   <rect class="box" x="1040" y="410" width="120" height="95" />
-  <text class="label" x="1058" y="452">Shell</text>
-  <text class="small" x="1053" y="475">scripts</text>
+  <text class="label" x="1100" y="447" text-anchor="middle">Shell</text>
+  <text class="label" x="1100" y="471" text-anchor="middle">Scripts</text>
 
   <rect class="box" x="1040" y="545" width="120" height="95" />
   <text class="label" x="1057" y="587">AWS CLI</text>
@@ -105,10 +105,9 @@
   <path class="arrow" d="M 640 440 L 700 500" />
   <text class="small" x="649" y="470">artifact access</text>
 
-  <path class="arrow dashed" d="M 790 555 C 880 555, 965 535, 1040 500" />
-  <text class="small" x="830" y="537">tool-generated reports</text>
+  <path class="arrow dashed" d="M 1040 500 C 965 535, 880 555, 790 555" />
+  <text class="small" x="838" y="537">tool-generated reports</text>
 
-  <path class="arrow dashed" d="M 610 555 C 540 555, 425 555, 300 555" />
-  <path class="arrow dashed" d="M 300 555 L 300 365" />
-  <text class="small" x="146" y="570">load sessions / preview artifacts</text>
+  <path class="arrow dashed" d="M 610 610 L 610 660 L 280 660 L 280 365" />
+  <text class="small" x="334" y="680">load sessions / preview artifacts</text>
 </svg>
