@@ -24,7 +24,8 @@ Default local URL:
 - supports session import, export, delete, and resume
 - renders structured MCP report cards for supported tool results
 - previews local report artifacts in-app through the backend artifact endpoints
-- shows provider metadata and technical details behind the UI debug toggle
+- shows provider/model provenance on assistant turns by default
+- keeps deeper timing and token details behind the UI debug toggle
 
 ## Backend Integration
 
@@ -44,7 +45,8 @@ It uses:
 ## Notes
 
 - the UI is session-oriented; reopened sessions restore saved messages and metadata
-- technical details are hidden by default and can be enabled from the UI
+- assistant turns show provider/model provenance by default
+- technical details such as timings, stop reasons, and token counts are hidden by default and can be enabled from the UI
 - if no Ollama models are installed locally, the composer shows a pull hint and disables sending
 - provider switching is runtime-driven by the backend `/api/models` response rather than a frontend-only toggle
 - streamed replies can enrich the final assistant message with provider metadata when the backend emits completion metadata

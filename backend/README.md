@@ -80,6 +80,9 @@ Those scripts set the backend default provider. The chat API can still override 
 
 `GET /api/models` exposes provider-aware model options for the UI:
 
+- `GET /api/models?provider=ollama`
+- `GET /api/models?provider=bedrock`
+- if `provider` is omitted, the backend returns models for the configured default provider
 - `ollama`: returns installed local models from Ollama plus the configured default model
 - `bedrock`: returns discovered Bedrock inference profiles when available and falls back to the configured model id if discovery fails
 

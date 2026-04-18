@@ -85,7 +85,7 @@ Provider selection is runtime-selectable per request. The backend maintains a pr
 Important distinction:
 
 - Ollama plain chat uses role-based chat messages
-- Bedrock currently uses the backend’s text-oriented prompt path
+- Bedrock now preserves structured system, user, and assistant messages when that context is available
 
 ### MCP Server
 
