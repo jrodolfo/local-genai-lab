@@ -274,6 +274,30 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void hybridModeFallsBackToRuleBasedAuditWhenPlannerAsksForGenericClarification() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextPlannerResponse = """
+                {
+                  "action": "clarification_needed",
+                  "toolName": "aws_region_audit",
+                  "arguments": {},
+                  "missingFields": [],
+                  "reason": "Need more information before running the tool."
+                }
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "hybrid");
+
+        ChatResponse response = orchestrator.chat("Please audit my AWS account.", "ollama", "llama3:8b", null);
+
+        assertNotNull(response.tool());
+        assertEquals("aws_region_audit", response.tool().name());
+        assertEquals("success", response.tool().status());
+        assertEquals(1, chatModelProvider.plannerCalls);
+    }
+
+    @Test
     void hybridModeUsesPlannerForPendingClarificationFollowUp() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         chatModelProvider.nextPlannerResponse = """

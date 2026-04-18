@@ -86,12 +86,26 @@ public class ToolDecisionService {
                     );
                 }
                 LlmToolPlannerService.PlanningResult planningResult = llmToolPlannerService.planDetailed(message, provider, model);
-                ChatToolRouterService.ToolDecision finalDecision = planningResult.parsedDecision()
-                        .orElseGet(() -> ruleBasedRouter.route(message));
+                ChatToolRouterService.ToolDecision rulesDecision = ruleBasedRouter.route(message);
+                ChatToolRouterService.ToolDecision finalDecision;
+                boolean fallbackUsed = planningResult.parsedDecision().isEmpty();
+
+                if (rulesDecision.shouldUseTool()) {
+                    // When the rules engine can satisfy the request deterministically, prefer that
+                    // over a planner clarification that leaks tool-internal wording or asks for
+                    // inputs that are not actually required.
+                    finalDecision = planningResult.parsedDecision()
+                            .filter(ChatToolRouterService.ToolDecision::shouldUseTool)
+                            .orElse(rulesDecision);
+                    fallbackUsed = planningResult.parsedDecision().isEmpty()
+                            || !planningResult.parsedDecision().orElse(ChatToolRouterService.ToolDecision.none()).shouldUseTool();
+                } else {
+                    finalDecision = planningResult.parsedDecision().orElse(rulesDecision);
+                }
                 yield new DecisionTrace(
                         "hybrid",
                         true,
-                        planningResult.parsedDecision().isEmpty(),
+                        fallbackUsed,
                         planningResult.rawResponse(),
                         planningResult.parsedDecision().orElse(null),
                         finalDecision
