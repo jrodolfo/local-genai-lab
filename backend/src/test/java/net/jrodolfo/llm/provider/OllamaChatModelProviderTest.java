@@ -46,6 +46,18 @@ class OllamaChatModelProviderTest {
         assertTrue(metadata.durationMs() >= 0);
     }
 
+    @Test
+    void streamChatMeasuresBlockingStreamDuration() {
+        SlowStreamingOllamaClient client = new SlowStreamingOllamaClient();
+        OllamaChatModelProvider provider = new OllamaChatModelProvider(client);
+
+        StreamingChatResult result = provider.streamChat(ProviderPrompt.forPrompt("hello"), "llama3:8b", chunk -> { });
+        ModelProviderMetadata metadata = result.completion().join();
+
+        assertNotNull(metadata.durationMs());
+        assertTrue(metadata.durationMs() >= 25);
+    }
+
     private static final class FakeOllamaClient extends OllamaClient {
 
         private FakeOllamaClient() {
@@ -61,6 +73,24 @@ class OllamaChatModelProviderTest {
         public void streamGenerate(String prompt, String model, java.util.function.Consumer<String> tokenConsumer) {
             tokenConsumer.accept("ollama");
             tokenConsumer.accept(" stream");
+        }
+    }
+
+    private static final class SlowStreamingOllamaClient extends OllamaClient {
+
+        private SlowStreamingOllamaClient() {
+            super(new ObjectMapper(), new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60));
+        }
+
+        @Override
+        public void streamGenerate(String prompt, String model, java.util.function.Consumer<String> tokenConsumer) {
+            try {
+                Thread.sleep(30);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(ex);
+            }
+            tokenConsumer.accept("done");
         }
     }
 }

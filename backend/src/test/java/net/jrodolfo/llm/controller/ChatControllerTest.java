@@ -13,7 +13,10 @@ import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
+import net.jrodolfo.llm.service.InvalidProviderException;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -32,6 +35,33 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatControllerTest {
+
+    @Test
+    void chatPassesRequestProviderFieldsToOrchestrator() {
+        TestOrchestrator orchestrator = new TestOrchestrator();
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+
+        ChatResponse response = controller.chat(new ChatRequest("hello", "bedrock", "us.amazon.nova-pro-v1:0", "session-9"));
+
+        assertEquals("hello", orchestrator.lastMessage);
+        assertEquals("bedrock", orchestrator.lastProvider);
+        assertEquals("us.amazon.nova-pro-v1:0", orchestrator.lastModel);
+        assertEquals("session-9", orchestrator.lastSessionId);
+        assertEquals("hello response", response.response());
+        assertEquals("bedrock", response.metadata().provider());
+        assertEquals("us.amazon.nova-pro-v1:0", response.metadata().modelId());
+        assertTrue(response.metadata().backendDurationMs() >= 0);
+    }
+
+    @Test
+    void invalidProviderIsReturnedAsBadRequest() {
+        ChatController controller = new ChatController(new TestOrchestrator(), new ObjectMapper(), Runnable::run);
+
+        ResponseEntity<Map<String, String>> response = controller.handleInvalidProvider(new InvalidProviderException("unsupported provider"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("unsupported provider", response.getBody().get("error"));
+    }
 
     @Test
     void failedDeltaSendDoesNotPersistAbortedTurn() {
@@ -74,11 +104,32 @@ class ChatControllerTest {
         private ChatModelProvider provider = new SynchronousStreamingProvider();
         private final PreparedChat preparedChat;
         private int completePreparedChatCalls;
+        private String lastMessage;
+        private String lastProvider;
+        private String lastModel;
+        private String lastSessionId;
 
         private TestOrchestrator() {
             super(new ChatModelProviderRegistry(new net.jrodolfo.llm.config.AppModelProperties("ollama"), java.util.Map.of("ollama", new SynchronousStreamingProvider())), null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
             ChatSession session = ChatSession.create("session-1", "llama3:8b", Instant.parse("2026-04-12T00:00:00Z"));
             this.preparedChat = new PreparedChat(provider, ProviderPrompt.forPrompt("prompt"), "llama3:8b", null, null, null, session, null);
+        }
+
+        @Override
+        public ChatResponse chat(String message, String provider, String model, String sessionId) {
+            this.lastMessage = message;
+            this.lastProvider = provider;
+            this.lastModel = model;
+            this.lastSessionId = sessionId;
+            return new ChatResponse(
+                    message + " response",
+                    model,
+                    null,
+                    null,
+                    sessionId,
+                    null,
+                    new ModelProviderMetadata(provider, model, null, null, null, null, null, null, null, null)
+            );
         }
 
         @Override

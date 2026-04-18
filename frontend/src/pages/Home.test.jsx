@@ -383,6 +383,33 @@ describe('Home', () => {
     expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
   });
 
+  it('shows a provider-specific empty state after switching to a provider with no models', async () => {
+    listAvailableModels
+      .mockResolvedValueOnce({
+        provider: 'ollama',
+        defaultProvider: 'ollama',
+        providers: ['bedrock', 'ollama'],
+        defaultModel: 'llama3:8b',
+        models: ['llama3:8b']
+      })
+      .mockResolvedValueOnce({
+        provider: 'bedrock',
+        defaultProvider: 'ollama',
+        defaultModel: 'us.amazon.nova-pro-v1:0',
+        providers: ['bedrock', 'ollama'],
+        models: []
+      });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole('combobox', { name: /chat provider/i })).toHaveValue('ollama');
+    await user.selectOptions(screen.getByRole('combobox', { name: /chat provider/i }), 'bedrock');
+
+    expect(await screen.findByText(/No models are configured for the active provider/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+  });
+
   it('renders streamed provenance before tokens complete', async () => {
     streamMessage.mockImplementation(async ({ onEvent }) => {
       onEvent({
@@ -438,9 +465,59 @@ describe('Home', () => {
     });
 
     expect(screen.getByText(/used tool: read_report_summary/i)).toBeInTheDocument();
+    expect(screen.getByText('Bedrock · amazon.nova-lite-v1:0')).toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
+  });
+
+  it('renders mixed-provider assistant turns when reopening a saved session', async () => {
+    listSessions.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        title: 'provider comparison',
+        summary: 'Compared ollama and bedrock.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:05:00Z',
+        messageCount: 4
+      }
+    ]);
+    getSession.mockResolvedValue({
+      sessionId: 'session-1',
+      title: 'provider comparison',
+      summary: 'Compared ollama and bedrock.',
+      pendingTool: null,
+      messages: [
+        { role: 'user', content: 'Explain recursion.', tool: null, timestamp: '2026-04-10T10:00:00Z' },
+        {
+          role: 'assistant',
+          content: 'Recursion is when a function calls itself.',
+          tool: null,
+          toolResult: null,
+          metadata: { provider: 'ollama', modelId: 'llama3:8b' },
+          timestamp: '2026-04-10T10:00:10Z'
+        },
+        { role: 'user', content: 'Now compare with Bedrock.', tool: null, timestamp: '2026-04-10T10:01:00Z' },
+        {
+          role: 'assistant',
+          content: 'Bedrock follows the same conversation with a different provider path.',
+          tool: null,
+          toolResult: null,
+          metadata: { provider: 'bedrock', modelId: 'us.amazon.nova-pro-v1:0' },
+          timestamp: '2026-04-10T10:01:10Z'
+        }
+      ]
+    });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('provider comparison');
+    await user.click(sessionTitle.closest('button'));
+
+    expect(await screen.findByText('Ollama · llama3:8b')).toBeInTheDocument();
+    expect(screen.getByText('Bedrock · us.amazon.nova-pro-v1:0')).toBeInTheDocument();
   });
 
   it('loads and opens an existing session from the sidebar', async () => {
