@@ -318,6 +318,65 @@ class SessionControllerTest {
     }
 
     @Test
+    void mixedProviderMetadataSurvivesExportImportRoundTrip() throws Exception {
+        ChatSession session = new ChatSession(
+                "mixed-session",
+                "llama3:8b",
+                Instant.parse("2026-04-10T10:00:00Z"),
+                Instant.parse("2026-04-10T10:03:00Z"),
+                List.of(
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Explain recursion.", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new net.jrodolfo.llm.model.ChatSessionMessage(
+                                "assistant",
+                                "Recursion is when a function calls itself.",
+                                null,
+                                null,
+                                new ModelProviderMetadata("ollama", "llama3:8b", "stop", 10, 20, 30, 100L, 90L, 110L, 120L),
+                                Instant.parse("2026-04-10T10:01:00Z")
+                        ),
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Now answer with Bedrock.", null, null, null, Instant.parse("2026-04-10T10:02:00Z")),
+                        new net.jrodolfo.llm.model.ChatSessionMessage(
+                                "assistant",
+                                "Bedrock can answer in the same session too.",
+                                null,
+                                null,
+                                new ModelProviderMetadata("bedrock", "us.amazon.nova-pro-v1:0", "end_turn", 11, 21, 32, 200L, 180L, 210L, 220L),
+                                Instant.parse("2026-04-10T10:03:00Z")
+                        )
+                ),
+                null,
+                "mixed provider session",
+                "compares ollama and bedrock"
+        );
+        sessionStore.save(session);
+
+        String exportedJson = mockMvc.perform(get("/api/sessions/mixed-session/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages[1].metadata.provider").value("ollama"))
+                .andExpect(jsonPath("$.messages[1].metadata.modelId").value("llama3:8b"))
+                .andExpect(jsonPath("$.messages[3].metadata.provider").value("bedrock"))
+                .andExpect(jsonPath("$.messages[3].metadata.modelId").value("us.amazon.nova-pro-v1:0"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String importedJson = exportedJson.replace("\"sessionId\":\"mixed-session\"", "\"sessionId\":\"mixed-session-imported\"");
+        MockMultipartFile file = new MockMultipartFile("file", "mixed-session.json", "application/json", importedJson.getBytes());
+
+        mockMvc.perform(multipart("/api/sessions/import").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value("mixed-session-imported"))
+                .andExpect(jsonPath("$.idChanged").value(false));
+
+        mockMvc.perform(get("/api/sessions/mixed-session-imported"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.messages[1].metadata.provider").value("ollama"))
+                .andExpect(jsonPath("$.messages[1].metadata.modelId").value("llama3:8b"))
+                .andExpect(jsonPath("$.messages[3].metadata.provider").value("bedrock"))
+                .andExpect(jsonPath("$.messages[3].metadata.modelId").value("us.amazon.nova-pro-v1:0"));
+    }
+
+    @Test
     void importSessionGeneratesNewIdOnCollision() throws Exception {
         saveSession("session-1", "existing session", Instant.parse("2026-04-10T10:00:00Z"));
         String json = """
