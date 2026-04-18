@@ -84,11 +84,45 @@ class BedrockChatModelProviderTest {
         assertEquals("bedrock", result.completion().join().provider());
     }
 
+    @Test
+    void usesStructuredMessagesWhenProviderPromptContainsHistory() {
+        FakeBedrockRuntimeGateway gateway = new FakeBedrockRuntimeGateway();
+        BedrockChatModelProvider provider = new BedrockChatModelProvider(
+                gateway,
+                new BedrockProperties("us-east-1", "amazon.nova-lite-v1:0")
+        );
+
+        provider.chat(
+                ProviderPrompt.forMessages(
+                        List.of(
+                                new ProviderPromptMessage("system", "You are helpful."),
+                                new ProviderPromptMessage("user", "hello"),
+                                new ProviderPromptMessage("assistant", "hi"),
+                                new ProviderPromptMessage("user", "follow up")
+                        ),
+                        "fallback"
+                ),
+                " ",
+                null,
+                null,
+                "session-1",
+                null
+        );
+
+        assertEquals(List.of(
+                new ProviderPromptMessage("system", "You are helpful."),
+                new ProviderPromptMessage("user", "hello"),
+                new ProviderPromptMessage("assistant", "hi"),
+                new ProviderPromptMessage("user", "follow up")
+        ), gateway.lastMessages);
+    }
+
     private static final class FakeBedrockRuntimeGateway implements BedrockRuntimeGateway {
         private String lastPrompt;
         private String lastModelId;
         private String lastStreamPrompt;
         private String lastStreamModelId;
+        private List<ProviderPromptMessage> lastMessages = List.of();
 
         @Override
         public ModelProviderReply converse(String prompt, String modelId) {
@@ -101,8 +135,33 @@ class BedrockChatModelProviderTest {
         }
 
         @Override
+        public ModelProviderReply converse(List<ProviderPromptMessage> messages, String modelId) {
+            this.lastMessages = List.copyOf(messages);
+            this.lastModelId = modelId;
+            return new ModelProviderReply(
+                    "bedrock response",
+                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 10, 20, 30, 400L, 390L, null, null)
+            );
+        }
+
+        @Override
         public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
             this.lastStreamPrompt = prompt;
+            this.lastStreamModelId = modelId;
+            chunkConsumer.accept("bedrock");
+            chunkConsumer.accept(" stream");
+            return CompletableFuture.completedFuture(
+                    new ModelProviderMetadata("bedrock", modelId, "end_turn", 1, 2, 3, 4L, 5L, null, null)
+            );
+        }
+
+        @Override
+        public CompletableFuture<ModelProviderMetadata> converseStream(
+                List<ProviderPromptMessage> messages,
+                String modelId,
+                java.util.function.Consumer<String> chunkConsumer
+        ) {
+            this.lastMessages = List.copyOf(messages);
             this.lastStreamModelId = modelId;
             chunkConsumer.accept("bedrock");
             chunkConsumer.accept(" stream");
@@ -121,7 +180,22 @@ class BedrockChatModelProviderTest {
         }
 
         @Override
+        public ModelProviderReply converse(List<ProviderPromptMessage> messages, String modelId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
+            chunkConsumer.accept("bedrock");
+            return completion;
+        }
+
+        @Override
+        public CompletableFuture<ModelProviderMetadata> converseStream(
+                List<ProviderPromptMessage> messages,
+                String modelId,
+                java.util.function.Consumer<String> chunkConsumer
+        ) {
             chunkConsumer.accept("bedrock");
             return completion;
         }

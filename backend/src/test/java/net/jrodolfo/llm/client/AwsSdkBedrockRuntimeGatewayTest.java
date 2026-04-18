@@ -2,6 +2,7 @@ package net.jrodolfo.llm.client;
 
 import org.junit.jupiter.api.Test;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.provider.ProviderPromptMessage;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseMetrics;
@@ -16,6 +17,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamRespon
 import software.amazon.awssdk.services.bedrockruntime.model.Message;
 import software.amazon.awssdk.services.bedrockruntime.model.MessageStopEvent;
 import software.amazon.awssdk.services.bedrockruntime.model.StopReason;
+import software.amazon.awssdk.services.bedrockruntime.model.SystemContentBlock;
 import software.amazon.awssdk.services.bedrockruntime.model.TokenUsage;
 
 import java.lang.reflect.Proxy;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AwsSdkBedrockRuntimeGatewayTest {
@@ -58,6 +61,77 @@ class AwsSdkBedrockRuntimeGatewayTest {
         assertEquals(34, metadata.outputTokens());
         assertEquals(46, metadata.totalTokens());
         assertEquals(321L, metadata.providerLatencyMs());
+    }
+
+    @Test
+    void converseUsesStructuredMessagesAndSystemPromptWhenProvided() {
+        AtomicBoolean asserted = new AtomicBoolean(false);
+        BedrockRuntimeClient syncClient = (BedrockRuntimeClient) Proxy.newProxyInstance(
+                BedrockRuntimeClient.class.getClassLoader(),
+                new Class<?>[]{BedrockRuntimeClient.class},
+                (proxy, method, args) -> {
+                    if ("converse".equals(method.getName())) {
+                        var request = (software.amazon.awssdk.services.bedrockruntime.model.ConverseRequest) args[0];
+                        assertEquals(1, request.system().size());
+                        assertEquals("You are helpful.", request.system().getFirst().text());
+                        assertEquals(2, request.messages().size());
+                        assertEquals("hello", request.messages().get(0).content().getFirst().text());
+                        assertEquals("hi", request.messages().get(1).content().getFirst().text());
+                        asserted.set(true);
+                        return ConverseResponse.builder()
+                                .stopReason(StopReason.END_TURN)
+                                .output(ConverseOutput.builder()
+                                        .message(Message.builder()
+                                                .content(software.amazon.awssdk.services.bedrockruntime.model.ContentBlock.fromText("ok"))
+                                                .build())
+                                        .build())
+                                .build();
+                    }
+                    return defaultValue(method.getReturnType());
+                }
+        );
+
+        AwsSdkBedrockRuntimeGateway gateway = new AwsSdkBedrockRuntimeGateway(syncClient, asyncClient((request, handler) -> CompletableFuture.completedFuture(null)));
+
+        gateway.converse(
+                List.of(
+                        new ProviderPromptMessage("system", "You are helpful."),
+                        new ProviderPromptMessage("user", "hello"),
+                        new ProviderPromptMessage("assistant", "hi")
+                ),
+                "amazon.nova-lite-v1:0"
+        );
+
+        assertTrue(asserted.get());
+    }
+
+    @Test
+    void converseStreamUsesStructuredMessagesAndSystemPromptWhenProvided() {
+        AtomicBoolean asserted = new AtomicBoolean(false);
+        BedrockRuntimeAsyncClient asyncClient = asyncClient((request, handler) -> {
+            assertEquals(1, request.system().size());
+            assertEquals("You are helpful.", request.system().getFirst().text());
+            assertEquals(2, request.messages().size());
+            assertEquals("hello", request.messages().get(0).content().getFirst().text());
+            assertEquals("hi", request.messages().get(1).content().getFirst().text());
+            asserted.set(true);
+            handler.complete();
+            return CompletableFuture.completedFuture(null);
+        });
+
+        AwsSdkBedrockRuntimeGateway gateway = new AwsSdkBedrockRuntimeGateway(syncClient(), asyncClient);
+
+        gateway.converseStream(
+                List.of(
+                        new ProviderPromptMessage("system", "You are helpful."),
+                        new ProviderPromptMessage("user", "hello"),
+                        new ProviderPromptMessage("assistant", "hi")
+                ),
+                "amazon.nova-lite-v1:0",
+                chunk -> { }
+        ).join();
+
+        assertTrue(asserted.get());
     }
 
     @Test

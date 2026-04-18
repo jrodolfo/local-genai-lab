@@ -31,17 +31,19 @@ public class BedrockChatModelProvider implements ChatModelProvider {
             String sessionId,
             PendingToolCallResponse pendingTool
     ) {
-        String normalizedMessage = prompt.prompt().trim();
         String resolvedModel = resolveModel(model);
-        ModelProviderReply reply = bedrockRuntimeGateway.converse(normalizedMessage, resolvedModel);
+        ModelProviderReply reply = prompt.hasMessages()
+                ? bedrockRuntimeGateway.converse(prompt.messages(), resolvedModel)
+                : bedrockRuntimeGateway.converse(prompt.prompt().trim(), resolvedModel);
         return new ChatResponse(reply.text(), resolvedModel, toolMetadata, toolResult, sessionId, pendingTool, reply.metadata());
     }
 
     @Override
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
-        String normalizedMessage = prompt.prompt().trim();
         String resolvedModel = resolveModel(model);
-        var completion = bedrockRuntimeGateway.converseStream(normalizedMessage, resolvedModel, tokenConsumer);
+        var completion = prompt.hasMessages()
+                ? bedrockRuntimeGateway.converseStream(prompt.messages(), resolvedModel, tokenConsumer)
+                : bedrockRuntimeGateway.converseStream(prompt.prompt().trim(), resolvedModel, tokenConsumer);
         return new StreamingChatResult(completion, () -> completion.cancel(true));
     }
 

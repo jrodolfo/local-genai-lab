@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.client;
 
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.provider.ProviderPromptMessage;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
@@ -16,8 +17,11 @@ import software.amazon.awssdk.services.bedrockruntime.model.Message;
 import software.amazon.awssdk.services.bedrockruntime.model.TokenUsage;
 import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetadataEvent;
 import software.amazon.awssdk.services.bedrockruntime.model.MessageStopEvent;
+import software.amazon.awssdk.services.bedrockruntime.model.SystemContentBlock;
 import software.amazon.awssdk.services.bedrockruntime.model.ValidationException;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,31 +51,24 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
     public ModelProviderReply converse(String prompt, String modelId) {
         try {
             long startedAt = System.currentTimeMillis();
-            ConverseRequest request = buildConverseRequest(prompt, modelId);
+            ConverseRequest request = buildConverseRequest(buildUserMessage(prompt), List.of(), modelId);
             ConverseResponse response = bedrockRuntimeClient.converse(request);
-            if (response.output() == null || response.output().message() == null || response.output().message().content() == null) {
-                throw new ModelProviderException("Bedrock response did not contain message content.");
-            }
-            String output = response.output().message().content().stream()
-                    .map(ContentBlock::text)
-                    .filter(text -> text != null && !text.isBlank())
-                    .collect(Collectors.joining());
-            if (output.isBlank()) {
-                throw new ModelProviderException("Bedrock response did not contain text output.");
-            }
-            ModelProviderMetadata metadata = new ModelProviderMetadata(
-                    "bedrock",
-                    modelId,
-                    response.stopReason() != null ? response.stopReasonAsString() : null,
-                    response.usage() != null ? response.usage().inputTokens() : null,
-                    response.usage() != null ? response.usage().outputTokens() : null,
-                    response.usage() != null ? response.usage().totalTokens() : null,
-                    System.currentTimeMillis() - startedAt,
-                    response.metrics() != null ? response.metrics().latencyMs() : null,
-                    null,
-                    null
-            );
-            return new ModelProviderReply(output, metadata);
+            return toReply(response, modelId, startedAt);
+        } catch (ValidationException ex) {
+            throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
+        } catch (RuntimeException ex) {
+            throw new ModelProviderException("Failed to call Bedrock converse endpoint.", ex);
+        }
+    }
+
+    @Override
+    public ModelProviderReply converse(List<ProviderPromptMessage> messages, String modelId) {
+        try {
+            long startedAt = System.currentTimeMillis();
+            StructuredBedrockPrompt prompt = toStructuredPrompt(messages);
+            ConverseRequest request = buildConverseRequest(prompt.messages(), prompt.system(), modelId);
+            ConverseResponse response = bedrockRuntimeClient.converse(request);
+            return toReply(response, modelId, startedAt);
         } catch (ValidationException ex) {
             throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
         } catch (RuntimeException ex) {
@@ -82,7 +79,42 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
     @Override
     public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, Consumer<String> chunkConsumer) {
         try {
-            ConverseStreamRequest request = buildConverseStreamRequest(prompt, modelId);
+            ConverseStreamRequest request = buildConverseStreamRequest(buildUserMessage(prompt), List.of(), modelId);
+            return stream(request, modelId, chunkConsumer);
+        } catch (ValidationException ex) {
+            throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
+        } catch (SdkException ex) {
+            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
+        } catch (RuntimeException ex) {
+            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
+        }
+    }
+
+    @Override
+    public CompletableFuture<ModelProviderMetadata> converseStream(
+            List<ProviderPromptMessage> messages,
+            String modelId,
+            Consumer<String> chunkConsumer
+    ) {
+        try {
+            StructuredBedrockPrompt prompt = toStructuredPrompt(messages);
+            ConverseStreamRequest request = buildConverseStreamRequest(prompt.messages(), prompt.system(), modelId);
+            return stream(request, modelId, chunkConsumer);
+        } catch (ValidationException ex) {
+            throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
+        } catch (SdkException ex) {
+            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
+        } catch (RuntimeException ex) {
+            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
+        }
+    }
+
+    private CompletableFuture<ModelProviderMetadata> stream(
+            ConverseStreamRequest request,
+            String modelId,
+            Consumer<String> chunkConsumer
+    ) {
+        try {
             long startedAt = System.currentTimeMillis();
             AtomicReference<String> stopReason = new AtomicReference<>();
             AtomicReference<TokenUsage> usage = new AtomicReference<>();
@@ -132,34 +164,96 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                 }
             });
             return metadataFuture;
-        } catch (ValidationException ex) {
-            throw new ModelProviderException("Bedrock request validation failed: " + ex.getMessage(), ex);
-        } catch (SdkException ex) {
-            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
         } catch (RuntimeException ex) {
-            throw new ModelProviderException("Failed to stream from Bedrock.", ex);
+            throw ex;
         }
     }
 
-    private ConverseRequest buildConverseRequest(String prompt, String modelId) {
+    private ConverseRequest buildConverseRequest(List<Message> messages, List<SystemContentBlock> system, String modelId) {
         return ConverseRequest.builder()
                 .modelId(modelId)
-                .messages(buildUserMessage(prompt))
+                .messages(messages)
+                .system(system)
                 .build();
     }
 
-    private ConverseStreamRequest buildConverseStreamRequest(String prompt, String modelId) {
+    private ConverseStreamRequest buildConverseStreamRequest(List<Message> messages, List<SystemContentBlock> system, String modelId) {
         return ConverseStreamRequest.builder()
                 .modelId(modelId)
-                .messages(buildUserMessage(prompt))
+                .messages(messages)
+                .system(system)
                 .build();
     }
 
-    private Message buildUserMessage(String prompt) {
-        return Message.builder()
+    private List<Message> buildUserMessage(String prompt) {
+        return List.of(Message.builder()
                 .role(ConversationRole.USER)
                 .content(ContentBlock.fromText(prompt))
+                .build());
+    }
+
+    private StructuredBedrockPrompt toStructuredPrompt(List<ProviderPromptMessage> providerMessages) {
+        List<Message> messages = new ArrayList<>();
+        List<SystemContentBlock> system = new ArrayList<>();
+
+        for (ProviderPromptMessage providerMessage : providerMessages) {
+            if (providerMessage == null || providerMessage.content() == null || providerMessage.content().isBlank()) {
+                continue;
+            }
+
+            String role = providerMessage.role() == null ? "" : providerMessage.role().trim().toLowerCase();
+            switch (role) {
+                case "system" -> system.add(SystemContentBlock.fromText(providerMessage.content()));
+                case "user" -> messages.add(toBedrockMessage(ConversationRole.USER, providerMessage.content()));
+                case "assistant" -> messages.add(toBedrockMessage(ConversationRole.ASSISTANT, providerMessage.content()));
+                default -> throw new ModelProviderException("Unsupported Bedrock prompt role: " + providerMessage.role());
+            }
+        }
+
+        if (messages.isEmpty()) {
+            throw new ModelProviderException("Bedrock structured prompt must contain at least one user or assistant message.");
+        }
+
+        return new StructuredBedrockPrompt(List.copyOf(messages), List.copyOf(system));
+    }
+
+    private Message toBedrockMessage(ConversationRole role, String content) {
+        return Message.builder()
+                .role(role)
+                .content(ContentBlock.fromText(content))
                 .build();
+    }
+
+    private ModelProviderReply toReply(ConverseResponse response, String modelId, long startedAt) {
+        if (response.output() == null || response.output().message() == null || response.output().message().content() == null) {
+            throw new ModelProviderException("Bedrock response did not contain message content.");
+        }
+        String output = response.output().message().content().stream()
+                .map(ContentBlock::text)
+                .filter(text -> text != null && !text.isBlank())
+                .collect(Collectors.joining());
+        if (output.isBlank()) {
+            throw new ModelProviderException("Bedrock response did not contain text output.");
+        }
+        ModelProviderMetadata metadata = new ModelProviderMetadata(
+                "bedrock",
+                modelId,
+                response.stopReason() != null ? response.stopReasonAsString() : null,
+                response.usage() != null ? response.usage().inputTokens() : null,
+                response.usage() != null ? response.usage().outputTokens() : null,
+                response.usage() != null ? response.usage().totalTokens() : null,
+                System.currentTimeMillis() - startedAt,
+                response.metrics() != null ? response.metrics().latencyMs() : null,
+                null,
+                null
+        );
+        return new ModelProviderReply(output, metadata);
+    }
+
+    private record StructuredBedrockPrompt(
+            List<Message> messages,
+            List<SystemContentBlock> system
+    ) {
     }
 
     private void forwardChunk(ContentBlockDeltaEvent event, Consumer<String> chunkConsumer) {

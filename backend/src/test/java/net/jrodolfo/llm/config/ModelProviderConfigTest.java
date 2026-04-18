@@ -8,6 +8,7 @@ import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.OllamaChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPromptMessage;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -69,7 +70,23 @@ class ModelProviderConfigTest {
         }
 
         @Override
+        public ModelProviderReply converse(java.util.List<ProviderPromptMessage> messages, String modelId) {
+            return new ModelProviderReply("ok", new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null, null, null));
+        }
+
+        @Override
         public CompletableFuture<ModelProviderMetadata> converseStream(String prompt, String modelId, java.util.function.Consumer<String> chunkConsumer) {
+            return CompletableFuture.completedFuture(
+                    new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null, null, null)
+            );
+        }
+
+        @Override
+        public CompletableFuture<ModelProviderMetadata> converseStream(
+                java.util.List<ProviderPromptMessage> messages,
+                String modelId,
+                java.util.function.Consumer<String> chunkConsumer
+        ) {
             return CompletableFuture.completedFuture(
                     new ModelProviderMetadata("bedrock", modelId, null, null, null, null, null, null, null, null)
             );
