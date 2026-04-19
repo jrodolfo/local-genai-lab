@@ -641,6 +641,11 @@ function Home() {
                 ) : null}
               </div>
             ) : null}
+            {providerStatus.refreshedAt ? (
+              <span className="provider-status-refreshed">
+                {`Last checked: ${new Date(providerStatus.refreshedAt).toLocaleString()}`}
+              </span>
+            ) : null}
           </div>
         ) : null}
 

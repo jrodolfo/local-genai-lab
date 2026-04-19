@@ -252,6 +252,12 @@
   color: #475569;
 }
 
+.provider-status-refreshed {
+  width: 100%;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
 .provider-status-ready {
   background: #ecfdf5;
   border-color: #86efac;

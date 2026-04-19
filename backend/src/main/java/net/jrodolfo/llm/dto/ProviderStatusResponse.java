@@ -12,6 +12,8 @@ public record ProviderStatusResponse(
         String status,
         @Schema(description = "Short user-facing explanation of the current provider state.")
         String message,
+        @Schema(description = "ISO-8601 timestamp of the last provider status refresh.", example = "2026-04-19T20:15:00Z")
+        String refreshedAt,
         @Schema(description = "Configured candidate models considered for the selected provider when applicable.")
         List<String> configuredModels,
         @Schema(description = "Models currently validated as usable for the selected provider when applicable.")
@@ -20,6 +22,10 @@ public record ProviderStatusResponse(
         List<String> rejectedModels
 ) {
     public ProviderStatusResponse(String provider, String status, String message) {
-        this(provider, status, message, List.of(), List.of(), List.of());
+        this(provider, status, message, null, List.of(), List.of(), List.of());
+    }
+
+    public ProviderStatusResponse(String provider, String status, String message, String refreshedAt) {
+        this(provider, status, message, refreshedAt, List.of(), List.of(), List.of());
     }
 }

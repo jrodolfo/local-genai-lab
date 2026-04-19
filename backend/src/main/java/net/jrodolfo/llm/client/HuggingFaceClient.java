@@ -12,7 +12,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,13 +33,15 @@ public class HuggingFaceClient {
     private final ObjectMapper objectMapper;
     private final HuggingFaceProperties huggingFaceProperties;
     private final HttpClient httpClient;
+    private final Clock clock;
+    private final Duration discoveryCacheTtl;
     // Cache the last validated probe context for a short period so provider status and model
     // discovery can share the same remote validation result without repeatedly probing the
     // hosted endpoint. The cache must remember the candidate set, not only the usable subset,
     // otherwise an expanded or changed request can accidentally reuse stale probe results.
     private volatile List<String> cachedUsableModels = List.of();
     private volatile Set<String> cachedCandidateModels = Set.of();
-    private volatile long cachedUsableModelsAtMillis = 0L;
+    private volatile Instant cachedUsableModelsAt = Instant.EPOCH;
 
     public HuggingFaceClient(ObjectMapper objectMapper, HuggingFaceProperties huggingFaceProperties) {
         this(
@@ -45,7 +49,9 @@ public class HuggingFaceClient {
                 huggingFaceProperties,
                 HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(Math.max(1, huggingFaceProperties.connectTimeoutSeconds())))
-                        .build()
+                        .build(),
+                Clock.systemUTC(),
+                Duration.ofSeconds(30)
         );
     }
 
@@ -54,9 +60,21 @@ public class HuggingFaceClient {
             HuggingFaceProperties huggingFaceProperties,
             HttpClient httpClient
     ) {
+        this(objectMapper, huggingFaceProperties, httpClient, Clock.systemUTC(), Duration.ofSeconds(30));
+    }
+
+    HuggingFaceClient(
+            ObjectMapper objectMapper,
+            HuggingFaceProperties huggingFaceProperties,
+            HttpClient httpClient,
+            Clock clock,
+            Duration discoveryCacheTtl
+    ) {
         this.objectMapper = objectMapper;
         this.huggingFaceProperties = huggingFaceProperties;
         this.httpClient = httpClient;
+        this.clock = clock;
+        this.discoveryCacheTtl = discoveryCacheTtl;
     }
 
     public ModelProviderReply chat(List<ProviderPromptMessage> messages, String model) {
@@ -112,21 +130,28 @@ public class HuggingFaceClient {
      * state without triggering repeated probe requests.
      */
     public List<String> discoverUsableModels(List<String> candidateModels) {
+        return discoverUsableModelsSnapshot(candidateModels).usableModels();
+    }
+
+    public DiscoverySnapshot discoverUsableModelsSnapshot(List<String> candidateModels) {
         List<String> normalizedCandidates = candidateModels == null ? List.of() : candidateModels.stream()
                 .filter(model -> model != null && !model.isBlank())
                 .map(String::trim)
                 .distinct()
                 .toList();
         if (normalizedCandidates.isEmpty()) {
-            return List.of();
+            return new DiscoverySnapshot(List.of(), Instant.now(clock));
         }
 
-        long now = System.currentTimeMillis();
+        Instant now = Instant.now(clock);
         Set<String> candidateSet = Set.copyOf(normalizedCandidates);
-        if (now - cachedUsableModelsAtMillis < 30_000L && cachedCandidateModels.equals(candidateSet)) {
-            return normalizedCandidates.stream()
-                    .filter(cachedUsableModels::contains)
-                    .toList();
+        if (cachedCandidateModels.equals(candidateSet) && now.isBefore(cachedUsableModelsAt.plus(discoveryCacheTtl))) {
+            return new DiscoverySnapshot(
+                    normalizedCandidates.stream()
+                            .filter(cachedUsableModels::contains)
+                            .toList(),
+                    cachedUsableModelsAt
+            );
         }
 
         List<String> usableModels = new ArrayList<>();
@@ -138,8 +163,8 @@ public class HuggingFaceClient {
         List<String> immutableUsableModels = List.copyOf(usableModels);
         cachedUsableModels = immutableUsableModels;
         cachedCandidateModels = candidateSet;
-        cachedUsableModelsAtMillis = now;
-        return immutableUsableModels;
+        cachedUsableModelsAt = now;
+        return new DiscoverySnapshot(immutableUsableModels, now);
     }
 
     private boolean isModelUsable(String model) {
@@ -254,5 +279,11 @@ public class HuggingFaceClient {
         }
         String value = node.asText();
         return value == null || value.isBlank() ? null : value;
+    }
+
+    public record DiscoverySnapshot(
+            List<String> usableModels,
+            Instant checkedAt
+    ) {
     }
 }

@@ -18,6 +18,8 @@ import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -57,6 +59,28 @@ class HuggingFaceClientTest {
         assertEquals(List.of("meta-llama/Llama-3.1-8B-Instruct"), first);
         assertEquals(List.of("meta-llama/Llama-3.1-8B-Instruct"), second);
         assertEquals(2, httpClient.sendCount());
+    }
+
+    @Test
+    void discoverUsableModelsSnapshotReusesCheckedAtWhileCacheIsFresh() {
+        RecordingHttpClient httpClient = new RecordingHttpClient();
+        httpClient.addResponse("meta-llama/Llama-3.1-8B-Instruct", 200, "{}");
+        MutableClock clock = new MutableClock(Instant.parse("2026-04-19T00:00:00Z"));
+
+        HuggingFaceClient client = new HuggingFaceClient(
+                new ObjectMapper(),
+                properties(),
+                httpClient,
+                clock,
+                Duration.ofSeconds(30)
+        );
+
+        HuggingFaceClient.DiscoverySnapshot first = client.discoverUsableModelsSnapshot(List.of("meta-llama/Llama-3.1-8B-Instruct"));
+        clock.set(Instant.parse("2026-04-19T00:00:10Z"));
+        HuggingFaceClient.DiscoverySnapshot second = client.discoverUsableModelsSnapshot(List.of("meta-llama/Llama-3.1-8B-Instruct"));
+
+        assertEquals(first.checkedAt(), second.checkedAt());
+        assertEquals(1, httpClient.sendCount());
     }
 
     @Test
@@ -316,6 +340,33 @@ class HuggingFaceClientTest {
                 HttpResponse.PushPromiseHandler<T> pushPromiseHandler
         ) {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static final class MutableClock extends java.time.Clock {
+        private Instant current;
+
+        private MutableClock(Instant current) {
+            this.current = current;
+        }
+
+        void set(Instant instant) {
+            this.current = instant;
+        }
+
+        @Override
+        public ZoneOffset getZone() {
+            return ZoneOffset.UTC;
+        }
+
+        @Override
+        public java.time.Clock withZone(java.time.ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return current;
         }
     }
 

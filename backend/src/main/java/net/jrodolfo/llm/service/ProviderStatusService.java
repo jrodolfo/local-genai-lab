@@ -10,8 +10,13 @@ import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.ProviderStatusResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -26,13 +31,19 @@ import java.util.List;
 @Service
 public class ProviderStatusService {
 
+    private static final Duration STATUS_CACHE_TTL = Duration.ofSeconds(15);
+
     private final ChatModelProviderRegistry chatModelProviderRegistry;
     private final OllamaProperties ollamaProperties;
     private final BedrockProperties bedrockProperties;
     private final HuggingFaceProperties huggingFaceProperties;
     private final OllamaClient ollamaClient;
     private final HuggingFaceClient huggingFaceClient;
+    private final Clock clock;
+    private final Duration statusCacheTtl;
+    private final ConcurrentHashMap<String, CachedStatus> cachedStatuses = new ConcurrentHashMap<>();
 
+    @Autowired
     public ProviderStatusService(
             ChatModelProviderRegistry chatModelProviderRegistry,
             OllamaProperties ollamaProperties,
@@ -41,26 +52,58 @@ public class ProviderStatusService {
             OllamaClient ollamaClient,
             @org.springframework.lang.Nullable HuggingFaceClient huggingFaceClient
     ) {
+        this(
+                chatModelProviderRegistry,
+                ollamaProperties,
+                bedrockProperties,
+                huggingFaceProperties,
+                ollamaClient,
+                huggingFaceClient,
+                Clock.systemUTC(),
+                STATUS_CACHE_TTL
+        );
+    }
+
+    ProviderStatusService(
+            ChatModelProviderRegistry chatModelProviderRegistry,
+            OllamaProperties ollamaProperties,
+            BedrockProperties bedrockProperties,
+            HuggingFaceProperties huggingFaceProperties,
+            OllamaClient ollamaClient,
+            @org.springframework.lang.Nullable HuggingFaceClient huggingFaceClient,
+            Clock clock,
+            Duration statusCacheTtl
+    ) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.ollamaProperties = ollamaProperties;
         this.bedrockProperties = bedrockProperties;
         this.huggingFaceProperties = huggingFaceProperties;
         this.ollamaClient = ollamaClient;
         this.huggingFaceClient = huggingFaceClient;
+        this.clock = clock;
+        this.statusCacheTtl = statusCacheTtl;
     }
 
     public ProviderStatusResponse getProviderStatus(String provider) {
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
         chatModelProviderRegistry.get(resolvedProvider);
-        return switch (resolvedProvider) {
+        Instant now = Instant.now(clock);
+        CachedStatus cachedStatus = cachedStatuses.get(resolvedProvider);
+        if (cachedStatus != null && now.isBefore(cachedStatus.checkedAt().plus(statusCacheTtl))) {
+            return cachedStatus.response();
+        }
+        ProviderStatusResponse response = switch (resolvedProvider) {
             case "bedrock" -> bedrockStatus();
             case "huggingface" -> huggingFaceStatus();
             case "ollama" -> ollamaStatus();
             default -> throw new InvalidProviderException("Unsupported model provider: " + resolvedProvider);
         };
+        cachedStatuses.put(resolvedProvider, new CachedStatus(response, now));
+        return response;
     }
 
     private ProviderStatusResponse ollamaStatus() {
+        Instant now = Instant.now(clock);
         try {
             List<String> models = ollamaClient.listModels();
             String defaultModel = normalize(ollamaProperties.defaultModel());
@@ -68,27 +111,31 @@ public class ProviderStatusService {
                 return new ProviderStatusResponse(
                         "ollama",
                         "model_missing",
-                        "No Ollama models are installed locally. Run ollama pull llama3:8b and refresh."
+                        "No Ollama models are installed locally. Run ollama pull llama3:8b and refresh.",
+                        now.toString()
                 );
             }
             if (defaultModel != null && !models.contains(defaultModel)) {
                 return new ProviderStatusResponse(
                         "ollama",
                         "default_model_missing",
-                        "Ollama is reachable, but the configured default model is not installed."
+                        "Ollama is reachable, but the configured default model is not installed.",
+                        now.toString()
                 );
             }
-            return new ProviderStatusResponse("ollama", "ready", "Ollama is reachable and ready.");
+            return new ProviderStatusResponse("ollama", "ready", "Ollama is reachable and ready.", now.toString());
         } catch (OllamaClientException ex) {
             return new ProviderStatusResponse(
                     "ollama",
                     "unreachable",
-                    "Ollama is not reachable. Check that the local Ollama service is running."
+                    "Ollama is not reachable. Check that the local Ollama service is running.",
+                    now.toString()
             );
         }
     }
 
     private ProviderStatusResponse bedrockStatus() {
+        Instant now = Instant.now(clock);
         boolean regionConfigured = normalize(bedrockProperties.region()) != null;
         boolean modelConfigured = normalize(bedrockProperties.modelId()) != null;
 
@@ -96,13 +143,15 @@ public class ProviderStatusService {
             return new ProviderStatusResponse(
                     "bedrock",
                     "misconfigured",
-                    "Bedrock needs a region and model before requests can succeed."
+                    "Bedrock needs a region and model before requests can succeed.",
+                    now.toString()
             );
         }
-        return new ProviderStatusResponse("bedrock", "ready", "Bedrock is configured and ready.");
+        return new ProviderStatusResponse("bedrock", "ready", "Bedrock is configured and ready.", now.toString());
     }
 
     private ProviderStatusResponse huggingFaceStatus() {
+        Instant now = Instant.now(clock);
         boolean tokenConfigured = normalize(huggingFaceProperties.apiToken()) != null;
         boolean baseUrlConfigured = normalize(huggingFaceProperties.baseUrl()) != null;
         boolean modelConfigured = normalize(huggingFaceProperties.defaultModel()) != null;
@@ -111,14 +160,16 @@ public class ProviderStatusService {
             return new ProviderStatusResponse(
                     "huggingface",
                     "misconfigured",
-                    "Hugging Face needs an API token, base URL, and default model before requests can succeed."
+                    "Hugging Face needs an API token, base URL, and default model before requests can succeed.",
+                    now.toString()
             );
         }
         if (huggingFaceClient == null) {
             return new ProviderStatusResponse(
                     "huggingface",
                     "misconfigured",
-                    "Hugging Face is selected, but the backend client is not enabled."
+                    "Hugging Face is selected, but the backend client is not enabled.",
+                    now.toString()
             );
         }
 
@@ -137,7 +188,8 @@ public class ProviderStatusService {
         }
         List<String> configuredModels = List.copyOf(configuredCandidates);
         try {
-            List<String> usableModels = huggingFaceClient.discoverUsableModels(configuredModels);
+            HuggingFaceClient.DiscoverySnapshot discoverySnapshot = huggingFaceClient.discoverUsableModelsSnapshot(configuredModels);
+            List<String> usableModels = discoverySnapshot.usableModels();
             List<String> rejectedModels = configuredModels.stream()
                     .filter(model -> !usableModels.contains(model))
                     .toList();
@@ -146,6 +198,7 @@ public class ProviderStatusService {
                         "huggingface",
                         "ready",
                         "Hugging Face is configured and ready.",
+                        discoverySnapshot.checkedAt().toString(),
                         configuredModels,
                         usableModels,
                         rejectedModels
@@ -156,6 +209,7 @@ public class ProviderStatusService {
                     "huggingface",
                     "unreachable",
                     "Hugging Face model discovery failed. Check the token, base URL, network access, or provider availability.",
+                    now.toString(),
                     configuredModels,
                     List.of(),
                     configuredModels
@@ -165,6 +219,7 @@ public class ProviderStatusService {
                 "huggingface",
                 "model_missing",
                 "No configured Hugging Face models are currently usable. Check the token, model ids, or provider access.",
+                now.toString(),
                 configuredModels,
                 List.of(),
                 configuredModels
@@ -176,5 +231,11 @@ public class ProviderStatusService {
             return null;
         }
         return value.trim();
+    }
+
+    private record CachedStatus(
+            ProviderStatusResponse response,
+            Instant checkedAt
+    ) {
     }
 }

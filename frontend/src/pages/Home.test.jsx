@@ -61,7 +61,8 @@ describe('Home', () => {
     getProviderStatus.mockResolvedValue({
       provider: 'ollama',
       status: 'ready',
-      message: 'Ollama is reachable and ready.'
+      message: 'Ollama is reachable and ready.',
+      refreshedAt: '2026-04-19T00:00:00Z'
     });
     exportSession.mockResolvedValue({
       blob: new Blob(['{"sessionId":"session-1"}'], { type: 'application/json' }),
@@ -200,7 +201,8 @@ describe('Home', () => {
     getProviderStatus.mockResolvedValue({
       provider: 'bedrock',
       status: 'misconfigured',
-      message: 'Bedrock needs a region, model, and valid AWS credentials before requests can succeed.'
+      message: 'Bedrock needs a region, model, and valid AWS credentials before requests can succeed.',
+      refreshedAt: '2026-04-19T00:00:00Z'
     });
 
     render(<Home />);
@@ -222,6 +224,7 @@ describe('Home', () => {
       provider: 'huggingface',
       status: 'ready',
       message: 'Hugging Face is configured and ready.',
+      refreshedAt: '2026-04-19T00:00:00Z',
       configuredModels: [
         'meta-llama/Llama-3.1-8B-Instruct',
         'Qwen/Qwen2.5-72B-Instruct',
@@ -239,6 +242,7 @@ describe('Home', () => {
     expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('meta-llama/Llama-3.1-8B-Instruct');
     expect(screen.getByText(/provider: Hugging Face/i)).toBeInTheDocument();
     expect(screen.getByText(/Hugging Face status: ready/i)).toBeInTheDocument();
+    expect(screen.getByText(/Last checked:/i)).toBeInTheDocument();
     expect(screen.getByText(/Configured: meta-llama\/Llama-3\.1-8B-Instruct, Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
     expect(screen.getByText(/Usable: meta-llama\/Llama-3\.1-8B-Instruct/i)).toBeInTheDocument();
     expect(screen.getByText(/Rejected: Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
