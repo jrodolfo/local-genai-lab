@@ -13,7 +13,7 @@ The directory includes:
 - a focused S3 CloudWatch report generator for one bucket
 - local shell tests
 - a smoke-check script for the local frontend/backend/model-discovery/Ollama stack
-- helper scripts for starting the backend with `ollama`, `bedrock`, or `huggingface`
+- one helper script for starting the backend with the providers configured in `.env` or the shell
 
 It is designed for a practical cleanup workflow:
 - compare resources across one or more regions
@@ -69,9 +69,7 @@ Key files:
 - `aws-region-audit-report.sh`: regional AWS audit report generator
 - `aws-s3-cloudwatch-report.sh`: focused S3 CloudWatch report generator for one bucket
 - `check-app.sh`: local stack smoke-check script
-- `run-backend-ollama.sh`: start the backend with the Ollama provider
-- `run-backend-bedrock.sh`: start the backend with Bedrock defaults
-- `run-backend-huggingface.sh`: start the backend with Hugging Face defaults
+- `run-backend.sh`: start the backend with `APP_MODEL_PROVIDER` and all configured providers
 - `.env.example`: sample multi-provider environment file for local startup
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests
@@ -178,6 +176,22 @@ Show available targets:
 make help
 ```
 
+Start the backend:
+
+```bash
+make run-backend
+```
+
+Override the startup default provider when needed:
+
+```bash
+APP_MODEL_PROVIDER=bedrock make run-backend
+```
+
+```bash
+APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx make run-backend
+```
+
 Check whether the local app stack is up:
 
 ```bash
@@ -202,37 +216,37 @@ The smoke check uses these defaults:
 
 For common local runtime problems, see [../docs/troubleshooting.md](../docs/troubleshooting.md).
 
-Start the backend in Ollama mode:
-
-```bash
-make run-backend-ollama
-```
-
-All three backend helper scripts auto-load the repo-local `.env` file when present, without overriding variables you already exported in the shell. A good local starting point is:
+The unified backend helper script auto-loads the repo-local `.env` file when present, without overriding variables you already exported in the shell. A good local starting point is:
 
 ```bash
 cp .env.example .env
 ```
 
-Start the backend in Bedrock mode:
+Start the backend with Ollama as the default provider:
 
 ```bash
-make run-backend-bedrock
+APP_MODEL_PROVIDER=ollama make run-backend
 ```
 
-Bedrock helper defaults:
+Start the backend with Bedrock as the default provider:
+
+```bash
+APP_MODEL_PROVIDER=bedrock make run-backend
+```
+
+Bedrock defaults:
 
 - `BEDROCK_REGION=us-east-2`
 - `BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0`
 - `MCP_ENABLED=true`
 
-Start the backend in Hugging Face mode:
+Start the backend with Hugging Face as the default provider:
 
 ```bash
-HUGGINGFACE_API_TOKEN=hf_xxx make run-backend-huggingface
+APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx make run-backend
 ```
 
-Hugging Face helper defaults:
+Hugging Face defaults:
 
 - `HUGGINGFACE_BASE_URL=https://router.huggingface.co/v1/chat/completions`
 - `HUGGINGFACE_DEFAULT_MODEL=meta-llama/Llama-3.1-8B-Instruct`
@@ -246,7 +260,7 @@ For Nova Pro, use the inference profile id rather than the base model id.
 Override them when needed:
 
 ```bash
-BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 make run-backend-bedrock
+APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 make run-backend
 ```
 
 For the full provider workflow and verification steps, see [../docs/providers.md](../docs/providers.md).

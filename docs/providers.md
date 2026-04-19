@@ -11,8 +11,8 @@ The frontend always talks to the Spring Boot backend.
 - the backend still has a configured default provider
 - the UI can now switch provider per request without restarting the backend
 - the UI only shows providers that are actually configured in the current backend process
-- the helper scripts below set the backend default provider for a local session
-- the helper scripts auto-load the repo-local `.env` file when present, without overriding variables you already exported in the shell
+- the helper script below sets the backend default provider for a local session
+- the helper script auto-loads the repo-local `.env` file when present, without overriding variables you already exported in the shell
 
 Supported providers:
 
@@ -20,16 +20,40 @@ Supported providers:
 - `bedrock`: optional AWS-managed provider
 - `huggingface`: optional hosted provider with a configured candidate list that the backend validates dynamically
 
-## Ollama
+## Unified startup
 
 Default local workflow:
 
 ```bash
 cd scripts
-./run-backend-ollama.sh
+./run-backend.sh
 ```
 
-Defaults:
+The unified startup script uses:
+
+- `APP_MODEL_PROVIDER` to choose the default provider at startup
+- the current shell and optional `.env` file for all provider configuration
+
+Examples:
+
+```bash
+cd scripts
+APP_MODEL_PROVIDER=ollama ./run-backend.sh
+```
+
+```bash
+cd scripts
+APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./run-backend.sh
+```
+
+```bash
+cd scripts
+APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx ./run-backend.sh
+```
+
+## Ollama
+
+Defaults when `APP_MODEL_PROVIDER=ollama`:
 
 - provider: `ollama`
 - `MCP_ENABLED=true`
@@ -45,16 +69,7 @@ ollama pull llama3:8b
 
 ## Bedrock
 
-Preferred local Bedrock workflow:
-
-```bash
-cd scripts
-./run-backend-bedrock.sh
-```
-
-If `.env` contains Hugging Face config as well, the same backend process can expose both Bedrock and Hugging Face in the UI.
-
-Defaults:
+Defaults when `APP_MODEL_PROVIDER=bedrock`:
 
 - provider: `bedrock`
 - region: `us-east-2`
@@ -78,28 +93,19 @@ Example with an explicit AWS profile:
 
 ```bash
 cd scripts
-AWS_PROFILE=personal ./run-backend-bedrock.sh
+APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./run-backend.sh
 ```
 
 Override the region or model when needed:
 
 ```bash
 cd scripts
-BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 ./run-backend-bedrock.sh
+APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 ./run-backend.sh
 ```
 
 ## Hugging Face
 
-Preferred hosted Hugging Face workflow:
-
-```bash
-cd scripts
-HUGGINGFACE_API_TOKEN=hf_xxx ./run-backend-huggingface.sh
-```
-
-If `.env` also contains Bedrock config, the same backend process can expose both providers in the UI while still starting with Hugging Face as the default provider.
-
-Defaults:
+Defaults when `APP_MODEL_PROVIDER=huggingface`:
 
 - provider: `huggingface`
 - base URL: `https://router.huggingface.co/v1/chat/completions`
@@ -116,10 +122,11 @@ Override the configured candidate list when needed:
 
 ```bash
 cd scripts
+APP_MODEL_PROVIDER=huggingface \
 HUGGINGFACE_API_TOKEN=hf_xxx \
 HUGGINGFACE_DEFAULT_MODEL=Qwen/Qwen2.5-72B-Instruct \
 HUGGINGFACE_MODELS=Qwen/Qwen2.5-72B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-./run-backend-huggingface.sh
+./run-backend.sh
 ```
 
 ## Verification

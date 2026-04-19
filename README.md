@@ -119,16 +119,16 @@ Ollama should be reachable at `http://localhost:11434`.
 cp .env.example .env
 ```
 
-Fill in only the providers you want available in the running backend process. The backend helper scripts will auto-load `.env` if it exists.
+Fill in only the providers you want available in the running backend process. The backend helper script will auto-load `.env` if it exists.
 
 ### 3. Start the backend
 
 ```bash
 cd scripts
-./run-backend-ollama.sh
+./run-backend.sh
 ```
 
-If you want Bedrock or Hugging Face as the default backend provider instead of Ollama, use `./run-backend-bedrock.sh` or `./run-backend-huggingface.sh` and see [docs/providers.md](./docs/providers.md).
+If you want Bedrock or Hugging Face as the default backend provider instead of Ollama, set `APP_MODEL_PROVIDER=bedrock` or `APP_MODEL_PROVIDER=huggingface` in `.env` or the shell before starting the backend. Provider configuration details live in [docs/providers.md](./docs/providers.md).
 
 Backend URLs:
 

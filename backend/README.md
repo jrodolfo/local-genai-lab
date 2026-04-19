@@ -76,13 +76,11 @@ Relevant settings:
 
 Bedrock supports both normal chat and streaming chat.
 
-For local provider switching without memorizing JVM flags, use the helper scripts documented in [../docs/providers.md](../docs/providers.md):
+For local provider switching without memorizing JVM flags, use the unified helper script documented in [../docs/providers.md](../docs/providers.md):
 
-- [`../scripts/run-backend-ollama.sh`](../scripts/run-backend-ollama.sh)
-- [`../scripts/run-backend-bedrock.sh`](../scripts/run-backend-bedrock.sh)
-- [`../scripts/run-backend-huggingface.sh`](../scripts/run-backend-huggingface.sh)
+- [`../scripts/run-backend.sh`](../scripts/run-backend.sh)
 
-Those scripts set the backend default provider. The chat API can still override provider per request at runtime.
+That script uses `APP_MODEL_PROVIDER` to choose the backend default provider. The chat API can still override provider per request at runtime.
 The frontend selector only shows providers that are configured in the running backend process.
 
 `GET /api/models` exposes provider-aware model options for the UI:
