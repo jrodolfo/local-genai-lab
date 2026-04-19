@@ -118,21 +118,12 @@ public class ProviderStatusService {
     private ProviderStatusResponse bedrockStatus() {
         boolean regionConfigured = normalize(bedrockProperties.region()) != null;
         boolean modelConfigured = normalize(bedrockProperties.modelId()) != null;
-        boolean credentialsResolved = false;
 
-        if (regionConfigured && modelConfigured) {
-            try {
-                credentialsResolved = Boolean.TRUE.equals(bedrockCredentialsResolver.get());
-            } catch (RuntimeException ignored) {
-                credentialsResolved = false;
-            }
-        }
-
-        if (!regionConfigured || !modelConfigured || !credentialsResolved) {
+        if (!regionConfigured || !modelConfigured) {
             return new ProviderStatusResponse(
                     "bedrock",
                     "misconfigured",
-                    "Bedrock needs a region, model, and valid AWS credentials before requests can succeed."
+                    "Bedrock needs a region and model before requests can succeed."
             );
         }
         return new ProviderStatusResponse("bedrock", "ready", "Bedrock is configured and ready.");

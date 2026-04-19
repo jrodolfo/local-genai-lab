@@ -54,7 +54,7 @@ class ProviderStatusServiceTest {
     }
 
     @Test
-    void bedrockStatusIsMisconfiguredWhenCredentialsAreMissing() {
+    void bedrockStatusIsReadyWhenRegionAndModelAreConfigured() {
         ProviderStatusService service = new ProviderStatusService(
                 registry("bedrock"),
                 new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
@@ -69,7 +69,7 @@ class ProviderStatusServiceTest {
 
         ProviderStatusResponse response = service.getProviderStatus("bedrock");
 
-        assertEquals("misconfigured", response.status());
+        assertEquals("ready", response.status());
     }
 
     @Test
