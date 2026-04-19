@@ -383,6 +383,14 @@ describe('Home', () => {
     expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
   });
 
+  it('shows a backend hint when sessions fail to load', async () => {
+    listSessions.mockRejectedValue(new Error(''));
+
+    render(<Home />);
+
+    expect(await screen.findByText(/Failed to load sessions\. Check if the backend is up and running\./i)).toBeInTheDocument();
+  });
+
   it('shows a provider-specific empty state after switching to a provider with no models', async () => {
     listAvailableModels
       .mockResolvedValueOnce({

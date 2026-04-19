@@ -142,7 +142,7 @@ function Home() {
       const payload = await listSessions(filters);
       setSessions(payload);
     } catch (err) {
-      setError(err.message || 'Failed to load sessions.');
+      setError(err.message || 'Failed to load sessions. Check if the backend is up and running.');
     }
   }
 
