@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,9 +30,12 @@ public class HuggingFaceClient {
     private final ObjectMapper objectMapper;
     private final HuggingFaceProperties huggingFaceProperties;
     private final HttpClient httpClient;
-    // Cache the last validated usable subset for a short period so provider status and model
-    // discovery can share the same result without repeatedly probing the hosted endpoint.
+    // Cache the last validated probe context for a short period so provider status and model
+    // discovery can share the same remote validation result without repeatedly probing the
+    // hosted endpoint. The cache must remember the candidate set, not only the usable subset,
+    // otherwise an expanded or changed request can accidentally reuse stale probe results.
     private volatile List<String> cachedUsableModels = List.of();
+    private volatile Set<String> cachedCandidateModels = Set.of();
     private volatile long cachedUsableModelsAtMillis = 0L;
 
     public HuggingFaceClient(ObjectMapper objectMapper, HuggingFaceProperties huggingFaceProperties) {
@@ -117,9 +121,10 @@ public class HuggingFaceClient {
         }
 
         long now = System.currentTimeMillis();
-        if (now - cachedUsableModelsAtMillis < 30_000L && cachedUsableModels.containsAll(normalizedCandidates)) {
-            return cachedUsableModels.stream()
-                    .filter(normalizedCandidates::contains)
+        Set<String> candidateSet = Set.copyOf(normalizedCandidates);
+        if (now - cachedUsableModelsAtMillis < 30_000L && cachedCandidateModels.equals(candidateSet)) {
+            return normalizedCandidates.stream()
+                    .filter(cachedUsableModels::contains)
                     .toList();
         }
 
@@ -131,6 +136,7 @@ public class HuggingFaceClient {
         }
         List<String> immutableUsableModels = List.copyOf(usableModels);
         cachedUsableModels = immutableUsableModels;
+        cachedCandidateModels = candidateSet;
         cachedUsableModelsAtMillis = now;
         return immutableUsableModels;
     }
