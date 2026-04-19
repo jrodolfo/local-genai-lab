@@ -72,6 +72,7 @@ Key files:
 - `run-backend-ollama.sh`: start the backend with the Ollama provider
 - `run-backend-bedrock.sh`: start the backend with Bedrock defaults
 - `run-backend-huggingface.sh`: start the backend with Hugging Face defaults
+- `.env.example`: sample multi-provider environment file for local startup
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests
 - `.github/workflows/ci.yml`: GitHub Actions CI workflow
@@ -207,6 +208,12 @@ Start the backend in Ollama mode:
 make run-backend-ollama
 ```
 
+All three backend helper scripts auto-load the repo-local `.env` file when present, without overriding variables you already exported in the shell. A good local starting point is:
+
+```bash
+cp .env.example .env
+```
+
 Start the backend in Bedrock mode:
 
 ```bash
@@ -231,6 +238,8 @@ Hugging Face helper defaults:
 - `HUGGINGFACE_DEFAULT_MODEL=meta-llama/Llama-3.1-8B-Instruct`
 - `HUGGINGFACE_MODELS` defaults to the configured default model
 - `MCP_ENABLED=true`
+
+If the same `.env` file also contains Bedrock config, the backend process can expose both Bedrock and Hugging Face in the runtime selector while still starting with one default provider.
 
 For Nova Pro, use the inference profile id rather than the base model id.
 

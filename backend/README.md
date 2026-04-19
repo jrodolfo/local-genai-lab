@@ -83,6 +83,7 @@ For local provider switching without memorizing JVM flags, use the helper script
 - [`../scripts/run-backend-huggingface.sh`](../scripts/run-backend-huggingface.sh)
 
 Those scripts set the backend default provider. The chat API can still override provider per request at runtime.
+The frontend selector only shows providers that are configured in the running backend process.
 
 `GET /api/models` exposes provider-aware model options for the UI:
 

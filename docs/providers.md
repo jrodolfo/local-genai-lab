@@ -2,13 +2,17 @@
 
 Use this document when you want to control the backend default provider and understand how runtime provider switching works in the UI.
 
+If you want a local template for provider configuration, start from [../.env.example](../.env.example) and copy it to `.env`.
+
 ## Overview
 
 The frontend always talks to the Spring Boot backend.
 
 - the backend still has a configured default provider
 - the UI can now switch provider per request without restarting the backend
+- the UI only shows providers that are actually configured in the current backend process
 - the helper scripts below set the backend default provider for a local session
+- the helper scripts auto-load the repo-local `.env` file when present, without overriding variables you already exported in the shell
 
 Supported providers:
 
@@ -47,6 +51,8 @@ Preferred local Bedrock workflow:
 cd scripts
 ./run-backend-bedrock.sh
 ```
+
+If `.env` contains Hugging Face config as well, the same backend process can expose both Bedrock and Hugging Face in the UI.
 
 Defaults:
 
@@ -91,6 +97,8 @@ cd scripts
 HUGGINGFACE_API_TOKEN=hf_xxx ./run-backend-huggingface.sh
 ```
 
+If `.env` also contains Bedrock config, the same backend process can expose both providers in the UI while still starting with Hugging Face as the default provider.
+
 Defaults:
 
 - provider: `huggingface`
@@ -131,7 +139,7 @@ cd scripts
 ## Notes
 
 - the frontend model selector is provider-aware
-- the frontend provider selector can switch between supported providers at runtime without restarting the backend
+- the frontend provider selector can switch between providers configured in the current backend process without restarting the backend
 - for `ollama`, the UI only offers models installed locally
 - for `bedrock`, the backend tries to list available inference profiles in the configured region and falls back to the configured model id if discovery is unavailable
 - for `huggingface`, the backend starts from a configured candidate list and validates which models are currently usable before returning them to the UI

@@ -55,13 +55,14 @@ public class AvailableModelsService {
     public AvailableModelsResponse getAvailableModels(String provider) {
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
         chatModelProviderRegistry.get(resolvedProvider);
+        List<String> availableProviders = resolveAvailableProviders();
         if ("bedrock".equals(resolvedProvider)) {
             List<String> models = resolveBedrockModels();
             String modelId = resolveDefaultBedrockModel(models);
             return new AvailableModelsResponse(
                     "bedrock",
                     chatModelProviderRegistry.defaultProvider(),
-                    chatModelProviderRegistry.supportedProviders(),
+                    availableProviders,
                     modelId,
                     models
             );
@@ -71,7 +72,7 @@ public class AvailableModelsService {
             return new AvailableModelsResponse(
                     "huggingface",
                     chatModelProviderRegistry.defaultProvider(),
-                    chatModelProviderRegistry.supportedProviders(),
+                    availableProviders,
                     resolveDefaultHuggingFaceModel(models),
                     models
             );
@@ -81,10 +82,28 @@ public class AvailableModelsService {
         return new AvailableModelsResponse(
                 "ollama",
                 chatModelProviderRegistry.defaultProvider(),
-                chatModelProviderRegistry.supportedProviders(),
+                availableProviders,
                 normalizeModel(ollamaProperties.defaultModel()),
                 models
         );
+    }
+
+    private List<String> resolveAvailableProviders() {
+        return chatModelProviderRegistry.supportedProviders().stream()
+                .filter(this::isProviderAvailable)
+                .toList();
+    }
+
+    private boolean isProviderAvailable(String provider) {
+        return switch (provider) {
+            case "bedrock" -> normalizeModel(bedrockProperties.region()) != null
+                    && normalizeModel(bedrockProperties.modelId()) != null;
+            case "huggingface" -> normalizeModel(huggingFaceProperties.apiToken()) != null
+                    && normalizeModel(huggingFaceProperties.baseUrl()) != null
+                    && normalizeModel(huggingFaceProperties.defaultModel()) != null;
+            case "ollama" -> true;
+            default -> false;
+        };
     }
 
     private List<String> resolveBedrockModels() {

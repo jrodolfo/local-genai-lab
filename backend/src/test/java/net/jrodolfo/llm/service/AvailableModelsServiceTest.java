@@ -166,6 +166,34 @@ class AvailableModelsServiceTest {
         assertEquals(List.of("Qwen/Qwen2.5-72B-Instruct"), response.models());
     }
 
+    @Test
+    void providersListIncludesOnlyConfiguredProvidersForCurrentProcess() {
+        AvailableModelsService service = new AvailableModelsService(
+                new ChatModelProviderRegistry(new AppModelProperties("huggingface"), java.util.Map.of(
+                        "ollama", new FakeProvider(),
+                        "bedrock", new FakeProvider(),
+                        "huggingface", new FakeProvider()
+                )),
+                new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
+                new BedrockProperties("us-east-2", null),
+                new HuggingFaceProperties(
+                        "https://router.huggingface.co/v1/chat/completions",
+                        "token",
+                        "meta-llama/Llama-3.1-8B-Instruct",
+                        List.of("meta-llama/Llama-3.1-8B-Instruct"),
+                        10,
+                        60
+                ),
+                new FakeOllamaClient(List.of("llama3:8b")),
+                null,
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct"))
+        );
+
+        AvailableModelsResponse response = service.getAvailableModels("huggingface");
+
+        assertEquals(List.of("huggingface", "ollama"), response.providers());
+    }
+
     private static final class FakeProvider implements net.jrodolfo.llm.provider.ChatModelProvider {
         @Override
         public net.jrodolfo.llm.dto.ChatResponse chat(net.jrodolfo.llm.provider.ProviderPrompt prompt, String model, net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata, java.util.Map<String, Object> toolResult, String sessionId, net.jrodolfo.llm.dto.PendingToolCallResponse pendingTool) {

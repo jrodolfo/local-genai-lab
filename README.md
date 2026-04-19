@@ -113,7 +113,15 @@ ollama run llama3:8b
 
 Ollama should be reachable at `http://localhost:11434`.
 
-### 2. Start the backend
+### 2. Optional: create a local environment file
+
+```bash
+cp .env.example .env
+```
+
+Fill in only the providers you want available in the running backend process. The backend helper scripts will auto-load `.env` if it exists.
+
+### 3. Start the backend
 
 ```bash
 cd scripts
@@ -132,7 +140,7 @@ Backend URLs:
 
 `GET /actuator` redirects to `/actuator/health`. Swagger excludes `/actuator/**` so the generated API docs stay focused on the application API.
 
-### 3. Start the frontend
+### 4. Start the frontend
 
 ```bash
 cd frontend
@@ -198,6 +206,7 @@ Provider switching details and helper startup scripts live in [docs/providers.md
 - provider metadata in responses and saved session history
 - typed JSON SSE events for streaming chat
 - provider-aware model discovery for the frontend selector
+- runtime provider switching across providers configured in the current backend process
 
 Observed model behavior:
 
