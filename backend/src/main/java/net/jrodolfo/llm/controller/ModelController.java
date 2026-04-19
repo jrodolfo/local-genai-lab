@@ -58,14 +58,14 @@ public class ModelController {
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaClientException(OllamaClientException ex) {
-        log.error("Ollama model discovery failed", ex);
+        log.warn("Ollama model discovery failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(ModelDiscoveryException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelDiscoveryException(ModelDiscoveryException ex) {
-        log.error("Model discovery failed", ex);
+        log.warn("Model discovery failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
     }
 

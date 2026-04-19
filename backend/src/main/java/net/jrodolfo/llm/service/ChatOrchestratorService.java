@@ -14,6 +14,8 @@ import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,6 +31,8 @@ import java.nio.file.Path;
  */
 @Service
 public class ChatOrchestratorService {
+
+    private static final Logger log = LoggerFactory.getLogger(ChatOrchestratorService.class);
 
     private final ChatModelProviderRegistry chatModelProviderRegistry;
     private final McpService mcpService;
@@ -93,6 +97,15 @@ public class ChatOrchestratorService {
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
         ChatToolRouterService.ToolDecision routedDecision = toolDecisionService.route(message, resolvedProvider, resolvedModel);
         ChatToolRouterService.ToolDecision decision = resolveDecision(session, message, resolvedProvider, resolvedModel, routedDecision);
+        log.info(
+                "chat_prepare sessionId={} provider={} model={} decisionType={} needsClarification={} usesTool={}",
+                session.sessionId(),
+                resolvedProvider,
+                resolvedModel,
+                decision.type(),
+                decision.needsClarification(),
+                decision.shouldUseTool()
+        );
         if (decision.needsClarification()) {
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
@@ -119,7 +132,23 @@ public class ChatOrchestratorService {
         }
 
         try {
+            log.info(
+                    "tool_execution_start sessionId={} provider={} model={} tool={} reason={}",
+                    session.sessionId(),
+                    resolvedProvider,
+                    resolvedModel,
+                    toolNameForDecision(decision),
+                    decision.reason()
+            );
             ToolExecution execution = executeTool(decision);
+            log.info(
+                    "tool_execution_complete sessionId={} provider={} model={} tool={} summary={}",
+                    session.sessionId(),
+                    resolvedProvider,
+                    resolvedModel,
+                    execution.toolName(),
+                    execution.summary()
+            );
             ChatSession clearedSession = session.withPendingToolCall(null);
             ProviderPrompt augmentedPrompt = buildConversationPrompt(
                     clearedSession,
@@ -134,6 +163,14 @@ public class ChatOrchestratorService {
             ChatToolMetadata metadata = new ChatToolMetadata(true, execution.toolName(), "success", execution.summary());
             return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, execution.toolResult(reportsDirectory), clearedSession);
         } catch (IllegalArgumentException | McpClientException ex) {
+            log.warn(
+                    "tool_execution_failed sessionId={} provider={} model={} tool={} message={}",
+                    session.sessionId(),
+                    resolvedProvider,
+                    resolvedModel,
+                    toolNameForDecision(decision),
+                    ex.getMessage()
+            );
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
                     toolNameForDecision(decision),

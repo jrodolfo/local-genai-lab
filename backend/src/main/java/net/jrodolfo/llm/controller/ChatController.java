@@ -76,7 +76,21 @@ public class ChatController {
     })
     public ChatResponse chat(@Valid @RequestBody ChatRequest request) {
         long startedAt = System.nanoTime();
+        log.info(
+                "chat_request_start provider={} model={} sessionId={} streaming=false",
+                request.provider(),
+                request.model(),
+                request.sessionId()
+        );
         ChatResponse response = chatOrchestratorService.chat(request.message(), request.provider(), request.model(), request.sessionId());
+        long backendDurationMs = elapsedMillis(startedAt);
+        log.info(
+                "chat_request_complete provider={} model={} sessionId={} streaming=false backendDurationMs={}",
+                request.provider(),
+                response.model(),
+                response.sessionId(),
+                backendDurationMs
+        );
         return new ChatResponse(
                 response.response(),
                 response.model(),
@@ -84,7 +98,7 @@ public class ChatController {
                 response.toolResult(),
                 response.sessionId(),
                 response.pendingTool(),
-                withBackendDuration(response.metadata(), elapsedMillis(startedAt))
+                withBackendDuration(response.metadata(), backendDurationMs)
         );
     }
 
@@ -118,6 +132,12 @@ public class ChatController {
      */
     void stream(ChatRequest request, SseEmitter emitter) {
         long startedAt = System.nanoTime();
+        log.info(
+                "chat_request_start provider={} model={} sessionId={} streaming=true",
+                request.provider(),
+                request.model(),
+                request.sessionId()
+        );
         AtomicBoolean streamClosed = new AtomicBoolean(false);
         AtomicBoolean streamAborted = new AtomicBoolean(false);
         AtomicReference<CompletableFuture<?>> taskReference = new AtomicReference<>();
@@ -161,6 +181,7 @@ public class ChatController {
                 }
 
                 if (preparedChat.immediateResponse() != null) {
+                    long backendDurationMs = elapsedMillis(startedAt);
                     if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(preparedChat.immediateResponse().response()))) {
                         streamAborted.set(true);
                         return;
@@ -170,11 +191,18 @@ public class ChatController {
                             preparedChat.immediateResponse().tool(),
                             preparedChat.immediateResponse().toolResult(),
                             preparedChat.immediateResponse().pendingTool(),
-                            withBackendDuration(preparedChat.immediateResponse().metadata(), elapsedMillis(startedAt))
+                            withBackendDuration(preparedChat.immediateResponse().metadata(), backendDurationMs)
                     ))) {
                         streamAborted.set(true);
                         return;
                     }
+                    log.info(
+                            "chat_request_complete provider={} model={} sessionId={} streaming=true backendDurationMs={} immediateResponse=true",
+                            request.provider(),
+                            preparedChat.immediateResponse().model(),
+                            preparedChat.immediateResponse().sessionId(),
+                            backendDurationMs
+                    );
                     completeEmitter(emitter, streamClosed);
                     return;
                 }
@@ -201,26 +229,47 @@ public class ChatController {
                     return;
                 }
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString(), providerMetadata);
+                long backendDurationMs = elapsedMillis(startedAt);
                 if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
                         preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
-                        withBackendDuration(providerMetadata, elapsedMillis(startedAt))
+                        withBackendDuration(providerMetadata, backendDurationMs)
                 ))) {
                     streamAborted.set(true);
                     return;
                 }
+                log.info(
+                        "chat_request_complete provider={} model={} sessionId={} streaming=true backendDurationMs={} immediateResponse=false",
+                        request.provider(),
+                        preparedChat.model(),
+                        preparedChat.session().sessionId(),
+                        backendDurationMs
+                );
                 completeEmitter(emitter, streamClosed);
             } catch (StreamAbortedException ex) {
                 streamAborted.set(true);
             } catch (Exception ex) {
                 Throwable cause = unwrapCompletionException(ex);
                 if (!streamClosed.get()) {
+                    log.warn(
+                            "chat_request_failed provider={} model={} sessionId={} streaming=true message={}",
+                            request.provider(),
+                            request.model(),
+                            request.sessionId(),
+                            cause.getMessage()
+                    );
                     emitter.completeWithError(cause);
                 }
             } finally {
                 if (streamAborted.get()) {
+                    log.info(
+                            "chat_request_aborted provider={} model={} sessionId={} streaming=true",
+                            request.provider(),
+                            request.model(),
+                            request.sessionId()
+                    );
                     completeEmitter(emitter, streamClosed);
                 }
             }
@@ -231,7 +280,7 @@ public class ChatController {
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaError(OllamaClientException ex) {
-        log.error("Ollama request failed", ex);
+        log.warn("Ollama request failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", ex.getMessage()));
     }
@@ -239,7 +288,7 @@ public class ChatController {
     @ExceptionHandler(ModelProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
-        log.error("Model provider request failed", ex);
+        log.warn("Model provider request failed: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", ex.getMessage()));
     }
