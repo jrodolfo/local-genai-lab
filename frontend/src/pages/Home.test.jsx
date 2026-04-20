@@ -248,6 +248,72 @@ describe('Home', () => {
     expect(screen.getByText(/Rejected: Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
   });
 
+  it('allows manually refreshing provider status', async () => {
+    getProviderStatus
+      .mockResolvedValueOnce({
+        provider: 'ollama',
+        status: 'ready',
+        message: 'Ollama is reachable and ready.',
+        refreshedAt: '2026-04-19T00:00:00Z'
+      })
+      .mockResolvedValueOnce({
+        provider: 'ollama',
+        status: 'ready',
+        message: 'Ollama is reachable and ready.',
+        refreshedAt: '2026-04-19T01:30:00Z'
+      });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const initialLastChecked = await screen.findByText(/Last checked:/i);
+    const initialText = initialLastChecked.textContent;
+    await user.click(screen.getByRole('button', { name: /refresh status/i }));
+
+    await waitFor(() => {
+      expect(getProviderStatus).toHaveBeenCalledTimes(2);
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/Last checked:/i).textContent).not.toEqual(initialText);
+    });
+  });
+
+  it('shows a loading state while provider status is refreshing', async () => {
+    let resolveStatus;
+    getProviderStatus
+      .mockResolvedValueOnce({
+        provider: 'ollama',
+        status: 'ready',
+        message: 'Ollama is reachable and ready.',
+        refreshedAt: '2026-04-19T00:00:00Z'
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStatus = resolve;
+          })
+      );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole('button', { name: /refresh status/i })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /refresh status/i }));
+
+    expect(screen.getByRole('button', { name: /refreshing/i })).toBeDisabled();
+
+    resolveStatus({
+      provider: 'ollama',
+      status: 'ready',
+      message: 'Ollama is reachable and ready.',
+      refreshedAt: '2026-04-19T02:00:00Z'
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /refresh status/i })).toBeEnabled();
+    });
+  });
+
   it('switches provider and reloads provider-specific models', async () => {
     listAvailableModels
       .mockResolvedValueOnce({

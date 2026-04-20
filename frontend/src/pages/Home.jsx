@@ -32,6 +32,7 @@ function Home() {
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedModel, setSelectedModel] = useState('');
   const [providerStatus, setProviderStatus] = useState(null);
+  const [providerStatusRefreshing, setProviderStatusRefreshing] = useState(false);
   const [modelsLoading, setModelsLoading] = useState(true);
   const [modelsLoadFailed, setModelsLoadFailed] = useState(false);
   const [error, setError] = useState('');
@@ -230,7 +231,11 @@ function Home() {
     }
   }
 
-  async function loadProviderStatus(provider) {
+  async function loadProviderStatus(provider, options = {}) {
+    const { manual = false } = options;
+    if (manual) {
+      setProviderStatusRefreshing(true);
+    }
     try {
       const payload = await getProviderStatus(provider);
       setProviderStatus(payload);
@@ -240,6 +245,10 @@ function Home() {
         status: 'unknown',
         message: err.message || 'Failed to load provider status.'
       });
+    } finally {
+      if (manual) {
+        setProviderStatusRefreshing(false);
+      }
     }
   }
 
@@ -646,6 +655,14 @@ function Home() {
                 {`Last checked: ${new Date(providerStatus.refreshedAt).toLocaleString()}`}
               </span>
             ) : null}
+            <button
+              type="button"
+              className="page-action-button provider-status-refresh"
+              onClick={() => loadProviderStatus(selectedProvider, { manual: true })}
+              disabled={providerStatusRefreshing || !selectedProvider}
+            >
+              {providerStatusRefreshing ? 'Refreshing...' : 'Refresh status'}
+            </button>
           </div>
         ) : null}
 
