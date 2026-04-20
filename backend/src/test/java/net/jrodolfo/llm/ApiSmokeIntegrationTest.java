@@ -10,6 +10,10 @@ import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.ProviderStatusResponse;
 import net.jrodolfo.llm.config.AppStorageProperties;
+import net.jrodolfo.llm.model.ChatSession;
+import net.jrodolfo.llm.provider.ChatModelProvider;
+import net.jrodolfo.llm.provider.ProviderPrompt;
+import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.service.AvailableModelsService;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import net.jrodolfo.llm.service.ChatSessionExportService;
@@ -32,7 +36,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -40,6 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 
 @SpringBootTest(properties = {
         "MCP_ENABLED=false",
@@ -115,6 +124,40 @@ class ApiSmokeIntegrationTest {
                 .andExpect(jsonPath("$.sessionId").value("session-1"))
                 .andExpect(jsonPath("$.metadata.provider").value("ollama"))
                 .andExpect(jsonPath("$.metadata.modelId").value("llama3:8b"));
+    }
+
+    @Test
+    void streamingChatEndpointEmitsSseEventsAndPassesRequestFields() throws Exception {
+        chatOrchestratorService.streamingSessionId = "stream-session-7";
+
+        var mvcResult = mockMvc.perform(post("/api/chat/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new ChatRequest(
+                                "Explain recursion.",
+                                "bedrock",
+                                "us.amazon.nova-pro-v1:0",
+                                "stream-session-7"
+                        ))))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("X-Request-Id"))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("event:chat")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"start\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"delta\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"complete\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("stream-chunk")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"sessionId\":\"stream-session-7\"")));
+
+        org.junit.jupiter.api.Assertions.assertEquals("Explain recursion.", chatOrchestratorService.lastMessage);
+        org.junit.jupiter.api.Assertions.assertEquals("bedrock", chatOrchestratorService.lastProvider);
+        org.junit.jupiter.api.Assertions.assertEquals("us.amazon.nova-pro-v1:0", chatOrchestratorService.lastModel);
+        org.junit.jupiter.api.Assertions.assertEquals("stream-session-7", chatOrchestratorService.lastSessionId);
+        org.junit.jupiter.api.Assertions.assertEquals("stream-chunk", chatOrchestratorService.lastAssistantResponse);
+        org.junit.jupiter.api.Assertions.assertTrue(chatOrchestratorService.lastRequestId != null && !chatOrchestratorService.lastRequestId.isBlank());
     }
 
     @Test
@@ -205,6 +248,14 @@ class ApiSmokeIntegrationTest {
 
     static final class FakeChatOrchestratorService extends ChatOrchestratorService {
         private ChatResponse response;
+        private final ChatModelProvider streamingProvider = new FakeStreamingProvider();
+        private String streamingSessionId = "stream-session-1";
+        private String lastMessage;
+        private String lastProvider;
+        private String lastModel;
+        private String lastSessionId;
+        private String lastRequestId;
+        private String lastAssistantResponse;
 
         FakeChatOrchestratorService() {
             super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
@@ -212,12 +263,43 @@ class ApiSmokeIntegrationTest {
 
         @Override
         public ChatResponse chat(String message, String provider, String model, String sessionId) {
+            this.lastMessage = message;
+            this.lastProvider = provider;
+            this.lastModel = model;
+            this.lastSessionId = sessionId;
             return response;
         }
 
         @Override
         public ChatResponse chat(String message, String provider, String model, String sessionId, String requestId) {
-            return response;
+            this.lastRequestId = requestId;
+            return chat(message, provider, model, sessionId);
+        }
+
+        @Override
+        public PreparedChat prepareChat(String message, String provider, String model, String sessionId, String requestId) {
+            this.lastMessage = message;
+            this.lastProvider = provider;
+            this.lastModel = model;
+            this.lastSessionId = sessionId;
+            this.lastRequestId = requestId;
+            return new PreparedChat(
+                    streamingProvider,
+                    ProviderPrompt.forPrompt("Explain recursion."),
+                    model,
+                    null,
+                    null,
+                    null,
+                    ChatSession.create(streamingSessionId, model, Instant.parse("2026-04-19T00:00:00Z")),
+                    null
+            );
+        }
+
+        @Override
+        public ChatSession completePreparedChat(PreparedChat preparedChat, String assistantResponse, ModelProviderMetadata providerMetadata, String requestId) {
+            this.lastAssistantResponse = assistantResponse;
+            this.lastRequestId = requestId;
+            return preparedChat.session();
         }
     }
 
@@ -273,6 +355,27 @@ class ApiSmokeIntegrationTest {
         @Override
         public ChatSessionImportResponse importSession(MultipartFile file) {
             return response;
+        }
+    }
+
+    static final class FakeStreamingProvider implements ChatModelProvider {
+        @Override
+        public ChatResponse chat(ProviderPrompt prompt, String model, net.jrodolfo.llm.dto.ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, net.jrodolfo.llm.dto.PendingToolCallResponse pendingTool) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
+            tokenConsumer.accept("stream-chunk");
+            return new StreamingChatResult(
+                    CompletableFuture.completedFuture(new ModelProviderMetadata("bedrock", model, "stop", 1, 2, 3, 4L, 5L, null, null)),
+                    () -> { }
+            );
+        }
+
+        @Override
+        public String resolveModel(String model) {
+            return model;
         }
     }
 }
