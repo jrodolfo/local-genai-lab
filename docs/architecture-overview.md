@@ -6,7 +6,7 @@ The diagram below captures the current architecture in a compact, maintainable f
 
 - `React UI` covers chat, sessions, provider/model selection, exports, and artifact access.
 - `Chat Flow` covers routing, prompt construction, streaming, and persistence.
-- `Provider Hub` covers runtime provider selection, configured-provider filtering, and provider status/troubleshooting.
+- `Provider Registry` covers runtime provider selection, configured-provider filtering, and provider status/troubleshooting.
 - `Reports` covers generated summaries, report files, stderr files, and backend-driven previews.
 
 ```mermaid
@@ -17,7 +17,7 @@ flowchart LR
 
   subgraph API[Spring Boot Backend]
     ChatFlow[Chat Flow]
-    ProviderHub[Provider Hub]
+    ProviderHub[Provider Registry]
     Sessions[Sessions]
     Reports[Reports]
   end

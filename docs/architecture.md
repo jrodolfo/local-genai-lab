@@ -84,7 +84,7 @@ The provider layer currently supports three backends:
 - Amazon Bedrock
 - Hugging Face
 
-Provider selection is runtime-selectable per request. The backend maintains a Provider Hub rather than a single startup-only provider.
+Provider selection is runtime-selectable per request. The backend maintains a Provider Registry rather than a single startup-only provider.
 
 Important distinction:
 
@@ -151,7 +151,7 @@ Step-by-step:
 
 1. the user selects provider/model in the UI
 2. the frontend sends the message to the backend
-3. the backend resolves the selected provider from the Provider Hub
+3. the backend resolves the selected provider from the Provider Registry
 4. the backend builds the appropriate prompt/message structure
 5. the provider generates the response
 6. the backend stores the assistant turn and returns it to the UI
@@ -213,7 +213,7 @@ The UI sidebar is backed by persisted session metadata rather than ephemeral in-
 The provider subsystem is built around:
 
 - a configured default provider
-- a Provider Hub over the supported providers
+- a Provider Registry over the supported providers
 - per-request provider resolution
 - provider-aware model discovery
 
