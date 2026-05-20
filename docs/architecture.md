@@ -15,7 +15,7 @@ At runtime, the backend is the central coordinator. The frontend never talks dir
 
 ## Core Diagram
 
-![Architecture overview](./images/architecture-overview.svg)
+See the maintained Mermaid version in [architecture-overview.md](./architecture-overview.md).
 
 ```text
 React UI
