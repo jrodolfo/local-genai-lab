@@ -45,8 +45,8 @@ flowchart LR
   ProviderHub -->|hosted| HF
   ChatFlow <-->|tool chat| MCP
 
-  MCP --> Scripts
-  Scripts --> AWS
+  MCP <--> Scripts
+  Scripts <--> AWS
   Scripts -. reports .-> Reports
 
   ChatFlow -->|persist turns| Sessions
