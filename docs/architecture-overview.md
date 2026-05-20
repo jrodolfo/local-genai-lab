@@ -2,6 +2,9 @@
 
 This Mermaid version replaces the generated SVG because it is easier to maintain in Git, review in diffs, and update when the architecture changes.
 
+The Mermaid diagram below is the source of truth for the system architecture.
+Please update this document whenever architectural changes are introduced.
+
 The diagram keeps the same architectural meaning as the previous SVG:
 
 - `React UI` covers chat, sessions, provider/model selection, exports, and artifact access.
