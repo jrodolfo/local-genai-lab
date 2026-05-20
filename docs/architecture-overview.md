@@ -2,7 +2,7 @@
 
 This Mermaid diagram is the maintained source of truth for the system architecture. Mermaid diagrams are easier to maintain in Git, review in diffs, and update when the architecture changes. Please update this document whenever architectural changes are introduced.
 
-The diagram keeps the same architectural meaning as the previous SVG:
+The diagram below captures the current architecture in a compact, maintainable form:
 
 - `React UI` covers chat, sessions, provider/model selection, exports, and artifact access.
 - `Chat Flow` covers routing, prompt construction, streaming, and persistence.

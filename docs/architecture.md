@@ -84,7 +84,7 @@ The provider layer currently supports three backends:
 - Amazon Bedrock
 - Hugging Face
 
-Provider selection is runtime-selectable per request. The backend maintains a provider registry rather than a single startup-only provider.
+Provider selection is runtime-selectable per request. The backend maintains a Provider Hub rather than a single startup-only provider.
 
 Important distinction:
 
@@ -141,7 +141,7 @@ This allows:
 React -> /api/chat or /api/chat/stream
       -> backend provider selection
       -> prompt construction
-      -> Ollama or Bedrock
+      -> Ollama, Bedrock, or Hugging Face
       -> assistant response
       -> session persistence
       -> UI render
@@ -151,7 +151,7 @@ Step-by-step:
 
 1. the user selects provider/model in the UI
 2. the frontend sends the message to the backend
-3. the backend resolves the selected provider from the provider registry
+3. the backend resolves the selected provider from the Provider Hub
 4. the backend builds the appropriate prompt/message structure
 5. the provider generates the response
 6. the backend stores the assistant turn and returns it to the UI
@@ -166,7 +166,7 @@ React
         -> shell script
           -> AWS CLI / reports
     -> prompt enrichment with structured tool result
-    -> Ollama or Bedrock
+    -> Ollama, Bedrock, or Hugging Face
     -> assistant response + structured tool result
 ```
 
@@ -213,7 +213,7 @@ The UI sidebar is backed by persisted session metadata rather than ephemeral in-
 The provider subsystem is built around:
 
 - a configured default provider
-- a registry of supported providers
+- a Provider Hub over the supported providers
 - per-request provider resolution
 - provider-aware model discovery
 

@@ -69,18 +69,18 @@ In the successful tool-assisted path, the backend:
 3. calls the MCP-backed tool
 4. gets structured tool output back
 5. builds an augmented prompt with that tool context
-6. sends that enriched prompt to Ollama or Bedrock
+6. sends that enriched prompt to Ollama, Bedrock, or Hugging Face
 
 Primary chat path:
 
 ```text
-React Frontend -> Spring Boot Backend -> Ollama or Bedrock
+React Frontend -> Spring Boot Backend -> Ollama, Bedrock, or Hugging Face
 ```
 
 Tool-assisted chat path:
 
 ```text
-React Frontend -> Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report artifacts -> Spring Boot Backend prompt enrichment -> Ollama or Bedrock
+React Frontend -> Spring Boot Backend -> Local MCP Server -> Shell Scripts -> AWS CLI / report artifacts -> Spring Boot Backend prompt enrichment -> Ollama, Bedrock, or Hugging Face
 ```
 
 Immediate backend response path:
