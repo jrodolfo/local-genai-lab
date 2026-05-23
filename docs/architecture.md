@@ -39,6 +39,16 @@ Accepted architecture decisions live under [`docs/adr/`](./adr/).
 Current ADRs:
 
 - [ADR 0001: Keep MCP As A Separate TypeScript Runtime](./adr/0001-mcp-separate-typescript-runtime.md)
+- [ADR 0002: Use Runtime Provider Switching Per Request](./adr/0002-runtime-provider-switching-per-request.md)
+- [ADR 0003: Show Only Configured Providers In The Selector](./adr/0003-show-only-configured-providers-in-selector.md)
+- [ADR 0004: Keep Tool Execution Behind The MCP Boundary](./adr/0004-keep-tool-execution-behind-mcp-boundary.md)
+- [ADR 0005: Ground Tool Results Through The Selected Model](./adr/0005-ground-tool-results-through-the-selected-model.md)
+- [ADR 0006: Persist Sessions As Local JSON Files](./adr/0006-persist-sessions-as-local-json-files.md)
+- [ADR 0007: Restrict Artifact Access To The Configured Reports Root](./adr/0007-restrict-artifact-access-to-configured-reports-root.md)
+- [ADR 0008: Use Curated Hugging Face Candidates Instead Of Full Catalog Browsing](./adr/0008-use-curated-hugging-face-candidates-not-full-catalog.md)
+- [ADR 0009: Use Short-Lived Provider Status Caching](./adr/0009-use-short-lived-provider-status-caching.md)
+- [ADR 0010: Use A Unified Backend Startup Script](./adr/0010-use-unified-backend-startup-script.md)
+- [ADR 0011: Use Mermaid As The Architecture Source Of Truth](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
 
 ## Main Components
 
