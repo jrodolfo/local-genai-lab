@@ -17,21 +17,6 @@ At runtime, the backend is the central coordinator. The frontend never talks dir
 
 See the maintained Mermaid version in [architecture-overview.md](./architecture-overview.md).
 
-```text
-React UI
-  -> Spring Boot API
-    -> Chat orchestration
-      -> Ollama
-      -> Amazon Bedrock
-      -> Hugging Face
-      -> MCP server
-        -> Shell scripts
-          -> AWS CLI
-          -> Report artifacts
-    -> Session storage
-    -> Artifact preview APIs
-```
-
 ## Architecture Decisions
 
 Accepted architecture decisions live under [`docs/adr/`](./adr/).

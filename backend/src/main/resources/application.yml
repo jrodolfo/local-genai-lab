@@ -36,7 +36,7 @@ ollama:
   read-timeout-seconds: ${OLLAMA_READ_TIMEOUT_SECONDS:240}
 
 bedrock:
-  region: ${BEDROCK_REGION:us-east-1}
+  region: ${BEDROCK_REGION:us-east-2}
   model-id: ${BEDROCK_MODEL_ID:}
 
 huggingface:

@@ -204,7 +204,7 @@ The most important backend settings are:
 
 - `APP_MODEL_PROVIDER` default: `ollama`
 - `OLLAMA_DEFAULT_MODEL` default: `llama3:8b`
-- `BEDROCK_REGION` default: `us-east-1`
+- `BEDROCK_REGION` default: `us-east-2`
 - `BEDROCK_MODEL_ID` default: empty
 - `HUGGINGFACE_BASE_URL` default: `https://router.huggingface.co/v1/chat/completions`
 - `HUGGINGFACE_DEFAULT_MODEL` default: empty
