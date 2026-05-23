@@ -279,6 +279,7 @@ make s3-cloudwatch BUCKET=example.com
 ## Documentation Map
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
+- [docs/adr/](./docs/adr/): accepted architecture decision records
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas
 - [docs/troubleshooting.md](./docs/troubleshooting.md): common local runtime problems and practical fixes
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes

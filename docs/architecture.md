@@ -32,6 +32,14 @@ React UI
     -> Artifact preview APIs
 ```
 
+## Architecture Decisions
+
+Accepted architecture decisions live under [`docs/adr/`](./adr/).
+
+Current ADRs:
+
+- [ADR 0001: Keep MCP As A Separate TypeScript Runtime](./adr/0001-mcp-separate-typescript-runtime.md)
+
 ## Main Components
 
 ### Frontend
