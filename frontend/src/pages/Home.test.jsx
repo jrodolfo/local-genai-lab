@@ -409,6 +409,89 @@ describe('Home', () => {
     });
   });
 
+  it('shows tool lifecycle status for a tool-assisted streaming request', async () => {
+    let resolveStream;
+    streamMessage.mockImplementation(async ({ onEvent }) => {
+      onEvent({
+        type: 'start',
+        sessionId: 'session-123',
+        tool: {
+          used: true,
+          name: 'aws_region_audit',
+          status: 'success',
+          summary: 'AWS audit completed.'
+        },
+        toolResult: null,
+        pendingTool: null,
+        metadata: null
+      });
+      await new Promise((resolve) => {
+        resolveStream = () => {
+          onEvent({ type: 'delta', text: 'Audit complete.' });
+          onEvent({
+            type: 'complete',
+            sessionId: 'session-123',
+            tool: {
+              used: true,
+              name: 'aws_region_audit',
+              status: 'success',
+              summary: 'AWS audit completed.'
+            },
+            toolResult: null,
+            pendingTool: null,
+            metadata: null
+          });
+          resolve();
+        };
+      });
+    });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await screen.findByRole('combobox', { name: /model/i });
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Please audit my AWS account.');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText(/Preparing the final answer from tool results/i)).toBeInTheDocument();
+    resolveStream();
+    await waitFor(() => {
+      expect(screen.queryByText(/Preparing the final answer from tool results/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows pending tool input status when clarification is needed', async () => {
+    sendMessage.mockResolvedValue({
+      response: 'Which bucket should I inspect?',
+      model: 'llama3:8b',
+      sessionId: 'session-123',
+      pendingTool: {
+        toolName: 's3_cloudwatch_report',
+        reason: 's3 cloudwatch metrics request',
+        missingFields: ['bucket']
+      },
+      tool: {
+        used: true,
+        name: 's3_cloudwatch_report',
+        status: 'clarification-needed',
+        summary: 'Need a bucket before running the tool.'
+      },
+      toolResult: null,
+      metadata: null
+    });
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await screen.findByRole('combobox', { name: /model/i });
+    await user.click(screen.getByLabelText(/Streaming/i));
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Check S3 CloudWatch metrics.');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText(/awaiting input for tool:/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Awaiting additional tool input/i)).not.toBeInTheDocument();
+  });
+
   it('shows a slow-provider hint after a long in-flight request', async () => {
     let unmount = () => {};
     try {

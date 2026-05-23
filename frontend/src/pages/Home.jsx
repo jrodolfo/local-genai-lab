@@ -25,6 +25,7 @@ function Home() {
   const [pendingOnly, setPendingOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [toolLifecycleMessage, setToolLifecycleMessage] = useState('');
   const [loadingStartedAt, setLoadingStartedAt] = useState(null);
   const [loadingElapsedSeconds, setLoadingElapsedSeconds] = useState(0);
   const [availableProviders, setAvailableProviders] = useState([]);
@@ -399,6 +400,7 @@ function Home() {
   const resetLoadingState = () => {
     setLoading(false);
     setLoadingMessage('');
+    setToolLifecycleMessage('');
     setLoadingStartedAt(null);
     activeRequestControllerRef.current = null;
   };
@@ -410,17 +412,20 @@ function Home() {
   const handleSend = async ({ message, provider, model, streaming }) => {
     const requestStartedAt = Date.now();
     const requestController = new AbortController();
+    const maybeToolAssisted = looksLikeToolAssistedPrompt(message);
     activeRequestControllerRef.current = requestController;
     setError('');
     setStatusNotice('');
     setLoading(true);
     setLoadingMessage(streaming ? 'Waiting for streamed response...' : 'Waiting for response...');
+    setToolLifecycleMessage(maybeToolAssisted ? 'Checking whether a tool is needed...' : '');
     setLoadingStartedAt(Date.now());
     addMessage('user', message);
 
     try {
       if (!streaming) {
         const payload = await sendMessage({ message, provider, model, sessionId, signal: requestController.signal });
+        setToolLifecycleMessage(resolveToolLifecycleMessage({ tool: payload.tool, pendingTool: payload.pendingTool }));
         setSessionId((current) => payload.sessionId || current);
         setPendingTool(payload.pendingTool || null);
         addMessage(
@@ -447,6 +452,7 @@ function Home() {
           signal: requestController.signal,
           onEvent: (event) => {
             if (event.type === 'start' || event.type === 'complete') {
+              setToolLifecycleMessage(resolveToolLifecycleMessage({ tool: event?.tool, pendingTool: event?.pendingTool }));
               setSessionId((current) => event?.sessionId || current);
               setPendingTool(event?.pendingTool || null);
               updateLastAssistantDetails({
@@ -477,6 +483,9 @@ function Home() {
         }
         setStatusNotice('Request canceled.');
         return;
+      }
+      if (toolLifecycleMessage) {
+        setToolLifecycleMessage('Tool execution failed before the final answer was generated.');
       }
       setError(err.message || 'Something went wrong.');
       addMessage('assistant', 'Error calling backend/Ollama. Check backend logs.');
@@ -739,6 +748,7 @@ function Home() {
           disabled={modelsLoading}
           loading={loading}
           loadingMessage={loading ? loadingStatusMessage : modelsLoading ? 'Loading available models...' : ''}
+          loadingDetail={loading ? toolLifecycleMessage : ''}
           loadingHint={slowProviderHint}
           statusMessage={
             statusNotice || (
@@ -774,6 +784,44 @@ function Home() {
       </section>
     </main>
   );
+}
+
+function looksLikeToolAssistedPrompt(message) {
+  const normalized = message.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  return [
+    'audit my aws',
+    'aws audit',
+    's3',
+    'cloudwatch',
+    'latest report',
+    'recent report',
+    'recent reports',
+    'read the report',
+    'read report',
+    'bucket'
+  ].some((keyword) => normalized.includes(keyword));
+}
+
+function resolveToolLifecycleMessage({ tool, pendingTool }) {
+  if (pendingTool) {
+    return 'Awaiting additional tool input...';
+  }
+  if (!tool?.used) {
+    return '';
+  }
+  if (tool.status === 'clarification-needed') {
+    return 'Awaiting additional tool input...';
+  }
+  if (tool.status === 'failed') {
+    return 'Tool execution failed before the final answer was generated.';
+  }
+  if (tool.status === 'success') {
+    return 'Preparing the final answer from tool results...';
+  }
+  return `Running tool: ${tool.name}`;
 }
 
 function mergeProviderMetadata(existingMetadata, updates) {
