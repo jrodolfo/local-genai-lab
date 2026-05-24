@@ -177,6 +177,8 @@ The frontend provider and model selectors now load from the backend's `/api/mode
 
 The provider selector only shows providers configured in the running backend process. The provider status banner is cached briefly to avoid excessive live checks, shows `Last checked`, and includes a manual `Refresh status` action when you want to re-fetch the current status explicitly.
 
+For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phases while the request is in flight. Completed assistant replies also show compact tool provenance, and generated summaries, reports, and file lists can be inspected through the artifact inspector panel.
+
 ### 5. Optional: build the local MCP server
 
 ```bash

@@ -40,7 +40,8 @@ Covers:
 - provider/model selection behavior
 - streamed and non-streamed chat UI flows
 - session sidebar, reopening saved sessions, and mixed-provider rendering
-- message formatting, provenance display, loading states, and provider-status refresh behavior
+- explicit streaming tool-phase handling
+- message formatting, tool provenance display, tool result cards, loading states, provider-status refresh behavior, and artifact panel empty states
 
 Use this suite when changing:
 - `Home.jsx`
@@ -106,7 +107,7 @@ These flows are still worth running manually after meaningful changes:
    Verify partial tokens appear before completion and metadata/provenance settle correctly at the end.
 
 5. Tool-assisted chat
-   Verify prompts such as `Please audit my AWS account.` or S3 metrics requests execute the MCP-backed tools and render tool results correctly.
+   Verify prompts such as `Please audit my AWS account.` or S3 metrics requests execute the MCP-backed tools, show streaming tool phases when applicable, and render tool results correctly.
 
 6. Provider switching in one session
    Verify the configured providers in the current backend process can all answer in the same saved session and that the UI shows per-turn provider/model provenance.
@@ -115,7 +116,7 @@ These flows are still worth running manually after meaningful changes:
    Verify saved sessions reopen correctly and JSON/Markdown export still reflect the stored provider/model metadata.
 
 8. Artifact preview
-   Verify report summary and report preview actions open the expected artifacts without loading the entire file into memory.
+   Verify report summary and report preview actions open the expected artifacts without loading the entire file into memory, and that the artifact inspector titles and empty states make sense.
 
 ## Known Non-Automated Areas
 

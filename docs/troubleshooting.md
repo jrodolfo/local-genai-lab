@@ -162,6 +162,26 @@ Important distinction:
 - the status banner is a lightweight readiness/troubleshooting surface
 - actual `/api/chat` and `/api/chat/stream` failures are still the source of truth for request-time provider errors
 
+## Artifact Inspector Looks Empty
+
+Symptoms:
+- the artifact inspector shows an empty-state message
+- you opened a tool result but do not see preview content yet
+
+What this usually means:
+- no summary, report, or file list has been selected yet
+- the selected run directory has no files to show
+- the artifact preview endpoint returned no previewable content for that path
+
+Expected behavior:
+- before any artifact action, the panel shows `Select a summary, report, or file list to inspect artifacts.`
+- empty file lists show `No files were found in this run directory.`
+- missing preview content shows `No preview content is available for this artifact.`
+
+Fix:
+- click `Open summary`, `Open report`, or `Show files` from a completed tool result card
+- if the panel still stays empty, inspect the tool result card and backend logs to confirm the run directory and artifact paths were produced as expected
+
 ## Correlating A Failed Chat Request
 
 Chat responses now include an `X-Request-Id` header. The backend logs use the same request id for:

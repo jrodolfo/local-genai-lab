@@ -194,12 +194,15 @@ Important design point:
 ```text
 React -> /api/chat/stream
       -> backend stream orchestration
+      -> tool phase events when applicable
       -> provider streaming path
       -> SSE start / delta / complete events
       -> session persistence on successful completion
 ```
 
 The backend explicitly manages stream lifecycle, disconnect handling, and cancellation to avoid persisting aborted assistant turns as completed responses.
+
+For tool-assisted streaming turns, the backend also emits explicit tool-phase events so the frontend can show in-flight lifecycle states such as tool decision, tool execution, and transition back to answer generation without guessing from the prompt text.
 
 ### Session Load / Export / Import
 
@@ -246,6 +249,11 @@ Provider status is a separate, lightweight troubleshooting surface:
 - the backend caches provider status briefly to avoid excessive live discovery checks
 - the UI shows `Last checked` from that backend status response
 - the UI can manually re-fetch status with `Refresh status` without reloading the provider model list
+
+Completed tool-assisted replies expose two complementary UI layers:
+
+- compact tool provenance in the assistant message
+- artifact inspection through the artifact inspector panel for previews and file lists
 
 ## Tool Orchestration Architecture
 
