@@ -17,8 +17,9 @@ describe('MessageBubble', () => {
     );
 
     expect(screen.getByText('Done.')).toBeInTheDocument();
-    expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
-    expect(screen.getByText(/status: success/i)).toBeInTheDocument();
+    expect(screen.getByText(/tool used/i)).toBeInTheDocument();
+    expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^success$/i)).toBeInTheDocument();
     expect(screen.getByText(/AWS audit completed./i)).toBeInTheDocument();
   });
 
@@ -89,6 +90,7 @@ def factorial(n):
     );
 
     expect(screen.getByText('reports')).toBeInTheDocument();
+    expect(screen.getByText(/structured result available below/i)).toBeInTheDocument();
     expect(screen.getByText(/type: all/i)).toBeInTheDocument();
     expect(screen.getByText(/^audit$/i)).toBeInTheDocument();
     expect(screen.getByText(/\/tmp\/audit-1/i)).toBeInTheDocument();
@@ -203,7 +205,7 @@ def factorial(n):
     render(<MessageBubble role="assistant" content="No tool used." tool={null} metadata={null} />);
 
     expect(screen.getByText('No tool used.')).toBeInTheDocument();
-    expect(screen.queryByText(/used tool:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^tool used$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
   });
 
@@ -226,8 +228,44 @@ def factorial(n):
     );
 
     expect(screen.getByText('Hello')).toBeInTheDocument();
-    expect(screen.queryByText(/used tool:/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^tool used$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/technical details/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bedrock · amazon\.nova-lite-v1:0/i)).not.toBeInTheDocument();
+  });
+
+  it('renders failed tool status clearly', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content="The tool failed."
+        tool={{
+          used: true,
+          name: 'aws_region_audit',
+          status: 'failed',
+          summary: 'AWS credentials were invalid.'
+        }}
+      />
+    );
+
+    expect(screen.getByText(/^failed$/i)).toBeInTheDocument();
+    expect(screen.getByText(/AWS credentials were invalid./i)).toBeInTheDocument();
+  });
+
+  it('renders clarification-needed tool status clearly', () => {
+    render(
+      <MessageBubble
+        role="assistant"
+        content="Which bucket should I inspect?"
+        tool={{
+          used: true,
+          name: 's3_cloudwatch_report',
+          status: 'clarification-needed',
+          summary: 'Need a bucket before running the tool.'
+        }}
+      />
+    );
+
+    expect(screen.getByText(/needs input/i)).toBeInTheDocument();
+    expect(screen.getByText(/Need a bucket before running the tool./i)).toBeInTheDocument();
   });
 });

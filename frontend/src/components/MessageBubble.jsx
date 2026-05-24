@@ -19,6 +19,7 @@ function MessageBubble({
   const showMetadata = !isUser && showTechnicalDetails && metadata && (metadata.provider || metadata.modelId);
   const showToolResult = !isUser && toolResult?.type;
   const showToolVarianceHint = !isUser && showTechnicalDetails && tool?.used && tool?.status === 'success';
+  const toolStatusClass = showTool ? `tool-provenance-${normalizeToolStatus(tool.status)}` : '';
 
   return (
     <div className={`message-row ${isUser ? 'user' : 'assistant'}`}>
@@ -32,10 +33,18 @@ function MessageBubble({
           </div>
         ) : null}
         {showTool ? (
-          <div className="tool-provenance">
-            <span>used tool: {tool.name}</span>
-            {tool.status ? <span>status: {tool.status}</span> : null}
-            {tool.summary ? <span>{tool.summary}</span> : null}
+          <div className={`tool-provenance ${toolStatusClass}`.trim()}>
+            <div className="tool-provenance-header">
+              <span className="tool-provenance-label">tool used</span>
+              <span className="tool-provenance-name">{tool.name}</span>
+              {tool.status ? (
+                <span className={`tool-status-badge tool-status-${normalizeToolStatus(tool.status)}`}>
+                  {formatToolStatus(tool.status)}
+                </span>
+              ) : null}
+            </div>
+            {tool.summary ? <span className="tool-provenance-summary">{tool.summary}</span> : null}
+            {showToolResult ? <span className="tool-provenance-result">structured result available below</span> : null}
           </div>
         ) : null}
         {showToolVarianceHint ? (
@@ -114,6 +123,27 @@ function formatProviderName(provider) {
     return 'Hugging Face';
   }
   return provider;
+}
+
+function normalizeToolStatus(status) {
+  if (!status) {
+    return 'unknown';
+  }
+  return status.toLowerCase();
+}
+
+function formatToolStatus(status) {
+  const normalized = normalizeToolStatus(status);
+  if (normalized === 'clarification-needed') {
+    return 'Needs input';
+  }
+  if (normalized === 'failed') {
+    return 'Failed';
+  }
+  if (normalized === 'success') {
+    return 'Success';
+  }
+  return status;
 }
 
 function renderMarkdownBlocks(content = '') {

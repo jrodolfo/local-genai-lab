@@ -181,7 +181,8 @@ describe('Home', () => {
 
     expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ provider: 'ollama', model: 'llama3:8b' }));
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
-    expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
+    expect(screen.getByText(/^tool used$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
     expect(screen.getByText('aws audit')).toBeInTheDocument();
     expect(screen.getByText(/success: 10/i)).toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
@@ -776,7 +777,8 @@ describe('Home', () => {
       expect(screen.getByText('Latest report ready.')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/used tool: read_report_summary/i)).toBeInTheDocument();
+    expect(screen.getByText(/^tool used$/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/^read_report_summary$/i).length).toBeGreaterThan(0);
     expect(screen.getByText('Bedrock · amazon.nova-lite-v1:0')).toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
@@ -885,7 +887,8 @@ describe('Home', () => {
     await user.click(sessionTitle.closest('button'));
 
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
-    expect(screen.getByText(/used tool: aws_region_audit/i)).toBeInTheDocument();
+    expect(screen.getByText(/^tool used$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(getSession).toHaveBeenCalledWith('session-1');
   });
