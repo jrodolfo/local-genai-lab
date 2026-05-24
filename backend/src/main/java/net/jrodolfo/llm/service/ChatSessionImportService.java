@@ -139,12 +139,12 @@ public class ChatSessionImportService {
                     case "s3_cloudwatch_report" -> ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT;
                     default -> throw new ChatSessionImportException("Unsupported pending tool: " + pendingTool.toolName());
                 },
-                null,
-                null,
-                null,
-                null,
+                pendingTool.reportType(),
+                pendingTool.bucket(),
+                pendingTool.region(),
+                pendingTool.days(),
                 pendingTool.reason(),
-                List.of(),
+                pendingTool.services() == null ? List.of() : pendingTool.services(),
                 pendingTool.missingFields() == null ? List.of() : pendingTool.missingFields()
         );
     }

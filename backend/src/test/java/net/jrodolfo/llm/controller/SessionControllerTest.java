@@ -102,10 +102,16 @@ class SessionControllerTest {
     void listSessionsFiltersByProvider() throws Exception {
         saveSession("bedrock-session", "bedrock question", Instant.parse("2026-04-10T10:00:00Z"));
         saveSession("ollama-session", "ollama question", Instant.parse("2026-04-11T10:00:00Z"), null, "ollama", false);
+        saveSession("hf-session", "hugging face question", Instant.parse("2026-04-12T10:00:00Z"), null, "huggingface", false);
 
         mockMvc.perform(get("/api/sessions").queryParam("provider", "bedrock"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sessionId").value("bedrock-session"))
+                .andExpect(jsonPath("$[1]").doesNotExist());
+
+        mockMvc.perform(get("/api/sessions").queryParam("provider", "huggingface"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sessionId").value("hf-session"))
                 .andExpect(jsonPath("$[1]").doesNotExist());
     }
 
@@ -208,7 +214,8 @@ class SessionControllerTest {
         mockMvc.perform(get("/api/sessions/session-1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.pendingTool.toolName").value("s3_cloudwatch_report"))
-                .andExpect(jsonPath("$.pendingTool.missingFields[0]").value("bucket"));
+                .andExpect(jsonPath("$.pendingTool.missingFields[0]").value("bucket"))
+                .andExpect(jsonPath("$.pendingTool.days").value(7));
     }
 
     @Test
@@ -403,6 +410,51 @@ class SessionControllerTest {
                 .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.sessionId").value(org.hamcrest.Matchers.not("session-1")))
                 .andExpect(jsonPath("$.idChanged").value(true));
+    }
+
+    @Test
+    void exportImportRoundTripPreservesPendingToolContext() throws Exception {
+        saveSession(
+                "pending-tool-session",
+                "check bucket metrics",
+                Instant.parse("2026-04-10T10:00:00Z"),
+                new PendingToolCall(
+                        ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT,
+                        null,
+                        "demo-metrics-bucket",
+                        "us-east-2",
+                        14,
+                        "s3 cloudwatch metrics request",
+                        List.of("cloudwatch"),
+                        List.of("bucket")
+                )
+        );
+
+        String exportedJson = mockMvc.perform(get("/api/sessions/pending-tool-session/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingTool.toolName").value("s3_cloudwatch_report"))
+                .andExpect(jsonPath("$.pendingTool.bucket").value("demo-metrics-bucket"))
+                .andExpect(jsonPath("$.pendingTool.region").value("us-east-2"))
+                .andExpect(jsonPath("$.pendingTool.days").value(14))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String importedJson = exportedJson.replace("\"sessionId\":\"pending-tool-session\"", "\"sessionId\":\"pending-tool-session-imported\"");
+        MockMultipartFile file = new MockMultipartFile("file", "pending-tool-session.json", "application/json", importedJson.getBytes());
+
+        mockMvc.perform(multipart("/api/sessions/import").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value("pending-tool-session-imported"));
+
+        mockMvc.perform(get("/api/sessions/pending-tool-session-imported"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pendingTool.toolName").value("s3_cloudwatch_report"))
+                .andExpect(jsonPath("$.pendingTool.bucket").value("demo-metrics-bucket"))
+                .andExpect(jsonPath("$.pendingTool.region").value("us-east-2"))
+                .andExpect(jsonPath("$.pendingTool.days").value(14))
+                .andExpect(jsonPath("$.pendingTool.services[0]").value("cloudwatch"))
+                .andExpect(jsonPath("$.pendingTool.missingFields[0]").value("bucket"));
     }
 
     @Test

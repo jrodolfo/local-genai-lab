@@ -929,6 +929,32 @@ describe('Home', () => {
     expect(getSession).toHaveBeenCalledWith('session-1');
   });
 
+  it('keeps artifact actions usable when reopening a saved tool-assisted session', async () => {
+    listSessions.mockResolvedValue([
+      {
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+
+    await user.click(await screen.findByRole('button', { name: /open summary/i }));
+
+    expect(previewArtifact).toHaveBeenCalledWith('/tmp/audit-1/summary.json');
+    expect(await screen.findByText('Summary preview')).toBeInTheDocument();
+    expect(screen.getByText(/Relative path: audit\/aws-audit-2026-04-10\/summary\.json/i)).toBeInTheDocument();
+  });
+
   it('shows provider metadata when technical details are enabled', async () => {
     window.localStorage.setItem('local-genai-lab.debug-mode', 'true');
     sendMessage.mockResolvedValue({

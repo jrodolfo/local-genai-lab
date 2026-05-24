@@ -87,7 +87,9 @@ public class ChatSessionService {
         }
 
         String normalizedProvider = provider.trim().toLowerCase(Locale.ROOT);
-        if (!normalizedProvider.equals("ollama") && !normalizedProvider.equals("bedrock")) {
+        if (!normalizedProvider.equals("ollama")
+                && !normalizedProvider.equals("bedrock")
+                && !normalizedProvider.equals("huggingface")) {
             return true;
         }
 
@@ -154,7 +156,12 @@ public class ChatSessionService {
         return new PendingToolCallResponse(
                 toolNameForDecision(pendingToolCall.type()),
                 pendingToolCall.reason(),
-                pendingToolCall.missingFields()
+                pendingToolCall.missingFields(),
+                pendingToolCall.reportType(),
+                pendingToolCall.bucket(),
+                pendingToolCall.region(),
+                pendingToolCall.days(),
+                pendingToolCall.services()
         );
     }
 

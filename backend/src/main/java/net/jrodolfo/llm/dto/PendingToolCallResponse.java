@@ -8,6 +8,11 @@ import java.util.List;
 public record PendingToolCallResponse(
         String toolName,
         String reason,
-        List<String> missingFields
+        List<String> missingFields,
+        String reportType,
+        String bucket,
+        String region,
+        Integer days,
+        List<String> services
 ) {
 }
