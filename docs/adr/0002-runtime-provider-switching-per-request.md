@@ -44,6 +44,13 @@ Negative:
 - backend APIs and UI state must carry provider information explicitly
 - provider-specific configuration still needs to exist in the running backend process
 
+## Primary Implementation
+
+- [ChatModelProviderRegistry.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/provider/ChatModelProviderRegistry.java)
+- [ChatOrchestratorService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ChatOrchestratorService.java)
+- [ChatController.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/controller/ChatController.java)
+- [Home.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/Home.jsx)
+
 ## Revisit Triggers
 
 Reevaluate this decision if:

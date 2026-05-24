@@ -29,6 +29,12 @@ Negative:
 - Mermaid has simpler layout control than hand-tuned SVG
 - diagram readability depends more on good labels and surrounding prose
 
+## Primary Implementation
+
+- [architecture-overview.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture-overview.md)
+- [architecture.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture.md)
+- [interview-architecture-notes.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/interview-architecture-notes.md)
+
 ## Revisit Triggers
 
 Reevaluate this decision if:

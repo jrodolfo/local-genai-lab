@@ -38,6 +38,12 @@ Negative:
 - “supported by the repo” and “available right now” are intentionally different concepts
 - users must configure multiple providers in the same process if they want to switch among them live
 
+## Primary Implementation
+
+- [AvailableModelsService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/AvailableModelsService.java)
+- [ProviderStatusService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ProviderStatusService.java)
+- [Home.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/Home.jsx)
+
 ## Revisit Triggers
 
 Reevaluate this decision if:

@@ -56,6 +56,12 @@ Negative:
 - maintainers who are more comfortable in Java need to cross a language boundary to understand MCP internals
 - some concepts are represented on both sides of the boundary and must stay aligned through contracts and documentation
 
+## Primary Implementation
+
+- [McpService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/McpService.java)
+- [mcp/README.md](/Users/jrodolfo/workspace/aws/local-genai-lab/mcp/README.md)
+- [run-backend.sh](/Users/jrodolfo/workspace/aws/local-genai-lab/scripts/run-backend.sh)
+
 ## Revisit Triggers
 
 Reevaluate this decision if one or more of these become true:

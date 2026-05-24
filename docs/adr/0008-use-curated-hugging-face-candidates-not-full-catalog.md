@@ -34,6 +34,13 @@ Negative:
 - the Hugging Face selector is intentionally narrower than the full public catalog
 - adding models requires configuration rather than pure discovery
 
+## Primary Implementation
+
+- [HuggingFaceClient.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/client/HuggingFaceClient.java)
+- [AvailableModelsService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/AvailableModelsService.java)
+- [ProviderStatusService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ProviderStatusService.java)
+- [Home.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/Home.jsx)
+
 ## Revisit Triggers
 
 Reevaluate this decision if:

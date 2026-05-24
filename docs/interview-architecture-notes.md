@@ -5,6 +5,13 @@ This document is a quick interview-oriented guide to `Local GenAI Lab`.
 It is intentionally shorter and more conversational than
 [`architecture.md`](./architecture.md) and the ADR set in [`adr/`](./adr/).
 
+Suggested reading path:
+
+1. start with [`../README.md`](../README.md)
+2. then read [`architecture.md`](./architecture.md)
+3. use this file for interview prep
+4. follow specific decisions into [`adr/README.md`](./adr/README.md)
+
 ## One-Minute System Summary
 
 This repository is a local-first GenAI lab with four main runtime layers:
