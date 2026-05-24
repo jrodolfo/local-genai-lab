@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
+import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionImportResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
@@ -129,6 +130,8 @@ class ApiSmokeIntegrationTest {
     @Test
     void streamingChatEndpointEmitsSseEventsAndPassesRequestFields() throws Exception {
         chatOrchestratorService.streamingSessionId = "stream-session-7";
+        chatOrchestratorService.emitToolPhases = false;
+        chatOrchestratorService.streamingToolMetadata = null;
 
         var mvcResult = mockMvc.perform(post("/api/chat/stream")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -149,6 +152,7 @@ class ApiSmokeIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"start\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"delta\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"complete\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("\"type\":\"tool-decision-started\""))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("stream-chunk")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"sessionId\":\"stream-session-7\"")));
 
@@ -158,6 +162,38 @@ class ApiSmokeIntegrationTest {
         org.junit.jupiter.api.Assertions.assertEquals("stream-session-7", chatOrchestratorService.lastSessionId);
         org.junit.jupiter.api.Assertions.assertEquals("stream-chunk", chatOrchestratorService.lastAssistantResponse);
         org.junit.jupiter.api.Assertions.assertTrue(chatOrchestratorService.lastRequestId != null && !chatOrchestratorService.lastRequestId.isBlank());
+    }
+
+    @Test
+    void toolAssistedStreamingChatEndpointEmitsExplicitToolPhaseEvents() throws Exception {
+        chatOrchestratorService.streamingSessionId = "stream-session-tool";
+        chatOrchestratorService.emitToolPhases = true;
+        chatOrchestratorService.streamingToolMetadata = new ChatToolMetadata(
+                true,
+                "aws_region_audit",
+                "success",
+                "AWS audit completed."
+        );
+
+        var mvcResult = mockMvc.perform(post("/api/chat/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(new ChatRequest(
+                                "Audit my AWS regions.",
+                                "ollama",
+                                "llama3:8b",
+                                "stream-session-tool"
+                        ))))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(mvcResult))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"tool-decision-started\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"tool-execution-started\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"tool-execution-completed\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"type\":\"answer-generation-started\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"toolName\":\"aws_region_audit\"")));
     }
 
     @Test
@@ -256,6 +292,8 @@ class ApiSmokeIntegrationTest {
         private String lastSessionId;
         private String lastRequestId;
         private String lastAssistantResponse;
+        private boolean emitToolPhases;
+        private ChatToolMetadata streamingToolMetadata;
 
         FakeChatOrchestratorService() {
             super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
@@ -278,16 +316,26 @@ class ApiSmokeIntegrationTest {
 
         @Override
         public PreparedChat prepareChat(String message, String provider, String model, String sessionId, String requestId) {
+            return prepareChat(message, provider, model, sessionId, requestId, (phaseType, toolName) -> { });
+        }
+
+        @Override
+        public PreparedChat prepareChat(String message, String provider, String model, String sessionId, String requestId, ToolPhaseListener toolPhaseListener) {
             this.lastMessage = message;
             this.lastProvider = provider;
             this.lastModel = model;
             this.lastSessionId = sessionId;
             this.lastRequestId = requestId;
+            if (emitToolPhases) {
+                toolPhaseListener.onPhase("tool-decision-started", "aws_region_audit");
+                toolPhaseListener.onPhase("tool-execution-started", "aws_region_audit");
+                toolPhaseListener.onPhase("tool-execution-completed", "aws_region_audit");
+            }
             return new PreparedChat(
                     streamingProvider,
                     ProviderPrompt.forPrompt("Explain recursion."),
                     model,
-                    null,
+                    streamingToolMetadata,
                     null,
                     null,
                     ChatSession.create(streamingSessionId, model, Instant.parse("2026-04-19T00:00:00Z")),

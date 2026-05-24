@@ -41,6 +41,7 @@ public class ChatOrchestratorService {
     private final ChatPromptBuilder chatPromptBuilder;
     private final ChatSessionService chatSessionService;
     private final Path reportsDirectory;
+    private static final ToolPhaseListener NOOP_TOOL_PHASE_LISTENER = (phaseType, toolName) -> { };
 
     public ChatOrchestratorService(
             ChatModelProviderRegistry chatModelProviderRegistry,
@@ -102,6 +103,17 @@ public class ChatOrchestratorService {
      * Prepares a chat turn and includes the current request id in orchestration logs.
      */
     public PreparedChat prepareChat(String message, String provider, String model, String sessionId, String requestId) {
+        return prepareChat(message, provider, model, sessionId, requestId, NOOP_TOOL_PHASE_LISTENER);
+    }
+
+    public PreparedChat prepareChat(
+            String message,
+            String provider,
+            String model,
+            String sessionId,
+            String requestId,
+            ToolPhaseListener toolPhaseListener
+    ) {
         ChatModelProvider chatModelProvider = chatModelProviderRegistry.get(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
         ChatSession session = chatMemoryService.startTurn(sessionId, model, resolvedModel, message);
@@ -118,6 +130,9 @@ public class ChatOrchestratorService {
                 decision.needsClarification(),
                 decision.shouldUseTool()
         );
+        if (decision.needsClarification() || decision.shouldUseTool()) {
+            toolPhaseListener.onPhase("tool-decision-started", toolNameForDecision(decision));
+        }
         if (decision.needsClarification()) {
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
@@ -144,6 +159,7 @@ public class ChatOrchestratorService {
         }
 
         try {
+            toolPhaseListener.onPhase("tool-execution-started", toolNameForDecision(decision));
             log.info(
                     "requestId={} tool_execution_start sessionId={} provider={} model={} tool={} reason={}",
                     requestId,
@@ -154,6 +170,7 @@ public class ChatOrchestratorService {
                     decision.reason()
             );
             ToolExecution execution = executeTool(decision);
+            toolPhaseListener.onPhase("tool-execution-completed", execution.toolName());
             log.info(
                     "requestId={} tool_execution_complete sessionId={} provider={} model={} tool={} summary={}",
                     requestId,
@@ -586,5 +603,10 @@ public class ChatOrchestratorService {
         static PreparedChat forImmediateResponse(ChatResponse response) {
             return new PreparedChat(null, null, response.model(), response.tool(), response.toolResult(), response.pendingTool(), null, response);
         }
+    }
+
+    @FunctionalInterface
+    public interface ToolPhaseListener {
+        void onPhase(String phaseType, String toolName);
     }
 }

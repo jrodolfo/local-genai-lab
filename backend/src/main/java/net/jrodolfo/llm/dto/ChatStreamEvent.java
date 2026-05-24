@@ -12,6 +12,8 @@ public record ChatStreamEvent(
         String sessionId,
         @Schema(description = "Delta text for `delta` events.")
         String text,
+        @Schema(description = "Tool name associated with explicit tool-phase events.", example = "aws_region_audit")
+        String toolName,
         @Schema(description = "Optional tool provenance attached to the event.")
         ChatToolMetadata tool,
         @Schema(description = "Optional structured tool result payload attached to the event.")
@@ -28,11 +30,15 @@ public record ChatStreamEvent(
             PendingToolCallResponse pendingTool,
             ModelProviderMetadata metadata
     ) {
-        return new ChatStreamEvent("start", sessionId, null, tool, toolResult, pendingTool, metadata);
+        return new ChatStreamEvent("start", sessionId, null, null, tool, toolResult, pendingTool, metadata);
+    }
+
+    public static ChatStreamEvent phase(String type, String toolName) {
+        return new ChatStreamEvent(type, null, null, toolName, null, null, null, null);
     }
 
     public static ChatStreamEvent delta(String text) {
-        return new ChatStreamEvent("delta", null, text, null, null, null, null);
+        return new ChatStreamEvent("delta", null, text, null, null, null, null, null);
     }
 
     public static ChatStreamEvent complete(
@@ -42,6 +48,6 @@ public record ChatStreamEvent(
             PendingToolCallResponse pendingTool,
             ModelProviderMetadata metadata
     ) {
-        return new ChatStreamEvent("complete", sessionId, null, tool, toolResult, pendingTool, metadata);
+        return new ChatStreamEvent("complete", sessionId, null, null, tool, toolResult, pendingTool, metadata);
     }
 }

@@ -410,22 +410,41 @@ describe('Home', () => {
   });
 
   it('shows tool lifecycle status for a tool-assisted streaming request', async () => {
+    let emitToolPhase;
     let resolveStream;
     streamMessage.mockImplementation(async ({ onEvent }) => {
-      onEvent({
-        type: 'start',
-        sessionId: 'session-123',
-        tool: {
-          used: true,
-          name: 'aws_region_audit',
-          status: 'success',
-          summary: 'AWS audit completed.'
-        },
-        toolResult: null,
-        pendingTool: null,
-        metadata: null
-      });
       await new Promise((resolve) => {
+        emitToolPhase = () => {
+          onEvent({
+            type: 'tool-decision-started',
+            toolName: 'aws_region_audit'
+          });
+          onEvent({
+            type: 'tool-execution-started',
+            toolName: 'aws_region_audit'
+          });
+          onEvent({
+            type: 'tool-execution-completed',
+            toolName: 'aws_region_audit'
+          });
+          onEvent({
+            type: 'answer-generation-started',
+            toolName: 'aws_region_audit'
+          });
+          onEvent({
+            type: 'start',
+            sessionId: 'session-123',
+            tool: {
+              used: true,
+              name: 'aws_region_audit',
+              status: 'success',
+              summary: 'AWS audit completed.'
+            },
+            toolResult: null,
+            pendingTool: null,
+            metadata: null
+          });
+        };
         resolveStream = () => {
           onEvent({ type: 'delta', text: 'Audit complete.' });
           onEvent({
@@ -453,6 +472,8 @@ describe('Home', () => {
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Please audit my AWS account.');
     await user.click(screen.getByRole('button', { name: /send/i }));
 
+    expect(screen.queryByText(/Checking whether a tool is needed/i)).not.toBeInTheDocument();
+    emitToolPhase();
     expect(await screen.findByText(/Preparing the final answer from tool results/i)).toBeInTheDocument();
     resolveStream();
     await waitFor(() => {

@@ -123,7 +123,7 @@ public class ChatController {
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(
             summary = "Run a streaming chat request",
-            description = "Streams Server-Sent Events using a typed JSON envelope. The stream emits `chat` events with `type=start`, zero or more `type=delta` chunks, and a final `type=complete` event."
+            description = "Streams Server-Sent Events using a typed JSON envelope. The stream emits `chat` events with additive tool-phase events, `type=start`, zero or more `type=delta` chunks, and a final `type=complete` event."
     )
     @ApiResponses({
             @ApiResponse(
@@ -196,8 +196,26 @@ public class ChatController {
                         request.provider(),
                         request.model(),
                         request.sessionId(),
-                        requestId
+                        requestId,
+                        (phaseType, toolName) -> {
+                            if (!sendEvent(emitter, streamClosed, ChatStreamEvent.phase(phaseType, toolName))) {
+                                throw new StreamAbortedException();
+                            }
+                        }
                 );
+
+                if (preparedChat.immediateResponse() == null
+                        && preparedChat.toolMetadata() != null
+                        && preparedChat.toolMetadata().used()
+                        && "success".equals(preparedChat.toolMetadata().status())) {
+                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.phase(
+                            "answer-generation-started",
+                            preparedChat.toolMetadata().name()
+                    ))) {
+                        streamAborted.set(true);
+                        return;
+                    }
+                }
 
                 if (!sendEvent(emitter, streamClosed, ChatStreamEvent.start(
                         preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().sessionId() : preparedChat.session().sessionId(),

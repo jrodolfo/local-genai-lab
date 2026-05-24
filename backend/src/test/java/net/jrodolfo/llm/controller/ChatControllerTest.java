@@ -183,8 +183,33 @@ class ChatControllerTest {
         }
 
         @Override
+        public PreparedChat prepareChat(
+                String message,
+                String provider,
+                String model,
+                String sessionId,
+                String requestId,
+                ToolPhaseListener toolPhaseListener
+        ) {
+            this.lastRequestId = requestId;
+            return prepareChat(message, provider, model, sessionId);
+        }
+
+        @Override
         public ChatSession completePreparedChat(PreparedChat preparedChat, String assistantResponse, ModelProviderMetadata providerMetadata) {
             completePreparedChatCalls++;
+            return preparedChat.session();
+        }
+
+        @Override
+        public ChatSession completePreparedChat(
+                PreparedChat preparedChat,
+                String assistantResponse,
+                ModelProviderMetadata providerMetadata,
+                String requestId
+        ) {
+            completePreparedChatCalls++;
+            this.lastRequestId = requestId;
             return preparedChat.session();
         }
     }

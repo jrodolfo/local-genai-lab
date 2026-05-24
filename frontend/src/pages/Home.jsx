@@ -412,13 +412,12 @@ function Home() {
   const handleSend = async ({ message, provider, model, streaming }) => {
     const requestStartedAt = Date.now();
     const requestController = new AbortController();
-    const maybeToolAssisted = looksLikeToolAssistedPrompt(message);
     activeRequestControllerRef.current = requestController;
     setError('');
     setStatusNotice('');
     setLoading(true);
     setLoadingMessage(streaming ? 'Waiting for streamed response...' : 'Waiting for response...');
-    setToolLifecycleMessage(maybeToolAssisted ? 'Checking whether a tool is needed...' : '');
+    setToolLifecycleMessage('');
     setLoadingStartedAt(Date.now());
     addMessage('user', message);
 
@@ -451,8 +450,12 @@ function Home() {
           sessionId,
           signal: requestController.signal,
           onEvent: (event) => {
+            if (isToolPhaseEvent(event?.type)) {
+              setToolLifecycleMessage(resolveStreamingToolPhaseMessage(event));
+              return;
+            }
+
             if (event.type === 'start' || event.type === 'complete') {
-              setToolLifecycleMessage(resolveToolLifecycleMessage({ tool: event?.tool, pendingTool: event?.pendingTool }));
               setSessionId((current) => event?.sessionId || current);
               setPendingTool(event?.pendingTool || null);
               updateLastAssistantDetails({
@@ -786,23 +789,27 @@ function Home() {
   );
 }
 
-function looksLikeToolAssistedPrompt(message) {
-  const normalized = message.trim().toLowerCase();
-  if (!normalized) {
-    return false;
-  }
+function isToolPhaseEvent(type) {
   return [
-    'audit my aws',
-    'aws audit',
-    's3',
-    'cloudwatch',
-    'latest report',
-    'recent report',
-    'recent reports',
-    'read the report',
-    'read report',
-    'bucket'
-  ].some((keyword) => normalized.includes(keyword));
+    'tool-decision-started',
+    'tool-execution-started',
+    'tool-execution-completed',
+    'answer-generation-started'
+  ].includes(type);
+}
+
+function resolveStreamingToolPhaseMessage(event) {
+  switch (event?.type) {
+    case 'tool-decision-started':
+      return 'Checking whether a tool is needed...';
+    case 'tool-execution-started':
+      return `Running tool: ${event.toolName || 'selected tool'}`;
+    case 'tool-execution-completed':
+    case 'answer-generation-started':
+      return 'Preparing the final answer from tool results...';
+    default:
+      return '';
+  }
 }
 
 function resolveToolLifecycleMessage({ tool, pendingTool }) {
