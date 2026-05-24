@@ -21,6 +21,9 @@ See the maintained Mermaid version in [architecture-overview.md](./architecture-
 
 Accepted architecture decisions live under [`docs/adr/`](./adr/).
 
+Start with the folder guide in [docs/adr/README.md](./adr/README.md) and use
+[docs/adr/template.md](./adr/template.md) for new records.
+
 Current ADRs:
 
 - [ADR 0001: Keep MCP As A Separate TypeScript Runtime](./adr/0001-mcp-separate-typescript-runtime.md)
