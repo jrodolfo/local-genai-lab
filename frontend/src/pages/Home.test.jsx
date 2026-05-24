@@ -183,7 +183,7 @@ describe('Home', () => {
     expect((await screen.findAllByText('Audit complete.')).length).toBeGreaterThan(0);
     expect(screen.getByText(/^tool used$/i)).toBeInTheDocument();
     expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
-    expect(screen.getByText('aws audit')).toBeInTheDocument();
+    expect(screen.getByText('AWS audit result')).toBeInTheDocument();
     expect(screen.getByText(/success: 10/i)).toBeInTheDocument();
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/tokens: \? in \/ \? out \/ 46 total/i)).not.toBeInTheDocument();
@@ -642,7 +642,7 @@ describe('Home', () => {
     await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
     await user.click(screen.getByRole('button', { name: /send/i }));
 
-    await user.click(await screen.findByRole('button', { name: /view summary/i }));
+    await user.click(await screen.findByRole('button', { name: /open summary/i }));
 
     expect(previewArtifact).toHaveBeenCalledWith('/tmp/audit-1/summary.json');
     expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/summary\.json/i)).toBeInTheDocument();
@@ -667,7 +667,7 @@ describe('Home', () => {
 
     const sessionTitle = await screen.findByText('run aws audit');
     await user.click(sessionTitle.closest('button'));
-    await user.click(await screen.findByRole('button', { name: /list files/i }));
+    await user.click(await screen.findByRole('button', { name: /show files/i }));
 
     expect(listArtifacts).toHaveBeenCalledWith('/tmp/audit-1');
     expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/report\.txt/i)).toBeInTheDocument();

@@ -3,6 +3,12 @@ function ToolResultCard({ toolResult, onPreviewArtifact, onListArtifacts, onCopy
     return null;
   }
 
+  const actionButton = (key, label, onClick) => (
+    <button key={key} type="button" onClick={onClick}>
+      {label}
+    </button>
+  );
+
   const renderActions = (actions) => {
     const visibleActions = actions.filter(Boolean);
     if (visibleActions.length === 0) {
@@ -16,34 +22,26 @@ function ToolResultCard({ toolResult, onPreviewArtifact, onListArtifacts, onCopy
     const reports = Array.isArray(toolResult.reports) ? toolResult.reports : [];
     return (
       <div className="tool-result-card">
-        <span className="tool-result-title">reports</span>
-        <span>type: {toolResult.reportType || 'all'}</span>
+        <span className="tool-result-title">Recent reports</span>
+        <span>Report type: {toolResult.reportType || 'all'}</span>
         {reports.length === 0 ? <span>no reports found.</span> : null}
         {reports.map((report) => (
           <div key={report.run_dir || report.summary_json || report.report_txt} className="tool-result-item">
-            <span>{report.report_type || 'report'}</span>
-            {report.created_at ? <span>{report.created_at}</span> : null}
-            {report.run_dir ? <span>{report.run_dir}</span> : null}
+            <span className="tool-result-item-title">{report.report_type || 'report'}</span>
+            {report.created_at ? <span>Created: {report.created_at}</span> : null}
+            {report.run_dir ? <span>Run directory: {report.run_dir}</span> : null}
             {renderActions([
               report.summary_json ? (
-                <button key="summary" type="button" onClick={() => onPreviewArtifact?.(report.summary_json, 'summary preview')}>
-                  View summary
-                </button>
+                actionButton('summary', 'Open summary', () => onPreviewArtifact?.(report.summary_json, 'summary preview'))
               ) : null,
               report.report_txt ? (
-                <button key="report" type="button" onClick={() => onPreviewArtifact?.(report.report_txt, 'report preview')}>
-                  View report
-                </button>
+                actionButton('report', 'Open report', () => onPreviewArtifact?.(report.report_txt, 'report preview'))
               ) : null,
               report.run_dir ? (
-                <button key="files" type="button" onClick={() => onListArtifacts?.(report.run_dir, 'artifact files')}>
-                  List files
-                </button>
+                actionButton('files', 'Show files', () => onListArtifacts?.(report.run_dir, 'artifact files'))
               ) : null,
               report.run_dir ? (
-                <button key="copy" type="button" onClick={() => onCopyPath?.(report.run_dir)}>
-                  Copy run dir
-                </button>
+                actionButton('copy', 'Copy run directory', () => onCopyPath?.(report.run_dir))
               ) : null
             ])}
           </div>
@@ -56,32 +54,24 @@ function ToolResultCard({ toolResult, onPreviewArtifact, onListArtifacts, onCopy
     const summary = toolResult.summary || {};
     return (
       <div className="tool-result-card">
-        <span className="tool-result-title">report summary</span>
-        {toolResult.reportType ? <span>type: {toolResult.reportType}</span> : null}
-        {toolResult.runDir ? <span>run dir: {toolResult.runDir}</span> : null}
-        {summary.success_count != null ? <span>success: {summary.success_count}</span> : null}
-        {summary.failure_count != null ? <span>failures: {summary.failure_count}</span> : null}
+        <span className="tool-result-title">Latest report summary</span>
+        {toolResult.reportType ? <span>Report type: {toolResult.reportType}</span> : null}
+        {toolResult.runDir ? <span>Run directory: {toolResult.runDir}</span> : null}
+        {summary.success_count != null ? <span>Success: {summary.success_count}</span> : null}
+        {summary.failure_count != null ? <span>Failures: {summary.failure_count}</span> : null}
         {toolResult.reportPreview ? <span>{toolResult.reportPreview}</span> : null}
         {renderActions([
           toolResult.summaryPath ? (
-            <button key="summary" type="button" onClick={() => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview')}>
-              View summary
-            </button>
+            actionButton('summary', 'Open summary', () => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview'))
           ) : null,
           toolResult.reportPath ? (
-            <button key="report" type="button" onClick={() => onPreviewArtifact?.(toolResult.reportPath, 'report preview')}>
-              View report
-            </button>
+            actionButton('report', 'Open report', () => onPreviewArtifact?.(toolResult.reportPath, 'report preview'))
           ) : null,
           toolResult.runDir ? (
-            <button key="files" type="button" onClick={() => onListArtifacts?.(toolResult.runDir, 'artifact files')}>
-              List files
-            </button>
+            actionButton('files', 'Show files', () => onListArtifacts?.(toolResult.runDir, 'artifact files'))
           ) : null,
           toolResult.runDir ? (
-            <button key="copy" type="button" onClick={() => onCopyPath?.(toolResult.runDir)}>
-              Copy run dir
-            </button>
+            actionButton('copy', 'Copy run directory', () => onCopyPath?.(toolResult.runDir))
           ) : null
         ])}
       </div>
@@ -92,50 +82,40 @@ function ToolResultCard({ toolResult, onPreviewArtifact, onListArtifacts, onCopy
     const failedSteps = Array.isArray(toolResult.failedSteps) ? toolResult.failedSteps : [];
     return (
       <div className="tool-result-card">
-        <span className="tool-result-title">aws audit</span>
-        {toolResult.accountId ? <span>account: {toolResult.accountId}</span> : null}
-        {toolResult.runDir ? <span>run dir: {toolResult.runDir}</span> : null}
-        <span>success: {toolResult.successCount ?? 0}</span>
-        <span>failures: {toolResult.failureCount ?? 0}</span>
-        <span>skipped: {toolResult.skippedCount ?? 0}</span>
+        <span className="tool-result-title">AWS audit result</span>
+        {toolResult.accountId ? <span>Account: {toolResult.accountId}</span> : null}
+        {toolResult.runDir ? <span>Run directory: {toolResult.runDir}</span> : null}
+        <span>Success: {toolResult.successCount ?? 0}</span>
+        <span>Failures: {toolResult.failureCount ?? 0}</span>
+        <span>Skipped: {toolResult.skippedCount ?? 0}</span>
         {Array.isArray(toolResult.selectedRegions) && toolResult.selectedRegions.length > 0 ? (
-          <span>regions: {toolResult.selectedRegions.join(', ')}</span>
+          <span>Regions: {toolResult.selectedRegions.join(', ')}</span>
         ) : null}
         {Array.isArray(toolResult.selectedServices) && toolResult.selectedServices.length > 0 ? (
-          <span>services: {toolResult.selectedServices.join(', ')}</span>
+          <span>Services: {toolResult.selectedServices.join(', ')}</span>
         ) : null}
         {renderActions([
           toolResult.summaryPath ? (
-            <button key="summary" type="button" onClick={() => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview')}>
-              View summary
-            </button>
+            actionButton('summary', 'Open summary', () => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview'))
           ) : null,
           toolResult.reportPath ? (
-            <button key="report" type="button" onClick={() => onPreviewArtifact?.(toolResult.reportPath, 'report preview')}>
-              View report
-            </button>
+            actionButton('report', 'Open report', () => onPreviewArtifact?.(toolResult.reportPath, 'report preview'))
           ) : null,
           toolResult.runDir ? (
-            <button key="files" type="button" onClick={() => onListArtifacts?.(toolResult.runDir, 'artifact files')}>
-              List files
-            </button>
+            actionButton('files', 'Show files', () => onListArtifacts?.(toolResult.runDir, 'artifact files'))
           ) : null,
           toolResult.runDir ? (
-            <button key="copy" type="button" onClick={() => onCopyPath?.(toolResult.runDir)}>
-              Copy run dir
-            </button>
+            actionButton('copy', 'Copy run directory', () => onCopyPath?.(toolResult.runDir))
           ) : null
         ])}
         {failedSteps.length > 0 ? (
           <div className="tool-result-item">
-            <span>failed steps:</span>
+            <span className="tool-result-item-title">Failed steps</span>
             {failedSteps.map((step) => (
               <div key={step.step || step.stderr_path} className="tool-result-item">
                 <span>{step.step || 'unknown step'}</span>
                 {step.stderr_path ? (
-                  <button type="button" onClick={() => onPreviewArtifact?.(step.stderr_path, 'failed step stderr')}>
-                    View stderr
-                  </button>
+                  actionButton(step.stderr_path, 'Open stderr', () => onPreviewArtifact?.(step.stderr_path, 'failed step stderr'))
                 ) : null}
               </div>
             ))}
@@ -148,32 +128,24 @@ function ToolResultCard({ toolResult, onPreviewArtifact, onListArtifacts, onCopy
   if (toolResult.type === 's3_report_summary') {
     return (
       <div className="tool-result-card">
-        <span className="tool-result-title">s3 cloudwatch report</span>
-        {toolResult.bucket ? <span>bucket: {toolResult.bucket}</span> : null}
-        {toolResult.runDir ? <span>run dir: {toolResult.runDir}</span> : null}
-        <span>success: {toolResult.successCount ?? 0}</span>
-        <span>failures: {toolResult.failureCount ?? 0}</span>
-        <span>skipped: {toolResult.skippedCount ?? 0}</span>
+        <span className="tool-result-title">S3 CloudWatch report</span>
+        {toolResult.bucket ? <span>Bucket: {toolResult.bucket}</span> : null}
+        {toolResult.runDir ? <span>Run directory: {toolResult.runDir}</span> : null}
+        <span>Success: {toolResult.successCount ?? 0}</span>
+        <span>Failures: {toolResult.failureCount ?? 0}</span>
+        <span>Skipped: {toolResult.skippedCount ?? 0}</span>
         {renderActions([
           toolResult.summaryPath ? (
-            <button key="summary" type="button" onClick={() => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview')}>
-              View summary
-            </button>
+            actionButton('summary', 'Open summary', () => onPreviewArtifact?.(toolResult.summaryPath, 'summary preview'))
           ) : null,
           toolResult.reportPath ? (
-            <button key="report" type="button" onClick={() => onPreviewArtifact?.(toolResult.reportPath, 'report preview')}>
-              View report
-            </button>
+            actionButton('report', 'Open report', () => onPreviewArtifact?.(toolResult.reportPath, 'report preview'))
           ) : null,
           toolResult.runDir ? (
-            <button key="files" type="button" onClick={() => onListArtifacts?.(toolResult.runDir, 'artifact files')}>
-              List files
-            </button>
+            actionButton('files', 'Show files', () => onListArtifacts?.(toolResult.runDir, 'artifact files'))
           ) : null,
           toolResult.runDir ? (
-            <button key="copy" type="button" onClick={() => onCopyPath?.(toolResult.runDir)}>
-              Copy run dir
-            </button>
+            actionButton('copy', 'Copy run directory', () => onCopyPath?.(toolResult.runDir))
           ) : null
         ])}
       </div>

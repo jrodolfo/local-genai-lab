@@ -535,7 +535,7 @@
 
 .tool-result-title {
   font-weight: 600;
-  text-transform: lowercase;
+  color: #0f172a;
 }
 
 .tool-result-item {
@@ -544,6 +544,11 @@
   gap: 3px;
   padding-left: 8px;
   border-left: 2px solid #dbeafe;
+}
+
+.tool-result-item-title {
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .tool-result-actions {

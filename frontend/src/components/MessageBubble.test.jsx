@@ -89,15 +89,15 @@ def factorial(n):
       />
     );
 
-    expect(screen.getByText('reports')).toBeInTheDocument();
+    expect(screen.getByText('Recent reports')).toBeInTheDocument();
     expect(screen.getByText(/structured result available below/i)).toBeInTheDocument();
-    expect(screen.getByText(/type: all/i)).toBeInTheDocument();
+    expect(screen.getByText(/Report type: all/i)).toBeInTheDocument();
     expect(screen.getByText(/^audit$/i)).toBeInTheDocument();
     expect(screen.getByText(/\/tmp\/audit-1/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /view summary/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /view report/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /list files/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /copy run dir/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open summary/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open report/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /show files/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /copy run directory/i })).toBeInTheDocument();
   });
 
   it('renders provider metadata for assistant messages', () => {
