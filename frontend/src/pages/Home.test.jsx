@@ -191,6 +191,13 @@ describe('Home', () => {
     expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
   });
 
+  it('shows an artifact inspector empty state before any artifact interaction', async () => {
+    render(<Home />);
+
+    expect(await screen.findByText('Artifact inspector')).toBeInTheDocument();
+    expect(screen.getAllByText(/Select a summary, report, or file list to inspect artifacts\./i).length).toBeGreaterThan(0);
+  });
+
   it('shows the active provider in the header for bedrock mode', async () => {
     listAvailableModels.mockResolvedValue({
       provider: 'bedrock',
@@ -645,7 +652,10 @@ describe('Home', () => {
     await user.click(await screen.findByRole('button', { name: /open summary/i }));
 
     expect(previewArtifact).toHaveBeenCalledWith('/tmp/audit-1/summary.json');
+    expect(await screen.findByText('Summary preview')).toBeInTheDocument();
     expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/summary\.json/i)).toBeInTheDocument();
+    expect(screen.getByText(/File: summary\.json/i)).toBeInTheDocument();
+    expect(screen.getByText(/Content type: application\/json/i)).toBeInTheDocument();
     expect(screen.getByText(/\{"success_count":10,"failure_count":0\}/i)).toBeInTheDocument();
   });
 
@@ -670,7 +680,33 @@ describe('Home', () => {
     await user.click(await screen.findByRole('button', { name: /show files/i }));
 
     expect(listArtifacts).toHaveBeenCalledWith('/tmp/audit-1');
+    expect(await screen.findByText('Files in run directory')).toBeInTheDocument();
     expect(await screen.findByText(/audit\/aws-audit-2026-04-10\/report\.txt/i)).toBeInTheDocument();
+  });
+
+  it('shows an empty file-list state when no artifact files are returned', async () => {
+    listArtifacts.mockResolvedValueOnce([]);
+    listSessions.mockResolvedValueOnce([
+      {
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        messageCount: 2
+      }
+    ]);
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+    await user.click(await screen.findByRole('button', { name: /show files/i }));
+
+    expect(await screen.findByText('Files in run directory')).toBeInTheDocument();
+    expect(screen.getByText(/No files were found in this run directory\./i)).toBeInTheDocument();
   });
 
   it('shows a clear empty state when no local ollama models are installed', async () => {

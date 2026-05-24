@@ -39,7 +39,10 @@ function Home() {
   const [error, setError] = useState('');
   const [artifactFiles, setArtifactFiles] = useState([]);
   const [artifactPreview, setArtifactPreview] = useState(null);
+  const [artifactPanelMode, setArtifactPanelMode] = useState('idle');
   const [artifactPanelTitle, setArtifactPanelTitle] = useState('');
+  const [artifactPanelMessage, setArtifactPanelMessage] = useState('');
+  const [artifactPanelPath, setArtifactPanelPath] = useState('');
   const [statusNotice, setStatusNotice] = useState('');
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(() => {
     if (typeof window === 'undefined') {
@@ -47,6 +50,15 @@ function Home() {
     }
     return window.localStorage.getItem(DEBUG_MODE_STORAGE_KEY) === 'true';
   });
+  const resetArtifactPanel = () => {
+    const nextState = resetArtifactPanelState();
+    setArtifactFiles([]);
+    setArtifactPreview(null);
+    setArtifactPanelMode(nextState.mode);
+    setArtifactPanelTitle(nextState.title);
+    setArtifactPanelMessage(nextState.message);
+    setArtifactPanelPath(nextState.path);
+  };
 
   useEffect(() => {
     // Debounce list filtering so typing in the session search box does not trigger a backend
@@ -259,7 +271,7 @@ function Home() {
     setMessages([]);
     setArtifactFiles([]);
     setArtifactPreview(null);
-    setArtifactPanelTitle('');
+    resetArtifactPanel();
     setError('');
   };
 
@@ -300,7 +312,7 @@ function Home() {
       setPendingTool(payload.pendingTool || null);
       setArtifactFiles([]);
       setArtifactPreview(null);
-      setArtifactPanelTitle('');
+      resetArtifactPanel();
       setMessages(
         payload.messages.map((message, index) => ({
           id: `${payload.sessionId}-${index}-${message.timestamp || index}`,
@@ -359,10 +371,19 @@ function Home() {
     setLoading(true);
     try {
       const payload = await listArtifacts(runDir);
-      setArtifactPanelTitle(title);
+      setArtifactPanelMode('files');
+      setArtifactPanelTitle(formatArtifactPanelTitle(title, 'files'));
+      setArtifactPanelMessage('');
+      setArtifactPanelPath(runDir);
       setArtifactFiles(payload);
       setArtifactPreview(null);
     } catch (err) {
+      setArtifactPanelMode('files');
+      setArtifactPanelTitle(formatArtifactPanelTitle(title, 'files'));
+      setArtifactPanelMessage(err.message || 'Failed to load artifact files.');
+      setArtifactPanelPath(runDir);
+      setArtifactFiles([]);
+      setArtifactPreview(null);
       setError(err.message || 'Failed to list artifact files.');
     } finally {
       setLoading(false);
@@ -374,9 +395,19 @@ function Home() {
     setLoading(true);
     try {
       const payload = await previewArtifact(path);
-      setArtifactPanelTitle(title);
+      setArtifactPanelMode('preview');
+      setArtifactPanelTitle(formatArtifactPanelTitle(title, 'preview'));
+      setArtifactPanelMessage('');
+      setArtifactPanelPath(path);
       setArtifactPreview(payload);
+      setArtifactFiles([]);
     } catch (err) {
+      setArtifactPanelMode('preview');
+      setArtifactPanelTitle(formatArtifactPanelTitle(title, 'preview'));
+      setArtifactPanelMessage(err.message || 'Failed to load preview content.');
+      setArtifactPanelPath(path);
+      setArtifactPreview(null);
+      setArtifactFiles([]);
       setError(err.message || 'Failed to preview artifact.');
     } finally {
       setLoading(false);
@@ -687,32 +718,46 @@ function Home() {
           </div>
         ) : null}
 
-        {artifactFiles.length > 0 || artifactPreview ? (
-          <section className="artifact-panel">
+        <section className="artifact-panel">
             <div className="artifact-panel-header">
               <div>
-                <strong>{artifactPanelTitle || 'artifact inspector'}</strong>
-                {artifactPreview?.relativePath ? <span>{artifactPreview.relativePath}</span> : null}
+                <strong>{artifactPanelTitle || 'Artifact inspector'}</strong>
+                {artifactPanelMode === 'idle' ? (
+                  <span>Select a summary, report, or file list to inspect artifacts.</span>
+                ) : null}
+                {artifactPreview?.relativePath ? <span>{`Relative path: ${artifactPreview.relativePath}`}</span> : null}
+                {!artifactPreview?.relativePath && artifactPanelPath ? <span>{`Path: ${artifactPanelPath}`}</span> : null}
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setArtifactFiles([]);
-                  setArtifactPreview(null);
-                  setArtifactPanelTitle('');
-                }}
+                onClick={resetArtifactPanel}
               >
                 Close
               </button>
             </div>
-            {artifactFiles.length > 0 ? (
+            {artifactPanelMode === 'idle' ? (
+              <div className="artifact-panel-empty">
+                <span>Select a summary, report, or file list to inspect artifacts.</span>
+              </div>
+            ) : null}
+            {artifactPanelMode === 'files' && artifactPanelMessage ? (
+              <div className="artifact-panel-empty">
+                <span>{artifactPanelMessage}</span>
+              </div>
+            ) : null}
+            {artifactPanelMode === 'files' && !artifactPanelMessage && artifactFiles.length === 0 ? (
+              <div className="artifact-panel-empty">
+                <span>No files were found in this run directory.</span>
+              </div>
+            ) : null}
+            {artifactPanelMode === 'files' && artifactFiles.length > 0 ? (
               <div className="artifact-file-list">
                 {artifactFiles.map((file) => (
                   <div key={file.path} className="artifact-file-item">
                     <span>{file.relativePath}</span>
                     <div className="artifact-file-actions">
                       {file.previewable ? (
-                        <button type="button" onClick={() => handlePreviewArtifact(file.path, 'artifact preview')}>
+                        <button type="button" onClick={() => handlePreviewArtifact(file.path, 'Artifact preview')}>
                           Preview
                         </button>
                       ) : null}
@@ -724,19 +769,28 @@ function Home() {
                 ))}
               </div>
             ) : null}
+            {artifactPanelMode === 'preview' && artifactPanelMessage ? (
+              <div className="artifact-panel-empty">
+                <span>{artifactPanelMessage}</span>
+              </div>
+            ) : null}
+            {artifactPanelMode === 'preview' && !artifactPanelMessage && !artifactPreview ? (
+              <div className="artifact-panel-empty">
+                <span>No preview content is available for this artifact.</span>
+              </div>
+            ) : null}
             {artifactPreview ? (
               <div className="artifact-preview">
                 <div className="artifact-preview-meta">
-                  <span>{artifactPreview.fileName}</span>
-                  <span>{artifactPreview.contentType}</span>
-                  <span>{artifactPreview.size} bytes</span>
-                  {artifactPreview.truncated ? <span>preview truncated</span> : null}
+                  <span>{`File: ${artifactPreview.fileName}`}</span>
+                  <span>{`Content type: ${artifactPreview.contentType}`}</span>
+                  <span>{`Size: ${artifactPreview.size} bytes`}</span>
+                  {artifactPreview.truncated ? <span>Preview truncated</span> : null}
                 </div>
                 <pre>{artifactPreview.content}</pre>
               </div>
             ) : null}
           </section>
-        ) : null}
 
         <ChatWindow
           ref={chatWindowRef}
@@ -787,6 +841,38 @@ function Home() {
       </section>
     </main>
   );
+}
+
+function resetArtifactPanelState() {
+  return {
+    mode: 'idle',
+    title: '',
+    message: '',
+    path: ''
+  };
+}
+
+function formatArtifactPanelTitle(title, mode) {
+  const normalized = (title || '').trim().toLowerCase();
+  if (!normalized) {
+    return mode === 'files' ? 'Artifact files' : 'Artifact preview';
+  }
+  if (normalized === 'summary preview') {
+    return 'Summary preview';
+  }
+  if (normalized === 'report preview') {
+    return 'Report preview';
+  }
+  if (normalized === 'artifact preview') {
+    return 'Artifact preview';
+  }
+  if (normalized === 'artifact files') {
+    return 'Files in run directory';
+  }
+  if (normalized === 'failed step stderr') {
+    return 'Failed step stderr';
+  }
+  return title.charAt(0).toUpperCase() + title.slice(1);
 }
 
 function isToolPhaseEvent(type) {
