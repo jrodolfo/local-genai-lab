@@ -1,6 +1,6 @@
-# Interview Architecture Notes
+# Architecture Walkthrough
 
-This document is a quick interview-oriented guide to `Local GenAI Lab`.
+This document is a concise walkthrough of `Local GenAI Lab`.
 
 It is intentionally shorter and more conversational than
 [`architecture.md`](./architecture.md) and the ADR set in [`adr/`](./adr/).
@@ -9,7 +9,7 @@ Suggested reading path:
 
 1. start with [`../README.md`](../README.md)
 2. then read [`architecture.md`](./architecture.md)
-3. use this file for interview prep
+3. use this file as a practical walkthrough of the system
 4. follow specific decisions into [`adr/README.md`](./adr/README.md)
 
 ## One-Minute System Summary
@@ -146,7 +146,7 @@ Related ADR:
 
 - [ADR 0007](./adr/0007-restrict-artifact-access-to-configured-reports-root.md)
 
-## What I Would Emphasize In An Interview
+## Key Design Points
 
 ### Clear runtime boundaries
 
@@ -184,18 +184,18 @@ The project separates:
 
 That makes the system easier to reason about during failures and restores.
 
-## Likely Interview Questions
+## Common Design Questions
 
 ### Why not call Ollama, Bedrock, or Hugging Face directly from the frontend?
 
-Current answer:
+Short answer:
 
 - the backend needs to coordinate provider selection, tool orchestration, prompt enrichment, persistence, and artifact access
 - direct browser calls would fragment that logic and complicate credentials and local-tool boundaries
 
 ### Why is MCP separate from the backend?
 
-Current answer:
+Short answer:
 
 - MCP is a protocol and runtime boundary, not just a Java package
 - it keeps local tool execution isolated from the web application
@@ -208,7 +208,7 @@ Related ADRs:
 
 ### Why use TypeScript for MCP if the backend is Java?
 
-Current answer:
+Short answer:
 
 - because the MCP layer is mostly lightweight protocol glue and schema validation
 - TypeScript is efficient for that job
@@ -216,7 +216,7 @@ Current answer:
 
 ### Why not use a database for sessions?
 
-Current answer:
+Short answer:
 
 - the project is local-first and educational
 - local JSON keeps setup simple and makes export/import and manual inspection easy
@@ -228,7 +228,7 @@ Related ADR:
 
 ### Why not list all Hugging Face models dynamically?
 
-Current answer:
+Short answer:
 
 - the full public catalog is too broad and inconsistent for a safe dropdown
 - model usability depends on endpoint, account, and token constraints
@@ -240,7 +240,7 @@ Related ADR:
 
 ### Why does the UI only show configured providers?
 
-Current answer:
+Short answer:
 
 - because showing every compiled-in provider would imply usability that may not exist in the running process
 - the selector reflects actual backend availability, not theoretical support
@@ -251,7 +251,7 @@ Related ADR:
 
 ### Why use Mermaid as the architecture source of truth?
 
-Current answer:
+Short answer:
 
 - Mermaid diagrams are easier to maintain in Git, review in diffs, and update as the system changes
 - it keeps the diagram close to the documentation and easier to evolve than generated image assets
@@ -260,9 +260,9 @@ Related ADR:
 
 - [ADR 0011](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
 
-## What I Would Improve Next
+## Future Evolution Paths
 
-If asked how I would evolve the system, I would mention:
+If the system grows, likely next improvements would include:
 
 - stronger real-world smoke coverage across provider/tool combinations
 - clearer restored-session handling when referenced artifacts are missing on disk

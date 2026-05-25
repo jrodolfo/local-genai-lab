@@ -17,8 +17,8 @@ At runtime, the backend is the central coordinator. The frontend never talks dir
 
 See the maintained Mermaid version in [architecture-overview.md](./architecture-overview.md).
 
-For a shorter interview-oriented summary, see
-[interview-architecture-notes.md](./interview-architecture-notes.md).
+For a shorter companion walkthrough of the system and its tradeoffs, see
+[architecture-walkthrough.md](./architecture-walkthrough.md).
 
 ## Architecture Decisions
 

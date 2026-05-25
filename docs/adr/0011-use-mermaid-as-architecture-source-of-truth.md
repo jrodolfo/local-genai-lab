@@ -33,7 +33,7 @@ Negative:
 
 - [architecture-overview.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture-overview.md)
 - [architecture.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture.md)
-- [interview-architecture-notes.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/interview-architecture-notes.md)
+- [architecture-walkthrough.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture-walkthrough.md)
 
 ## Revisit Triggers
 
