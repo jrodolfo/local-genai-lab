@@ -47,3 +47,15 @@
   border-color: #0f172a;
   color: #fff;
 }
+
+.app-nav__tabs button.app-nav__tab--disabled {
+  background: #f8fafc;
+  border-style: dashed;
+  color: #64748b;
+}
+
+.app-nav__hint {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin: 0;
+}

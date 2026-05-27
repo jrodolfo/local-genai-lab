@@ -11,7 +11,7 @@ describe('App mode navigation', () => {
     });
   });
 
-  it('renders chat as the selected mode by default and disables the active tab', async () => {
+  it('renders docs rag as a visible but disabled mode when rag is not enabled', async () => {
     server.use(
       http.get('/api/rag/status', () => HttpResponse.json({
         enabled: false,
@@ -39,9 +39,12 @@ describe('App mode navigation', () => {
     render(<App />);
 
     const chatTab = await screen.findByRole('tab', { name: /chat/i });
+    const ragTab = await screen.findByRole('tab', { name: /docs rag/i });
     expect(chatTab).toBeDisabled();
     expect(chatTab).toHaveAttribute('aria-selected', 'true');
-    expect(screen.queryByRole('tab', { name: /docs rag/i })).not.toBeInTheDocument();
+    expect(ragTab).toBeDisabled();
+    expect(ragTab).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText(/Enable `RAG_ENABLED=true` in the backend to use Docs RAG\./i)).toBeInTheDocument();
   });
 
   it('lets the user switch to docs rag when rag is enabled', async () => {

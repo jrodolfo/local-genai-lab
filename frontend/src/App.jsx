@@ -7,6 +7,7 @@ import './App.css';
 function App() {
   const [mode, setMode] = useState('chat');
   const [ragEnabled, setRagEnabled] = useState(false);
+  const [ragStatusLoaded, setRagStatusLoaded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -14,11 +15,13 @@ function App() {
       .then((payload) => {
         if (active) {
           setRagEnabled(Boolean(payload.enabled));
+          setRagStatusLoaded(true);
         }
       })
       .catch(() => {
         if (active) {
           setRagEnabled(false);
+          setRagStatusLoaded(true);
         }
       });
     return () => {
@@ -42,20 +45,27 @@ function App() {
           >
             Chat
           </button>
-          {ragEnabled ? (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'rag'}
-              aria-current={mode === 'rag' ? 'page' : undefined}
-              disabled={mode === 'rag'}
-              className={mode === 'rag' ? 'app-nav__tab--active' : ''}
-              onClick={() => setMode('rag')}
-            >
-              Docs RAG
-            </button>
-          ) : null}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === 'rag'}
+            aria-current={mode === 'rag' ? 'page' : undefined}
+            aria-disabled={!ragEnabled}
+            disabled={mode === 'rag' || !ragEnabled}
+            className={`${mode === 'rag' ? 'app-nav__tab--active' : ''} ${!ragEnabled ? 'app-nav__tab--disabled' : ''}`.trim()}
+            onClick={() => {
+              if (!ragEnabled) {
+                return;
+              }
+              setMode('rag');
+            }}
+          >
+            Docs RAG
+          </button>
         </div>
+        {ragStatusLoaded && !ragEnabled ? (
+          <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use Docs RAG.</p>
+        ) : null}
       </header>
       {mode === 'rag' && ragEnabled ? <RagWorkspace /> : <Home />}
     </div>
