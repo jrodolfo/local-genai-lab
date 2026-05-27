@@ -21,6 +21,7 @@ mcp/dist/
 
 # Env
 .env
+.run/
 
 # Local chat memory
 data/sessions/**

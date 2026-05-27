@@ -7,6 +7,26 @@
 
 Shell-based AWS audit and S3 CloudWatch helpers, plus local smoke-check utilities used by the main application and the MCP server.
 
+This directory is no longer the main human-facing app lifecycle entry point.
+
+Use the repository root for local app lifecycle commands:
+
+```bash
+./start.sh
+./stop.sh
+./restart.sh
+./status.sh
+```
+
+or:
+
+```bash
+make start
+make stop
+make restart
+make status
+```
+
 The directory includes:
 
 - a regional AWS audit report generator
@@ -14,6 +34,11 @@ The directory includes:
 - local shell tests
 - a smoke-check script for the local frontend/backend/model-discovery/Ollama stack
 - one helper script for starting the backend with the providers configured in `.env` or the shell
+
+Separation of concerns:
+
+- top-level lifecycle scripts are for developers running the app
+- this `scripts/` directory contains backend helpers, report generators, MCP-executed tooling, and shell tests
 
 It is designed for a practical cleanup workflow:
 - compare resources across one or more regions

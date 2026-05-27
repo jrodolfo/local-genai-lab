@@ -44,6 +44,7 @@ load_env_defaults() {
 load_env_defaults "${ENV_FILE}"
 
 APP_MODEL_PROVIDER="${APP_MODEL_PROVIDER:-ollama}"
+SERVER_PORT="${SERVER_PORT:-8080}"
 OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://localhost:11434}"
 OLLAMA_DEFAULT_MODEL="${OLLAMA_DEFAULT_MODEL:-llama3:8b}"
 BEDROCK_REGION="${BEDROCK_REGION:-us-east-2}"
@@ -56,6 +57,7 @@ MCP_ENABLED="${MCP_ENABLED:-true}"
 DRY_RUN="${DRY_RUN:-false}"
 
 export APP_MODEL_PROVIDER
+export SERVER_PORT
 export OLLAMA_BASE_URL
 export OLLAMA_DEFAULT_MODEL
 export BEDROCK_REGION
@@ -83,6 +85,7 @@ fi
 
 printf '%s\n' \
   "Starting backend with provider=${APP_MODEL_PROVIDER}" \
+  "  server_port=${SERVER_PORT}" \
   "  env_file=$([ -f "${ENV_FILE}" ] && printf '%s' '.env loaded' || printf '%s' 'none')" \
   "  ollama_base_url=${OLLAMA_BASE_URL}" \
   "  ollama_default_model=${OLLAMA_DEFAULT_MODEL}" \

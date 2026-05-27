@@ -23,8 +23,7 @@ If you want the shortest path to a running local setup:
 
 ```bash
 cp .env.example .env
-cd scripts && ./run-backend.sh
-cd ../frontend && npm install && npm run dev
+./start.sh
 ```
 
 Then open:
@@ -34,9 +33,11 @@ Then open:
 
 Notes:
 
-- By default, the backend starts with `APP_MODEL_PROVIDER=ollama`.
+- By default, the backend starts on `http://localhost:8080` with `APP_MODEL_PROVIDER=ollama`.
 - If you want Bedrock or Hugging Face available in the provider selector, add their config to `.env` first.
 - For the default Ollama path, make sure `llama3:8b` is installed locally.
+- The lifecycle scripts store PID files and logs under `.run/`.
+- Use `./status.sh` or `make status` to inspect the local runtime.
 
 ## Why This Matters
 
@@ -93,6 +94,11 @@ React Frontend -> Spring Boot Backend -> clarification or tool-failure response
 
 ```text
 local-genai-lab/
+├── start.sh
+├── stop.sh
+├── restart.sh
+├── status.sh
+├── Makefile
 ├── backend/
 │   ├── src/
 │   ├── pom.xml
@@ -113,6 +119,11 @@ local-genai-lab/
 ├── docker-compose.yml
 └── README.md
 ```
+
+Script separation:
+
+- top-level scripts and the root `Makefile` are the public local app lifecycle interface
+- `scripts/` contains backend helpers, MCP-facing operational scripts, report generators, and shell tests
 
 ## Prerequisites
 
@@ -142,14 +153,26 @@ cp .env.example .env
 
 Fill in only the providers you want available in the running backend process. The backend helper script will auto-load `.env` if it exists.
 
-### 3. Start the backend
+### 3. Start the app
 
 ```bash
-cd scripts
-./run-backend.sh
+./start.sh
 ```
 
-If you want Bedrock or Hugging Face as the default backend provider instead of Ollama, set `APP_MODEL_PROVIDER=bedrock` or `APP_MODEL_PROVIDER=huggingface` in `.env` or the shell before starting the backend. Provider configuration details live in [docs/providers.md](./docs/providers.md).
+This starts both:
+
+- the Spring Boot backend
+- the Vite frontend dev server
+
+If you want Bedrock or Hugging Face as the default backend provider instead of Ollama, set `APP_MODEL_PROVIDER=bedrock` or `APP_MODEL_PROVIDER=huggingface` in `.env` or the shell before starting the app. Provider configuration details live in [docs/providers.md](./docs/providers.md).
+
+If port `8080` is already in use, choose another backend port explicitly:
+
+```bash
+SERVER_PORT=8081 ./start.sh
+```
+
+The frontend dev proxy follows that override automatically when you start the app this way.
 
 Backend URLs:
 
@@ -161,17 +184,13 @@ Backend URLs:
 
 `GET /actuator` redirects to `/actuator/health`. Swagger excludes `/actuator/**` so the generated API docs stay focused on the application API.
 
-### 4. Start the frontend
+### 4. Stop, restart, or inspect the app
 
 ```bash
-cd frontend
-npm install
-npm run dev
+./stop.sh
+./restart.sh
+./status.sh
 ```
-
-Frontend URL:
-
-- `http://localhost:5173`
 
 The frontend provider and model selectors now load from the backend's `/api/models` endpoint. You can switch between supported providers at runtime without restarting the backend. For Ollama, the UI only offers locally installed models. If no local models are installed, the UI shows a clear pull hint instead of failing only after submit.
 
