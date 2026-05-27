@@ -338,6 +338,180 @@ describe('Home integration', () => {
     expect(screen.getByText(/Relative path: audit\/aws-audit-2026-04-10\/summary\.json/i)).toBeInTheDocument();
   });
 
+  it('shows a clear message when a restored-session artifact preview is no longer available', async () => {
+    server.use(
+      ...defaultRuntimeHandlers({
+        sessions: [
+          {
+            sessionId: 'session-1',
+            title: 'run aws audit',
+            summary: 'Audit complete.',
+            model: 'llama3:8b',
+            createdAt: '2026-04-10T10:00:00Z',
+            updatedAt: '2026-04-10T10:01:00Z',
+            messageCount: 2
+          }
+        ]
+      }),
+      http.get('/api/sessions/session-1', () => HttpResponse.json({
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        pendingTool: null,
+        messages: [
+          { role: 'user', content: 'run aws audit', tool: null, timestamp: '2026-04-10T10:00:00Z' },
+          {
+            role: 'assistant',
+            content: 'Audit complete.',
+            tool: { used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed.' },
+            toolResult: {
+              type: 'audit_summary',
+              runDir: '/tmp/audit-1',
+              summaryPath: '/tmp/audit-1/summary.json',
+              reportPath: '/tmp/audit-1/report.txt',
+              successCount: 10,
+              failureCount: 0,
+              skippedCount: 1
+            },
+            metadata: { provider: 'bedrock', modelId: 'us.amazon.nova-pro-v1:0' },
+            timestamp: '2026-04-10T10:01:00Z'
+          }
+        ]
+      })),
+      http.get('/api/artifacts/preview', () => HttpResponse.json({ error: 'Artifact not found.' }, { status: 404 }))
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+    await user.click(await screen.findByRole('button', { name: /open summary/i }));
+
+    expect(await screen.findByText('Summary preview')).toBeInTheDocument();
+    expect(screen.getByText(/This artifact is no longer available on disk\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Artifact not found\./i)).toBeInTheDocument();
+  });
+
+  it('shows a clear message when a restored-session run directory is no longer available', async () => {
+    server.use(
+      ...defaultRuntimeHandlers({
+        sessions: [
+          {
+            sessionId: 'session-1',
+            title: 'run aws audit',
+            summary: 'Audit complete.',
+            model: 'llama3:8b',
+            createdAt: '2026-04-10T10:00:00Z',
+            updatedAt: '2026-04-10T10:01:00Z',
+            messageCount: 2
+          }
+        ]
+      }),
+      http.get('/api/sessions/session-1', () => HttpResponse.json({
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        pendingTool: null,
+        messages: [
+          { role: 'user', content: 'run aws audit', tool: null, timestamp: '2026-04-10T10:00:00Z' },
+          {
+            role: 'assistant',
+            content: 'Audit complete.',
+            tool: { used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed.' },
+            toolResult: {
+              type: 'audit_summary',
+              runDir: '/tmp/audit-1',
+              summaryPath: '/tmp/audit-1/summary.json',
+              reportPath: '/tmp/audit-1/report.txt',
+              successCount: 10,
+              failureCount: 0,
+              skippedCount: 1
+            },
+            metadata: { provider: 'bedrock', modelId: 'us.amazon.nova-pro-v1:0' },
+            timestamp: '2026-04-10T10:01:00Z'
+          }
+        ]
+      })),
+      http.get('/api/artifacts/files', () => HttpResponse.json({ error: 'Run directory not found.' }, { status: 404 }))
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+    await user.click(await screen.findByRole('button', { name: /show files/i }));
+
+    expect(await screen.findByText('Files in run directory')).toBeInTheDocument();
+    expect(screen.getByText(/This run directory is no longer available on disk\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Run directory not found\./i)).toBeInTheDocument();
+  });
+
+  it('keeps the generic artifact preview failure path for non-404 errors', async () => {
+    server.use(
+      ...defaultRuntimeHandlers({
+        sessions: [
+          {
+            sessionId: 'session-1',
+            title: 'run aws audit',
+            summary: 'Audit complete.',
+            model: 'llama3:8b',
+            createdAt: '2026-04-10T10:00:00Z',
+            updatedAt: '2026-04-10T10:01:00Z',
+            messageCount: 2
+          }
+        ]
+      }),
+      http.get('/api/sessions/session-1', () => HttpResponse.json({
+        sessionId: 'session-1',
+        title: 'run aws audit',
+        summary: 'Audit complete.',
+        model: 'llama3:8b',
+        createdAt: '2026-04-10T10:00:00Z',
+        updatedAt: '2026-04-10T10:01:00Z',
+        pendingTool: null,
+        messages: [
+          { role: 'user', content: 'run aws audit', tool: null, timestamp: '2026-04-10T10:00:00Z' },
+          {
+            role: 'assistant',
+            content: 'Audit complete.',
+            tool: { used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed.' },
+            toolResult: {
+              type: 'audit_summary',
+              runDir: '/tmp/audit-1',
+              summaryPath: '/tmp/audit-1/summary.json',
+              reportPath: '/tmp/audit-1/report.txt',
+              successCount: 10,
+              failureCount: 0,
+              skippedCount: 1
+            },
+            metadata: { provider: 'bedrock', modelId: 'us.amazon.nova-pro-v1:0' },
+            timestamp: '2026-04-10T10:01:00Z'
+          }
+        ]
+      })),
+      http.get('/api/artifacts/preview', () => HttpResponse.json({ error: 'Preview backend failed.' }, { status: 500 }))
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    const sessionTitle = await screen.findByText('run aws audit');
+    await user.click(sessionTitle.closest('button'));
+    await user.click(await screen.findByRole('button', { name: /open summary/i }));
+
+    expect(await screen.findByText('Summary preview')).toBeInTheDocument();
+    expect(screen.getAllByText(/Preview backend failed\./i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/This artifact is no longer available on disk\./i)).not.toBeInTheDocument();
+  });
+
   it('exports a session through the backend download endpoint', async () => {
     server.use(
       ...defaultRuntimeHandlers({

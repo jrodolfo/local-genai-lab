@@ -378,9 +378,10 @@ function Home() {
       setArtifactFiles(payload);
       setArtifactPreview(null);
     } catch (err) {
+      const panelMessage = resolveArtifactPanelErrorMessage(err, 'files');
       setArtifactPanelMode('files');
       setArtifactPanelTitle(formatArtifactPanelTitle(title, 'files'));
-      setArtifactPanelMessage(err.message || 'Failed to load artifact files.');
+      setArtifactPanelMessage(panelMessage);
       setArtifactPanelPath(runDir);
       setArtifactFiles([]);
       setArtifactPreview(null);
@@ -402,9 +403,10 @@ function Home() {
       setArtifactPreview(payload);
       setArtifactFiles([]);
     } catch (err) {
+      const panelMessage = resolveArtifactPanelErrorMessage(err, 'preview');
       setArtifactPanelMode('preview');
       setArtifactPanelTitle(formatArtifactPanelTitle(title, 'preview'));
-      setArtifactPanelMessage(err.message || 'Failed to load preview content.');
+      setArtifactPanelMessage(panelMessage);
       setArtifactPanelPath(path);
       setArtifactPreview(null);
       setArtifactFiles([]);
@@ -873,6 +875,19 @@ function formatArtifactPanelTitle(title, mode) {
     return 'Failed step stderr';
   }
   return title.charAt(0).toUpperCase() + title.slice(1);
+}
+
+function resolveArtifactPanelErrorMessage(error, mode) {
+  if (error?.status === 404) {
+    if (mode === 'files') {
+      return 'This run directory is no longer available on disk.';
+    }
+    return 'This artifact is no longer available on disk.';
+  }
+  if (mode === 'files') {
+    return error?.message || 'Failed to load artifact files.';
+  }
+  return error?.message || 'Failed to load preview content.';
 }
 
 function isToolPhaseEvent(type) {
