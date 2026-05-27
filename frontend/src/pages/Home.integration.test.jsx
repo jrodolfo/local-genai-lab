@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from './Home';
-import { HttpResponse, http, server } from '../test/mswServer';
+import { HttpResponse, http, server, sseEventChunk, sseStreamResponse } from '../test/mswServer';
 
 function defaultRuntimeHandlers(overrides = {}) {
   const {
@@ -120,6 +120,177 @@ describe('Home integration', () => {
 
     expect(await screen.findByText(/^Provider request failed\.$/i)).toBeInTheDocument();
     expect(screen.queryByText('AWS audit result')).not.toBeInTheDocument();
+  });
+
+  it('streams a successful chat response through backend-shaped SSE events', async () => {
+    server.use(
+      ...defaultRuntimeHandlers(),
+      http.post('/api/chat/stream', async ({ request }) => {
+        const body = await request.json();
+        expect(body).toMatchObject({
+          message: 'stream hello',
+          provider: 'ollama',
+          model: 'llama3:8b'
+        });
+        return sseStreamResponse(new ReadableStream({
+          start(controller) {
+            const encoder = new TextEncoder();
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'start', sessionId: 'session-stream-1' })));
+            setTimeout(() => {
+              controller.enqueue(encoder.encode(sseEventChunk({ type: 'delta', text: 'Hello ' })));
+            }, 10);
+            setTimeout(() => {
+              controller.enqueue(encoder.encode(sseEventChunk({ type: 'delta', text: 'streaming world.' })));
+            }, 20);
+            setTimeout(() => {
+              controller.enqueue(encoder.encode(sseEventChunk({
+                type: 'complete',
+                sessionId: 'session-stream-1',
+                metadata: { provider: 'ollama', modelId: 'llama3:8b' }
+              })));
+              controller.close();
+            }, 30);
+          }
+        }));
+      })
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('llama3:8b');
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'stream hello');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText('Hello streaming world.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Ollama\s*·\s*llama3:8b/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows explicit backend tool phases during a tool-assisted streaming request', async () => {
+    server.use(
+      ...defaultRuntimeHandlers(),
+      http.post('/api/chat/stream', () => sseStreamResponse(new ReadableStream({
+        start(controller) {
+          const encoder = new TextEncoder();
+          controller.enqueue(encoder.encode(sseEventChunk({ type: 'tool-decision-started', toolName: 'aws_region_audit' })));
+          setTimeout(() => {
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'tool-execution-started', toolName: 'aws_region_audit' })));
+          }, 10);
+          setTimeout(() => {
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'tool-execution-completed', toolName: 'aws_region_audit' })));
+          }, 20);
+          setTimeout(() => {
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'answer-generation-started', toolName: 'aws_region_audit' })));
+            controller.enqueue(encoder.encode(sseEventChunk({
+              type: 'start',
+              sessionId: 'session-tool-1',
+              tool: {
+                used: true,
+                name: 'aws_region_audit',
+                status: 'success',
+                summary: 'AWS audit completed.'
+              }
+            })));
+          }, 30);
+          setTimeout(() => {
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'delta', text: 'Audit complete.' })));
+          }, 40);
+          setTimeout(() => {
+            controller.enqueue(encoder.encode(sseEventChunk({
+              type: 'complete',
+              sessionId: 'session-tool-1',
+              tool: {
+                used: true,
+                name: 'aws_region_audit',
+                status: 'success',
+                summary: 'AWS audit completed.'
+              },
+              toolResult: {
+                type: 'audit_summary',
+                successCount: 10,
+                failureCount: 0,
+                skippedCount: 1
+              },
+              metadata: { provider: 'ollama', modelId: 'llama3:8b' }
+            })));
+            controller.close();
+          }, 50);
+        }
+      })))
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await screen.findByRole('combobox', { name: /model/i });
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText(/Checking whether a tool is needed/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Running tool: aws_region_audit/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Preparing the final answer from tool results/i)).toBeInTheDocument();
+    expect(await screen.findByText('Audit complete.')).toBeInTheDocument();
+    expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText(/Preparing the final answer from tool results/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('shows a backend error when a streaming chat request fails', async () => {
+    server.use(
+      ...defaultRuntimeHandlers(),
+      http.post('/api/chat/stream', () => HttpResponse.json({ error: 'Stream backend failed.' }, { status: 503 }))
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await screen.findByRole('combobox', { name: /model/i });
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'stream fail');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText(/^Stream backend failed\.$/i)).toBeInTheDocument();
+    expect(screen.getByText(/Error calling backend\/Ollama\. Check backend logs\./i)).toBeInTheDocument();
+  });
+
+  it('allows canceling a streaming request and marks the partial reply as canceled', async () => {
+    server.use(
+      ...defaultRuntimeHandlers(),
+      http.post('/api/chat/stream', ({ request }) => {
+        const encoder = new TextEncoder();
+        return sseStreamResponse(new ReadableStream({
+          start(controller) {
+            controller.enqueue(encoder.encode(sseEventChunk({
+              type: 'start',
+              sessionId: 'session-cancel-1',
+              pendingTool: null,
+              tool: null,
+              toolResult: null,
+              metadata: null
+            })));
+            controller.enqueue(encoder.encode(sseEventChunk({ type: 'delta', text: 'Partial answer' })));
+            request.signal.addEventListener('abort', () => {
+              controller.error(new DOMException('The operation was aborted.', 'AbortError'));
+            });
+          }
+        }));
+      })
+    );
+
+    render(<Home />);
+    const user = userEvent.setup();
+
+    await screen.findByRole('combobox', { name: /model/i });
+    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'cancel this stream');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(await screen.findByText('Partial answer')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+    expect(await screen.findByText(/\[Response canceled\.\]/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Request canceled\./i)).toBeInTheDocument();
   });
 
   it('reopens a saved session and previews an artifact through the backend endpoints', async () => {
