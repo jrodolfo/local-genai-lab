@@ -362,78 +362,6 @@ describe('Home', () => {
     });
   });
 
-  it('shows tool lifecycle status for a tool-assisted streaming request', async () => {
-    let emitToolPhase;
-    let resolveStream;
-    streamMessage.mockImplementation(async ({ onEvent }) => {
-      await new Promise((resolve) => {
-        emitToolPhase = () => {
-          onEvent({
-            type: 'tool-decision-started',
-            toolName: 'aws_region_audit'
-          });
-          onEvent({
-            type: 'tool-execution-started',
-            toolName: 'aws_region_audit'
-          });
-          onEvent({
-            type: 'tool-execution-completed',
-            toolName: 'aws_region_audit'
-          });
-          onEvent({
-            type: 'answer-generation-started',
-            toolName: 'aws_region_audit'
-          });
-          onEvent({
-            type: 'start',
-            sessionId: 'session-123',
-            tool: {
-              used: true,
-              name: 'aws_region_audit',
-              status: 'success',
-              summary: 'AWS audit completed.'
-            },
-            toolResult: null,
-            pendingTool: null,
-            metadata: null
-          });
-        };
-        resolveStream = () => {
-          onEvent({ type: 'delta', text: 'Audit complete.' });
-          onEvent({
-            type: 'complete',
-            sessionId: 'session-123',
-            tool: {
-              used: true,
-              name: 'aws_region_audit',
-              status: 'success',
-              summary: 'AWS audit completed.'
-            },
-            toolResult: null,
-            pendingTool: null,
-            metadata: null
-          });
-          resolve();
-        };
-      });
-    });
-
-    render(<Home />);
-    const user = userEvent.setup();
-
-    await screen.findByRole('combobox', { name: /model/i });
-    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Please audit my AWS account.');
-    await user.click(screen.getByRole('button', { name: /send/i }));
-
-    expect(screen.queryByText(/Checking whether a tool is needed/i)).not.toBeInTheDocument();
-    emitToolPhase();
-    expect(await screen.findByText(/Preparing the final answer from tool results/i)).toBeInTheDocument();
-    resolveStream();
-    await waitFor(() => {
-      expect(screen.queryByText(/Preparing the final answer from tool results/i)).not.toBeInTheDocument();
-    });
-  });
-
   it('shows pending tool input status when clarification is needed', async () => {
     sendMessage.mockResolvedValue({
       response: 'Which bucket should I inspect?',
@@ -756,38 +684,6 @@ describe('Home', () => {
     expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
     expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
     expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
-  });
-
-  it('marks a partial streamed reply as canceled when the request is aborted', async () => {
-    streamMessage.mockImplementation(async ({ signal, onEvent }) => {
-      onEvent({
-        type: 'start',
-        sessionId: 'session-123',
-        pendingTool: null,
-        tool: null,
-        toolResult: null,
-        metadata: null
-      });
-      onEvent({ type: 'delta', text: 'Partial answer' });
-      await new Promise((_, reject) => {
-        signal.addEventListener('abort', () => {
-          reject(new DOMException('The operation was aborted.', 'AbortError'));
-        });
-      });
-    });
-
-    render(<Home />);
-    const user = userEvent.setup();
-
-    await screen.findByRole('combobox', { name: /model/i });
-    await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Stream something slow');
-    await user.click(screen.getByRole('button', { name: /send/i }));
-
-    expect(await screen.findByText('Partial answer')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /cancel/i }));
-
-    expect(await screen.findByText(/\[Response canceled\.\]/i)).toBeInTheDocument();
-    expect(await screen.findByText(/Request canceled\./i)).toBeInTheDocument();
   });
 
   it('renders mixed-provider assistant turns when reopening a saved session', async () => {

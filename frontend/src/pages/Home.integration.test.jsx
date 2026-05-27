@@ -2,30 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from './Home';
 import { HttpResponse, http, server, sseEventChunk, sseStreamResponse } from '../test/mswServer';
-
-function defaultRuntimeHandlers(overrides = {}) {
-  const {
-    models,
-    status,
-    sessions
-  } = overrides;
-
-  return [
-    http.get('/api/models', () => HttpResponse.json(models || {
-      provider: 'ollama',
-      defaultProvider: 'ollama',
-      providers: ['ollama'],
-      defaultModel: 'llama3:8b',
-      models: ['llama3:8b']
-    })),
-    http.get('/api/models/status', () => HttpResponse.json(status || {
-      provider: 'ollama',
-      status: 'ready',
-      message: 'Ollama is reachable and ready.'
-    })),
-    http.get('/api/sessions', () => HttpResponse.json(sessions || []))
-  ];
-}
+import { defaultRuntimeHandlers } from '../test/mswHandlers';
 
 describe('Home integration', () => {
   beforeEach(() => {
