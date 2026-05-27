@@ -199,30 +199,44 @@ function RagWorkspace() {
   return (
     <main className="rag-page">
       <section className="rag-hero">
-        <div>
-          <p className="rag-eyebrow">Experimental RAG</p>
-          <h1>Chat with the project docs</h1>
-          <p>
-            This workspace retrieves chunks from the local docs corpus, sends them to the selected
-            provider, and returns an answer with cited sources.
-          </p>
+        <div className="rag-hero__copy">
+          <p className="rag-eyebrow">Experimental</p>
+          <h1>RAG</h1>
+          <p>Ask questions against the local docs corpus.</p>
         </div>
         <div className="rag-status-card">
-          <h2>Index status</h2>
+          <div className="rag-status-card__header">
+            <h2>Index</h2>
+            {ragStatus?.enabled ? (
+              <button type="button" onClick={handleRebuildIndex} disabled={rebuilding}>
+                {rebuilding ? 'Rebuilding...' : 'Rebuild index'}
+              </button>
+            ) : null}
+          </div>
           {loading ? <p>Loading RAG status...</p> : null}
           {!loading && ragStatus ? (
-            <>
-              <p>Status: {ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed yet') : 'disabled'}</p>
-              <p>Corpus: {ragStatus.corpusRoot}</p>
-              <p>Documents: {ragStatus.documentCount}</p>
-              <p>Chunks: {ragStatus.chunkCount}</p>
-              <p>Retrieval: {ragStatus.retrievalMode}</p>
-              {ragStatus.enabled ? (
-                <button type="button" onClick={handleRebuildIndex} disabled={rebuilding}>
-                  {rebuilding ? 'Rebuilding index...' : 'Rebuild index'}
-                </button>
-              ) : null}
-            </>
+            <dl className="rag-status-grid">
+              <div>
+                <dt>Status</dt>
+                <dd>{ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</dd>
+              </div>
+              <div>
+                <dt>Corpus</dt>
+                <dd>docs/</dd>
+              </div>
+              <div>
+                <dt>Documents</dt>
+                <dd>{ragStatus.documentCount}</dd>
+              </div>
+              <div>
+                <dt>Chunks</dt>
+                <dd>{ragStatus.chunkCount}</dd>
+              </div>
+              <div>
+                <dt>Retrieval</dt>
+                <dd>{ragStatus.retrievalMode}</dd>
+              </div>
+            </dl>
           ) : null}
         </div>
       </section>

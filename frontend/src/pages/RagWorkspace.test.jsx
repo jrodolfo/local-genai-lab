@@ -93,7 +93,9 @@ describe('RagWorkspace', () => {
     render(<RagWorkspace />);
     const user = userEvent.setup();
 
-    expect(await screen.findByText(/Status: ready/i)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^rag$/i })).toBeInTheDocument();
+    expect(screen.getByText('Status')).toBeInTheDocument();
+    expect(screen.getByText('ready')).toBeInTheDocument();
     await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
     await user.click(screen.getByRole('button', { name: /Ask docs corpus/i }));
 
@@ -153,7 +155,8 @@ describe('RagWorkspace', () => {
     render(<RagWorkspace />);
     const user = userEvent.setup();
 
-    await screen.findByText(/Status: ready/i);
+    await screen.findByRole('heading', { name: /^rag$/i });
+    expect(screen.getByText('ready')).toBeInTheDocument();
     await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'What is MCP?');
     await user.click(screen.getByRole('button', { name: /Ask docs corpus/i }));
 

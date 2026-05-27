@@ -86,7 +86,7 @@ describe('App mode navigation', () => {
 
     await user.click(ragTab);
 
-    expect(await screen.findByRole('heading', { name: /chat with the project docs/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /^rag$/i })).toBeInTheDocument();
     expect(ragTab).toBeDisabled();
     expect(ragTab).toHaveAttribute('aria-selected', 'true');
   });
