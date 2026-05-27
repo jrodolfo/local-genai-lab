@@ -204,6 +204,8 @@ The provider selector only shows providers configured in the running backend pro
 
 For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phases while the request is in flight. Completed assistant replies also show compact tool provenance, and generated summaries, reports, and file lists can be inspected through the artifact inspector panel.
 
+The separate `RAG` workspace is enabled by default. If you want to hide it, start the backend with `RAG_ENABLED=false`.
+
 ### 5. Optional: build the local MCP server
 
 ```bash
@@ -237,6 +239,7 @@ The most important backend settings are:
 - `HUGGINGFACE_DEFAULT_MODEL` default: empty
 - `HUGGINGFACE_MODELS` default: empty
 - `MCP_ENABLED` default: `true`
+- `RAG_ENABLED` default: `true`
 - `APP_TOOLS_ROUTING_MODE` default: `hybrid`
 - `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`

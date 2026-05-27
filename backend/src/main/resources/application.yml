@@ -57,7 +57,7 @@ mcp:
   tool-timeout-seconds: ${MCP_TOOL_TIMEOUT_SECONDS:120}
 
 rag:
-  enabled: ${RAG_ENABLED:false}
+  enabled: ${RAG_ENABLED:true}
   corpus-root: ${RAG_CORPUS_ROOT:docs}
   max-chunk-size: ${RAG_MAX_CHUNK_SIZE:900}
   chunk-overlap: ${RAG_CHUNK_OVERLAP:160}

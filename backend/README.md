@@ -172,6 +172,15 @@ Relevant MCP settings:
 - `MCP_STARTUP_TIMEOUT_SECONDS` default: `10`
 - `MCP_TOOL_TIMEOUT_SECONDS` default: `120`
 
+Relevant RAG settings:
+
+- `RAG_ENABLED` default: `true`
+- `RAG_CORPUS_ROOT` default: `docs`
+- `RAG_MAX_CHUNK_SIZE` default: `900`
+- `RAG_CHUNK_OVERLAP` default: `160`
+- `RAG_TOP_K` default: `4`
+- `RAG_RETRIEVAL_MODE` default: `lexical`
+
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 
 ## Sessions and Storage
