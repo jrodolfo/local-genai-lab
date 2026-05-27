@@ -224,6 +224,25 @@ These flows are still worth running manually after meaningful changes:
    - user flow through backend endpoints -> MSW-backed integration test
    - local UI-only behavior -> mocked unit/component test
 
+10. Cross-provider evaluation
+   Use:
+   - [provider-evaluation-template.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/provider-evaluation-template.md)
+
+   Run the same prompt set against:
+   - Ollama
+   - Bedrock
+   - Hugging Face
+
+   Compare:
+   - objective timing
+   - perceived responsiveness
+   - streaming behavior
+   - tool-assisted behavior
+   - clarification flow
+   - failure-message quality
+
+   Promote only repeated issues into the backlog. Do not react to one-off provider noise.
+
 ## Known Non-Automated Areas
 
 The following still depend primarily on manual or environment-specific validation:
