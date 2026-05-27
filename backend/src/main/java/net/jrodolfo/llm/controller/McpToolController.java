@@ -30,6 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * REST controller for interacting with Model Context Protocol (MCP) tools.
+ */
 @RestController
 @Validated
 @RequestMapping("/api/tools")
@@ -38,28 +41,57 @@ public class McpToolController {
 
     private final McpService mcpService;
 
+    /**
+     * Constructs a new McpToolController with the specified McpService.
+     *
+     * @param mcpService the service for MCP tool operations.
+     */
     public McpToolController(McpService mcpService) {
         this.mcpService = mcpService;
     }
 
+    /**
+     * Lists all available MCP tools.
+     *
+     * @return a list of available tools.
+     */
     @GetMapping
     @Operation(summary = "List available MCP tools", description = "Returns the locally configured MCP tools exposed through the backend.")
     public McpToolListResponse listTools() {
         return mcpService.listTools();
     }
 
+    /**
+     * Runs the AWS regional audit tool.
+     *
+     * @param request the tool invocation request.
+     * @return the result of the tool invocation.
+     */
     @PostMapping("/aws-region-audit")
     @Operation(summary = "Run the AWS regional audit tool", description = "Invokes the local MCP-backed AWS regional audit shell workflow.")
     public McpToolInvocationResponse runAwsRegionAudit(@Valid @RequestBody AwsRegionAuditToolRequest request) {
         return mcpService.runAwsRegionAudit(request);
     }
 
+    /**
+     * Runs the S3 CloudWatch report tool.
+     *
+     * @param request the tool invocation request.
+     * @return the result of the tool invocation.
+     */
     @PostMapping("/s3-cloudwatch-report")
     @Operation(summary = "Run the S3 CloudWatch report tool", description = "Invokes the local MCP-backed S3 CloudWatch shell workflow.")
     public McpToolInvocationResponse runS3CloudwatchReport(@Valid @RequestBody S3CloudwatchReportToolRequest request) {
         return mcpService.runS3CloudwatchReport(request);
     }
 
+    /**
+     * Lists recent report directories.
+     *
+     * @param reportType optional filter for report type.
+     * @param limit      optional limit on the number of reports returned.
+     * @return the tool invocation response containing the list of reports.
+     */
     @GetMapping("/reports")
     @Operation(summary = "List recent report directories", description = "Lists recent audit or S3 CloudWatch report directories under the local reports tree.")
     public McpToolInvocationResponse listRecentReports(
@@ -73,12 +105,24 @@ public class McpToolController {
         return mcpService.listRecentReports(new ListReportsRequest(reportType, limit));
     }
 
+    /**
+     * Reads a report summary bundle.
+     *
+     * @param request the request containing the report path.
+     * @return the report summary and preview.
+     */
     @PostMapping("/reports/read")
     @Operation(summary = "Read a report summary bundle", description = "Reads a report bundle under the local reports tree and returns summary data plus a short text preview.")
     public McpToolInvocationResponse readReportSummary(@Valid @RequestBody ReadReportSummaryToolRequest request) {
         return mcpService.readReportSummary(request);
     }
 
+    /**
+     * Exception handler for McpClientException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(McpClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleMcpError(McpClientException ex) {
@@ -90,6 +134,12 @@ public class McpToolController {
                 .body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for IllegalArgumentException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidInput(IllegalArgumentException ex) {

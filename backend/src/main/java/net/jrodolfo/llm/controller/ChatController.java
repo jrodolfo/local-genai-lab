@@ -61,6 +61,13 @@ public class ChatController {
     private final ObjectMapper objectMapper;
     private final Executor chatStreamingExecutor;
 
+    /**
+     * Constructs a new ChatController with the specified orchestrator, mapper, and executor.
+     *
+     * @param chatOrchestratorService the service that orchestrates chat interactions.
+     * @param objectMapper           the Jackson mapper for JSON serialization/deserialization.
+     * @param chatStreamingExecutor  the executor for managing streaming tasks.
+     */
     public ChatController(
             ChatOrchestratorService chatOrchestratorService,
             ObjectMapper objectMapper,
@@ -71,6 +78,13 @@ public class ChatController {
         this.chatStreamingExecutor = chatStreamingExecutor;
     }
 
+    /**
+     * Handles a non-streaming chat request.
+     *
+     * @param request         the chat request containing message and provider details.
+     * @param requestIdHeader an optional request identifier from headers.
+     * @return a ResponseEntity containing the ChatResponse.
+     */
     @PostMapping
     @Operation(summary = "Run a non-streaming chat request", description = "Routes the request through the active provider, optionally using local MCP-backed tools before the model call.")
     @ApiResponses({
@@ -120,6 +134,14 @@ public class ChatController {
                 ));
     }
 
+    /**
+     * Handles a streaming chat request using Server-Sent Events (SSE).
+     *
+     * @param request         the chat request containing message and provider details.
+     * @param requestIdHeader an optional request identifier from headers.
+     * @param response        the HTTP servlet response.
+     * @return an SseEmitter for streaming events.
+     */
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(
             summary = "Run a streaming chat request",
@@ -158,6 +180,13 @@ public class ChatController {
         stream(request, emitter, resolveRequestId(null));
     }
 
+    /**
+     * Internal method to initiate a streaming chat workflow.
+     *
+     * @param request   the chat request.
+     * @param emitter   the SseEmitter to send events to.
+     * @param requestId the unique request identifier.
+     */
     void stream(ChatRequest request, SseEmitter emitter, String requestId) {
         long startedAt = System.nanoTime();
         log.info(
@@ -329,6 +358,12 @@ public class ChatController {
         taskReference.set(task);
     }
 
+    /**
+     * Exception handler for OllamaClientException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaError(OllamaClientException ex) {
@@ -337,6 +372,12 @@ public class ChatController {
                 .body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for ModelProviderException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(ModelProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
@@ -345,6 +386,12 @@ public class ChatController {
                 .body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for InvalidSessionIdException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(InvalidSessionIdException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
@@ -353,6 +400,12 @@ public class ChatController {
                 .body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for InvalidProviderException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(InvalidProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidProvider(InvalidProviderException ex) {

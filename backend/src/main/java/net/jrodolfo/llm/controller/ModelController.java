@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * REST controller for retrieving available models and provider status.
+ */
 @RestController
 @RequestMapping("/api/models")
 @Tag(name = "models", description = "Available model options for the active provider.")
@@ -32,11 +35,23 @@ public class ModelController {
     private final AvailableModelsService availableModelsService;
     private final ProviderStatusService providerStatusService;
 
+    /**
+     * Constructs a new ModelController with the specified services.
+     *
+     * @param availableModelsService the service for listing available models.
+     * @param providerStatusService  the service for checking provider status.
+     */
     public ModelController(AvailableModelsService availableModelsService, ProviderStatusService providerStatusService) {
         this.availableModelsService = availableModelsService;
         this.providerStatusService = providerStatusService;
     }
 
+    /**
+     * Lists available models for a given provider.
+     *
+     * @param provider optional provider override.
+     * @return the available models response.
+     */
     @GetMapping
     @Operation(summary = "List available models", description = "Returns provider-aware model options the frontend can safely offer. Ollama returns installed local models; Bedrock returns discovered inference profiles when available and otherwise falls back to the configured model id.")
     public AvailableModelsResponse listAvailableModels(
@@ -46,6 +61,12 @@ public class ModelController {
         return availableModelsService.getAvailableModels(provider);
     }
 
+    /**
+     * Retrieves the status of a given provider.
+     *
+     * @param provider optional provider override.
+     * @return the provider status response.
+     */
     @GetMapping("/status")
     @Operation(summary = "Get provider status", description = "Returns a compact readiness and troubleshooting summary for the selected provider.")
     public ProviderStatusResponse getProviderStatus(
@@ -55,6 +76,12 @@ public class ModelController {
         return providerStatusService.getProviderStatus(provider);
     }
 
+    /**
+     * Exception handler for OllamaClientException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(OllamaClientException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaClientException(OllamaClientException ex) {
@@ -62,6 +89,12 @@ public class ModelController {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for ModelDiscoveryException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(ModelDiscoveryException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleModelDiscoveryException(ModelDiscoveryException ex) {
@@ -69,6 +102,12 @@ public class ModelController {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for InvalidProviderException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(InvalidProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidProviderException(InvalidProviderException ex) {

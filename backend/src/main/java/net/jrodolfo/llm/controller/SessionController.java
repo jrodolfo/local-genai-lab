@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * REST controller for managing chat sessions, including listing, retrieval, deletion, and import/export.
+ */
 @RestController
 @RequestMapping("/api/sessions")
 @Tag(name = "sessions", description = "Local JSON-backed conversation sessions, import/export, and filtering.")
@@ -41,6 +44,13 @@ public class SessionController {
     private final ChatSessionExportService chatSessionExportService;
     private final ChatSessionImportService chatSessionImportService;
 
+    /**
+     * Constructs a new SessionController with the specified services.
+     *
+     * @param chatSessionService       the service for session management.
+     * @param chatSessionExportService the service for exporting sessions.
+     * @param chatSessionImportService the service for importing sessions.
+     */
     public SessionController(
             ChatSessionService chatSessionService,
             ChatSessionExportService chatSessionExportService,
@@ -51,6 +61,17 @@ public class SessionController {
         this.chatSessionImportService = chatSessionImportService;
     }
 
+    /**
+     * Lists stored chat sessions with optional filters.
+     *
+     * @param query     text query for title, summary, or content.
+     * @param q         legacy alias for query.
+     * @param provider  optional provider filter.
+     * @param toolUsage optional tool usage filter.
+     * @param pending   optional pending clarification filter.
+     * @param mode      optional session mode filter.
+     * @return a list of session summaries.
+     */
     @GetMapping
     @Operation(summary = "List stored chat sessions", description = "Returns local session summaries filtered by optional text query, provider, tool usage, and pending clarification state.")
     public List<ChatSessionSummaryResponse> listSessions(
@@ -76,6 +97,12 @@ public class SessionController {
         );
     }
 
+    /**
+     * Retrieves a specific chat session by its identifier.
+     *
+     * @param sessionId the unique identifier of the session.
+     * @return the detailed session data.
+     */
     @GetMapping("/{sessionId}")
     @Operation(summary = "Get a stored chat session", description = "Loads one saved session with full messages, tool data, provider metadata, and pending clarification state.")
     @ApiResponses({
@@ -86,6 +113,13 @@ public class SessionController {
         return chatSessionService.getSession(sessionId);
     }
 
+    /**
+     * Exports a specific chat session in JSON or Markdown format.
+     *
+     * @param sessionId the unique identifier of the session.
+     * @param format    the export format (json, markdown, or md).
+     * @return a ResponseEntity containing the exported session data.
+     */
     @GetMapping("/{sessionId}/export")
     @Operation(summary = "Export a stored chat session", description = "Returns the saved session as JSON by default, or Markdown when `format=markdown` or `format=md`.")
     public ResponseEntity<?> exportSession(
@@ -107,6 +141,12 @@ public class SessionController {
                 .body(session);
     }
 
+    /**
+     * Deletes a specific chat session.
+     *
+     * @param sessionId the unique identifier of the session.
+     * @return a 204 No Content response on success.
+     */
     @DeleteMapping("/{sessionId}")
     @Operation(summary = "Delete a stored chat session")
     @ApiResponses({
@@ -118,6 +158,12 @@ public class SessionController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Imports a chat session from a JSON file.
+     *
+     * @param file the multipart file containing the session JSON.
+     * @return the import result.
+     */
     @PostMapping("/import")
     @Operation(summary = "Import a JSON chat session export", description = "Accepts a JSON session export produced by this app. If the imported `sessionId` already exists locally, a new identifier is generated instead of overwriting.")
     @ApiResponses({
@@ -128,18 +174,36 @@ public class SessionController {
         return chatSessionImportService.importSession(file);
     }
 
+    /**
+     * Exception handler for ChatSessionNotFoundException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(ChatSessionNotFoundException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleChatSessionNotFound(ChatSessionNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for ChatSessionImportException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(ChatSessionImportException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleChatSessionImport(ChatSessionImportException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Exception handler for InvalidSessionIdException.
+     *
+     * @param ex the exception.
+     * @return a ResponseEntity with error details.
+     */
     @ExceptionHandler(InvalidSessionIdException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
