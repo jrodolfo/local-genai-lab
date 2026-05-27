@@ -23,11 +23,12 @@ class ChatPromptBuilderTest {
         String prompt = promptBuilder.buildToolAssistedPrompt(
                 "what happened in the audit?",
                 List.of(
-                        new ChatSessionMessage("user", "run aws audit", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new ChatSessionMessage("user", "run aws audit", null, null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
                         new ChatSessionMessage(
                                 "assistant",
                                 "Audit complete.",
                                 new ChatToolMetadata(true, "aws_region_audit", "success", "done"),
+                                null,
                                 null,
                                 null,
                                 Instant.parse("2026-04-10T10:01:00Z")
@@ -93,8 +94,8 @@ class ChatPromptBuilderTest {
         String prompt = promptBuilder.build(new ChatPromptBuilder.PromptContext(
                 "now explain it using fibonacci and java",
                 List.of(
-                        new ChatSessionMessage("user", "explain recursion", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
-                        new ChatSessionMessage("assistant", "Recursion is when a function calls itself.", null, null, null, Instant.parse("2026-04-10T10:00:05Z"))
+                        new ChatSessionMessage("user", "explain recursion", null, null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new ChatSessionMessage("assistant", "Recursion is when a function calls itself.", null, null, null, null, Instant.parse("2026-04-10T10:00:05Z"))
                 ),
                 null
         ));
@@ -111,8 +112,8 @@ class ChatPromptBuilderTest {
         ProviderPrompt prompt = promptBuilder.buildPlainChatProviderPrompt(
                 "now explain it using fibonacci and java",
                 List.of(
-                        new ChatSessionMessage("user", "explain recursion", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
-                        new ChatSessionMessage("assistant", "Recursion is when a function calls itself.", null, null, null, Instant.parse("2026-04-10T10:00:05Z"))
+                        new ChatSessionMessage("user", "explain recursion", null, null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new ChatSessionMessage("assistant", "Recursion is when a function calls itself.", null, null, null, null, Instant.parse("2026-04-10T10:00:05Z"))
                 )
         );
 

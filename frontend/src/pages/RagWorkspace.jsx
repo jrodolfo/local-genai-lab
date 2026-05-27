@@ -1,17 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listAvailableModels } from '../api/modelApi';
 import { getRagStatus, queryRag, rebuildRagIndex } from '../api/ragApi';
+import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
 
 function RagWorkspace() {
+  const importInputRef = useRef(null);
   const [ragStatus, setRagStatus] = useState(null);
   const [availableProviders, setAvailableProviders] = useState([]);
   const [availableModels, setAvailableModels] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [sessionId, setSessionId] = useState(null);
+  const [sessions, setSessions] = useState([]);
   const [question, setQuestion] = useState('');
-  const [result, setResult] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [querying, setQuerying] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
@@ -32,17 +36,24 @@ function RagWorkspace() {
     try {
       setLoading(true);
       setError('');
-      const [statusPayload, modelsPayload] = await Promise.all([
+      const [statusPayload, modelsPayload, sessionsPayload] = await Promise.all([
         getRagStatus(),
-        listAvailableModels()
+        listAvailableModels(),
+        listSessions({ mode: 'rag' })
       ]);
       setRagStatus(statusPayload);
       hydrateProviders(modelsPayload);
+      setSessions(sessionsPayload);
     } catch (err) {
       setError(err.message || 'Failed to load the RAG workspace.');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function loadRagSessions() {
+    const payload = await listSessions({ mode: 'rag' });
+    setSessions(payload);
   }
 
   async function loadModelsForProvider(provider) {
@@ -83,9 +94,15 @@ function RagWorkspace() {
       const payload = await queryRag({
         question: question.trim(),
         provider: selectedProvider,
-        model: selectedModel
+        model: selectedModel,
+        sessionId
       });
-      setResult(payload);
+      setSessionId(payload.sessionId);
+      setQuestion('');
+      await Promise.all([
+        openSession(payload.sessionId),
+        loadRagSessions()
+      ]);
     } catch (err) {
       setError(err.message || 'Failed to query the RAG workspace.');
     } finally {
@@ -111,6 +128,70 @@ function RagWorkspace() {
       setError(err.message || 'Failed to rebuild the RAG index.');
     } finally {
       setRebuilding(false);
+    }
+  }
+
+  async function openSession(targetSessionId) {
+    try {
+      setError('');
+      const payload = await getSession(targetSessionId);
+      setSessionId(payload.sessionId);
+      setMessages(Array.isArray(payload.messages) ? payload.messages : []);
+    } catch (err) {
+      setError(err.message || 'Failed to load the RAG session.');
+    }
+  }
+
+  function startNewSession() {
+    setSessionId(null);
+    setMessages([]);
+    setQuestion('');
+    setError('');
+  }
+
+  async function removeSession(targetSessionId) {
+    try {
+      await deleteSession(targetSessionId);
+      if (sessionId === targetSessionId) {
+        startNewSession();
+      }
+      await loadRagSessions();
+    } catch (err) {
+      setError(err.message || 'Failed to delete session.');
+    }
+  }
+
+  async function downloadSession(targetSessionId, format) {
+    try {
+      const payload = await exportSession(targetSessionId, format);
+      const url = window.URL.createObjectURL(payload.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = payload.filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message || 'Failed to export session.');
+    }
+  }
+
+  async function handleImport(event) {
+    const [file] = event.target.files || [];
+    if (!file) {
+      return;
+    }
+    try {
+      const payload = await importSession(file);
+      await Promise.all([
+        loadRagSessions(),
+        openSession(payload.sessionId)
+      ]);
+    } catch (err) {
+      setError(err.message || 'Failed to import session.');
+    } finally {
+      event.target.value = '';
     }
   }
 
@@ -155,56 +236,112 @@ function RagWorkspace() {
       ) : null}
 
       {!loading && ragStatus?.enabled ? (
-        <section className="rag-workspace">
-          <form className="rag-query-form" onSubmit={handleSubmit}>
-            <div className="rag-field-grid">
-              <label>
-                Provider
-                <select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value)}>
-                  {availableProviders.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {provider}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Model
-                <select value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
-                  {availableModels.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
-              </label>
+        <section className="rag-layout">
+          <aside className="rag-session-sidebar">
+            <div className="rag-session-sidebar__header">
+              <h2>RAG sessions</h2>
+              <div className="rag-session-sidebar__actions">
+                <button type="button" onClick={startNewSession}>New</button>
+                <button type="button" onClick={() => importInputRef.current?.click()}>Import</button>
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept="application/json"
+                  className="rag-session-sidebar__import"
+                  onChange={handleImport}
+                />
+              </div>
             </div>
-
-            <label className="rag-question-field">
-              Question
-              <textarea
-                value={question}
-                onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Ask a question about the project docs and ADRs."
-                rows={6}
-              />
-            </label>
-
-            <div className="rag-actions">
-              <button type="submit" disabled={querying || !question.trim()}>
-                {querying ? 'Querying...' : 'Ask docs corpus'}
-              </button>
+            <div className="rag-session-list">
+              {sessions.length === 0 ? (
+                <p className="rag-session-empty">No saved RAG sessions yet.</p>
+              ) : sessions.map((session) => (
+                <article key={session.sessionId} className={`rag-session-item ${session.sessionId === sessionId ? 'active' : ''}`}>
+                  <button type="button" className="rag-session-open" onClick={() => openSession(session.sessionId)}>
+                    <span className="rag-session-title">{session.title}</span>
+                    {session.summary ? <span className="rag-session-summary">{session.summary}</span> : null}
+                    <span className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                  </button>
+                  <div className="rag-session-item__actions">
+                    <button type="button" onClick={() => downloadSession(session.sessionId, 'json')}>JSON</button>
+                    <button type="button" onClick={() => downloadSession(session.sessionId, 'markdown')}>MD</button>
+                    <button type="button" onClick={() => removeSession(session.sessionId)}>Delete</button>
+                  </div>
+                </article>
+              ))}
             </div>
-          </form>
+          </aside>
 
-          {result ? (
-            <RagAnswerWithSources result={result} />
-          ) : (
-            <section className="rag-empty-state">
-              <h2>No answer yet</h2>
-              <p>Ask a question to retrieve the most relevant doc chunks and generate a cited answer.</p>
-            </section>
-          )}
+          <section className="rag-workspace">
+            <form className="rag-query-form" onSubmit={handleSubmit}>
+              <div className="rag-field-grid">
+                <label>
+                  Provider
+                  <select value={selectedProvider} onChange={(event) => setSelectedProvider(event.target.value)}>
+                    {availableProviders.map((provider) => (
+                      <option key={provider} value={provider}>
+                        {provider}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Model
+                  <select value={selectedModel} onChange={(event) => setSelectedModel(event.target.value)}>
+                    {availableModels.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <label className="rag-question-field">
+                Question
+                <textarea
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  placeholder="Ask a question about the project docs and ADRs."
+                  rows={6}
+                />
+              </label>
+
+              <div className="rag-actions">
+                <button type="submit" disabled={querying || !question.trim()}>
+                  {querying ? 'Querying...' : 'Ask docs corpus'}
+                </button>
+              </div>
+            </form>
+
+            {messages.length > 0 ? (
+              <section className="rag-conversation" aria-label="RAG conversation history">
+                {messages.map((message, index) => (
+                  message.role === 'assistant' ? (
+                    <RagAnswerWithSources
+                      key={`${message.timestamp || index}-${index}`}
+                      result={{
+                        answer: message.content,
+                        provider: message.metadata?.provider,
+                        model: message.metadata?.modelId || selectedModel,
+                        sources: message.ragSources || []
+                      }}
+                    />
+                  ) : (
+                    <section key={`${message.timestamp || index}-${index}`} className="rag-question-card">
+                      <h2>Question</h2>
+                      <p>{message.content}</p>
+                    </section>
+                  )
+                ))}
+              </section>
+            ) : (
+              <section className="rag-empty-state">
+                <h2>No answer yet</h2>
+                <p>Ask a question to retrieve the most relevant doc chunks and generate a cited answer.</p>
+              </section>
+            )}
+          </section>
         </section>
       ) : null}
     </main>

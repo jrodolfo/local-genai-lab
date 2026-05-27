@@ -10,6 +10,7 @@ public record ChatSessionDetailResponse(
         String sessionId,
         String title,
         String summary,
+        String mode,
         String model,
         Instant createdAt,
         Instant updatedAt,

@@ -1,7 +1,9 @@
 package net.jrodolfo.llm.rag.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.config.AppModelProperties;
+import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
@@ -16,6 +18,10 @@ import net.jrodolfo.llm.rag.service.RagChunkingService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
 import net.jrodolfo.llm.rag.service.RagDocumentLoader;
 import net.jrodolfo.llm.rag.service.RagRetrievalService;
+import net.jrodolfo.llm.rag.service.RagSessionService;
+import net.jrodolfo.llm.service.ChatSessionMetadataService;
+import net.jrodolfo.llm.service.FileChatSessionStore;
+import net.jrodolfo.llm.service.SessionIdPolicy;
 import net.jrodolfo.llm.rag.store.InMemoryRagVectorStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +88,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
                 .andExpect(jsonPath("$.provider").value("ollama"))
                 .andExpect(jsonPath("$.model").value("llama3:8b"))
+                .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
                 .andExpect(jsonPath("$.metadata.provider").value("ollama"));
     }
@@ -109,6 +116,14 @@ class RagControllerTest {
 
     private MockMvc buildMockMvc(RagProperties properties) {
         InMemoryRagVectorStore store = new InMemoryRagVectorStore();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        SessionIdPolicy sessionIdPolicy = new SessionIdPolicy();
+        FileChatSessionStore sessionStore = new FileChatSessionStore(
+                objectMapper,
+                new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()),
+                sessionIdPolicy
+        );
         RagCorpusService corpusService = new RagCorpusService(
                 properties,
                 new RagDocumentLoader(),
@@ -120,10 +135,11 @@ class RagControllerTest {
                         new AppModelProperties("ollama"),
                         Map.of("ollama", new FakeProvider())
                 ),
-                new RagRetrievalService(properties, corpusService, store)
+                new RagRetrievalService(properties, corpusService, store),
+                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
         );
         return MockMvcBuilders.standaloneSetup(new RagController(properties, corpusService, answerService))
-                .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
     }
 

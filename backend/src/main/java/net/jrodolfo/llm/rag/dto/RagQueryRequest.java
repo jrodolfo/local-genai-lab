@@ -6,6 +6,7 @@ public record RagQueryRequest(
         @NotBlank(message = "question is required")
         String question,
         String provider,
-        String model
+        String model,
+        String sessionId
 ) {
 }

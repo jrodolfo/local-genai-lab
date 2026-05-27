@@ -8,6 +8,7 @@ public record RagQueryResponse(
         String answer,
         String provider,
         String model,
+        String sessionId,
         List<RagSourceChunkResponse> sources,
         ModelProviderMetadata metadata
 ) {

@@ -6,6 +6,8 @@ import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.dto.RagSourceChunkResponse;
+import net.jrodolfo.llm.model.ChatRagSourceChunk;
+import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,19 @@ public class RagAnswerService {
 
     private final ChatModelProviderRegistry providerRegistry;
     private final RagRetrievalService ragRetrievalService;
+    private final RagSessionService ragSessionService;
 
-    public RagAnswerService(ChatModelProviderRegistry providerRegistry, RagRetrievalService ragRetrievalService) {
+    public RagAnswerService(
+            ChatModelProviderRegistry providerRegistry,
+            RagRetrievalService ragRetrievalService,
+            RagSessionService ragSessionService
+    ) {
         this.providerRegistry = providerRegistry;
         this.ragRetrievalService = ragRetrievalService;
+        this.ragSessionService = ragSessionService;
     }
 
-    public RagQueryResponse answer(String question, String provider, String model) {
+    public RagQueryResponse answer(String question, String provider, String model, String sessionId) {
         List<RagMatch> matches = ragRetrievalService.retrieve(question);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
@@ -31,12 +39,13 @@ public class RagAnswerService {
         ChatModelProvider chatModelProvider = providerRegistry.get(provider);
         String resolvedProvider = providerRegistry.resolveProviderName(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
+        ChatSession session = ragSessionService.startTurn(sessionId, resolvedModel, question);
         ChatResponse response = chatModelProvider.chat(
                 ProviderPrompt.forPrompt(buildPrompt(question, matches)),
                 resolvedModel,
                 null,
                 null,
-                null,
+                session.sessionId(),
                 null
         );
 
@@ -48,11 +57,21 @@ public class RagAnswerService {
                         roundScore(match.score())
                 ))
                 .toList();
+        List<ChatRagSourceChunk> persistedSources = sources.stream()
+                .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
+                .toList();
+        ChatSession persistedSession = ragSessionService.finishTurn(
+                session,
+                response.response(),
+                response.metadata(),
+                persistedSources
+        );
 
         return new RagQueryResponse(
                 response.response(),
                 resolvedProvider,
                 response.model(),
+                persistedSession.sessionId(),
                 sources,
                 response.metadata()
         );

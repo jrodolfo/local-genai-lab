@@ -67,7 +67,12 @@ public class RagController {
     @PostMapping("/query")
     public ResponseEntity<RagQueryResponse> query(@Valid @RequestBody RagQueryRequest request) {
         ensureEnabled();
-        return ResponseEntity.ok(ragAnswerService.answer(request.question(), request.provider(), request.model()));
+        return ResponseEntity.ok(ragAnswerService.answer(
+                request.question(),
+                request.provider(),
+                request.model(),
+                request.sessionId()
+        ));
     }
 
     @ExceptionHandler(IllegalStateException.class)

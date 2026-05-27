@@ -68,7 +68,8 @@ public class ChatSessionImportService {
                 messages,
                 toPendingToolCall(imported.pendingTool()),
                 imported.title(),
-                imported.summary()
+                imported.summary(),
+                hasText(imported.mode()) ? imported.mode().trim() : "chat"
         );
 
         ChatSession saved = sessionStore.save(chatSessionMetadataService.enrich(session));
@@ -120,7 +121,7 @@ public class ChatSessionImportService {
 
             Instant timestamp = message.timestamp() != null ? message.timestamp() : lastTimestamp;
             lastTimestamp = timestamp;
-            normalized.add(new ChatSessionMessage(role, content, message.tool(), message.toolResult(), message.metadata(), timestamp));
+            normalized.add(new ChatSessionMessage(role, content, message.tool(), message.toolResult(), message.metadata(), message.ragSources(), timestamp));
         }
 
         return normalized;

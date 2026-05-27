@@ -24,13 +24,13 @@ export async function rebuildRagIndex() {
   return response.json();
 }
 
-export async function queryRag({ question, provider, model }) {
+export async function queryRag({ question, provider, model, sessionId }) {
   const response = await fetch('/api/rag/query', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ question, provider, model })
+    body: JSON.stringify({ question, provider, model, sessionId })
   });
   if (!response.ok) {
     const payload = await parseJson(response);

@@ -33,7 +33,7 @@ public class ChatMemoryService {
                 .map(session -> session.withUpdatedModel(resolvedModel))
                 .orElseGet(() -> ChatSession.create(sessionId, resolvedModel, now));
 
-        return existingSession.appendMessage("user", userMessage.trim(), null, null, null, now);
+        return existingSession.appendMessage("user", userMessage.trim(), null, null, null, null, now);
     }
 
     public ChatSession finishTurn(ChatSession session, String assistantMessage, ChatToolMetadata toolMetadata) {
@@ -50,7 +50,7 @@ public class ChatMemoryService {
     ) {
         ChatSession updatedSession = session
                 .withPendingToolCall(pendingToolCall)
-                .appendMessage("assistant", assistantMessage, toolMetadata, toolResult, providerMetadata, Instant.now());
+                .appendMessage("assistant", assistantMessage, toolMetadata, toolResult, providerMetadata, null, Instant.now());
         return sessionStore.save(chatSessionMetadataService.enrich(updatedSession));
     }
 

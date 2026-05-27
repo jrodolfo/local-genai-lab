@@ -6,7 +6,7 @@ async function parseJson(response) {
   }
 }
 
-export async function listSessions({ query = '', provider = '', toolUsage = '', pending = false } = {}) {
+export async function listSessions({ query = '', provider = '', toolUsage = '', pending = false, mode = '' } = {}) {
   const params = new URLSearchParams();
   if (query) {
     params.set('query', query);
@@ -19,6 +19,9 @@ export async function listSessions({ query = '', provider = '', toolUsage = '', 
   }
   if (pending) {
     params.set('pending', 'true');
+  }
+  if (mode) {
+    params.set('mode', mode);
   }
 
   const search = params.toString() ? `?${params.toString()}` : '';

@@ -22,6 +22,7 @@ public class ChatSessionExportService {
 
         markdown.append("## session metadata\n\n");
         markdown.append("- session id: ").append(session.sessionId()).append("\n");
+        markdown.append("- mode: ").append(valueOrFallback(session.mode(), "chat")).append("\n");
         markdown.append("- model: ").append(valueOrFallback(session.model(), "unknown")).append("\n");
         markdown.append("- created at: ").append(formatInstant(session.createdAt())).append("\n");
         markdown.append("- updated at: ").append(formatInstant(session.updatedAt())).append("\n\n");
@@ -44,6 +45,7 @@ public class ChatSessionExportService {
             }
 
             appendProviderMetadata(markdown, message.metadata());
+            appendRagSources(markdown, message.ragSources());
             markdown.append("\n");
             markdown.append(message.content() == null ? "" : message.content()).append("\n\n");
         }
@@ -101,6 +103,22 @@ public class ChatSessionExportService {
         }
         if (metadata.uiWaitMs() != null) {
             markdown.append("- ui wait: ").append(metadata.uiWaitMs()).append(" ms\n");
+        }
+    }
+
+    private void appendRagSources(StringBuilder markdown, java.util.List<net.jrodolfo.llm.model.ChatRagSourceChunk> ragSources) {
+        if (ragSources == null || ragSources.isEmpty()) {
+            return;
+        }
+        markdown.append("- rag sources:\n");
+        for (net.jrodolfo.llm.model.ChatRagSourceChunk source : ragSources) {
+            markdown.append("  - ")
+                    .append(valueOrFallback(source.title(), "source"))
+                    .append(" (")
+                    .append(valueOrFallback(source.sourcePath(), "unknown"))
+                    .append(", score ")
+                    .append(source.score())
+                    .append(")\n");
         }
     }
 

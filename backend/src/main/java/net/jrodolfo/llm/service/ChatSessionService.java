@@ -26,12 +26,13 @@ public class ChatSessionService {
         this.chatSessionMetadataService = chatSessionMetadataService;
     }
 
-    public List<ChatSessionSummaryResponse> listSessions(String query, String provider, String toolUsage, Boolean pending) {
+    public List<ChatSessionSummaryResponse> listSessions(String query, String provider, String toolUsage, Boolean pending, String mode) {
         return sessionStore.findAll().stream()
                 .filter(session -> matchesQuery(session, query))
                 .filter(session -> matchesProvider(session, provider))
                 .filter(session -> matchesToolUsage(session, toolUsage))
                 .filter(session -> matchesPending(session, pending))
+                .filter(session -> matchesMode(session, mode))
                 .sorted(Comparator.comparing(ChatSession::updatedAt).reversed())
                 .map(this::toSummary)
                 .toList();
@@ -54,6 +55,7 @@ public class ChatSessionService {
                 session.sessionId(),
                 chatSessionMetadataService.fallbackTitle(session),
                 chatSessionMetadataService.fallbackSummary(session),
+                session.mode(),
                 session.model(),
                 session.createdAt(),
                 session.updatedAt(),
@@ -124,11 +126,19 @@ public class ChatSessionService {
         return pending == (session.pendingToolCall() != null);
     }
 
+    private boolean matchesMode(ChatSession session, String mode) {
+        if (mode == null || mode.isBlank()) {
+            return true;
+        }
+        return mode.trim().equalsIgnoreCase(session.mode());
+    }
+
     private ChatSessionDetailResponse toDetail(ChatSession session) {
         return new ChatSessionDetailResponse(
                 session.sessionId(),
                 chatSessionMetadataService.fallbackTitle(session),
                 chatSessionMetadataService.fallbackSummary(session),
+                session.mode(),
                 session.model(),
                 session.createdAt(),
                 session.updatedAt(),
@@ -144,6 +154,7 @@ public class ChatSessionService {
                 message.tool(),
                 message.toolResult(),
                 message.metadata(),
+                message.ragSources(),
                 message.timestamp()
         );
     }

@@ -220,6 +220,7 @@ class ApiSmokeIntegrationTest {
                 "session-123",
                 "Smoke Session",
                 "Short summary",
+                "chat",
                 "llama3:8b",
                 Instant.parse("2026-04-19T00:00:00Z"),
                 Instant.parse("2026-04-19T00:05:00Z"),
@@ -229,6 +230,7 @@ class ApiSmokeIntegrationTest {
                         null,
                         null,
                         new ModelProviderMetadata("ollama", "llama3:8b", "stop", null, null, null, 50L, null, null, null),
+                        null,
                         Instant.parse("2026-04-19T00:01:00Z")
                 )),
                 null

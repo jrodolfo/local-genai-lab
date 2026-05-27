@@ -63,13 +63,16 @@ public class SessionController {
             @Parameter(description = "Optional tool usage filter: `used` or `unused`.", example = "used")
             @RequestParam(required = false) String toolUsage,
             @Parameter(description = "Optional pending clarification filter.", example = "true")
-            @RequestParam(required = false) Boolean pending
+            @RequestParam(required = false) Boolean pending,
+            @Parameter(description = "Optional session mode filter.", example = "rag")
+            @RequestParam(required = false) String mode
     ) {
         return chatSessionService.listSessions(
                 (query == null || query.isBlank()) ? q : query,
                 provider,
                 toolUsage,
-                pending
+                pending,
+                mode
         );
     }
 

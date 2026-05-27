@@ -9,6 +9,7 @@ public record ChatSessionSummaryResponse(
         String sessionId,
         String title,
         String summary,
+        String mode,
         String model,
         Instant createdAt,
         Instant updatedAt,

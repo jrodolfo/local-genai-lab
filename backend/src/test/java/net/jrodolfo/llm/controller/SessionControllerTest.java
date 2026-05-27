@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.service.ChatToolRouterService;
@@ -143,6 +144,18 @@ class SessionControllerTest {
         mockMvc.perform(get("/api/sessions").queryParam("pending", "true"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sessionId").value("pending-session"))
+                .andExpect(jsonPath("$[1]").doesNotExist());
+    }
+
+    @Test
+    void listSessionsFiltersByMode() throws Exception {
+        saveSession("chat-session", "plain chat", Instant.parse("2026-04-10T10:00:00Z"));
+        saveRagSession("rag-session", "How are sessions persisted?", Instant.parse("2026-04-11T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions").queryParam("mode", "rag"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sessionId").value("rag-session"))
+                .andExpect(jsonPath("$[0].mode").value("rag"))
                 .andExpect(jsonPath("$[1]").doesNotExist());
     }
 
@@ -332,28 +345,31 @@ class SessionControllerTest {
                 Instant.parse("2026-04-10T10:00:00Z"),
                 Instant.parse("2026-04-10T10:03:00Z"),
                 List.of(
-                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Explain recursion.", null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Explain recursion.", null, null, null, null, Instant.parse("2026-04-10T10:00:00Z")),
                         new net.jrodolfo.llm.model.ChatSessionMessage(
                                 "assistant",
                                 "Recursion is when a function calls itself.",
                                 null,
                                 null,
                                 new ModelProviderMetadata("ollama", "llama3:8b", "stop", 10, 20, 30, 100L, 90L, 110L, 120L),
+                                null,
                                 Instant.parse("2026-04-10T10:01:00Z")
                         ),
-                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Now answer with Bedrock.", null, null, null, Instant.parse("2026-04-10T10:02:00Z")),
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", "Now answer with Bedrock.", null, null, null, null, Instant.parse("2026-04-10T10:02:00Z")),
                         new net.jrodolfo.llm.model.ChatSessionMessage(
                                 "assistant",
                                 "Bedrock can answer in the same session too.",
                                 null,
                                 null,
                                 new ModelProviderMetadata("bedrock", "us.amazon.nova-pro-v1:0", "end_turn", 11, 21, 32, 200L, 180L, 210L, 220L),
+                                null,
                                 Instant.parse("2026-04-10T10:03:00Z")
                         )
                 ),
                 null,
                 "mixed provider session",
-                "compares ollama and bedrock"
+                "compares ollama and bedrock",
+                "chat"
         );
         sessionStore.save(session);
 
@@ -458,6 +474,32 @@ class SessionControllerTest {
     }
 
     @Test
+    void exportImportRoundTripPreservesRagSourcesAndMode() throws Exception {
+        saveRagSession("rag-session", "How are sessions persisted?", Instant.parse("2026-04-10T10:00:00Z"));
+
+        String exportedJson = mockMvc.perform(get("/api/sessions/rag-session/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mode").value("rag"))
+                .andExpect(jsonPath("$.messages[1].ragSources[0].sourcePath").value("sessions.md"))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String importedJson = exportedJson.replace("\"sessionId\":\"rag-session\"", "\"sessionId\":\"rag-session-imported\"");
+        MockMultipartFile file = new MockMultipartFile("file", "rag-session.json", "application/json", importedJson.getBytes());
+
+        mockMvc.perform(multipart("/api/sessions/import").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value("rag-session-imported"));
+
+        mockMvc.perform(get("/api/sessions/rag-session-imported"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.mode").value("rag"))
+                .andExpect(jsonPath("$.messages[1].ragSources[0].sourcePath").value("sessions.md"))
+                .andExpect(jsonPath("$.messages[1].metadata.provider").value("ollama"));
+    }
+
+    @Test
     void importSessionRejectsInvalidJson() throws Exception {
         MockMultipartFile file = new MockMultipartFile("file", "invalid.json", "application/json", "{".getBytes());
 
@@ -548,7 +590,7 @@ class SessionControllerTest {
                 timestamp,
                 timestamp.plusSeconds(30),
                 List.of(
-                        new net.jrodolfo.llm.model.ChatSessionMessage("user", userMessage, null, null, null, timestamp),
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", userMessage, null, null, null, null, timestamp),
                         new net.jrodolfo.llm.model.ChatSessionMessage(
                                 "assistant",
                                 "done",
@@ -566,12 +608,45 @@ class SessionControllerTest {
                                         110L,
                                         120L
                                 ),
+                                null,
                                 timestamp.plusSeconds(30)
                         )
                 ),
                 pendingToolCall,
                 null,
-                null
+                null,
+                "chat"
+        );
+        sessionStore.save(session);
+    }
+
+    private void saveRagSession(String sessionId, String userMessage, Instant timestamp) {
+        ChatSession session = new ChatSession(
+                sessionId,
+                "llama3:8b",
+                timestamp,
+                timestamp.plusSeconds(30),
+                List.of(
+                        new net.jrodolfo.llm.model.ChatSessionMessage("user", userMessage, null, null, null, null, timestamp),
+                        new net.jrodolfo.llm.model.ChatSessionMessage(
+                                "assistant",
+                                "Sessions are stored as local JSON files.",
+                                null,
+                                null,
+                                new ModelProviderMetadata("ollama", "llama3:8b", "stop", 1, 2, 3, 100L, 90L, 110L, 120L),
+                                List.of(new ChatRagSourceChunk(
+                                        "sessions.md",
+                                        "Sessions",
+                                        "Sessions are stored as local JSON files so they can be reopened, exported, and imported.",
+                                        0.91
+                                )),
+                                timestamp.plusSeconds(30)
+                        )
+                ),
+                null,
+                null,
+                null,
+                "rag"
         );
         sessionStore.save(session);
     }
