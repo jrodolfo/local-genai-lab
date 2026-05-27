@@ -37,6 +37,11 @@
   padding: 0.55rem 0.9rem;
 }
 
+.app-nav__tabs button:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .app-nav__tabs button.app-nav__tab--active {
   background: #0f172a;
   border-color: #0f172a;

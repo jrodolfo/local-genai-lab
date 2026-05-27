@@ -33,6 +33,10 @@ function App() {
         <div className="app-nav__tabs" role="tablist" aria-label="Application modes">
           <button
             type="button"
+            role="tab"
+            aria-selected={mode === 'chat'}
+            aria-current={mode === 'chat' ? 'page' : undefined}
+            disabled={mode === 'chat'}
             className={mode === 'chat' ? 'app-nav__tab--active' : ''}
             onClick={() => setMode('chat')}
           >
@@ -41,6 +45,10 @@ function App() {
           {ragEnabled ? (
             <button
               type="button"
+              role="tab"
+              aria-selected={mode === 'rag'}
+              aria-current={mode === 'rag' ? 'page' : undefined}
+              disabled={mode === 'rag'}
               className={mode === 'rag' ? 'app-nav__tab--active' : ''}
               onClick={() => setMode('rag')}
             >
