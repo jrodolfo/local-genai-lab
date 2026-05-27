@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listArtifacts, previewArtifact } from '../api/artifactApi';
 import { sendMessage, streamMessage } from '../api/chatApi';
 import { getProviderStatus, listAvailableModels } from '../api/modelApi';
+import { retryAsync } from '../api/retry';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
 import InputBox from '../components/InputBox';
@@ -189,8 +190,9 @@ function Home() {
 
   async function loadSessions(filters = {}) {
     try {
-      const payload = await listSessions(filters);
+      const payload = await retryAsync(() => listSessions(filters), { retries: 4, delayMs: 500 });
       setSessions(payload);
+      setError((current) => (current === 'Failed to load sessions. Check if the backend is up and running.' ? '' : current));
     } catch (err) {
       setError(err.message || 'Failed to load sessions. Check if the backend is up and running.');
     }
@@ -200,7 +202,7 @@ function Home() {
     try {
       setModelsLoading(true);
       setModelsLoadFailed(false);
-      const payload = await listAvailableModels(provider);
+      const payload = await retryAsync(() => listAvailableModels(provider), { retries: 4, delayMs: 500 });
       const providers = Array.isArray(payload.providers) ? payload.providers : [];
       const models = Array.isArray(payload.models) ? payload.models : [];
       const defaultModel = payload.defaultModel && models.includes(payload.defaultModel) ? payload.defaultModel : '';
@@ -250,7 +252,7 @@ function Home() {
       setProviderStatusRefreshing(true);
     }
     try {
-      const payload = await getProviderStatus(provider);
+      const payload = await retryAsync(() => getProviderStatus(provider), { retries: manual ? 0 : 4, delayMs: 500 });
       setProviderStatus(payload);
     } catch (err) {
       setProviderStatus({

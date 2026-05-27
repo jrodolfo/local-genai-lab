@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { listAvailableModels } from '../api/modelApi';
 import { getRagStatus, queryRag, rebuildRagIndex } from '../api/ragApi';
+import { retryAsync } from '../api/retry';
 import { deleteSession, exportSession, getSession, importSession, listSessions } from '../api/sessionApi';
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
@@ -37,9 +38,9 @@ function RagWorkspace() {
       setLoading(true);
       setError('');
       const [statusPayload, modelsPayload, sessionsPayload] = await Promise.all([
-        getRagStatus(),
-        listAvailableModels(),
-        listSessions({ mode: 'rag' })
+        retryAsync(() => getRagStatus(), { retries: 8, delayMs: 500 }),
+        retryAsync(() => listAvailableModels(), { retries: 8, delayMs: 500 }),
+        retryAsync(() => listSessions({ mode: 'rag' }), { retries: 8, delayMs: 500 })
       ]);
       setRagStatus(statusPayload);
       hydrateProviders(modelsPayload);
@@ -52,13 +53,13 @@ function RagWorkspace() {
   }
 
   async function loadRagSessions() {
-    const payload = await listSessions({ mode: 'rag' });
+    const payload = await retryAsync(() => listSessions({ mode: 'rag' }), { retries: 4, delayMs: 500 });
     setSessions(payload);
   }
 
   async function loadModelsForProvider(provider) {
     try {
-      const payload = await listAvailableModels(provider);
+      const payload = await retryAsync(() => listAvailableModels(provider), { retries: 4, delayMs: 500 });
       setAvailableModels(Array.isArray(payload.models) ? payload.models : []);
       setSelectedModel((current) => {
         if (current && payload.models.includes(current)) {

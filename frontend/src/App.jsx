@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getRagStatus } from './api/ragApi';
+import { retryAsync } from './api/retry';
 import Home from './pages/Home';
 import RagWorkspace from './pages/RagWorkspace';
 import './App.css';
@@ -11,7 +12,7 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    getRagStatus()
+    retryAsync(() => getRagStatus(), { retries: 8, delayMs: 500 })
       .then((payload) => {
         if (active) {
           setRagEnabled(Boolean(payload.enabled));
