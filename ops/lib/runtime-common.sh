@@ -83,7 +83,7 @@ wait_for_url() {
 
 find_port_process() {
   local port="$1"
-  lsof -ti "tcp:${port}" 2>/dev/null | head -n 1
+  lsof -ti "tcp:${port}" 2>/dev/null | head -n 1 || true
 }
 
 terminate_pid() {
