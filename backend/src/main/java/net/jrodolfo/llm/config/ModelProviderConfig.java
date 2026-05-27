@@ -24,6 +24,10 @@ import software.amazon.awssdk.services.bedrock.BedrockClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 
+/**
+ * Spring configuration class that defines beans for different LLM providers
+ * and the registry that manages them.
+ */
 @Configuration
 public class ModelProviderConfig {
 

@@ -6,6 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+/**
+ * Configuration for chat streaming execution.
+ * Defines a cached thread pool executor for handling streaming responses from LLM providers.
+ */
 @Configuration
 public class StreamingConfig {
 

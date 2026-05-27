@@ -4,6 +4,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.nio.file.Path;
 
+/**
+ * Configuration properties for application storage.
+ * Handles resolution of directories for sessions and reports relative to the project root.
+ * 
+ * @param sessionsDirectory the directory path for storing session data
+ * @param reportsDirectory the directory path for storing reports
+ */
 @ConfigurationProperties(prefix = "app.storage")
 public record AppStorageProperties(
         String sessionsDirectory,

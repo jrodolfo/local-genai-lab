@@ -8,6 +8,11 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Contributes custom information to the application's actuator /info endpoint.
+ * Provides details about application naming, runtime configuration, storage paths,
+ * and the status of various LLM providers and MCP tooling.
+ */
 @Component
 public class ActuatorInfoContributor implements InfoContributor {
 
