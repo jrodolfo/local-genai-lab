@@ -6,6 +6,10 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Gateway interface for interacting with the Amazon Bedrock Runtime.
+ * Provides methods for synchronous and asynchronous (streaming) model invocations.
+ */
 public interface BedrockRuntimeGateway {
 
     ModelProviderReply converse(String prompt, String modelId);

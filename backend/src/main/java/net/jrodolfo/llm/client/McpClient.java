@@ -29,6 +29,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Client for interacting with Model Context Protocol (MCP) servers.
+ * This client manages the lifecycle of MCP server processes and provides methods to list and call tools.
+ */
 @Component
 public class McpClient {
 

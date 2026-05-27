@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
  * <p>This client handles both normal chat requests and the lightweight candidate-model probes used
  * by the frontend model selector. The probe result is cached briefly so the UI can refresh the
  * usable subset without turning every selector refresh into a full round of remote validation.
+ *
+ * <p>This client allows sending chat requests to models hosted on Hugging Face.
  */
 public class HuggingFaceClient {
 

@@ -12,6 +12,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+/**
+ * Implementation of {@link BedrockCatalogClient} using the AWS SDK for Java v2.
+ * This client interacts with the Amazon Bedrock service to discover available models and inference profiles.
+ */
 public class AwsSdkBedrockCatalogClient implements BedrockCatalogClient {
 
     private final BedrockClient bedrockClient;

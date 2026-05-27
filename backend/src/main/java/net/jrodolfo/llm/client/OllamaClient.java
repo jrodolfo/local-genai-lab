@@ -26,6 +26,8 @@ import java.util.stream.Stream;
  *
  * <p>The application uses {@code /api/chat} for role-based conversations and keeps
  * {@code /api/generate} as a fallback for older flattened prompt flows.
+ *
+ * <p>This client provides methods for synchronous and streaming chat and generation.
  */
 @Component
 public class OllamaClient {

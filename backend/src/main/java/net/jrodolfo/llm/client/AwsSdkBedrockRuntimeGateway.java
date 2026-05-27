@@ -33,6 +33,10 @@ import java.util.stream.Collectors;
  *
  * <p>The gateway keeps Bedrock-specific event handling out of the provider layer and converts both
  * normal and streaming responses into the project's provider metadata model.
+ *
+ * <p>Implementation of {@link BedrockRuntimeGateway} using the AWS SDK for Java v2.
+ * This gateway provides methods to interact with the Amazon Bedrock Runtime service,
+ * supporting both synchronous and streaming model invocations.
  */
 public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
 
