@@ -42,6 +42,49 @@ It uses:
 - `/api/artifacts/*`
 - `/api/tools/*`
 
+## Tests
+
+Run:
+
+```bash
+npm test -- --run
+npm run build
+```
+
+Frontend tests are organized into three practical layers:
+
+1. Narrow unit/component tests
+   Main files:
+   - `src/components/*.test.jsx`
+   - `src/pages/Home.test.jsx`
+
+   Use these for local UI behavior, conditional rendering, and formatting details.
+
+2. API integration tests
+   Main file:
+   - `src/api/api.integration.test.js`
+
+   Use these for request parsing, SSE parsing, and API-level error handling.
+
+3. MSW-backed page integration tests
+   Main file:
+   - `src/pages/Home.integration.test.jsx`
+
+   Use these for backend-shaped user flows such as:
+   - chat success and failure
+   - streaming chat and tool phases
+   - session reopen/export
+   - artifact preview
+
+Shared test setup lives in:
+- `src/test/setup.js`
+- `src/test/mswServer.js`
+- `src/test/mswHandlers.js`
+
+Practical rule:
+- if the behavior is a real UI flow through frontend API modules, prefer MSW
+- if the behavior is narrow and local to the component, prefer direct mocks
+
 ## Notes
 
 - the UI is session-oriented; reopened sessions restore saved messages and metadata

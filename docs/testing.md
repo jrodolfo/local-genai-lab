@@ -43,6 +43,52 @@ Covers:
 - explicit streaming tool-phase handling
 - message formatting, tool provenance display, tool result cards, loading states, provider-status refresh behavior, and artifact panel empty states
 
+Frontend tests are split into three layers:
+
+1. Unit and component-style tests
+   Main examples:
+   - `frontend/src/components/*.test.jsx`
+   - `frontend/src/pages/Home.test.jsx`
+
+   Use this layer for:
+   - narrow UI state transitions
+   - conditional rendering
+   - formatting and metadata display
+   - fast behavior checks that do not need backend-shaped request flows
+
+2. API integration tests
+   Main example:
+   - `frontend/src/api/api.integration.test.js`
+
+   Use this layer for:
+   - request/response parsing
+   - SSE event parsing
+   - error propagation from the API modules
+
+3. MSW-backed page integration tests
+   Main example:
+   - `frontend/src/pages/Home.integration.test.jsx`
+
+   Use this layer for:
+   - backend-shaped user flows through the real API modules
+   - chat success and failure paths
+   - streaming SSE flows
+   - session reopen and export flows
+   - artifact preview flows
+
+Supporting test utilities:
+- `frontend/src/test/setup.js`
+  Wires the shared MSW lifecycle into Vitest with `server.listen()`, `server.resetHandlers()`, and `server.close()`.
+- `frontend/src/test/mswServer.js`
+  Owns the reusable MSW server plus SSE helpers such as `sseResponse(...)`, `sseStreamResponse(...)`, and `sseEventChunk(...)`.
+- `frontend/src/test/mswHandlers.js`
+  Owns shared backend-shaped runtime handlers used by the page integration tests.
+
+Practical rule:
+- prefer MSW-backed tests for full request/response user flows
+- prefer direct module mocks for narrow local UI behavior
+- do not add broad module-mocked tests for flows already covered well through `Home.integration.test.jsx`
+
 Use this suite when changing:
 - `Home.jsx`
 - message rendering
@@ -117,6 +163,16 @@ These flows are still worth running manually after meaningful changes:
 
 8. Artifact preview
    Verify report summary and report preview actions open the expected artifacts without loading the entire file into memory, and that the artifact inspector titles and empty states make sense.
+
+9. Frontend test architecture drift
+   If you add a new major frontend flow, decide explicitly whether it belongs in:
+   - `Home.test.jsx`
+   - `api.integration.test.js`
+   - `Home.integration.test.jsx`
+
+   Default:
+   - user flow through backend endpoints -> MSW-backed integration test
+   - local UI-only behavior -> mocked unit/component test
 
 ## Known Non-Automated Areas
 
