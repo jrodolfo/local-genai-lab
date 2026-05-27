@@ -160,7 +160,9 @@ describe('Home', () => {
 
     render(<Home />);
 
-    expect(await screen.findByRole('combobox', { name: /model/i })).toHaveValue('us.amazon.nova-pro-v1:0');
+    await waitFor(() => {
+      expect(screen.getByRole('combobox', { name: /model/i })).toHaveValue('us.amazon.nova-pro-v1:0');
+    });
     expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
     expect(await screen.findByText(/Bedrock status: misconfigured/i)).toBeInTheDocument();
   });
