@@ -5,7 +5,7 @@
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![aws](https://img.shields.io/badge/aws-cloud-a1662f)
 
-Shell-based AWS audit and S3 CloudWatch helpers, plus local smoke-check utilities used by the main application and the MCP server.
+Shell-based AWS audit and S3 CloudWatch helpers used by the main application and the MCP server.
 
 This directory is no longer the main human-facing app lifecycle entry point.
 
@@ -25,6 +25,7 @@ make start
 make stop
 make restart
 make status
+make check-app
 ```
 
 The directory includes:
@@ -32,13 +33,12 @@ The directory includes:
 - a regional AWS audit report generator
 - a focused S3 CloudWatch report generator for one bucket
 - local shell tests
-- a smoke-check script for the local frontend/backend/model-discovery/Ollama stack
-- one helper script for starting the backend with the providers configured in `.env` or the shell
 
 Separation of concerns:
 
 - top-level lifecycle scripts are for developers running the app
-- this `scripts/` directory contains backend helpers, report generators, MCP-executed tooling, and shell tests
+- `ops/` contains backend helpers and local runtime checks
+- this `scripts/` directory contains report generators, MCP-executed tooling, and shell tests
 
 It is designed for a practical cleanup workflow:
 - compare resources across one or more regions
@@ -93,8 +93,6 @@ The `reports/` directory is ignored by Git so generated output does not get comm
 Key files:
 - `aws-region-audit-report.sh`: regional AWS audit report generator
 - `aws-s3-cloudwatch-report.sh`: focused S3 CloudWatch report generator for one bucket
-- `check-app.sh`: local stack smoke-check script
-- `start-backend-helper.sh`: start only the backend with `APP_MODEL_PROVIDER` and all configured providers
 - `.env.example`: sample multi-provider environment file for local startup
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests
@@ -226,7 +224,7 @@ make check-app
 Optional overrides:
 
 ```bash
-BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false make check-app
+BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false ../ops/check-app.sh
 ```
 
 The smoke check uses these defaults:
@@ -237,7 +235,7 @@ The smoke check uses these defaults:
 - `CHECK_OLLAMA=true`
 - `CHECK_MODELS=true`
 
-`check-app.sh` now checks `/api/models` as well, so it can distinguish “backend process is up” from “the UI can actually load usable models”.
+`ops/check-app.sh` now checks `/api/models` as well, so it can distinguish “backend process is up” from “the UI can actually load usable models”.
 
 For common local runtime problems, see [../docs/troubleshooting.md](../docs/troubleshooting.md).
 

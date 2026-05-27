@@ -366,7 +366,7 @@ MCP health is intentionally config-oriented and cheap. It does not perform expen
 
 ### End-to-End Local Checks
 
-The script `scripts/check-app.sh` gives a broader local-stack view by checking:
+The script `ops/check-app.sh` gives a broader local-stack view by checking:
 
 - backend reachability
 - frontend reachability

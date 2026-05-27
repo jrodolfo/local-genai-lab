@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status test-backend test-frontend
+.PHONY: help start stop restart status check-app test-backend test-frontend
 
 help:
 	@printf '%s\n' \
@@ -9,6 +9,7 @@ help:
 		'  make stop          Stop background backend and frontend processes' \
 		'  make restart       Restart backend and frontend' \
 		'  make status        Show process, URL, and log status' \
+		'  make check-app     Run the local stack smoke check' \
 		'  make test-backend  Run backend tests' \
 		'  make test-frontend Run frontend tests'
 
@@ -23,6 +24,9 @@ restart:
 
 status:
 	@./status.sh
+
+check-app:
+	@./ops/check-app.sh
 
 test-backend:
 	@cd backend && mvn test

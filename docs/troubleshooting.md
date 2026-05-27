@@ -12,8 +12,7 @@ Symptoms:
 Check:
 
 ```bash
-cd scripts
-./check-app.sh
+./ops/check-app.sh
 ```
 
 Fix:
@@ -53,7 +52,7 @@ Example:
 - not `amazon.nova-pro-v1:0`
 
 Fix:
-- start only the backend helper with `APP_MODEL_PROVIDER=bedrock ./start-backend-helper.sh`
+- start only the backend helper with `APP_MODEL_PROVIDER=bedrock ./ops/start-backend-helper.sh`
 - or set `BEDROCK_MODEL_ID` to the correct inference profile
 
 See [providers.md](./providers.md) for the Bedrock startup flow.
@@ -124,7 +123,7 @@ Check:
 java -version
 ```
 
-## `check-app.sh` Fails on Models
+## `ops/check-app.sh` Fails on Models
 
 Symptoms:
 - `backend: ok`

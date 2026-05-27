@@ -3,8 +3,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/lib/runtime-common.sh
-source "${SCRIPT_DIR}/scripts/lib/runtime-common.sh"
+# shellcheck source=ops/lib/runtime-common.sh
+source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
 
 load_env_defaults "${ENV_FILE}"
 ensure_run_dir
@@ -67,7 +67,7 @@ fi
 (
   cd "${REPO_ROOT}"
   export SERVER_PORT
-  exec bash "${REPO_ROOT}/scripts/start-backend-helper.sh"
+  exec bash "${REPO_ROOT}/ops/start-backend-helper.sh"
 ) >> "${BACKEND_LOG_FILE}" 2>&1 &
 backend_pid=$!
 printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"

@@ -99,6 +99,10 @@ local-genai-lab/
 ├── restart.sh
 ├── status.sh
 ├── Makefile
+├── ops/
+│   ├── lib/
+│   ├── tests/
+│   └── README.md
 ├── backend/
 │   ├── src/
 │   ├── pom.xml
@@ -123,6 +127,8 @@ local-genai-lab/
 Script separation:
 
 - top-level scripts and the root `Makefile` are the public local app lifecycle interface
+- `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
+- `scripts/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
 - `scripts/` contains backend helpers, MCP-facing operational scripts, report generators, and shell tests
 
 ## Prerequisites
@@ -287,9 +293,10 @@ Artifact API note:
 The shell tooling lives under [`scripts/`](./scripts). Useful entrypoints:
 
 ```bash
-cd scripts
 make help
 make check-app
+cd scripts
+make help
 make test
 make audit
 make s3-cloudwatch BUCKET=example.com
@@ -306,6 +313,7 @@ make s3-cloudwatch BUCKET=example.com
 - [docs/troubleshooting.md](./docs/troubleshooting.md): common local runtime problems and practical fixes
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
 - [frontend/README.md](./frontend/README.md): frontend-specific details
+- [ops/README.md](./ops/README.md): local runtime helpers and lifecycle support files
 - [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
 - [mcp/README.md](./mcp/README.md): local MCP server details
 - [docs/providers.md](./docs/providers.md): switching between Ollama and Bedrock
@@ -320,7 +328,7 @@ make s3-cloudwatch BUCKET=example.com
 
 - not designed as a multi-tenant or internet-facing production service
 - MCP tool execution currently uses short-lived local subprocesses, which is acceptable for this local lab but not tuned for shared high-concurrency use
-- backend health/readiness is backend-only; whole-stack local checks still belong to `scripts/check-app.sh`
+- backend health/readiness is backend-only; whole-stack local checks belong to `ops/check-app.sh`
 - artifact access is intentionally read-only and bounded to the configured reports directory
 - Bedrock and AWS tool flows depend on your local AWS credentials and runtime environment being configured correctly
 - some operational choices favor simple local behavior over production-style resilience, especially around local process orchestration and developer-machine assumptions

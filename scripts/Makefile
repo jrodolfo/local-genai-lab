@@ -9,7 +9,7 @@ BUCKET ?=
 REGION ?=
 DAYS ?=
 
-.PHONY: help reports lint test audit s3-cloudwatch check-app run-backend
+.PHONY: help reports lint test audit s3-cloudwatch
 
 help:
 	@printf '%s\n' \
@@ -18,22 +18,13 @@ help:
 		'  make reports  Create the reports directory' \
 		'  make lint     Check Bash syntax for the shell scripts' \
 		'  make test     Run local shell tests without AWS access' \
-		'  make check-app  Verify backend, frontend, and optional Ollama health' \
-		'  make run-backend  Start only the backend helper using APP_MODEL_PROVIDER and any configured providers' \
-		'                Optional: APP_MODEL_PROVIDER=bedrock' \
-		'                Optional: APP_MODEL_PROVIDER=huggingface' \
-		'                Optional: HUGGINGFACE_API_TOKEN=hf_xxx' \
 		'  make audit    Run the AWS regional audit report' \
 		'                Optional: make audit REGIONS="us-east-2"' \
 		'                Optional: make audit SERVICES="sagemaker ec2"' \
 		'  make s3-cloudwatch BUCKET=example.com' \
 		'                Optional: make s3-cloudwatch BUCKET=example.com REGION=us-east-2' \
 		'                Optional: make s3-cloudwatch BUCKET=example.com DAYS=30' \
-		'  Optional env for make check-app:' \
-		'                BACKEND_URL=http://localhost:8080' \
-		'                FRONTEND_URL=http://localhost:5173' \
-		'                OLLAMA_URL=http://localhost:11434' \
-		'                CHECK_OLLAMA=true'
+		'  See the repository root Makefile for app lifecycle and local runtime checks.'
 
 reports:
 	@mkdir -p "$(REPORTS_DIR)"
@@ -41,19 +32,10 @@ reports:
 lint:
 	@bash -n "$(SCRIPT)"
 	@bash -n "$(S3_CLOUDWATCH_SCRIPT)"
-	@bash -n ./check-app.sh
-	@bash -n ./start-backend-helper.sh
 
 test:
 	@bash ./tests/test.sh
 	@bash ./tests/test-s3-cloudwatch.sh
-	@bash ./tests/test-start-backend-helper.sh
-
-check-app:
-	@./check-app.sh
-
-run-backend:
-	@./start-backend-helper.sh
 
 audit: reports lint
 	@"$(SCRIPT)" \

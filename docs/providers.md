@@ -26,7 +26,7 @@ Default local workflow:
 
 ```bash
 cd scripts
-./start-backend-helper.sh
+./ops/start-backend-helper.sh
 ```
 
 The unified startup script uses:
@@ -38,17 +38,17 @@ Examples:
 
 ```bash
 cd scripts
-APP_MODEL_PROVIDER=ollama ./start-backend-helper.sh
+APP_MODEL_PROVIDER=ollama ./ops/start-backend-helper.sh
 ```
 
 ```bash
 cd scripts
-APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./start-backend-helper.sh
+APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./ops/start-backend-helper.sh
 ```
 
 ```bash
 cd scripts
-APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx ./start-backend-helper.sh
+APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx ./ops/start-backend-helper.sh
 ```
 
 ## Ollama
@@ -93,14 +93,14 @@ Example with an explicit AWS profile:
 
 ```bash
 cd scripts
-APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./start-backend-helper.sh
+APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./ops/start-backend-helper.sh
 ```
 
 Override the region or model when needed:
 
 ```bash
 cd scripts
-APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 ./start-backend-helper.sh
+APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 ./ops/start-backend-helper.sh
 ```
 
 ## Hugging Face
@@ -126,7 +126,7 @@ APP_MODEL_PROVIDER=huggingface \
 HUGGINGFACE_API_TOKEN=hf_xxx \
 HUGGINGFACE_DEFAULT_MODEL=Qwen/Qwen2.5-72B-Instruct \
 HUGGINGFACE_MODELS=Qwen/Qwen2.5-72B-Instruct,meta-llama/Llama-3.1-8B-Instruct \
-./start-backend-helper.sh
+./ops/start-backend-helper.sh
 ```
 
 ## Verification
@@ -139,8 +139,7 @@ After the backend starts, verify the default provider:
 You can also run the local smoke check:
 
 ```bash
-cd scripts
-./check-app.sh
+./ops/check-app.sh
 ```
 
 ## Notes

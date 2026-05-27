@@ -3,8 +3,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=scripts/lib/runtime-common.sh
-source "${SCRIPT_DIR}/scripts/lib/runtime-common.sh"
+# shellcheck source=ops/lib/runtime-common.sh
+source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
 
 ensure_run_dir
 clear_stale_pid_file "${BACKEND_PID_FILE}"
