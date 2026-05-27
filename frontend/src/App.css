@@ -55,7 +55,10 @@
 }
 
 .app-nav__hint {
+  background: rgba(248, 250, 252, 0.95);
+  border-bottom: 1px solid rgba(203, 213, 225, 0.85);
   color: #64748b;
   font-size: 0.9rem;
   margin: 0;
+  padding: 0.55rem 1rem 0.7rem;
 }

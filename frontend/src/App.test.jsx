@@ -11,7 +11,7 @@ describe('App mode navigation', () => {
     });
   });
 
-  it('renders docs rag as a visible but disabled mode when rag is not enabled', async () => {
+  it('renders rag as a visible but disabled mode when rag is not enabled', async () => {
     server.use(
       http.get('/api/rag/status', () => HttpResponse.json({
         enabled: false,
@@ -39,15 +39,15 @@ describe('App mode navigation', () => {
     render(<App />);
 
     const chatTab = await screen.findByRole('tab', { name: /chat/i });
-    const ragTab = await screen.findByRole('tab', { name: /docs rag/i });
+    const ragTab = await screen.findByRole('tab', { name: /^rag$/i });
     expect(chatTab).toBeDisabled();
     expect(chatTab).toHaveAttribute('aria-selected', 'true');
     expect(ragTab).toBeDisabled();
     expect(ragTab).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByText(/Enable `RAG_ENABLED=true` in the backend to use Docs RAG\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Enable `RAG_ENABLED=true` in the backend to use RAG mode\./i)).toBeInTheDocument();
   });
 
-  it('lets the user switch to docs rag when rag is enabled', async () => {
+  it('lets the user switch to rag when rag is enabled', async () => {
     server.use(
       http.get('/api/rag/status', () => HttpResponse.json({
         enabled: true,
@@ -79,7 +79,7 @@ describe('App mode navigation', () => {
     const user = userEvent.setup();
 
     const chatTab = await screen.findByRole('tab', { name: /chat/i });
-    const ragTab = await screen.findByRole('tab', { name: /docs rag/i });
+    const ragTab = await screen.findByRole('tab', { name: /^rag$/i });
 
     expect(chatTab).toBeDisabled();
     expect(ragTab).not.toBeDisabled();

@@ -60,13 +60,13 @@ function App() {
               setMode('rag');
             }}
           >
-            Docs RAG
+            RAG
           </button>
         </div>
-        {ragStatusLoaded && !ragEnabled ? (
-          <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use Docs RAG.</p>
-        ) : null}
       </header>
+      {ragStatusLoaded && !ragEnabled ? (
+        <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use RAG mode.</p>
+      ) : null}
       {mode === 'rag' && ragEnabled ? <RagWorkspace /> : <Home />}
     </div>
   );
