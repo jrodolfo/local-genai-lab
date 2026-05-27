@@ -79,6 +79,12 @@ public class ChatModelProviderRegistry {
         return providers.keySet().stream().sorted().toList();
     }
 
+    /**
+     * Normalizes the provider name by trimming and converting to lowercase.
+     *
+     * @param provider the raw provider name
+     * @return the normalized provider name
+     */
     private String normalizeProvider(String provider) {
         if (provider == null || provider.isBlank()) {
             return "ollama";

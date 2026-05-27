@@ -36,6 +36,9 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public ChatResponse chat(
             ProviderPrompt prompt,
             String model,
@@ -50,6 +53,9 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         ChatResponse response = chat(prompt, model, null, null, null, null);
         tokenConsumer.accept(response.response());
@@ -60,6 +66,9 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public String resolveModel(String model) {
         String resolvedModel = normalizeModel(model);
         if (resolvedModel == null) {

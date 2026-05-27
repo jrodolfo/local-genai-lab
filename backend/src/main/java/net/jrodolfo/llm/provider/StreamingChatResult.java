@@ -15,6 +15,12 @@ public record StreamingChatResult(
         Runnable cancel
 ) {
 
+    /**
+     * Constructs a new StreamingChatResult.
+     *
+     * @param completion a future that completes when the stream is finished
+     * @param cancel a runnable to cancel the ongoing stream
+     */
     public StreamingChatResult {
         cancel = cancel != null ? cancel : () -> { };
     }

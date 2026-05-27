@@ -27,6 +27,9 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public ChatResponse chat(
             ProviderPrompt prompt,
             String model,
@@ -53,6 +56,9 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         String resolvedModel = ollamaClient.resolveModel(model);
         long startedAt = System.nanoTime();
@@ -71,6 +77,9 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     }
 
     @Override
+    /**
+     * {@inheritDoc}
+     */
     public String resolveModel(String model) {
         return ollamaClient.resolveModel(model);
     }
