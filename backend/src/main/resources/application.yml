@@ -55,3 +55,11 @@ mcp:
   working-directory: ${MCP_WORKING_DIRECTORY:mcp}
   startup-timeout-seconds: ${MCP_STARTUP_TIMEOUT_SECONDS:10}
   tool-timeout-seconds: ${MCP_TOOL_TIMEOUT_SECONDS:120}
+
+rag:
+  enabled: ${RAG_ENABLED:false}
+  corpus-root: ${RAG_CORPUS_ROOT:docs}
+  max-chunk-size: ${RAG_MAX_CHUNK_SIZE:900}
+  chunk-overlap: ${RAG_CHUNK_OVERLAP:160}
+  top-k: ${RAG_TOP_K:4}
+  retrieval-mode: ${RAG_RETRIEVAL_MODE:lexical}

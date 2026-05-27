@@ -4,7 +4,8 @@ export function defaultRuntimeHandlers(overrides = {}) {
   const {
     models,
     status,
-    sessions
+    sessions,
+    ragStatus
   } = overrides;
 
   return [
@@ -19,6 +20,14 @@ export function defaultRuntimeHandlers(overrides = {}) {
       provider: 'ollama',
       status: 'ready',
       message: 'Ollama is reachable and ready.'
+    })),
+    http.get('/api/rag/status', () => HttpResponse.json(ragStatus || {
+      enabled: false,
+      indexed: false,
+      corpusRoot: '/repo/docs',
+      documentCount: 0,
+      chunkCount: 0,
+      retrievalMode: 'lexical'
     })),
     http.get('/api/sessions', () => HttpResponse.json(sessions || []))
   ];
