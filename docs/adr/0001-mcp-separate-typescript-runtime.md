@@ -60,7 +60,7 @@ Negative:
 
 - [McpService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/McpService.java)
 - [mcp/README.md](/Users/jrodolfo/workspace/aws/local-genai-lab/mcp/README.md)
-- [run-backend.sh](/Users/jrodolfo/workspace/aws/local-genai-lab/scripts/run-backend.sh)
+- [start-backend-helper.sh](/Users/jrodolfo/workspace/aws/local-genai-lab/scripts/start-backend-helper.sh)
 
 ## Revisit Triggers
 

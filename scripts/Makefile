@@ -19,7 +19,7 @@ help:
 		'  make lint     Check Bash syntax for the shell scripts' \
 		'  make test     Run local shell tests without AWS access' \
 		'  make check-app  Verify backend, frontend, and optional Ollama health' \
-		'  make run-backend  Start backend using APP_MODEL_PROVIDER and any configured providers' \
+		'  make run-backend  Start only the backend helper using APP_MODEL_PROVIDER and any configured providers' \
 		'                Optional: APP_MODEL_PROVIDER=bedrock' \
 		'                Optional: APP_MODEL_PROVIDER=huggingface' \
 		'                Optional: HUGGINGFACE_API_TOKEN=hf_xxx' \
@@ -42,18 +42,18 @@ lint:
 	@bash -n "$(SCRIPT)"
 	@bash -n "$(S3_CLOUDWATCH_SCRIPT)"
 	@bash -n ./check-app.sh
-	@bash -n ./run-backend.sh
+	@bash -n ./start-backend-helper.sh
 
 test:
 	@bash ./tests/test.sh
 	@bash ./tests/test-s3-cloudwatch.sh
-	@bash ./tests/test-run-backend.sh
+	@bash ./tests/test-start-backend-helper.sh
 
 check-app:
 	@./check-app.sh
 
 run-backend:
-	@./run-backend.sh
+	@./start-backend-helper.sh
 
 audit: reports lint
 	@"$(SCRIPT)" \

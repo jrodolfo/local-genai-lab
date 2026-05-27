@@ -53,7 +53,7 @@ Example:
 - not `amazon.nova-pro-v1:0`
 
 Fix:
-- start the backend with `APP_MODEL_PROVIDER=bedrock ./run-backend.sh`
+- start only the backend helper with `APP_MODEL_PROVIDER=bedrock ./start-backend-helper.sh`
 - or set `BEDROCK_MODEL_ID` to the correct inference profile
 
 See [providers.md](./providers.md) for the Bedrock startup flow.

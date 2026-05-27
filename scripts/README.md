@@ -94,7 +94,7 @@ Key files:
 - `aws-region-audit-report.sh`: regional AWS audit report generator
 - `aws-s3-cloudwatch-report.sh`: focused S3 CloudWatch report generator for one bucket
 - `check-app.sh`: local stack smoke-check script
-- `run-backend.sh`: start the backend with `APP_MODEL_PROVIDER` and all configured providers
+- `start-backend-helper.sh`: start only the backend with `APP_MODEL_PROVIDER` and all configured providers
 - `.env.example`: sample multi-provider environment file for local startup
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests

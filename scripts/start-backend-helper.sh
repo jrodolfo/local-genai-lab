@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts the Spring Boot backend with the providers configured for the current local environment.
+# Starts only the Spring Boot backend with the providers configured for the current local environment.
 #
 # The script auto-loads the repo-local .env file for unset variables only, so explicit shell
 # overrides still win. Use APP_MODEL_PROVIDER to choose the startup default provider while keeping

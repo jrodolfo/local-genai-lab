@@ -67,7 +67,7 @@ fi
 (
   cd "${REPO_ROOT}"
   export SERVER_PORT
-  exec bash "${REPO_ROOT}/scripts/run-backend.sh"
+  exec bash "${REPO_ROOT}/scripts/start-backend-helper.sh"
 ) >> "${BACKEND_LOG_FILE}" 2>&1 &
 backend_pid=$!
 printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"

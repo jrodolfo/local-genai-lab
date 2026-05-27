@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-SCRIPT_PATH="$ROOT_DIR/run-backend.sh"
+SCRIPT_PATH="$ROOT_DIR/start-backend-helper.sh"
 
 assert_contains() {
   local haystack="$1"
@@ -58,13 +58,13 @@ test_invalid_default_provider_fails_clearly() {
   env_file="${tmp_dir}/test.env"
   : > "${env_file}"
 
-  if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=invalid bash "${SCRIPT_PATH}" >/tmp/run-backend-invalid.out 2>/tmp/run-backend-invalid.err; then
+  if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=invalid bash "${SCRIPT_PATH}" >/tmp/start-backend-helper-invalid.out 2>/tmp/start-backend-helper-invalid.err; then
     printf 'expected invalid APP_MODEL_PROVIDER to fail\n' >&2
     exit 1
   fi
 
-  assert_contains "$(cat /tmp/run-backend-invalid.err)" "APP_MODEL_PROVIDER must be one of: ollama, bedrock, huggingface."
-  rm -f /tmp/run-backend-invalid.out /tmp/run-backend-invalid.err
+  assert_contains "$(cat /tmp/start-backend-helper-invalid.err)" "APP_MODEL_PROVIDER must be one of: ollama, bedrock, huggingface."
+  rm -f /tmp/start-backend-helper-invalid.out /tmp/start-backend-helper-invalid.err
   rm -rf "${tmp_dir}"
 }
 
@@ -75,13 +75,13 @@ test_huggingface_default_requires_token() {
   env_file="${tmp_dir}/test.env"
   : > "${env_file}"
 
-  if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=huggingface bash "${SCRIPT_PATH}" >/tmp/run-backend-hf.out 2>/tmp/run-backend-hf.err; then
+  if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN= bash "${SCRIPT_PATH}" >/tmp/start-backend-helper-hf.out 2>/tmp/start-backend-helper-hf.err; then
     printf 'expected Hugging Face default provider without token to fail\n' >&2
     exit 1
   fi
 
-  assert_contains "$(cat /tmp/run-backend-hf.err)" "HUGGINGFACE_API_TOKEN is required when APP_MODEL_PROVIDER=huggingface."
-  rm -f /tmp/run-backend-hf.out /tmp/run-backend-hf.err
+  assert_contains "$(cat /tmp/start-backend-helper-hf.err)" "HUGGINGFACE_API_TOKEN is required when APP_MODEL_PROVIDER=huggingface."
+  rm -f /tmp/start-backend-helper-hf.out /tmp/start-backend-helper-hf.err
   rm -rf "${tmp_dir}"
 }
 
@@ -90,7 +90,7 @@ main() {
   test_shell_env_overrides_env_file
   test_invalid_default_provider_fails_clearly
   test_huggingface_default_requires_token
-  printf 'run-backend tests passed\n'
+  printf 'start-backend-helper tests passed\n'
 }
 
 main "$@"

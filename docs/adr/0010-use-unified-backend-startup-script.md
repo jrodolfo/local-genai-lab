@@ -10,7 +10,7 @@ The project originally had provider-specific backend startup scripts. As the sys
 
 Use one unified backend startup script:
 
-- `scripts/run-backend.sh`
+- `scripts/start-backend-helper.sh`
 
 That script auto-loads repo-local `.env` when present and starts the backend with the configured provider set, while `APP_MODEL_PROVIDER` selects the default provider.
 
