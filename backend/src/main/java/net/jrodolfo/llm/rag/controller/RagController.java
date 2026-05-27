@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/**
+ * REST controller for RAG (Retrieval-Augmented Generation) operations.
+ * Provides endpoints for checking status, rebuilding the index, and querying the RAG system.
+ */
 @RestController
 @RequestMapping("/api/rag")
 @Validated
@@ -29,6 +33,13 @@ public class RagController {
     private final RagCorpusService ragCorpusService;
     private final RagAnswerService ragAnswerService;
 
+    /**
+     * Constructs a new RagController with the necessary services.
+     *
+     * @param ragProperties   The configuration properties for RAG.
+     * @param ragCorpusService The service responsible for managing the document corpus.
+     * @param ragAnswerService The service responsible for generating RAG-based answers.
+     */
     public RagController(
             RagProperties ragProperties,
             RagCorpusService ragCorpusService,
@@ -39,6 +50,12 @@ public class RagController {
         this.ragAnswerService = ragAnswerService;
     }
 
+    /**
+     * Retrieves the current status of the RAG system.
+     *
+     * @return A response containing status information, such as whether RAG is enabled,
+     *         if an index is loaded, and the number of documents/chunks.
+     */
     @GetMapping("/status")
     public RagStatusResponse status() {
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.snapshot();
@@ -52,6 +69,13 @@ public class RagController {
         );
     }
 
+    /**
+     * Rebuilds the RAG index by scanning the corpus root directory.
+     * This operation may take some time depending on the size of the corpus.
+     *
+     * @return A response containing details of the newly created index.
+     * @throws IllegalStateException if RAG is disabled.
+     */
     @PostMapping("/index")
     public ResponseEntity<RagIndexResponse> index() {
         ensureEnabled();
@@ -64,6 +88,13 @@ public class RagController {
         ));
     }
 
+    /**
+     * Processes a RAG query to generate an answer based on the loaded corpus.
+     *
+     * @param request The query request containing the question and model details.
+     * @return A response containing the generated answer and supporting context.
+     * @throws IllegalStateException if RAG is disabled.
+     */
     @PostMapping("/query")
     public ResponseEntity<RagQueryResponse> query(@Valid @RequestBody RagQueryRequest request) {
         ensureEnabled();
@@ -75,12 +106,23 @@ public class RagController {
         ));
     }
 
+    /**
+     * Handles IllegalStateException by returning an appropriate HTTP error status and message.
+     *
+     * @param ex The exception that was thrown.
+     * @return A response entity containing the error message.
+     */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         HttpStatus status = "RAG is disabled.".equals(ex.getMessage()) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(Map.of("error", ex.getMessage()));
     }
 
+    /**
+     * Ensures that the RAG system is enabled before proceeding with an operation.
+     *
+     * @throws IllegalStateException if RAG is disabled in the configuration.
+     */
     private void ensureEnabled() {
         if (!ragProperties.enabled()) {
             throw new IllegalStateException("RAG is disabled.");
