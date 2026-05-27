@@ -43,6 +43,16 @@ public class ProviderStatusService {
     private final Duration statusCacheTtl;
     private final ConcurrentHashMap<String, CachedStatus> cachedStatuses = new ConcurrentHashMap<>();
 
+    /**
+     * Constructs a new ProviderStatusService.
+     *
+     * @param chatModelProviderRegistry the registry of chat model providers
+     * @param ollamaProperties properties for Ollama
+     * @param bedrockProperties properties for AWS Bedrock
+     * @param huggingFaceProperties properties for Hugging Face
+     * @param ollamaClient client for Ollama
+     * @param huggingFaceClient client for Hugging Face
+     */
     @Autowired
     public ProviderStatusService(
             ChatModelProviderRegistry chatModelProviderRegistry,
@@ -64,6 +74,18 @@ public class ProviderStatusService {
         );
     }
 
+    /**
+     * Package-private constructor for testing purposes.
+     *
+     * @param chatModelProviderRegistry the registry of chat model providers
+     * @param ollamaProperties properties for Ollama
+     * @param bedrockProperties properties for AWS Bedrock
+     * @param huggingFaceProperties properties for Hugging Face
+     * @param ollamaClient client for Ollama
+     * @param huggingFaceClient client for Hugging Face
+     * @param clock the clock to use for timestamps
+     * @param statusCacheTtl the TTL for cached statuses
+     */
     ProviderStatusService(
             ChatModelProviderRegistry chatModelProviderRegistry,
             OllamaProperties ollamaProperties,
@@ -84,6 +106,12 @@ public class ProviderStatusService {
         this.statusCacheTtl = statusCacheTtl;
     }
 
+    /**
+     * Gets the status of a specific provider.
+     *
+     * @param provider the provider name
+     * @return the provider status response
+     */
     public ProviderStatusResponse getProviderStatus(String provider) {
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
         chatModelProviderRegistry.get(resolvedProvider);
@@ -102,6 +130,11 @@ public class ProviderStatusService {
         return response;
     }
 
+    /**
+     * Checks and returns the status of Ollama.
+     *
+     * @return the Ollama status response
+     */
     private ProviderStatusResponse ollamaStatus() {
         Instant now = Instant.now(clock);
         try {
@@ -134,6 +167,11 @@ public class ProviderStatusService {
         }
     }
 
+    /**
+     * Checks and returns the status of AWS Bedrock.
+     *
+     * @return the Bedrock status response
+     */
     private ProviderStatusResponse bedrockStatus() {
         Instant now = Instant.now(clock);
         boolean regionConfigured = normalize(bedrockProperties.region()) != null;
@@ -150,6 +188,11 @@ public class ProviderStatusService {
         return new ProviderStatusResponse("bedrock", "ready", "Bedrock is configured and ready.", now.toString());
     }
 
+    /**
+     * Checks and returns the status of Hugging Face.
+     *
+     * @return the Hugging Face status response
+     */
     private ProviderStatusResponse huggingFaceStatus() {
         Instant now = Instant.now(clock);
         boolean tokenConfigured = normalize(huggingFaceProperties.apiToken()) != null;
@@ -226,6 +269,12 @@ public class ProviderStatusService {
         );
     }
 
+    /**
+     * Normalizes a string value by trimming and returning null if blank.
+     *
+     * @param value the string value
+     * @return the normalized value or null
+     */
     private String normalize(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -233,6 +282,12 @@ public class ProviderStatusService {
         return value.trim();
     }
 
+    /**
+     * Internal record to store cached provider status.
+     *
+     * @param response the provider status response
+     * @param checkedAt the timestamp when the status was checked
+     */
     private record CachedStatus(
             ProviderStatusResponse response,
             Instant checkedAt

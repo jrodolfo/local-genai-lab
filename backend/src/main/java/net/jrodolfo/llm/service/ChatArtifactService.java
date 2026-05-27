@@ -20,6 +20,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * Service for managing chat artifacts, such as reports and logs.
+ */
 @Service
 public class ChatArtifactService {
 
@@ -31,10 +34,21 @@ public class ChatArtifactService {
 
     private final Path reportsDirectory;
 
+    /**
+     * Constructs a new ChatArtifactService.
+     *
+     * @param properties application storage properties
+     */
     public ChatArtifactService(AppStorageProperties properties) {
         this.reportsDirectory = properties.resolvedReportsDirectory().toAbsolutePath().normalize();
     }
 
+    /**
+     * Lists files within a specific run directory.
+     *
+     * @param runDir the directory containing the run artifacts
+     * @return a list of artifact file responses
+     */
     public List<ArtifactFileResponse> listFiles(String runDir) {
         Path resolvedRunDir = resolveWithinReports(runDir);
         if (!Files.exists(resolvedRunDir)) {
@@ -55,6 +69,12 @@ public class ChatArtifactService {
         }
     }
 
+    /**
+     * Provides a preview of a specific artifact file.
+     *
+     * @param path the path to the artifact file
+     * @return an artifact preview response
+     */
     public ArtifactPreviewResponse previewFile(String path) {
         Path resolvedPath = resolveWithinReports(path);
         if (!Files.exists(resolvedPath)) {
@@ -86,6 +106,13 @@ public class ChatArtifactService {
         }
     }
 
+    /**
+     * Reads the content of a file for preview, respecting a maximum character limit.
+     *
+     * @param path the path to the file
+     * @return the preview content and truncation status
+     * @throws IOException if an I/O error occurs
+     */
     private PreviewContent readPreviewContent(Path path) throws IOException {
         StringBuilder builder = new StringBuilder(Math.min(MAX_PREVIEW_CHARACTERS, PREVIEW_BUFFER_SIZE));
         char[] buffer = new char[PREVIEW_BUFFER_SIZE];
@@ -109,6 +136,12 @@ public class ChatArtifactService {
         return new PreviewContent(builder.toString(), truncated);
     }
 
+    /**
+     * Converts a file path to an ArtifactFileResponse.
+     *
+     * @param path the path to the file
+     * @return an artifact file response
+     */
     private ArtifactFileResponse toArtifactFileResponse(Path path) {
         try {
             String relativePath = toApiRelativePath(path);
@@ -124,6 +157,12 @@ public class ChatArtifactService {
         }
     }
 
+    /**
+     * Resolves a requested path within the reports directory, ensuring it is safe and relative.
+     *
+     * @param requestedPath the path requested by the client
+     * @return the resolved absolute and normalized path
+     */
     private Path resolveWithinReports(String requestedPath) {
         if (requestedPath == null || requestedPath.isBlank()) {
             throw new ArtifactAccessException(HttpStatus.BAD_REQUEST, "Artifact path must not be blank.");
@@ -142,15 +181,33 @@ public class ChatArtifactService {
         throw new ArtifactAccessException(HttpStatus.BAD_REQUEST, "Artifact path is outside the allowed reports directory.");
     }
 
+    /**
+     * Checks if a file is previewable based on its extension.
+     *
+     * @param path the path to the file
+     * @return true if the file is previewable, false otherwise
+     */
     private boolean isPreviewable(Path path) {
         String lowerName = path.getFileName().toString().toLowerCase(Locale.ROOT);
         return PREVIEWABLE_EXTENSIONS.stream().anyMatch(lowerName::endsWith);
     }
 
+    /**
+     * Converts a file path to a relative path used in the API.
+     *
+     * @param path the path to the file
+     * @return the API-relative path string
+     */
     private String toApiRelativePath(Path path) {
         return reportsDirectory.relativize(path).toString().replace('\\', '/');
     }
 
+    /**
+     * Determines the content type for a file based on its extension.
+     *
+     * @param path the path to the file
+     * @return the content type string
+     */
     private String contentTypeFor(Path path) {
         String lowerName = path.getFileName().toString().toLowerCase(Locale.ROOT);
         if (lowerName.endsWith(".json")) {
@@ -162,6 +219,12 @@ public class ChatArtifactService {
         return "text/plain";
     }
 
+    /**
+     * Internal record to hold preview content and its truncation status.
+     *
+     * @param content the preview content
+     * @param truncated true if the content was truncated, false otherwise
+     */
     private record PreviewContent(String content, boolean truncated) {
     }
 }

@@ -43,6 +43,17 @@ public class ChatOrchestratorService {
     private final Path reportsDirectory;
     private static final ToolPhaseListener NOOP_TOOL_PHASE_LISTENER = (phaseType, toolName) -> { };
 
+    /**
+     * Constructs a new ChatOrchestratorService.
+     *
+     * @param chatModelProviderRegistry the registry of chat model providers
+     * @param mcpService the service for MCP tools
+     * @param toolDecisionService the service for making tool decisions
+     * @param chatMemoryService the service for managing chat memory
+     * @param chatPromptBuilder the builder for chat prompts
+     * @param chatSessionService the service for chat sessions
+     * @param appStorageProperties application storage properties
+     */
     public ChatOrchestratorService(
             ChatModelProviderRegistry chatModelProviderRegistry,
             McpService mcpService,
@@ -61,10 +72,29 @@ public class ChatOrchestratorService {
         this.reportsDirectory = appStorageProperties.resolvedReportsDirectory().toAbsolutePath().normalize();
     }
 
+    /**
+     * Executes a chat turn.
+     *
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param sessionId the session ID
+     * @return the chat response
+     */
     public ChatResponse chat(String message, String provider, String model, String sessionId) {
         return chat(message, provider, model, sessionId, null);
     }
 
+    /**
+     * Executes a chat turn with a request ID.
+     *
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param sessionId the session ID
+     * @param requestId the request ID for logging
+     * @return the chat response
+     */
     public ChatResponse chat(String message, String provider, String model, String sessionId, String requestId) {
         PreparedChat preparedChat = prepareChat(message, provider, model, sessionId, requestId);
         if (preparedChat.immediateResponse() != null) {
@@ -95,6 +125,18 @@ public class ChatOrchestratorService {
      * <p>The result is either an immediate response for clarification/failure cases or a
      * prompt-backed continuation that can be executed later.
      */
+    /**
+     * Prepares a chat turn before the controller chooses normal or streaming provider execution.
+     *
+     * <p>The result is either an immediate response for clarification/failure cases or a
+     * prompt-backed continuation that can be executed later.
+     *
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param sessionId the session ID
+     * @return the prepared chat object
+     */
     public PreparedChat prepareChat(String message, String provider, String model, String sessionId) {
         return prepareChat(message, provider, model, sessionId, null);
     }
@@ -102,10 +144,31 @@ public class ChatOrchestratorService {
     /**
      * Prepares a chat turn and includes the current request id in orchestration logs.
      */
+    /**
+     * Prepares a chat turn and includes the current request id in orchestration logs.
+     *
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param sessionId the session ID
+     * @param requestId the request ID for logging
+     * @return the prepared chat object
+     */
     public PreparedChat prepareChat(String message, String provider, String model, String sessionId, String requestId) {
         return prepareChat(message, provider, model, sessionId, requestId, NOOP_TOOL_PHASE_LISTENER);
     }
 
+    /**
+     * Prepares a chat turn with full context and a tool phase listener.
+     *
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param sessionId the session ID
+     * @param requestId the request ID for logging
+     * @param toolPhaseListener the listener for tool execution phases
+     * @return the prepared chat object
+     */
     public PreparedChat prepareChat(
             String message,
             String provider,
@@ -230,6 +293,14 @@ public class ChatOrchestratorService {
         }
     }
 
+    /**
+     * Completes a prepared chat with the assistant's response.
+     *
+     * @param preparedChat the prepared chat object
+     * @param assistantResponse the assistant's response text
+     * @param providerMetadata metadata from the model provider
+     * @return the updated and saved chat session
+     */
     public ChatSession completePreparedChat(
             PreparedChat preparedChat,
             String assistantResponse,
@@ -238,6 +309,15 @@ public class ChatOrchestratorService {
         return completePreparedChat(preparedChat, assistantResponse, providerMetadata, null);
     }
 
+    /**
+     * Completes a prepared chat with the assistant's response and a request ID.
+     *
+     * @param preparedChat the prepared chat object
+     * @param assistantResponse the assistant's response text
+     * @param providerMetadata metadata from the model provider
+     * @param requestId the request ID for logging
+     * @return the updated and saved chat session
+     */
     public ChatSession completePreparedChat(
             PreparedChat preparedChat,
             String assistantResponse,
@@ -264,6 +344,16 @@ public class ChatOrchestratorService {
         );
     }
 
+    /**
+     * Resolves the tool decision based on the current session state and the new message.
+     *
+     * @param session the current chat session
+     * @param message the user message
+     * @param provider the model provider name
+     * @param model the model name
+     * @param routedDecision the initial routing decision
+     * @return the resolved tool decision
+     */
     private ChatToolRouterService.ToolDecision resolveDecision(
             ChatSession session,
             String message,
@@ -287,6 +377,12 @@ public class ChatOrchestratorService {
         return routedDecision;
     }
 
+    /**
+     * Creates a pending tool call from a tool decision if clarification is needed.
+     *
+     * @param decision the tool decision
+     * @return the pending tool call, or null if not needed
+     */
     private PendingToolCall pendingToolCallForDecision(ChatToolRouterService.ToolDecision decision) {
         if (!decision.needsClarification()) {
             return null;
@@ -317,10 +413,22 @@ public class ChatOrchestratorService {
         };
     }
 
+    /**
+     * Converts a internal pending tool call to a DTO response.
+     *
+     * @param pendingToolCall the pending tool call
+     * @return the pending tool call response DTO
+     */
     private PendingToolCallResponse toPendingToolResponse(PendingToolCall pendingToolCall) {
         return chatSessionService.toPendingToolResponse(pendingToolCall);
     }
 
+    /**
+     * Executes the tool specified in the decision.
+     *
+     * @param decision the tool decision
+     * @return the result of the tool execution
+     */
     private ToolExecution executeTool(ChatToolRouterService.ToolDecision decision) {
         return switch (decision.type()) {
             case LIST_REPORTS -> {
@@ -354,6 +462,14 @@ public class ChatOrchestratorService {
         };
     }
 
+    /**
+     * Builds the conversation prompt for the model provider.
+     *
+     * @param session the chat session
+     * @param currentUserMessage the current user message
+     * @param toolContext context from a tool execution, if any
+     * @return the provider prompt
+     */
     private ProviderPrompt buildConversationPrompt(ChatSession session, String currentUserMessage, ChatPromptBuilder.ToolContext toolContext) {
         List<net.jrodolfo.llm.model.ChatSessionMessage> history = chatMemoryService.historyBeforeLatestUserMessage(session);
         if (toolContext == null) {
@@ -362,10 +478,23 @@ public class ChatOrchestratorService {
         return ProviderPrompt.forPrompt(chatPromptBuilder.buildToolAssistedPrompt(currentUserMessage, history, toolContext));
     }
 
+    /**
+     * Builds a failure message to be returned to the user when a tool fails.
+     *
+     * @param decision the tool decision
+     * @param errorMessage the error message
+     * @return the failure message
+     */
     private String buildFailureMessage(ChatToolRouterService.ToolDecision decision, String errorMessage) {
         return "I tried to use the local tool `" + toolNameForDecision(decision) + "`, but it failed: " + errorMessage;
     }
 
+    /**
+     * Maps a decision type to a tool name string.
+     *
+     * @param decision the tool decision
+     * @return the tool name
+     */
     private String toolNameForDecision(ChatToolRouterService.ToolDecision decision) {
         return switch (decision.type()) {
             case LIST_REPORTS -> "list_recent_reports";
@@ -376,6 +505,12 @@ public class ChatOrchestratorService {
         };
     }
 
+    /**
+     * Extracts the latest run directory from a list of reports.
+     *
+     * @param result the result map containing reports
+     * @return the latest run directory
+     */
     @SuppressWarnings("unchecked")
     private String extractLatestRunDir(Map<String, Object> result) {
         List<Map<String, Object>> reports = (List<Map<String, Object>>) result.get("reports");
@@ -389,6 +524,12 @@ public class ChatOrchestratorService {
         return runDirValue;
     }
 
+    /**
+     * Summarizes the result of a list reports tool invocation.
+     *
+     * @param result the result map
+     * @return a summary string
+     */
     @SuppressWarnings("unchecked")
     private String summarizeListReports(Map<String, Object> result) {
         List<Map<String, Object>> reports = (List<Map<String, Object>>) result.get("reports");
@@ -396,6 +537,12 @@ public class ChatOrchestratorService {
         return "Found " + count + " recent report" + (count == 1 ? "" : "s") + ".";
     }
 
+    /**
+     * Summarizes the result of a read report tool invocation.
+     *
+     * @param result the result map
+     * @return a summary string
+     */
     @SuppressWarnings("unchecked")
     private String summarizeReadReport(Map<String, Object> result) {
         Map<String, Object> summary = nestedMap(result, "summary");
@@ -407,6 +554,12 @@ public class ChatOrchestratorService {
         );
     }
 
+    /**
+     * Summarizes the result of an AWS region audit tool invocation.
+     *
+     * @param result the result map
+     * @return a summary string
+     */
     @SuppressWarnings("unchecked")
     private String summarizeAudit(Map<String, Object> result) {
         Map<String, Object> summary = nestedMap(result, "summary");
@@ -417,6 +570,12 @@ public class ChatOrchestratorService {
         );
     }
 
+    /**
+     * Summarizes the result of an S3 report tool invocation.
+     *
+     * @param result the result map
+     * @return a summary string
+     */
     @SuppressWarnings("unchecked")
     private String summarizeS3Report(Map<String, Object> result) {
         Map<String, Object> summary = nestedMap(result, "summary");
@@ -427,6 +586,13 @@ public class ChatOrchestratorService {
         );
     }
 
+    /**
+     * Safely retrieves a nested map from a source map.
+     *
+     * @param source the source map
+     * @param key the key for the nested map
+     * @return the nested map, or an empty map if not found
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> nestedMap(Map<String, Object> source, String key) {
         Object value = source.get(key);
@@ -436,21 +602,49 @@ public class ChatOrchestratorService {
         return Map.of();
     }
 
+    /**
+     * Safely retrieves a value from a map or returns "unknown".
+     *
+     * @param map the map
+     * @param key the key
+     * @return the value or "unknown"
+     */
     private Object valueOrUnknown(Map<String, Object> map, String key) {
         Object value = map.get(key);
         return value == null ? "unknown" : value;
     }
 
+    /**
+     * Internal record to store tool execution results.
+     *
+     * @param toolName the name of the tool
+     * @param result the result map
+     * @param summary a summary of the result
+     */
     private record ToolExecution(
             String toolName,
             Map<String, Object> result,
             String summary
     ) {
+        /**
+         * Converts the tool result to a structured map for the frontend.
+         *
+         * @param reportsDirectory the reports directory
+         * @return the structured tool result
+         */
         Map<String, Object> toolResult(Path reportsDirectory) {
             return structuredToolResult(toolName, result, reportsDirectory);
         }
     }
 
+    /**
+     * Structures a tool result for the frontend based on the tool name.
+     *
+     * @param toolName the name of the tool
+     * @param result the raw result map
+     * @param reportsDirectory the reports directory
+     * @return the structured result map
+     */
     @SuppressWarnings("unchecked")
     private static Map<String, Object> structuredToolResult(String toolName, Map<String, Object> result, Path reportsDirectory) {
         return switch (toolName) {
@@ -507,6 +701,14 @@ public class ChatOrchestratorService {
         };
     }
 
+    /**
+     * Generates a relative path for an artifact within the reports directory.
+     *
+     * @param runDir the run directory
+     * @param fileName the file name
+     * @param reportsDirectory the reports directory
+     * @return the relative path string
+     */
     private static String artifactPath(Object runDir, String fileName, Path reportsDirectory) {
         if (!(runDir instanceof String runDirValue) || runDirValue.isBlank()) {
             return "";
@@ -514,6 +716,13 @@ public class ChatOrchestratorService {
         return artifactRelativePath(Path.of(runDirValue, fileName).toString(), reportsDirectory);
     }
 
+    /**
+     * Relativizes run directories in a list of reports.
+     *
+     * @param reportsValue the reports value
+     * @param reportsDirectory the reports directory
+     * @return the relativized reports
+     */
     @SuppressWarnings("unchecked")
     private static Object relativizeReports(Object reportsValue, Path reportsDirectory) {
         if (!(reportsValue instanceof List<?> reports)) {
@@ -536,6 +745,13 @@ public class ChatOrchestratorService {
                 .toList();
     }
 
+    /**
+     * Relativizes paths in failed steps.
+     *
+     * @param failedStepsValue the failed steps value
+     * @param reportsDirectory the reports directory
+     * @return the relativized failed steps
+     */
     @SuppressWarnings("unchecked")
     private static Object relativizeFailedSteps(Object failedStepsValue, Path reportsDirectory) {
         if (!(failedStepsValue instanceof List<?> failedSteps)) {
@@ -558,6 +774,13 @@ public class ChatOrchestratorService {
                 .toList();
     }
 
+    /**
+     * Relativizes a path string against the reports directory.
+     *
+     * @param pathValue the path value
+     * @param reportsDirectory the reports directory
+     * @return the relativized path string
+     */
     private static String artifactRelativePath(Object pathValue, Path reportsDirectory) {
         if (!(pathValue instanceof String rawPath) || rawPath.isBlank()) {
             return "";
@@ -579,6 +802,21 @@ public class ChatOrchestratorService {
      * <p>An instance contains either an {@code immediateResponse} or the prompt/session state
      * needed to execute and persist a model-backed reply.
      */
+    /**
+     * Lightweight hand-off object between orchestration and provider execution.
+     *
+     * <p>An instance contains either an {@code immediateResponse} or the prompt/session state
+     * needed to execute and persist a model-backed reply.
+     *
+     * @param provider the model provider
+     * @param prompt the provider prompt
+     * @param model the model name
+     * @param toolMetadata metadata about the tool used
+     * @param toolResult result of the tool execution
+     * @param pendingTool pending tool call response
+     * @param session the chat session
+     * @param immediateResponse immediate response, if any
+     */
     public record PreparedChat(
             ChatModelProvider provider,
             ProviderPrompt prompt,
@@ -589,6 +827,17 @@ public class ChatOrchestratorService {
             ChatSession session,
             ChatResponse immediateResponse
     ) {
+        /**
+         * Creates a PreparedChat for a prompt-based continuation.
+         *
+         * @param provider the model provider
+         * @param prompt the provider prompt
+         * @param model the model name
+         * @param toolMetadata metadata about the tool used
+         * @param toolResult result of the tool execution
+         * @param session the chat session
+         * @return a PreparedChat instance
+         */
         static PreparedChat forPrompt(
                 ChatModelProvider provider,
                 ProviderPrompt prompt,
@@ -600,13 +849,28 @@ public class ChatOrchestratorService {
             return new PreparedChat(provider, prompt, model, toolMetadata, toolResult, null, session, null);
         }
 
+        /**
+         * Creates a PreparedChat for an immediate response.
+         *
+         * @param response the immediate chat response
+         * @return a PreparedChat instance
+         */
         static PreparedChat forImmediateResponse(ChatResponse response) {
             return new PreparedChat(null, null, response.model(), response.tool(), response.toolResult(), response.pendingTool(), null, response);
         }
     }
 
+    /**
+     * Interface for listening to tool execution phases.
+     */
     @FunctionalInterface
     public interface ToolPhaseListener {
+        /**
+         * Called when a tool phase changes.
+         *
+         * @param phaseType the type of the phase
+         * @param toolName the name of the tool
+         */
         void onPhase(String phaseType, String toolName);
     }
 }

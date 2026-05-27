@@ -26,11 +26,22 @@ public class McpService {
     private final McpClient mcpClient;
     private final McpProperties mcpProperties;
 
+    /**
+     * Constructs a new McpService.
+     *
+     * @param mcpClient the MCP client
+     * @param mcpProperties properties for MCP configuration
+     */
     public McpService(McpClient mcpClient, McpProperties mcpProperties) {
         this.mcpClient = mcpClient;
         this.mcpProperties = mcpProperties;
     }
 
+    /**
+     * Lists available tools from the MCP client.
+     *
+     * @return a response containing the list of tools
+     */
     public McpToolListResponse listTools() {
         if (!mcpProperties.enabled()) {
             return new McpToolListResponse(false, List.of());
@@ -48,6 +59,12 @@ public class McpService {
         return new McpToolListResponse(true, tools);
     }
 
+    /**
+     * Runs an AWS region audit tool.
+     *
+     * @param request the audit request
+     * @return the tool invocation response
+     */
     public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
         if (request.regions() != null && !request.regions().isEmpty()) {
@@ -59,6 +76,12 @@ public class McpService {
         return new McpToolInvocationResponse("aws_region_audit", mcpClient.callTool("aws_region_audit", arguments));
     }
 
+    /**
+     * Runs an S3 CloudWatch report tool.
+     *
+     * @param request the report request
+     * @return the tool invocation response
+     */
     public McpToolInvocationResponse runS3CloudwatchReport(S3CloudwatchReportToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
         arguments.put("bucket", request.bucket().trim());
@@ -71,6 +94,12 @@ public class McpService {
         return new McpToolInvocationResponse("s3_cloudwatch_report", mcpClient.callTool("s3_cloudwatch_report", arguments));
     }
 
+    /**
+     * Lists recent reports using the MCP tool.
+     *
+     * @param request the list reports request
+     * @return the tool invocation response
+     */
     public McpToolInvocationResponse listRecentReports(ListReportsRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
         arguments.put("report_type", normalizeReportType(request.reportType()));
@@ -78,6 +107,12 @@ public class McpService {
         return new McpToolInvocationResponse("list_recent_reports", mcpClient.callTool("list_recent_reports", arguments));
     }
 
+    /**
+     * Reads a report summary using the MCP tool.
+     *
+     * @param request the read report summary request
+     * @return the tool invocation response
+     */
     public McpToolInvocationResponse readReportSummary(ReadReportSummaryToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
         arguments.put("run_dir", request.runDir().trim());
@@ -85,6 +120,12 @@ public class McpService {
         return new McpToolInvocationResponse("read_report_summary", mcpClient.callTool("read_report_summary", arguments));
     }
 
+    /**
+     * Normalizes the report type string.
+     *
+     * @param reportType the raw report type
+     * @return the normalized report type
+     */
     private String normalizeReportType(String reportType) {
         if (reportType == null || reportType.isBlank()) {
             return "all";

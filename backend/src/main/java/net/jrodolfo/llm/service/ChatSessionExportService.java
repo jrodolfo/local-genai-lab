@@ -8,9 +8,18 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 
+/**
+ * Service for exporting chat sessions to different formats, such as Markdown.
+ */
 @Service
 public class ChatSessionExportService {
 
+    /**
+     * Converts a chat session detail response to a Markdown string.
+     *
+     * @param session the chat session details
+     * @return the session exported as Markdown
+     */
     public String toMarkdown(ChatSessionDetailResponse session) {
         StringBuilder markdown = new StringBuilder();
         markdown.append("# ").append(valueOrFallback(session.title(), "Untitled session")).append("\n\n");
@@ -53,6 +62,12 @@ public class ChatSessionExportService {
         return markdown.toString().trim() + "\n";
     }
 
+    /**
+     * Appends information about a pending tool call to the Markdown builder.
+     *
+     * @param markdown the Markdown builder
+     * @param pendingTool the pending tool call details
+     */
     private void appendPendingTool(StringBuilder markdown, PendingToolCallResponse pendingTool) {
         if (pendingTool == null) {
             return;
@@ -69,6 +84,12 @@ public class ChatSessionExportService {
         markdown.append("\n");
     }
 
+    /**
+     * Appends model provider metadata to the Markdown builder.
+     *
+     * @param markdown the Markdown builder
+     * @param metadata the provider metadata
+     */
     private void appendProviderMetadata(StringBuilder markdown, ModelProviderMetadata metadata) {
         if (metadata == null) {
             return;
@@ -106,6 +127,12 @@ public class ChatSessionExportService {
         }
     }
 
+    /**
+     * Appends RAG sources to the Markdown builder.
+     *
+     * @param markdown the Markdown builder
+     * @param ragSources the list of RAG sources
+     */
     private void appendRagSources(StringBuilder markdown, java.util.List<net.jrodolfo.llm.model.ChatRagSourceChunk> ragSources) {
         if (ragSources == null || ragSources.isEmpty()) {
             return;
@@ -122,14 +149,33 @@ public class ChatSessionExportService {
         }
     }
 
+    /**
+     * Formats an Instant as a string.
+     *
+     * @param instant the instant to format
+     * @return the formatted string
+     */
     private String formatInstant(Instant instant) {
         return instant == null ? "unknown" : instant.toString();
     }
 
+    /**
+     * Returns the value or a fallback string if the value is blank.
+     *
+     * @param value the string value
+     * @param fallback the fallback string
+     * @return the value or the fallback
+     */
     private String valueOrFallback(String value, String fallback) {
         return hasText(value) ? value : fallback;
     }
 
+    /**
+     * Checks if a string has text (not null and not blank).
+     *
+     * @param value the string value
+     * @return true if it has text, false otherwise
+     */
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }

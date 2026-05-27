@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+/**
+ * Local file-based store for chat sessions.
+ */
 @Service
 public class FileChatSessionStore {
 
@@ -21,12 +24,25 @@ public class FileChatSessionStore {
     private final Path sessionsDirectory;
     private final SessionIdPolicy sessionIdPolicy;
 
+    /**
+     * Constructs a new FileChatSessionStore.
+     *
+     * @param objectMapper the object mapper for JSON serialization
+     * @param properties application storage properties
+     * @param sessionIdPolicy the policy for session IDs
+     */
     public FileChatSessionStore(ObjectMapper objectMapper, AppStorageProperties properties, SessionIdPolicy sessionIdPolicy) {
         this.objectMapper = objectMapper;
         this.sessionsDirectory = properties.resolvedSessionsDirectory();
         this.sessionIdPolicy = sessionIdPolicy;
     }
 
+    /**
+     * Finds a chat session by its ID.
+     *
+     * @param sessionId the session ID
+     * @return an Optional containing the chat session if found, or empty otherwise
+     */
     public Optional<ChatSession> findById(String sessionId) {
         Path sessionPath = resolveSessionPath(sessionId);
         if (!Files.exists(sessionPath)) {
@@ -40,6 +56,12 @@ public class FileChatSessionStore {
         }
     }
 
+    /**
+     * Saves a chat session to a file.
+     *
+     * @param session the chat session to save
+     * @return the saved chat session
+     */
     public ChatSession save(ChatSession session) {
         try {
             Files.createDirectories(sessionsDirectory);
@@ -50,6 +72,11 @@ public class FileChatSessionStore {
         }
     }
 
+    /**
+     * Retrieves all chat sessions from the sessions directory.
+     *
+     * @return a list of all chat sessions
+     */
     public List<ChatSession> findAll() {
         if (!Files.exists(sessionsDirectory)) {
             return List.of();
@@ -66,6 +93,12 @@ public class FileChatSessionStore {
         }
     }
 
+    /**
+     * Deletes a chat session by its ID.
+     *
+     * @param sessionId the session ID
+     * @return true if the session was deleted, false if it did not exist
+     */
     public boolean deleteById(String sessionId) {
         Path sessionPath = resolveSessionPath(sessionId);
         try {
@@ -75,6 +108,12 @@ public class FileChatSessionStore {
         }
     }
 
+    /**
+     * Internal method to read a chat session from a path.
+     *
+     * @param sessionPath the path to the session file
+     * @return the chat session
+     */
     private ChatSession readSession(Path sessionPath) {
         try {
             return objectMapper.readValue(sessionPath.toFile(), ChatSession.class);
@@ -83,6 +122,12 @@ public class FileChatSessionStore {
         }
     }
 
+    /**
+     * Resolves a session ID to its corresponding file path.
+     *
+     * @param sessionId the session ID
+     * @return the resolved path
+     */
     private Path resolveSessionPath(String sessionId) {
         String safeSessionId = sessionIdPolicy.requireValid(sessionId);
         Path normalizedRoot = sessionsDirectory.toAbsolutePath().normalize();

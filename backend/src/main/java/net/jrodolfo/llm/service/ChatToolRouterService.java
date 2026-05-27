@@ -11,6 +11,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Service for routing user messages to appropriate tools based on intent and extraction.
+ */
 @Service
 public class ChatToolRouterService {
 
@@ -44,6 +47,12 @@ public class ChatToolRouterService {
             new ServiceAlias("tagging", List.of("tagging", "tagged resources"))
     );
 
+    /**
+     * Routes a message to a tool decision.
+     *
+     * @param message the user message
+     * @return the tool decision
+     */
     public ToolDecision route(String message) {
         String normalized = message.toLowerCase(Locale.ROOT).trim();
 
@@ -70,6 +79,13 @@ public class ChatToolRouterService {
         return ToolDecision.none();
     }
 
+    /**
+     * Resolves a pending tool call based on a new user message.
+     *
+     * @param pendingToolCall the pending tool call
+     * @param message the new user message
+     * @return the tool decision
+     */
     public ToolDecision resolvePending(PendingToolCall pendingToolCall, String message) {
         String normalized = message.toLowerCase(Locale.ROOT).trim();
 
@@ -80,6 +96,12 @@ public class ChatToolRouterService {
         };
     }
 
+    /**
+     * Matches report read intent.
+     *
+     * @param normalized the normalized message
+     * @return the tool decision or null
+     */
     private ToolDecision matchReportRead(String normalized) {
         boolean mentionsRead = normalized.contains("read")
                 || normalized.contains("show")
@@ -110,6 +132,12 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Matches report listing intent.
+     *
+     * @param normalized the normalized message
+     * @return the tool decision or null
+     */
     private ToolDecision matchReportListing(String normalized) {
         boolean mentionsReports = normalized.contains("reports");
         boolean mentionsListIntent = normalized.contains("list")
@@ -131,6 +159,13 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Matches S3 CloudWatch report intent.
+     *
+     * @param normalized the normalized message
+     * @param originalMessage the original message
+     * @return the tool decision or null
+     */
     private ToolDecision matchS3Cloudwatch(String normalized, String originalMessage) {
         boolean mentionsS3Intent = normalized.contains("s3 cloudwatch")
                 || normalized.contains("bucket metrics")
@@ -161,6 +196,12 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Matches AWS audit intent.
+     *
+     * @param normalized the normalized message
+     * @return the tool decision or null
+     */
     private ToolDecision matchAwsAudit(String normalized) {
         boolean mentionsAudit = normalized.contains("aws audit")
                 || normalized.contains("run audit")
@@ -184,6 +225,14 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Resolves a pending S3 report request.
+     *
+     * @param normalized the normalized message
+     * @param originalMessage the original message
+     * @param pendingToolCall the pending tool call
+     * @return the tool decision
+     */
     private ToolDecision resolvePendingS3(String normalized, String originalMessage, PendingToolCall pendingToolCall) {
         String bucket = extractBucket(originalMessage);
         if (bucket == null) {
@@ -207,6 +256,13 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Resolves a pending latest report request.
+     *
+     * @param normalized the normalized message
+     * @param pendingToolCall the pending tool call
+     * @return the tool decision
+     */
     private ToolDecision resolvePendingLatestReport(String normalized, PendingToolCall pendingToolCall) {
         String reportType = inferReportType(normalized);
         if ("all".equals(reportType)) {
@@ -229,6 +285,12 @@ public class ChatToolRouterService {
         );
     }
 
+    /**
+     * Infers the report type from the message.
+     *
+     * @param normalized the normalized message
+     * @return the inferred report type
+     */
     private String inferReportType(String normalized) {
         if (normalized.contains("s3")) {
             return "s3_cloudwatch";
@@ -239,6 +301,12 @@ public class ChatToolRouterService {
         return "all";
     }
 
+    /**
+     * Extracts a bucket name from the message.
+     *
+     * @param message the message
+     * @return the extracted bucket name or null
+     */
     private String extractBucket(String message) {
         String normalized = message.toLowerCase(Locale.ROOT);
 
@@ -269,6 +337,12 @@ public class ChatToolRouterService {
         return null;
     }
 
+    /**
+     * Extracts an AWS region from the message.
+     *
+     * @param normalized the normalized message
+     * @return the extracted region or null
+     */
     private String extractRegion(String normalized) {
         Matcher regionMatcher = REGION_PATTERN.matcher(normalized);
         if (regionMatcher.find()) {
@@ -277,6 +351,12 @@ public class ChatToolRouterService {
         return null;
     }
 
+    /**
+     * Extracts the number of days from the message.
+     *
+     * @param normalized the normalized message
+     * @return the extracted days or null
+     */
     private Integer extractDays(String normalized) {
         Matcher daysMatcher = DAYS_PATTERN.matcher(normalized);
         if (!daysMatcher.find()) {
@@ -287,6 +367,12 @@ public class ChatToolRouterService {
         return Math.min(days, 365);
     }
 
+    /**
+     * Extracts AWS services from the message.
+     *
+     * @param normalized the normalized message
+     * @return a list of extracted services
+     */
     private List<String> extractServices(String normalized) {
         Set<String> services = new LinkedHashSet<>();
         for (ServiceAlias alias : SERVICE_ALIASES) {
@@ -300,6 +386,12 @@ public class ChatToolRouterService {
         return new ArrayList<>(services);
     }
 
+    /**
+     * Validates if a string looks like a bucket name.
+     *
+     * @param candidate the string to validate
+     * @return true if it looks like a bucket name, false otherwise
+     */
     private boolean looksLikeBucketName(String candidate) {
         if (BUCKET_STOP_WORDS.contains(candidate)) {
             return false;
@@ -313,6 +405,12 @@ public class ChatToolRouterService {
         return candidate.length() >= 3 && candidate.length() <= 255;
     }
 
+    /**
+     * Checks if the user message indicates a change of topic.
+     *
+     * @param normalized the normalized message
+     * @return true if it looks like a topic change, false otherwise
+     */
     private boolean looksLikeTopicChange(String normalized) {
         return normalized.contains("explain")
                 || normalized.contains("what is")
@@ -322,6 +420,9 @@ public class ChatToolRouterService {
                 || normalized.contains("write ");
     }
 
+    /**
+     * Types of tool decisions.
+     */
     public enum DecisionType {
         NONE,
         LIST_REPORTS,
@@ -330,6 +431,18 @@ public class ChatToolRouterService {
         S3_CLOUDWATCH_REPORT
     }
 
+    /**
+     * Record representing a tool routing decision.
+     *
+     * @param type the type of decision
+     * @param reportType the report type, if applicable
+     * @param bucket the bucket name, if applicable
+     * @param region the AWS region, if applicable
+     * @param days the number of days, if applicable
+     * @param reason the reason for the decision
+     * @param services the list of AWS services, if applicable
+     * @param clarification clarification text if needed
+     */
     public record ToolDecision(
             DecisionType type,
             String reportType,
@@ -340,6 +453,16 @@ public class ChatToolRouterService {
             List<String> services,
             String clarification
     ) {
+        /**
+         * Constructor for a tool decision without services and clarification.
+         *
+         * @param type the type of decision
+         * @param reportType the report type
+         * @param bucket the bucket name
+         * @param region the AWS region
+         * @param days the number of days
+         * @param reason the reason for the decision
+         */
         public ToolDecision(
                 DecisionType type,
                 String reportType,
@@ -351,6 +474,17 @@ public class ChatToolRouterService {
             this(type, reportType, bucket, region, days, reason, List.of(), null);
         }
 
+        /**
+         * Constructor for a tool decision with services but without clarification.
+         *
+         * @param type the type of decision
+         * @param reportType the report type
+         * @param bucket the bucket name
+         * @param region the AWS region
+         * @param days the number of days
+         * @param reason the reason for the decision
+         * @param services the list of AWS services
+         */
         public ToolDecision(
                 DecisionType type,
                 String reportType,
@@ -363,23 +497,51 @@ public class ChatToolRouterService {
             this(type, reportType, bucket, region, days, reason, services, null);
         }
 
+        /**
+         * Creates a decision representing no tool match.
+         *
+         * @return a NONE tool decision
+         */
         public static ToolDecision none() {
             return new ToolDecision(DecisionType.NONE, null, null, null, null, "no tool matched", List.of(), null);
         }
 
+        /**
+         * Creates a decision representing a need for clarification.
+         *
+         * @param type the type of decision
+         * @param clarification the clarification text
+         * @return a tool decision with clarification
+         */
         public static ToolDecision clarification(DecisionType type, String clarification) {
             return new ToolDecision(type, null, null, null, null, "clarification required", List.of(), clarification);
         }
 
+        /**
+         * Checks if a tool should be used based on this decision.
+         *
+         * @return true if a tool should be used, false otherwise
+         */
         public boolean shouldUseTool() {
             return type != DecisionType.NONE && clarification == null;
         }
 
+        /**
+         * Checks if clarification is needed for this decision.
+         *
+         * @return true if clarification is needed, false otherwise
+         */
         public boolean needsClarification() {
             return clarification != null && !clarification.isBlank();
         }
     }
 
+    /**
+     * Internal record to map service aliases to service keys.
+     *
+     * @param serviceKey the canonical service key
+     * @param aliases the list of aliases for the service
+     */
     private record ServiceAlias(String serviceKey, List<String> aliases) {
     }
 }

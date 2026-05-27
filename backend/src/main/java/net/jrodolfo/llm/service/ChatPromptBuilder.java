@@ -21,10 +21,21 @@ public class ChatPromptBuilder {
 
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs a new ChatPromptBuilder.
+     *
+     * @param objectMapper the object mapper for JSON formatting
+     */
     public ChatPromptBuilder(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Builds a prompt string based on the provided context.
+     *
+     * @param context the prompt context
+     * @return the built prompt string
+     */
     public String build(PromptContext context) {
         if (context.toolContext() == null) {
             return buildPlainChatPrompt(context.currentUserMessage(), context.history());
@@ -32,6 +43,13 @@ public class ChatPromptBuilder {
         return buildToolAssistedPrompt(context.currentUserMessage(), context.history(), context.toolContext());
     }
 
+    /**
+     * Builds a plain chat prompt string.
+     *
+     * @param currentUserMessage the current user message
+     * @param history the conversation history
+     * @return the built prompt string
+     */
     public String buildPlainChatPrompt(String currentUserMessage, List<ChatSessionMessage> history) {
         StringBuilder builder = new StringBuilder();
         builder.append("You are a concise, factual assistant.\n");
@@ -45,6 +63,13 @@ public class ChatPromptBuilder {
         return builder.toString();
     }
 
+    /**
+     * Builds a plain chat provider prompt object.
+     *
+     * @param currentUserMessage the current user message
+     * @param history the conversation history
+     * @return the provider prompt object
+     */
     public ProviderPrompt buildPlainChatProviderPrompt(String currentUserMessage, List<ChatSessionMessage> history) {
         List<ProviderPromptMessage> messages = new java.util.ArrayList<>();
         messages.add(new ProviderPromptMessage("system", """
@@ -67,6 +92,14 @@ public class ChatPromptBuilder {
         return ProviderPrompt.forMessages(messages, buildPlainChatPrompt(currentUserMessage, history));
     }
 
+    /**
+     * Builds a tool-assisted prompt string.
+     *
+     * @param currentUserMessage the current user message
+     * @param history the conversation history
+     * @param toolContext the tool context
+     * @return the built prompt string
+     */
     public String buildToolAssistedPrompt(String currentUserMessage, List<ChatSessionMessage> history, ToolContext toolContext) {
         StringBuilder builder = new StringBuilder();
         builder.append("<assistant_instructions>\n");
@@ -81,6 +114,12 @@ public class ChatPromptBuilder {
         return builder.toString();
     }
 
+    /**
+     * Appends plain conversation history to the prompt builder.
+     *
+     * @param builder the string builder
+     * @param history the conversation history
+     */
     private void appendPlainConversationHistory(StringBuilder builder, List<ChatSessionMessage> history) {
         if (history == null || history.isEmpty()) {
             return;
@@ -93,6 +132,12 @@ public class ChatPromptBuilder {
         }
     }
 
+    /**
+     * Appends conversation history with tags to the prompt builder.
+     *
+     * @param builder the string builder
+     * @param history the conversation history
+     */
     private void appendConversationHistory(StringBuilder builder, List<ChatSessionMessage> history) {
         if (history == null || history.isEmpty()) {
             return;
@@ -105,12 +150,24 @@ public class ChatPromptBuilder {
         builder.append("</conversation_history>\n");
     }
 
+    /**
+     * Appends the current user message with tags to the prompt builder.
+     *
+     * @param builder the string builder
+     * @param currentUserMessage the current user message
+     */
     private void appendCurrentUserMessage(StringBuilder builder, String currentUserMessage) {
         builder.append("\n<current_user_message>\n");
         builder.append(currentUserMessage == null ? "" : currentUserMessage.trim()).append("\n");
         builder.append("</current_user_message>\n");
     }
 
+    /**
+     * Appends tool context with tags to the prompt builder.
+     *
+     * @param builder the string builder
+     * @param toolContext the tool context
+     */
     private void appendToolContext(StringBuilder builder, ToolContext toolContext) {
         if (toolContext == null) {
             return;
@@ -125,6 +182,11 @@ public class ChatPromptBuilder {
         builder.append("</tool_context>\n");
     }
 
+    /**
+     * Appends response rules with tags to the prompt builder.
+     *
+     * @param builder the string builder
+     */
     private void appendResponseRules(StringBuilder builder) {
         builder.append("\n<response_rules>\n");
         builder.append("- Answer the current user message directly.\n");
@@ -139,6 +201,12 @@ public class ChatPromptBuilder {
         builder.append("</response_rules>\n");
     }
 
+    /**
+     * Formats the tool result map as a JSON string.
+     *
+     * @param result the result map
+     * @return the formatted JSON string
+     */
     private String formatResult(Map<String, Object> result) {
         if (result == null || result.isEmpty()) {
             return "{}";
@@ -151,10 +219,22 @@ public class ChatPromptBuilder {
         }
     }
 
+    /**
+     * Returns an empty string if the provided value is null.
+     *
+     * @param value the string value
+     * @return the value or an empty string
+     */
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
     }
 
+    /**
+     * Normalizes the role name for the model provider.
+     *
+     * @param role the raw role name
+     * @return the normalized role name
+     */
     private String normalizeRole(String role) {
         if ("assistant".equalsIgnoreCase(role)) {
             return "assistant";
@@ -165,6 +245,13 @@ public class ChatPromptBuilder {
     /**
      * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
      */
+    /**
+     * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
+     *
+     * @param currentUserMessage the current user message
+     * @param history the conversation history
+     * @param toolContext the tool context
+     */
     public record PromptContext(
             String currentUserMessage,
             List<ChatSessionMessage> history,
@@ -174,6 +261,14 @@ public class ChatPromptBuilder {
 
     /**
      * Structured tool facts forwarded into a tool-assisted prompt.
+     */
+    /**
+     * Structured tool facts forwarded into a tool-assisted prompt.
+     *
+     * @param name the tool name
+     * @param reason the reason for using the tool
+     * @param summary a summary of the tool result
+     * @param result the tool result map
      */
     public record ToolContext(
             String name,

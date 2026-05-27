@@ -42,6 +42,17 @@ public class AvailableModelsService {
     private final BedrockCatalogClient bedrockCatalogClient;
     private final HuggingFaceClient huggingFaceClient;
 
+    /**
+     * Constructs a new AvailableModelsService.
+     *
+     * @param chatModelProviderRegistry the registry of chat model providers
+     * @param ollamaProperties properties for Ollama
+     * @param bedrockProperties properties for AWS Bedrock
+     * @param huggingFaceProperties properties for Hugging Face
+     * @param ollamaClient client for Ollama
+     * @param bedrockCatalogClient client for AWS Bedrock catalog
+     * @param huggingFaceClient client for Hugging Face
+     */
     public AvailableModelsService(
             ChatModelProviderRegistry chatModelProviderRegistry,
             OllamaProperties ollamaProperties,
@@ -60,6 +71,12 @@ public class AvailableModelsService {
         this.huggingFaceClient = huggingFaceClient;
     }
 
+    /**
+     * Gets the available models for a specific provider.
+     *
+     * @param provider the name of the provider
+     * @return the available models response
+     */
     public AvailableModelsResponse getAvailableModels(String provider) {
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
         chatModelProviderRegistry.get(resolvedProvider);
@@ -98,12 +115,23 @@ public class AvailableModelsService {
         );
     }
 
+    /**
+     * Resolves the list of available providers based on configuration.
+     *
+     * @return a list of available provider names
+     */
     private List<String> resolveAvailableProviders() {
         return chatModelProviderRegistry.supportedProviders().stream()
                 .filter(this::isProviderAvailable)
                 .toList();
     }
 
+    /**
+     * Checks if a specific provider is available based on its configuration.
+     *
+     * @param provider the name of the provider
+     * @return true if the provider is available, false otherwise
+     */
     private boolean isProviderAvailable(String provider) {
         return switch (provider) {
             case "bedrock" -> normalizeModel(bedrockProperties.region()) != null
@@ -116,6 +144,11 @@ public class AvailableModelsService {
         };
     }
 
+    /**
+     * Resolves the list of available models for AWS Bedrock.
+     *
+     * @return a list of Bedrock model IDs
+     */
     private List<String> resolveBedrockModels() {
         String configuredModelId = normalizeModel(bedrockProperties.modelId());
         LinkedHashSet<String> models = new LinkedHashSet<>();
@@ -137,6 +170,12 @@ public class AvailableModelsService {
         return List.copyOf(new ArrayList<>(models));
     }
 
+    /**
+     * Resolves the default model for AWS Bedrock from a list of available models.
+     *
+     * @param models the list of available models
+     * @return the default model ID
+     */
     private String resolveDefaultBedrockModel(List<String> models) {
         String configuredModelId = normalizeModel(bedrockProperties.modelId());
         if (configuredModelId != null && models.contains(configuredModelId)) {
@@ -148,6 +187,11 @@ public class AvailableModelsService {
         return configuredModelId;
     }
 
+    /**
+     * Resolves the list of available models for Hugging Face.
+     *
+     * @return a list of Hugging Face model IDs
+     */
     private List<String> resolveHuggingFaceModels() {
         LinkedHashSet<String> models = new LinkedHashSet<>();
         if (huggingFaceProperties.models() != null) {
@@ -175,6 +219,12 @@ public class AvailableModelsService {
         }
     }
 
+    /**
+     * Resolves the default model for Hugging Face from a list of available models.
+     *
+     * @param models the list of available models
+     * @return the default model ID
+     */
     private String resolveDefaultHuggingFaceModel(List<String> models) {
         String configuredModelId = normalizeModel(huggingFaceProperties.defaultModel());
         if (configuredModelId != null && models.contains(configuredModelId)) {
@@ -186,6 +236,12 @@ public class AvailableModelsService {
         return configuredModelId;
     }
 
+    /**
+     * Normalizes a model name by trimming whitespace and returning null if blank.
+     *
+     * @param model the model name to normalize
+     * @return the normalized model name, or null if blank
+     */
     private String normalizeModel(String model) {
         if (model == null || model.isBlank()) {
             return null;

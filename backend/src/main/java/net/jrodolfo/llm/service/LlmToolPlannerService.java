@@ -16,6 +16,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Service for planning tool usage based on LLM decisions.
+ */
 @Service
 public class LlmToolPlannerService {
 
@@ -29,15 +32,37 @@ public class LlmToolPlannerService {
     private final ChatModelProviderRegistry chatModelProviderRegistry;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs a new LlmToolPlannerService.
+     *
+     * @param chatModelProviderRegistry the registry of chat model providers
+     * @param objectMapper the object mapper for JSON parsing
+     */
     public LlmToolPlannerService(ChatModelProviderRegistry chatModelProviderRegistry, ObjectMapper objectMapper) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * Plans a tool decision based on a user message.
+     *
+     * @param message the user message
+     * @param provider the model provider
+     * @param model the model name
+     * @return an Optional containing the tool decision
+     */
     public Optional<ChatToolRouterService.ToolDecision> plan(String message, String provider, String model) {
         return planDetailed(message, provider, model).parsedDecision();
     }
 
+    /**
+     * Plans a tool decision and returns detailed planning results.
+     *
+     * @param message the user message
+     * @param provider the model provider
+     * @param model the model name
+     * @return the detailed planning result
+     */
     public PlanningResult planDetailed(String message, String provider, String model) {
         String plannerPrompt = """
                 <tool_planning_request>
@@ -91,10 +116,28 @@ public class LlmToolPlannerService {
         return new PlanningResult(rawResponse, parseDecision(rawResponse, message, true));
     }
 
+    /**
+     * Resolves a pending tool call based on a follow-up message.
+     *
+     * @param pendingToolCall the pending tool call
+     * @param message the follow-up message
+     * @param provider the model provider
+     * @param model the model name
+     * @return an Optional containing the resolved tool decision
+     */
     public Optional<ChatToolRouterService.ToolDecision> resolvePending(PendingToolCall pendingToolCall, String message, String provider, String model) {
         return resolvePendingDetailed(pendingToolCall, message, provider, model).parsedDecision();
     }
 
+    /**
+     * Resolves a pending tool call and returns detailed planning results.
+     *
+     * @param pendingToolCall the pending tool call
+     * @param message the follow-up message
+     * @param provider the model provider
+     * @param model the model name
+     * @return the detailed planning result
+     */
     public PlanningResult resolvePendingDetailed(PendingToolCall pendingToolCall, String message, String provider, String model) {
         String plannerPrompt = """
                 <tool_planning_request>
@@ -161,6 +204,14 @@ public class LlmToolPlannerService {
         return new PlanningResult(rawResponse, parseDecision(rawResponse, message, false));
     }
 
+    /**
+     * Parses the LLM response into a tool decision.
+     *
+     * @param rawResponse the raw response from the LLM
+     * @param originalMessage the original user message
+     * @param strictIntentChecks whether to perform strict intent checks
+     * @return an Optional containing the parsed tool decision
+     */
     private Optional<ChatToolRouterService.ToolDecision> parseDecision(String rawResponse, String originalMessage, boolean strictIntentChecks) {
         String json = extractJsonObject(rawResponse);
         if (json == null) {
@@ -223,6 +274,12 @@ public class LlmToolPlannerService {
         }
     }
 
+    /**
+     * Extracts a JSON object from a potentially noisy LLM response.
+     *
+     * @param rawResponse the raw response
+     * @return the extracted JSON string or null
+     */
     private String extractJsonObject(String rawResponse) {
         if (rawResponse == null || rawResponse.isBlank()) {
             return null;
@@ -235,6 +292,12 @@ public class LlmToolPlannerService {
         return rawResponse.substring(start, end + 1);
     }
 
+    /**
+     * Safely retrieves the text value from a JsonNode.
+     *
+     * @param node the JsonNode
+     * @return the text value or null
+     */
     private String textValue(JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
@@ -243,6 +306,12 @@ public class LlmToolPlannerService {
         return text == null || text.isBlank() ? null : text.trim();
     }
 
+    /**
+     * Maps a tool name to a DecisionType.
+     *
+     * @param toolName the tool name
+     * @return the DecisionType or null
+     */
     private ChatToolRouterService.DecisionType toDecisionType(String toolName) {
         if (toolName == null) {
             return null;
@@ -256,6 +325,12 @@ public class LlmToolPlannerService {
         };
     }
 
+    /**
+     * Normalizes the report type string.
+     *
+     * @param reportType the raw report type
+     * @return the normalized report type or null
+     */
     private String normalizeReportType(String reportType) {
         if (reportType == null) {
             return null;
@@ -268,6 +343,12 @@ public class LlmToolPlannerService {
         };
     }
 
+    /**
+     * Normalizes an AWS region string.
+     *
+     * @param region the raw region string
+     * @return the normalized region or null
+     */
     private String normalizeRegion(String region) {
         if (region == null) {
             return null;
@@ -276,6 +357,12 @@ public class LlmToolPlannerService {
         return matcher.find() ? matcher.group() : null;
     }
 
+    /**
+     * Normalizes the number of days from a JsonNode.
+     *
+     * @param node the JsonNode
+     * @return the normalized number of days or null
+     */
     private Integer normalizeDays(JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
@@ -287,6 +374,12 @@ public class LlmToolPlannerService {
         return Math.min(days, 365);
     }
 
+    /**
+     * Normalizes a list of services from a JsonNode.
+     *
+     * @param node the JsonNode
+     * @return a list of normalized services
+     */
     private List<String> normalizeServices(JsonNode node) {
         if (node == null || !node.isArray()) {
             return List.of();
@@ -301,6 +394,12 @@ public class LlmToolPlannerService {
         return new ArrayList<>(services);
     }
 
+    /**
+     * Normalizes a list of missing fields from a JsonNode.
+     *
+     * @param node the JsonNode
+     * @return a list of normalized field names
+     */
     private List<String> normalizeMissingFields(JsonNode node) {
         if (node == null || !node.isArray()) {
             return List.of();
@@ -315,6 +414,13 @@ public class LlmToolPlannerService {
         return new ArrayList<>(fields);
     }
 
+    /**
+     * Generates a clarification message based on the tool type and missing fields.
+     *
+     * @param type the tool type
+     * @param missingFields the list of missing fields
+     * @return the clarification message
+     */
     private String clarificationFor(ChatToolRouterService.DecisionType type, List<String> missingFields) {
         if (type == ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT && missingFields.contains("bucket")) {
             return "I can run the S3 CloudWatch report, but I need the bucket name.";
@@ -325,10 +431,24 @@ public class LlmToolPlannerService {
         return "I need a bit more information before I can use that tool.";
     }
 
+    /**
+     * Normalizes the reason string for a tool decision.
+     *
+     * @param reason the raw reason string
+     * @return the normalized reason
+     */
     private String normalizedReason(String reason) {
         return reason == null ? "llm tool planning decision" : reason;
     }
 
+    /**
+     * Applies guardrails to a tool decision to prevent unexpected or invalid tool usage.
+     *
+     * @param decision the tool decision
+     * @param originalMessage the original user message
+     * @param strictIntentChecks whether to perform strict intent checks
+     * @return the validated tool decision
+     */
     private ChatToolRouterService.ToolDecision applyGuardrails(
             ChatToolRouterService.ToolDecision decision,
             String originalMessage,
@@ -389,6 +509,12 @@ public class LlmToolPlannerService {
         return decision;
     }
 
+    /**
+     * Validates if a string looks like an S3 bucket name.
+     *
+     * @param bucket the string to validate
+     * @return true if it looks like a bucket name, false otherwise
+     */
     private boolean looksLikeBucket(String bucket) {
         if (bucket == null) {
             return false;
@@ -396,6 +522,13 @@ public class LlmToolPlannerService {
         return BUCKET_PATTERN.matcher(bucket.trim().toLowerCase(Locale.ROOT)).matches();
     }
 
+    /**
+     * Checks if a report decision is unexpected given the user message.
+     *
+     * @param decision the tool decision
+     * @param originalMessage the user message
+     * @return true if unexpected, false otherwise
+     */
     private boolean isUnexpectedReportDecision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
         if (originalMessage == null) {
             return false;
@@ -416,6 +549,13 @@ public class LlmToolPlannerService {
         return !(mentionsReport && mentionsReportIntent);
     }
 
+    /**
+     * Checks if an S3 decision is unexpected given the user message.
+     *
+     * @param decision the tool decision
+     * @param originalMessage the user message
+     * @return true if unexpected, false otherwise
+     */
     private boolean isUnexpectedS3Decision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
         if (originalMessage == null || decision.type() != ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT) {
             return false;
@@ -430,6 +570,13 @@ public class LlmToolPlannerService {
         return !(mentionsCloudwatch || mentionsMetrics || (mentionsBucket && mentionsReport));
     }
 
+    /**
+     * Checks if an AWS audit decision is unexpected given the user message.
+     *
+     * @param decision the tool decision
+     * @param originalMessage the user message
+     * @return true if unexpected, false otherwise
+     */
     private boolean isUnexpectedAuditDecision(ChatToolRouterService.ToolDecision decision, String originalMessage) {
         if (originalMessage == null || decision.type() != ChatToolRouterService.DecisionType.AWS_REGION_AUDIT) {
             return false;
@@ -439,6 +586,12 @@ public class LlmToolPlannerService {
         return !normalizedMessage.contains("audit");
     }
 
+    /**
+     * Record representing the result of tool planning.
+     *
+     * @param rawResponse the raw response from the LLM
+     * @param parsedDecision the parsed tool decision
+     */
     public record PlanningResult(
             String rawResponse,
             Optional<ChatToolRouterService.ToolDecision> parsedDecision

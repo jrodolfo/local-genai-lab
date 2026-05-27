@@ -17,6 +17,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+/**
+ * Service for importing chat sessions from JSON files.
+ */
 @Service
 public class ChatSessionImportService {
 
@@ -25,6 +28,14 @@ public class ChatSessionImportService {
     private final ChatSessionMetadataService chatSessionMetadataService;
     private final SessionIdPolicy sessionIdPolicy;
 
+    /**
+     * Constructs a new ChatSessionImportService.
+     *
+     * @param objectMapper the object mapper for JSON parsing
+     * @param sessionStore the store for chat sessions
+     * @param chatSessionMetadataService the service for session metadata
+     * @param sessionIdPolicy the policy for session IDs
+     */
     public ChatSessionImportService(
             ObjectMapper objectMapper,
             FileChatSessionStore sessionStore,
@@ -37,6 +48,12 @@ public class ChatSessionImportService {
         this.sessionIdPolicy = sessionIdPolicy;
     }
 
+    /**
+     * Imports a chat session from a multipart file.
+     *
+     * @param file the multipart file containing the session JSON
+     * @return the import response details
+     */
     public ChatSessionImportResponse importSession(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new ChatSessionImportException("Import file must not be empty.");
@@ -82,6 +99,12 @@ public class ChatSessionImportService {
         );
     }
 
+    /**
+     * Normalizes an imported session ID, generating a new one if necessary.
+     *
+     * @param importedSessionId the original session ID from the import
+     * @return a valid session ID
+     */
     private String normalizeImportedSessionId(String importedSessionId) {
         if (!hasText(importedSessionId)) {
             return UUID.randomUUID().toString();
@@ -92,6 +115,12 @@ public class ChatSessionImportService {
         return sessionIdPolicy.requireValid(importedSessionId);
     }
 
+    /**
+     * Parses the import file into a ChatSessionDetailResponse DTO.
+     *
+     * @param file the multipart file
+     * @return the parsed session detail response
+     */
     private ChatSessionDetailResponse parseImport(MultipartFile file) {
         try {
             return objectMapper.readValue(file.getInputStream(), ChatSessionDetailResponse.class);
@@ -100,6 +129,13 @@ public class ChatSessionImportService {
         }
     }
 
+    /**
+     * Normalizes a list of imported message responses into internal session messages.
+     *
+     * @param importedMessages the list of imported messages
+     * @param fallbackTime the fallback timestamp to use
+     * @return a list of normalized session messages
+     */
     private List<ChatSessionMessage> normalizeMessages(List<ChatSessionMessageResponse> importedMessages, Instant fallbackTime) {
         if (importedMessages == null) {
             return List.of();
@@ -127,6 +163,12 @@ public class ChatSessionImportService {
         return normalized;
     }
 
+    /**
+     * Converts an imported pending tool call response to an internal PendingToolCall object.
+     *
+     * @param pendingTool the pending tool call response
+     * @return the internal pending tool call object
+     */
     private PendingToolCall toPendingToolCall(net.jrodolfo.llm.dto.PendingToolCallResponse pendingTool) {
         if (pendingTool == null) {
             return null;
@@ -150,6 +192,12 @@ public class ChatSessionImportService {
         );
     }
 
+    /**
+     * Normalizes the role name, ensuring it is either "user" or "assistant".
+     *
+     * @param role the raw role name
+     * @return the normalized role name
+     */
     private String normalizeRole(String role) {
         if (!hasText(role)) {
             throw new ChatSessionImportException("Imported session message role must not be blank.");
@@ -161,10 +209,22 @@ public class ChatSessionImportService {
         return normalized;
     }
 
+    /**
+     * Normalizes a tool name by trimming whitespace.
+     *
+     * @param toolName the tool name
+     * @return the normalized tool name
+     */
     private String normalizeToolName(String toolName) {
         return hasText(toolName) ? toolName.trim() : "";
     }
 
+    /**
+     * Checks if a string has text (not null and not blank).
+     *
+     * @param value the string value
+     * @return true if it has text, false otherwise
+     */
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }

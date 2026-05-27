@@ -15,17 +15,36 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Service for managing chat sessions, including listing, retrieving, and deleting sessions.
+ */
 @Service
 public class ChatSessionService {
 
     private final FileChatSessionStore sessionStore;
     private final ChatSessionMetadataService chatSessionMetadataService;
 
+    /**
+     * Constructs a new ChatSessionService.
+     *
+     * @param sessionStore the store for chat sessions
+     * @param chatSessionMetadataService the service for session metadata
+     */
     public ChatSessionService(FileChatSessionStore sessionStore, ChatSessionMetadataService chatSessionMetadataService) {
         this.sessionStore = sessionStore;
         this.chatSessionMetadataService = chatSessionMetadataService;
     }
 
+    /**
+     * Lists chat sessions based on various filters.
+     *
+     * @param query search query
+     * @param provider filter by provider
+     * @param toolUsage filter by tool usage
+     * @param pending filter by pending status
+     * @param mode filter by mode
+     * @return a list of chat session summaries
+     */
     public List<ChatSessionSummaryResponse> listSessions(String query, String provider, String toolUsage, Boolean pending, String mode) {
         return sessionStore.findAll().stream()
                 .filter(session -> matchesQuery(session, query))
@@ -38,18 +57,35 @@ public class ChatSessionService {
                 .toList();
     }
 
+    /**
+     * Retrieves a detailed response for a specific chat session.
+     *
+     * @param sessionId the session ID
+     * @return the detailed session response
+     */
     public ChatSessionDetailResponse getSession(String sessionId) {
         ChatSession session = sessionStore.findById(sessionId)
                 .orElseThrow(() -> new ChatSessionNotFoundException(sessionId));
         return toDetail(session);
     }
 
+    /**
+     * Deletes a chat session by its ID.
+     *
+     * @param sessionId the session ID
+     */
     public void deleteSession(String sessionId) {
         if (!sessionStore.deleteById(sessionId)) {
             throw new ChatSessionNotFoundException(sessionId);
         }
     }
 
+    /**
+     * Converts a chat session to a summary response DTO.
+     *
+     * @param session the chat session
+     * @return the summary response DTO
+     */
     private ChatSessionSummaryResponse toSummary(ChatSession session) {
         return new ChatSessionSummaryResponse(
                 session.sessionId(),
@@ -63,6 +99,13 @@ public class ChatSessionService {
         );
     }
 
+    /**
+     * Checks if a session matches a search query.
+     *
+     * @param session the chat session
+     * @param query the search query
+     * @return true if it matches, false otherwise
+     */
     private boolean matchesQuery(ChatSession session, String query) {
         if (query == null || query.isBlank()) {
             return true;
@@ -83,6 +126,13 @@ public class ChatSessionService {
                 .anyMatch(content -> content.contains(normalizedQuery));
     }
 
+    /**
+     * Checks if a session matches a provider filter.
+     *
+     * @param session the chat session
+     * @param provider the provider name
+     * @return true if it matches, false otherwise
+     */
     private boolean matchesProvider(ChatSession session, String provider) {
         if (provider == null || provider.isBlank()) {
             return true;
@@ -102,6 +152,13 @@ public class ChatSessionService {
                 .anyMatch(value -> normalizedProvider.equalsIgnoreCase(value));
     }
 
+    /**
+     * Checks if a session matches a tool usage filter.
+     *
+     * @param session the chat session
+     * @param toolUsage the tool usage filter ("used" or "unused")
+     * @return true if it matches, false otherwise
+     */
     private boolean matchesToolUsage(ChatSession session, String toolUsage) {
         if (toolUsage == null || toolUsage.isBlank()) {
             return true;
@@ -119,6 +176,13 @@ public class ChatSessionService {
         };
     }
 
+    /**
+     * Checks if a session matches a pending tool call filter.
+     *
+     * @param session the chat session
+     * @param pending the pending status
+     * @return true if it matches, false otherwise
+     */
     private boolean matchesPending(ChatSession session, Boolean pending) {
         if (pending == null) {
             return true;
@@ -126,6 +190,13 @@ public class ChatSessionService {
         return pending == (session.pendingToolCall() != null);
     }
 
+    /**
+     * Checks if a session matches a mode filter.
+     *
+     * @param session the chat session
+     * @param mode the mode
+     * @return true if it matches, false otherwise
+     */
     private boolean matchesMode(ChatSession session, String mode) {
         if (mode == null || mode.isBlank()) {
             return true;
@@ -133,6 +204,12 @@ public class ChatSessionService {
         return mode.trim().equalsIgnoreCase(session.mode());
     }
 
+    /**
+     * Converts a chat session to a detailed response DTO.
+     *
+     * @param session the chat session
+     * @return the detailed response DTO
+     */
     private ChatSessionDetailResponse toDetail(ChatSession session) {
         return new ChatSessionDetailResponse(
                 session.sessionId(),
@@ -147,6 +224,12 @@ public class ChatSessionService {
         );
     }
 
+    /**
+     * Converts a chat session message to a message response DTO.
+     *
+     * @param message the chat session message
+     * @return the message response DTO
+     */
     private ChatSessionMessageResponse toMessageResponse(ChatSessionMessage message) {
         return new ChatSessionMessageResponse(
                 message.role(),
@@ -159,6 +242,12 @@ public class ChatSessionService {
         );
     }
 
+    /**
+     * Converts an internal pending tool call to a DTO response.
+     *
+     * @param pendingToolCall the pending tool call
+     * @return the pending tool call response DTO
+     */
     public PendingToolCallResponse toPendingToolResponse(PendingToolCall pendingToolCall) {
         if (pendingToolCall == null) {
             return null;
@@ -176,6 +265,12 @@ public class ChatSessionService {
         );
     }
 
+    /**
+     * Maps a decision type to a tool name string.
+     *
+     * @param type the decision type
+     * @return the tool name
+     */
     private String toolNameForDecision(ChatToolRouterService.DecisionType type) {
         return switch (type) {
             case LIST_REPORTS -> "list_recent_reports";
