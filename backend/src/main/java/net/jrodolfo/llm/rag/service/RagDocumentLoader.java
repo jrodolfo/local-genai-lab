@@ -11,9 +11,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
+/**
+ * Service responsible for loading documents from the file system.
+ * Currently supports loading and parsing Markdown files.
+ */
 @Service
 public class RagDocumentLoader {
 
+    /**
+     * Recursively loads all Markdown files from the specified corpus root directory.
+     *
+     * @param corpusRoot the root directory containing the RAG corpus
+     * @return a list of {@link RagDocument} objects
+     * @throws IllegalStateException if the root directory is invalid or if an error occurs during loading
+     */
     public List<RagDocument> loadMarkdownDocuments(Path corpusRoot) {
         if (!Files.isDirectory(corpusRoot)) {
             throw new IllegalStateException("RAG corpus root does not exist: " + corpusRoot);

@@ -7,9 +7,21 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service for splitting documents into smaller, manageable chunks.
+ * This is crucial for efficient retrieval and to stay within LLM context window limits.
+ */
 @Service
 public class RagChunkingService {
 
+    /**
+     * Splits a list of documents into chunks.
+     *
+     * @param documents the list of documents to chunk
+     * @param maxChunkSize the maximum size of each chunk (in characters)
+     * @param chunkOverlap the number of characters to overlap between consecutive chunks
+     * @return a list of {@link RagChunk} objects
+     */
     public List<RagChunk> chunkDocuments(List<RagDocument> documents, int maxChunkSize, int chunkOverlap) {
         List<RagChunk> chunks = new ArrayList<>();
         for (RagDocument document : documents) {

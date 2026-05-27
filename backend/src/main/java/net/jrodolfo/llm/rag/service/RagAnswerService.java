@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Service responsible for generating answers using the RAG (Retrieval-Augmented Generation) pattern.
+ * It retrieves relevant documents, builds a prompt, and uses an LLM to generate the final response.
+ */
 @Service
 public class RagAnswerService {
 
@@ -20,6 +24,13 @@ public class RagAnswerService {
     private final RagRetrievalService ragRetrievalService;
     private final RagSessionService ragSessionService;
 
+    /**
+     * Constructs a new RagAnswerService.
+     *
+     * @param providerRegistry the registry of available chat model providers
+     * @param ragRetrievalService the service used for document retrieval
+     * @param ragSessionService the service used for session management
+     */
     public RagAnswerService(
             ChatModelProviderRegistry providerRegistry,
             RagRetrievalService ragRetrievalService,
@@ -30,6 +41,16 @@ public class RagAnswerService {
         this.ragSessionService = ragSessionService;
     }
 
+    /**
+     * Generates an answer for the given question using the specified model and provider.
+     *
+     * @param question the user's question
+     * @param provider the LLM provider to use (e.g., "openai", "bedrock")
+     * @param model the specific model to use
+     * @param sessionId the unique identifier for the chat session
+     * @return a {@link RagQueryResponse} containing the answer and source metadata
+     * @throws IllegalStateException if no relevant source chunks are found
+     */
     public RagQueryResponse answer(String question, String provider, String model, String sessionId) {
         List<RagMatch> matches = ragRetrievalService.retrieve(question);
         if (matches.isEmpty()) {

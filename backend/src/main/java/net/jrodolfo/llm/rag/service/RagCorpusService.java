@@ -10,6 +10,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Orchestrator service for the RAG corpus.
+ * It manages the lifecycle of the document index, including loading, chunking, and indexing into the vector store.
+ */
 @Service
 public class RagCorpusService {
 
@@ -19,6 +23,14 @@ public class RagCorpusService {
     private final RagVectorStore vectorStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
 
+    /**
+     * Constructs a new RagCorpusService.
+     *
+     * @param ragProperties configuration properties for RAG
+     * @param documentLoader service for loading documents
+     * @param chunkingService service for splitting documents into chunks
+     * @param vectorStore the vector store for indexing chunks
+     */
     public RagCorpusService(
             RagProperties ragProperties,
             RagDocumentLoader documentLoader,
@@ -31,6 +43,12 @@ public class RagCorpusService {
         this.vectorStore = vectorStore;
     }
 
+    /**
+     * Ensures that the corpus is indexed. If it's already indexed, returns the current snapshot.
+     * Otherwise, it builds the index.
+     *
+     * @return the current {@link CorpusSnapshot}
+     */
     public synchronized CorpusSnapshot ensureIndexed() {
         CorpusSnapshot snapshot = snapshotRef.get();
         if (snapshot != null) {
@@ -39,6 +57,11 @@ public class RagCorpusService {
         return rebuildIndex();
     }
 
+    /**
+     * Rebuilds the corpus index by reloading documents, re-chunking them, and updating the vector store.
+     *
+     * @return the new {@link CorpusSnapshot}
+     */
     public synchronized CorpusSnapshot rebuildIndex() {
         Path corpusRoot = ragProperties.resolvedCorpusRoot();
         List<RagDocument> documents = documentLoader.loadMarkdownDocuments(corpusRoot);
@@ -53,10 +76,22 @@ public class RagCorpusService {
         return snapshot;
     }
 
+    /**
+     * Returns the current snapshot of the corpus, or null if it hasn't been indexed yet.
+     *
+     * @return the current {@link CorpusSnapshot} or null
+     */
     public CorpusSnapshot snapshot() {
         return snapshotRef.get();
     }
 
+    /**
+     * A snapshot of the indexed corpus.
+     *
+     * @param corpusRoot the root directory of the corpus
+     * @param documents the list of loaded documents
+     * @param chunks the list of generated chunks
+     */
     public record CorpusSnapshot(
             Path corpusRoot,
             List<RagDocument> documents,

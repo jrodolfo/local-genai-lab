@@ -11,6 +11,10 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Service for managing chat sessions in the context of RAG.
+ * It handles starting and finishing conversation turns and persists them in the session store.
+ */
 @Service
 public class RagSessionService {
 
@@ -18,6 +22,13 @@ public class RagSessionService {
     private final ChatSessionMetadataService chatSessionMetadataService;
     private final SessionIdPolicy sessionIdPolicy;
 
+    /**
+     * Constructs a new RagSessionService.
+     *
+     * @param sessionStore the store used for persisting chat sessions
+     * @param chatSessionMetadataService the service used for enriching session metadata
+     * @param sessionIdPolicy the policy used for generating and validating session IDs
+     */
     public RagSessionService(
             FileChatSessionStore sessionStore,
             ChatSessionMetadataService chatSessionMetadataService,
@@ -28,6 +39,14 @@ public class RagSessionService {
         this.sessionIdPolicy = sessionIdPolicy;
     }
 
+    /**
+     * Starts a new turn in a chat session.
+     *
+     * @param requestedSessionId the ID requested by the user, or null/empty to generate a new one
+     * @param resolvedModel the resolved name of the model being used
+     * @param question the user's question
+     * @return the {@link ChatSession} with the new user message appended
+     */
     public ChatSession startTurn(String requestedSessionId, String resolvedModel, String question) {
         Instant now = Instant.now();
         String sessionId = sessionIdPolicy.requireValidOrGenerate(requestedSessionId);
@@ -44,6 +63,15 @@ public class RagSessionService {
         return existingSession.appendMessage("user", question.trim(), null, null, null, null, now);
     }
 
+    /**
+     * Finishes a chat turn by appending the assistant's answer and source metadata, then saving the session.
+     *
+     * @param session the current chat session
+     * @param answer the assistant's generated answer
+     * @param providerMetadata metadata from the LLM provider
+     * @param ragSources the source chunks used to generate the answer
+     * @return the updated and persisted {@link ChatSession}
+     */
     public ChatSession finishTurn(
             ChatSession session,
             String answer,
