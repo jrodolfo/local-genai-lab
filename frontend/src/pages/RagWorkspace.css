@@ -12,6 +12,13 @@
   max-width: 1200px;
 }
 
+.rag-hero__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
 .rag-eyebrow {
   color: #9a3412;
   font-size: 0.75rem;
@@ -62,6 +69,10 @@
   max-width: 1200px;
 }
 
+.rag-layout.sidebar-hidden {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .rag-session-sidebar,
 .rag-question-card {
   background: rgba(255, 255, 255, 0.9);
@@ -96,17 +107,52 @@
   display: none;
 }
 
-.rag-session-sidebar button,
-.rag-session-item__actions button {
+.rag-action-button {
   background: #f8fafc;
   border: 1px solid #cbd5e1;
-  border-radius: 999px;
+  border-radius: 8px;
   color: #0f172a;
   cursor: pointer;
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.45rem 0.8rem;
+  padding: 0.5rem 0.85rem;
+}
+
+.rag-action-button:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.rag-action-button:focus-visible {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 2px;
+}
+
+.rag-action-button-danger {
+  background: #fff1f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.rag-action-button-danger:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.rag-primary-button {
+  background: linear-gradient(135deg, #0f766e, #0f766e 30%, #155e75);
+  border: none;
+  color: #fff;
+}
+
+.rag-primary-button:hover {
+  border-color: transparent;
+  filter: brightness(1.03);
+}
+
+.rag-sidebar-toggle {
+  white-space: nowrap;
 }
 
 .rag-session-list,
@@ -193,18 +239,6 @@
   margin-top: 0.85rem;
 }
 
-.rag-actions button,
-.rag-status-card button {
-  background: linear-gradient(135deg, #0f766e, #0f766e 30%, #155e75);
-  border: none;
-  border-radius: 999px;
-  color: #fff;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 0.8rem 1.2rem;
-}
-
 .rag-status-card__header {
   align-items: center;
   display: flex;
@@ -217,7 +251,7 @@
   margin: 0;
 }
 
-.rag-status-card button {
+.rag-status-card .rag-primary-button {
   font-size: 0.85rem;
   padding: 0.55rem 0.9rem;
 }
@@ -248,8 +282,7 @@
   margin: 0.12rem 0 0;
 }
 
-.rag-actions button:disabled,
-.rag-status-card button:disabled {
+.rag-action-button:disabled {
   cursor: default;
   opacity: 0.7;
 }
@@ -313,6 +346,10 @@
   .rag-layout,
   .rag-field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rag-hero__header {
+    flex-direction: column;
   }
 
   .rag-status-grid {

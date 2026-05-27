@@ -35,31 +35,37 @@ function InputBox({
   return (
     <form className="input-box" onSubmit={submit}>
       <div className="controls-row">
-        <select
-          aria-label="Chat provider"
-          value={selectedProvider}
-          onChange={(event) => onProviderChange(event.target.value)}
-          disabled={controlsDisabled}
-        >
-          {providers.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <label className="control-field">
+          <span>Provider</span>
+          <select
+            aria-label="Chat provider"
+            value={selectedProvider}
+            onChange={(event) => onProviderChange(event.target.value)}
+            disabled={controlsDisabled}
+          >
+            {providers.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <select
-          aria-label="Model"
-          value={selectedModel}
-          onChange={(event) => onModelChange(event.target.value)}
-          disabled={sendDisabled}
-        >
-          {models.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <label className="control-field">
+          <span>Model</span>
+          <select
+            aria-label="Model"
+            value={selectedModel}
+            onChange={(event) => onModelChange(event.target.value)}
+            disabled={sendDisabled}
+          >
+            {models.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="checkbox-wrap">
           <input

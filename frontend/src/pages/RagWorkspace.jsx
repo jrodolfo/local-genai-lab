@@ -15,6 +15,7 @@ function RagWorkspace() {
   const [selectedModel, setSelectedModel] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [sessions, setSessions] = useState([]);
+  const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -200,16 +201,29 @@ function RagWorkspace() {
     <main className="rag-page">
       <section className="rag-hero">
         <div className="rag-hero__copy">
-          <p className="rag-eyebrow">Experimental</p>
-          <h1>RAG</h1>
+          <div className="rag-hero__header">
+            <div>
+              <p className="rag-eyebrow">Experimental</p>
+              <h1>RAG</h1>
+            </div>
+            <button
+              type="button"
+              className="rag-action-button rag-sidebar-toggle"
+              aria-expanded={showSessionsSidebar}
+              aria-controls="rag-sessions-sidebar"
+              onClick={() => setShowSessionsSidebar((current) => !current)}
+            >
+              {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
+            </button>
+          </div>
           <p>Ask questions against the local docs corpus.</p>
         </div>
         <div className="rag-status-card">
           <div className="rag-status-card__header">
             <h2>Index</h2>
             {ragStatus?.enabled ? (
-              <button type="button" onClick={handleRebuildIndex} disabled={rebuilding}>
-                {rebuilding ? 'Rebuilding...' : 'Rebuild index'}
+              <button type="button" className="rag-action-button rag-primary-button" onClick={handleRebuildIndex} disabled={rebuilding}>
+                {rebuilding ? 'Rebuilding...' : 'Rebuild Index'}
               </button>
             ) : null}
           </div>
@@ -251,13 +265,14 @@ function RagWorkspace() {
       ) : null}
 
       {!loading && ragStatus?.enabled ? (
-        <section className="rag-layout">
-          <aside className="rag-session-sidebar">
+        <section className={`rag-layout ${showSessionsSidebar ? '' : 'sidebar-hidden'}`.trim()}>
+          {showSessionsSidebar ? (
+          <aside id="rag-sessions-sidebar" className="rag-session-sidebar">
             <div className="rag-session-sidebar__header">
               <h2>RAG sessions</h2>
               <div className="rag-session-sidebar__actions">
-                <button type="button" onClick={startNewSession}>New</button>
-                <button type="button" onClick={() => importInputRef.current?.click()}>Import</button>
+                <button type="button" className="rag-action-button" onClick={startNewSession}>New Session</button>
+                <button type="button" className="rag-action-button" onClick={() => importInputRef.current?.click()}>Import Session</button>
                 <input
                   ref={importInputRef}
                   type="file"
@@ -278,14 +293,15 @@ function RagWorkspace() {
                     <span className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
                   </button>
                   <div className="rag-session-item__actions">
-                    <button type="button" onClick={() => downloadSession(session.sessionId, 'json')}>JSON</button>
-                    <button type="button" onClick={() => downloadSession(session.sessionId, 'markdown')}>MD</button>
-                    <button type="button" onClick={() => removeSession(session.sessionId)}>Delete</button>
+                    <button type="button" className="rag-action-button" onClick={() => downloadSession(session.sessionId, 'json')}>Export JSON</button>
+                    <button type="button" className="rag-action-button" onClick={() => downloadSession(session.sessionId, 'markdown')}>Export Markdown</button>
+                    <button type="button" className="rag-action-button rag-action-button-danger" onClick={() => removeSession(session.sessionId)}>Delete</button>
                   </div>
                 </article>
               ))}
             </div>
           </aside>
+          ) : null}
 
           <section className="rag-workspace">
             <form className="rag-query-form" onSubmit={handleSubmit}>
@@ -323,8 +339,8 @@ function RagWorkspace() {
               </label>
 
               <div className="rag-actions">
-                <button type="submit" disabled={querying || !question.trim()}>
-                  {querying ? 'Querying...' : 'Ask docs corpus'}
+                <button type="submit" className="rag-action-button rag-primary-button" disabled={querying || !question.trim()}>
+                  {querying ? 'Querying...' : 'Ask Docs Corpus'}
                 </button>
               </div>
             </form>
