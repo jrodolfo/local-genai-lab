@@ -10,10 +10,18 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
+/**
+ * Implementation of {@link ChatModelProvider} that uses Ollama for local LLM execution.
+ */
 public class OllamaChatModelProvider implements ChatModelProvider {
 
     private final OllamaClient ollamaClient;
 
+    /**
+     * Constructs a new OllamaChatModelProvider.
+     *
+     * @param ollamaClient the client to communicate with the local Ollama instance
+     */
     public OllamaChatModelProvider(OllamaClient ollamaClient) {
         this.ollamaClient = ollamaClient;
     }

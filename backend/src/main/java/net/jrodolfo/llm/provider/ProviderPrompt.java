@@ -2,6 +2,13 @@ package net.jrodolfo.llm.provider;
 
 import java.util.List;
 
+/**
+ * Represents a prompt sent to a model provider.
+ * Can contain either a simple prompt string or a list of structured messages.
+ *
+ * @param prompt the simple prompt string (used as fallback or for providers that don't support structured messages)
+ * @param messages the list of structured messages (role and content)
+ */
 public record ProviderPrompt(
         String prompt,
         List<ProviderPromptMessage> messages

@@ -16,13 +16,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * Hosted Hugging Face provider backed by a curated configured model list.
+ * Implementation of {@link ChatModelProvider} for hosted Hugging Face models.
+ * Backed by a curated list of configured models.
  */
 public class HuggingFaceChatModelProvider implements ChatModelProvider {
 
     private final HuggingFaceClient huggingFaceClient;
     private final HuggingFaceProperties huggingFaceProperties;
 
+    /**
+     * Constructs a new HuggingFaceChatModelProvider.
+     *
+     * @param huggingFaceClient the client to communicate with Hugging Face API
+     * @param huggingFaceProperties the configuration properties for Hugging Face
+     */
     public HuggingFaceChatModelProvider(HuggingFaceClient huggingFaceClient, HuggingFaceProperties huggingFaceProperties) {
         this.huggingFaceClient = huggingFaceClient;
         this.huggingFaceProperties = huggingFaceProperties;

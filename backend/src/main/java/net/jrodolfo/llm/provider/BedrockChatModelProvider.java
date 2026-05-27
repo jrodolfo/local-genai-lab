@@ -12,11 +12,20 @@ import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * Implementation of {@link ChatModelProvider} that uses Amazon Bedrock.
+ */
 public class BedrockChatModelProvider implements ChatModelProvider {
 
     private final BedrockRuntimeGateway bedrockRuntimeGateway;
     private final BedrockProperties bedrockProperties;
 
+    /**
+     * Constructs a new BedrockChatModelProvider.
+     *
+     * @param bedrockRuntimeGateway the gateway to communicate with Amazon Bedrock
+     * @param bedrockProperties the configuration properties for Bedrock
+     */
     public BedrockChatModelProvider(BedrockRuntimeGateway bedrockRuntimeGateway, BedrockProperties bedrockProperties) {
         this.bedrockRuntimeGateway = bedrockRuntimeGateway;
         this.bedrockProperties = bedrockProperties;
