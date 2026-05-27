@@ -147,6 +147,7 @@
 }
 
 .rag-primary-button:hover {
+  background: linear-gradient(135deg, #0f766e, #0f766e 30%, #155e75);
   border-color: transparent;
   filter: brightness(1.03);
 }
