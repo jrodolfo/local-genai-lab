@@ -17,6 +17,48 @@ Spring Boot API for chat, local sessions, artifact preview, and MCP-backed AWS t
 mvn spring-boot:run
 ```
 
+## Tests
+
+Run:
+
+```bash
+mvn test
+```
+
+The backend test suite is organized into four practical layers:
+
+1. Service and unit-style tests
+   Main packages:
+   - `src/test/java/net/jrodolfo/llm/service`
+   - `src/test/java/net/jrodolfo/llm/config`
+   - `src/test/java/net/jrodolfo/llm/health`
+
+   Use these for orchestration, routing, normalization, persistence logic, and focused config or health behavior.
+
+2. Provider and client contract tests
+   Main packages:
+   - `src/test/java/net/jrodolfo/llm/client`
+   - `src/test/java/net/jrodolfo/llm/provider`
+
+   Use these for provider-specific request handling, error classification, caching, and adapter behavior.
+
+3. Focused controller tests
+   Main package:
+   - `src/test/java/net/jrodolfo/llm/controller`
+
+   Use these for request validation, response shape, controller-specific error handling, and SSE/controller behavior without a full Spring context.
+
+4. Spring Boot smoke and wiring tests
+   Main classes:
+   - `src/test/java/net/jrodolfo/llm/ApiSmokeIntegrationTest.java`
+   - `src/test/java/net/jrodolfo/llm/LlmApplicationTests.java`
+
+   Use these for critical endpoint wiring and full-context smoke validation.
+
+Practical rule:
+- if the behavior does not need full application wiring, prefer a narrower layer
+- reserve `@SpringBootTest` for startup and high-value endpoint smoke coverage
+
 ## API Docs and Operations
 
 - OpenAPI: `http://localhost:8080/v3/api-docs`

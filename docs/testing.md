@@ -20,6 +20,56 @@ Covers:
 - artifact preview and path-safety behavior
 - controller error handling, health/model APIs, and streamed chat MVC smoke coverage
 
+Backend tests are split into four practical layers:
+
+1. Service and unit-style tests
+   Main examples:
+   - `backend/src/test/java/net/jrodolfo/llm/service/*.java`
+   - `backend/src/test/java/net/jrodolfo/llm/config/*.java`
+   - `backend/src/test/java/net/jrodolfo/llm/health/*.java`
+
+   Use this layer for:
+   - orchestration, routing, normalization, and prompt-building logic
+   - session persistence rules
+   - provider-status and model-discovery behavior
+   - focused config and health-check logic
+
+2. Provider and client contract tests
+   Main examples:
+   - `backend/src/test/java/net/jrodolfo/llm/client/*.java`
+   - `backend/src/test/java/net/jrodolfo/llm/provider/*.java`
+
+   Use this layer for:
+   - provider-specific request/response behavior
+   - provider error classification
+   - client-side caching and timeout behavior
+   - provider adapter contract checks without a full Spring context
+
+3. Focused controller and MVC tests
+   Main examples:
+   - `backend/src/test/java/net/jrodolfo/llm/controller/*.java`
+
+   Use this layer for:
+   - request validation
+   - status-code and response-shape checks
+   - controller-specific error handling
+   - SSE/controller behavior without paying for a full application context
+
+4. Spring Boot smoke and wiring tests
+   Main examples:
+   - `backend/src/test/java/net/jrodolfo/llm/ApiSmokeIntegrationTest.java`
+   - `backend/src/test/java/net/jrodolfo/llm/LlmApplicationTests.java`
+
+   Use this layer for:
+   - real application wiring across the highest-value endpoints
+   - end-to-end MVC stack checks with the Spring context running
+   - critical startup and smoke coverage
+
+Practical rule:
+- prefer service/provider/controller tests when a full Spring context is not needed
+- prefer `ApiSmokeIntegrationTest` only for critical endpoint wiring
+- do not add heavy `@SpringBootTest` coverage for behavior that is already well covered at a narrower layer
+
 Use this suite when changing:
 - Spring Boot controllers or services
 - provider integration code
