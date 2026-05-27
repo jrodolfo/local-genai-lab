@@ -9,17 +9,33 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Health indicator for the application's storage directories.
+ * <p>
+ * Checks if the sessions directory is accessible and if the reports directory
+ * exists and is readable.
+ */
 @Component("storage")
 public class StorageHealthIndicator implements HealthIndicator {
 
     private final Path sessionsDirectory;
     private final Path reportsDirectory;
 
+    /**
+     * Constructs a new StorageHealthIndicator with the specified storage properties.
+     *
+     * @param appStorageProperties the properties defining the storage paths.
+     */
     public StorageHealthIndicator(AppStorageProperties appStorageProperties) {
         this.sessionsDirectory = appStorageProperties.resolvedSessionsDirectory();
         this.reportsDirectory = appStorageProperties.resolvedReportsDirectory();
     }
 
+    /**
+     * Performs the health check for the storage directories.
+     *
+     * @return the health status and details of the storage directories.
+     */
     @Override
     public Health health() {
         try {

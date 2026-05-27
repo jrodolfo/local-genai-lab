@@ -9,15 +9,32 @@ import org.springframework.stereotype.Component;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * Health indicator for the Model Context Protocol (MCP) integration.
+ * <p>
+ * Checks if the MCP tool is enabled and if the configured working directory
+ * and entrypoint exist.
+ */
 @Component("mcp")
 public class McpHealthIndicator implements HealthIndicator {
 
     private final McpProperties mcpProperties;
 
+    /**
+     * Constructs a new McpHealthIndicator with the specified properties and client.
+     *
+     * @param mcpProperties the properties for MCP configuration.
+     * @param mcpClient     the client for MCP interactions (not directly used in health check but injected for readiness).
+     */
     public McpHealthIndicator(McpProperties mcpProperties, McpClient mcpClient) {
         this.mcpProperties = mcpProperties;
     }
 
+    /**
+     * Performs the health check for the MCP integration.
+     *
+     * @return the health status and details of the MCP integration.
+     */
     @Override
     public Health health() {
         boolean commandConfigured = mcpProperties.command() != null && !mcpProperties.command().isBlank();

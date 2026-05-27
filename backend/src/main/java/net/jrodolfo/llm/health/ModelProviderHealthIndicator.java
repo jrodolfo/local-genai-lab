@@ -25,6 +25,11 @@ import java.util.function.Supplier;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Health indicator for the active model provider (Ollama, Bedrock, or Hugging Face).
+ * <p>
+ * This indicator checks the configuration and readiness of the selected provider.
+ */
 @Component("modelProvider")
 public class ModelProviderHealthIndicator implements HealthIndicator {
 
@@ -36,6 +41,15 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
     private final ObjectMapper objectMapper;
     private final Supplier<Boolean> bedrockCredentialsResolver;
 
+    /**
+     * Constructs a new ModelProviderHealthIndicator using Spring-managed beans.
+     *
+     * @param appModelProperties     the application model properties.
+     * @param ollamaProperties       the Ollama configuration properties.
+     * @param bedrockProperties      the Bedrock configuration properties.
+     * @param huggingFaceProperties  the Hugging Face configuration properties.
+     * @param objectMapperProvider   the provider for the Jackson object mapper.
+     */
     @Autowired
     public ModelProviderHealthIndicator(
             AppModelProperties appModelProperties,
@@ -61,6 +75,17 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
         );
     }
 
+    /**
+     * Constructs a new ModelProviderHealthIndicator with the specified dependencies.
+     *
+     * @param appModelProperties         the application model properties.
+     * @param ollamaProperties           the Ollama configuration properties.
+     * @param bedrockProperties          the Bedrock configuration properties.
+     * @param huggingFaceProperties      the Hugging Face configuration properties.
+     * @param httpClient                 the HTTP client for network checks.
+     * @param objectMapper               the Jackson object mapper for JSON parsing.
+     * @param bedrockCredentialsResolver the supplier for Bedrock credentials resolution.
+     */
     ModelProviderHealthIndicator(
             AppModelProperties appModelProperties,
             OllamaProperties ollamaProperties,
@@ -79,6 +104,11 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
         this.bedrockCredentialsResolver = bedrockCredentialsResolver;
     }
 
+    /**
+     * Performs the health check for the active model provider.
+     *
+     * @return the health status and details of the model provider.
+     */
     @Override
     public Health health() {
         String provider = normalizeProvider(appModelProperties.provider());
