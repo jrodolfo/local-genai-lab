@@ -40,6 +40,7 @@ Current ADRs:
 - [ADR 0009: Use Short-Lived Provider Status Caching](./adr/0009-use-short-lived-provider-status-caching.md)
 - [ADR 0010: Use A Unified Backend Startup Script](./adr/0010-use-unified-backend-startup-script.md)
 - [ADR 0011: Use Mermaid As The Architecture Source Of Truth](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
+- [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 
 ## Main Components
 
@@ -173,6 +174,29 @@ Related ADRs:
 
 - [ADR 0007: Restrict Artifact Access To The Configured Reports Root](./adr/0007-restrict-artifact-access-to-configured-reports-root.md)
 
+### RAG Workspace
+
+The repository also includes an experimental phase-1 RAG path that is separate
+from the main chat and MCP orchestration flow.
+
+Current responsibilities:
+
+- query a fixed local corpus rooted at `docs/`
+- retrieve relevant chunks through an in-memory retrieval layer
+- send those chunks to the selected provider
+- return the generated answer with cited source chunks
+
+Important boundaries:
+
+- RAG uses separate `/api/rag/*` endpoints
+- RAG does not currently share the main `/api/chat` flow
+- RAG does not invoke MCP tools
+- RAG does not yet support uploads, embeddings, or an external vector store
+
+Related ADRs:
+
+- [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+
 ## Request Flows
 
 ### Plain Chat
@@ -245,6 +269,27 @@ React -> /api/chat/stream
 The backend explicitly manages stream lifecycle, disconnect handling, and cancellation to avoid persisting aborted assistant turns as completed responses.
 
 For tool-assisted streaming turns, the backend also emits explicit tool-phase events so the frontend can show in-flight lifecycle states such as tool decision, tool execution, and transition back to answer generation without guessing from the prompt text.
+
+### RAG Query Flow
+
+```text
+React -> /api/rag/query
+      -> local docs corpus retrieval
+      -> selected provider
+      -> answer + cited source chunks
+```
+
+Step-by-step:
+
+1. the user opens the separate `RAG` workspace
+2. the frontend sends the question to `/api/rag/query`
+3. the backend retrieves the top matching chunks from the fixed local docs corpus
+4. the backend builds a provider prompt grounded in those chunks
+5. the selected provider generates the answer
+6. the backend returns the answer together with the cited source chunks
+
+For manual evaluation guidance and the recommended prompt set, see
+[rag-evaluation-guide.md](./rag-evaluation-guide.md).
 
 ### Session Load / Export / Import
 

@@ -25,6 +25,9 @@ The main architectural idea is that the backend is the coordinator. The UI
 never talks directly to LLM providers or local tools. Tool-assisted results are
 grounded through the selected model rather than bypassing it.
 
+The repository also now includes a separate experimental `RAG` workspace for
+docs-grounded retrieval and answer generation over the local documentation set.
+
 ## Core Design Story
 
 If I had to explain the project in a few sentences:
@@ -146,6 +149,29 @@ Related ADR:
 
 - [ADR 0007](./adr/0007-restrict-artifact-access-to-configured-reports-root.md)
 
+### 8. Keep phase-1 RAG isolated from the main chat and tool flow
+
+Why:
+
+- it adds retrieval-augmented generation without destabilizing `/api/chat`
+- it avoids mixing MCP/tool routing and retrieval routing too early
+- it makes the first RAG slice easier to evaluate honestly
+
+Tradeoff:
+
+- phase 1 RAG is a separate workspace instead of a unified conversation mode
+
+Current phase-1 scope:
+
+- fixed local `docs/` corpus
+- in-memory retrieval
+- provider-generated answer with cited source chunks
+- no uploads, embeddings, or external vector store yet
+
+Related ADR:
+
+- [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+
 ## Key Design Points
 
 ### Clear runtime boundaries
@@ -260,6 +286,18 @@ Related ADR:
 
 - [ADR 0011](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
 
+### How do I manually evaluate the current RAG feature?
+
+Short answer:
+
+- use the dedicated [rag-evaluation-guide.md](./rag-evaluation-guide.md)
+- run the same question set across Ollama, Bedrock, and Hugging Face when possible
+- compare answer quality, citation quality, and retrieval relevance
+
+Related ADR:
+
+- [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+
 ## Future Evolution Paths
 
 If the system grows, likely next improvements would include:
@@ -272,5 +310,6 @@ If the system grows, likely next improvements would include:
 ## Where To Read More
 
 - System overview: [`architecture.md`](./architecture.md)
+- RAG manual evaluation: [`rag-evaluation-guide.md`](./rag-evaluation-guide.md)
 - Architecture diagram: [`architecture-overview.md`](./architecture-overview.md)
 - Architectural decisions: [`adr/README.md`](./adr/README.md)

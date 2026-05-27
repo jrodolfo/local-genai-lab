@@ -1,0 +1,132 @@
+# RAG Evaluation Guide
+
+Use this guide to manually evaluate the current phase-1 RAG workspace.
+
+Current scope:
+
+- separate `RAG` workspace in the frontend
+- fixed local corpus from [`docs/`](./)
+- lexical in-memory retrieval
+- provider-generated answer with cited source chunks
+
+This is intentionally a small, isolated RAG slice. It does not yet include
+uploads, external vector storage, or routing through the main chat/tool flow.
+
+Related references:
+
+- [architecture.md](./architecture.md)
+- [architecture-walkthrough.md](./architecture-walkthrough.md)
+- [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+
+## Before You Start
+
+By default, the backend exposes the `RAG` workspace. To hide it explicitly:
+
+```bash
+RAG_ENABLED=false ./restart.sh
+```
+
+To use it:
+
+1. start the app with `./start.sh` or `./restart.sh`
+2. open the frontend
+3. switch from `Chat` to `RAG`
+4. confirm the status card shows the docs corpus and retrieval mode
+
+If needed, use `Rebuild index` before testing.
+
+## Recommended Prompt Set
+
+Use the same prompt set across Ollama, Bedrock, and Hugging Face when possible:
+
+1. `How does provider selection work?`
+2. `Why is MCP separate from the backend?`
+3. `How are sessions persisted?`
+4. `What ADR explains the Mermaid architecture diagram?`
+
+These questions are good phase-1 checks because the answers should come from
+the repository docs and ADRs, not from general model knowledge alone.
+
+## What To Evaluate
+
+### Answer quality
+
+Check whether the answer:
+
+- is factually aligned with the repository
+- stays focused on the actual question
+- avoids generic filler
+- reflects the current architecture instead of hallucinated features
+
+### Citation quality
+
+Check whether the cited chunks:
+
+- come from the right files
+- are clearly relevant to the answer
+- help you verify the answer quickly
+- do not point to unrelated ADRs or sections
+
+### Retrieval quality
+
+Check whether the retrieved chunks:
+
+- reflect the best matching docs for the prompt
+- include the relevant ADR when the question is decision-oriented
+- avoid obviously lower-signal chunks when better ones exist
+
+### Provider differences
+
+Compare whether Ollama, Bedrock, and Hugging Face differ in:
+
+- answer clarity
+- faithfulness to the retrieved chunks
+- willingness to cite the right material
+- tendency to over-generalize beyond the local docs corpus
+
+## What A Good Result Looks Like
+
+A good phase-1 result is:
+
+- the answer is mostly grounded in the local docs corpus
+- the cited chunks are recognizably relevant
+- the answer mentions the right ADR or architecture file when appropriate
+- the provider adds synthesis without drifting away from the retrieved material
+
+Phase 1 does not need perfect semantic retrieval. It needs a small, honest,
+useful docs-grounded workflow with clear citations.
+
+## Problems Worth Recording
+
+Record repeated issues such as:
+
+- the wrong ADR is cited consistently
+- the retrieved chunks are too broad or too shallow
+- one provider ignores the retrieved context more than the others
+- answers mention features the repo does not actually implement
+- citations are technically present but not useful
+
+Do not overreact to one-off weak answers. Promote only repeated problems into
+follow-up engineering work.
+
+## Likely Follow-Up Directions
+
+If the main issue is retrieval quality:
+
+- improve chunking
+- tune `top-k`
+- refine lexical scoring or replace it later
+
+If the main issue is answer grounding:
+
+- tighten the RAG answer prompt
+- make source use more explicit
+
+If the main issue is corpus coverage:
+
+- expand beyond `docs/` in a later phase
+
+If the main issue is scale or retrieval accuracy:
+
+- evaluate embeddings
+- evaluate a replaceable external vector store in a later phase

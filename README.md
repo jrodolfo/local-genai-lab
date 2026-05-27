@@ -129,7 +129,6 @@ Script separation:
 - top-level scripts and the root `Makefile` are the public local app lifecycle interface
 - `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
 - `scripts/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
-- `scripts/` contains backend helpers, MCP-facing operational scripts, report generators, and shell tests
 
 ## Prerequisites
 
@@ -204,7 +203,7 @@ The provider selector only shows providers configured in the running backend pro
 
 For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phases while the request is in flight. Completed assistant replies also show compact tool provenance, and generated summaries, reports, and file lists can be inspected through the artifact inspector panel.
 
-The separate `RAG` workspace is enabled by default. If you want to hide it, start the backend with `RAG_ENABLED=false`.
+The separate `RAG` workspace is enabled by default. In phase 1, it queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
 
 ### 5. Optional: build the local MCP server
 
@@ -310,6 +309,7 @@ make s3-cloudwatch BUCKET=example.com
 ## Documentation Map
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
+- [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the phase-1 RAG workspace
 - [docs/architecture-walkthrough.md](./docs/architecture-walkthrough.md): concise walkthrough of the system design, tradeoffs, and common design questions
 - [docs/adr/](./docs/adr/): accepted architecture decision records
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas

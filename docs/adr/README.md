@@ -73,3 +73,4 @@ Start new records from [template.md](template.md).
 - [0009-use-short-lived-provider-status-caching.md](0009-use-short-lived-provider-status-caching.md)
 - [0010-use-unified-backend-startup-script.md](0010-use-unified-backend-startup-script.md)
 - [0011-use-mermaid-as-architecture-source-of-truth.md](0011-use-mermaid-as-architecture-source-of-truth.md)
+- [0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md](0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
