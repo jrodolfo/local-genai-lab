@@ -1,64 +1,64 @@
 .app-shell {
-  min-height: 100vh;
+    min-height: 100vh;
 }
 
 .app-nav {
-  align-items: center;
-  background: rgba(255, 255, 255, 0.88);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
-  display: flex;
-  gap: 0.75rem;
-  justify-content: space-between;
-  padding: 0.9rem 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.88);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
 .app-nav__brand {
-  font-family: "IBM Plex Serif", Georgia, serif;
-  font-size: 1rem;
-  font-weight: 700;
+    font-family: "IBM Plex Serif", Georgia, serif;
+    font-size: 1rem;
+    font-weight: 700;
 }
 
 .app-nav__tabs {
-  display: flex;
-  gap: 0.55rem;
+    display: flex;
+    gap: 0.55rem;
 }
 
 .app-nav__tabs button {
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 999px;
-  color: #0f172a;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 700;
-  padding: 0.55rem 0.9rem;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    color: #0f172a;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    padding: 0.55rem 0.9rem;
 }
 
 .app-nav__tabs button:disabled {
-  cursor: default;
-  opacity: 1;
+    cursor: default;
+    opacity: 1;
 }
 
 .app-nav__tabs button.app-nav__tab--active {
-  background: #0f172a;
-  border-color: #0f172a;
-  color: #fff;
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #fff;
 }
 
 .app-nav__tabs button.app-nav__tab--disabled {
-  background: #f8fafc;
-  border-style: dashed;
-  color: #64748b;
+    background: #f8fafc;
+    border-style: dashed;
+    color: #64748b;
 }
 
 .app-nav__hint {
-  background: rgba(248, 250, 252, 0.95);
-  border-bottom: 1px solid rgba(203, 213, 225, 0.85);
-  color: #64748b;
-  font-size: 0.9rem;
-  margin: 0;
-  padding: 0.55rem 1rem 0.7rem;
+    background: rgba(248, 250, 252, 0.95);
+    border-bottom: 1px solid rgba(203, 213, 225, 0.85);
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: 0;
+    padding: 0.55rem 1rem 0.7rem;
 }

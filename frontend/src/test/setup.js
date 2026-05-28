@@ -1,15 +1,15 @@
 import '@testing-library/jest-dom/vitest';
-import { afterAll, afterEach, beforeAll } from 'vitest';
-import { server } from './mswServer';
+import {afterAll, afterEach, beforeAll} from 'vitest';
+import {server} from './mswServer';
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
+    server.listen({onUnhandledRequest: 'error'});
 });
 
 afterEach(() => {
-  server.resetHandlers();
+    server.resetHandlers();
 });
 
 afterAll(() => {
-  server.close();
+    server.close();
 });
