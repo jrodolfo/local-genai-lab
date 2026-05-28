@@ -5,6 +5,12 @@ import {runCommand} from "../services/processRunner.js";
 import {detectNewRunDirectory, listReportDirectories} from "../services/reportLocator.js";
 import {parseReportBundle} from "../services/reportParser.js";
 
+/**
+ * Builds the command line arguments for the AWS region audit script based on user input.
+ *
+ * @param input - The audit tool input parameters.
+ * @returns An array of string arguments.
+ */
 function buildArgs(input: AwsRegionAuditInput): string[] {
     const args: string[] = [];
 
@@ -19,6 +25,15 @@ function buildArgs(input: AwsRegionAuditInput): string[] {
     return args;
 }
 
+/**
+ * Handler for the AWS region audit tool.
+ * Executes the `aws-region-audit-report.sh` script to audit AWS resources across specified regions and services.
+ * Involved AWS services: multiple (depending on input), commonly includes STS, S3, EC2, RDS, Lambda, etc.
+ *
+ * @param input - Configuration for the audit including target regions and services.
+ * @returns A promise that resolves to the audit result, including execution metadata, report summary, and preview.
+ * @throws {Error} If the audit script fails to produce a report directory.
+ */
 export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
     const beforeRunDirectories = new Set(
         (await listReportDirectories("audit")).map((directory) => directory.runDir),

@@ -11,6 +11,13 @@ const reportsDir = path.join(scriptsDir, "reports");
 const auditReportsDir = path.join(reportsDir, "audit");
 const s3ReportsDir = path.join(reportsDir, "s3-cloudwatch");
 
+/**
+ * Resolves a timeout value from an environment variable.
+ *
+ * @param name - The name of the environment variable.
+ * @param fallback - The default value to return if the environment variable is missing or invalid.
+ * @returns The resolved timeout value in milliseconds.
+ */
 function resolveTimeout(name: string, fallback: number): number {
     const rawValue = process.env[name];
     if (!rawValue) {
@@ -25,6 +32,12 @@ function resolveTimeout(name: string, fallback: number): number {
     return parsedValue;
 }
 
+/**
+ * Asserts that a directory exists at the specified path.
+ *
+ * @param directoryPath - The filesystem path to check.
+ * @throws {Error} If the directory does not exist.
+ */
 function assertDirectoryExists(directoryPath: string): void {
     if (!fs.existsSync(directoryPath)) {
         throw new Error(`Required directory is missing: ${directoryPath}`);
@@ -36,6 +49,10 @@ assertDirectoryExists(reportsDir);
 assertDirectoryExists(auditReportsDir);
 assertDirectoryExists(s3ReportsDir);
 
+/**
+ * Configuration for the MCP server.
+ * Includes resolved paths to repository scripts and reports, and configurable timeouts.
+ */
 export const config = {
     repoRoot,
     scriptsDir,

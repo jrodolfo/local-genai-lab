@@ -5,10 +5,23 @@ import {ensureWithinReports, type ReportType} from "./reportLocator.js";
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
+/**
+ * Resolves a path relative to the scripts directory to an absolute path.
+ *
+ * @param value - The relative path to resolve.
+ * @returns The absolute path.
+ */
 function resolveRepoRelativePath(value: string): string {
     return path.resolve(config.scriptsDir, value);
 }
 
+/**
+ * Recursively scans a summary object and converts relative paths to absolute paths.
+ * Paths are identified by keys ending in '_path' or equal to 'output_directory'.
+ *
+ * @param value - The JSON value to process.
+ * @returns The processed JSON value with absolute paths.
+ */
 function absolutizeSummaryPaths(value: JsonValue): JsonValue {
     if (Array.isArray(value)) {
         return value.map((item) => absolutizeSummaryPaths(item));
@@ -33,6 +46,13 @@ function absolutizeSummaryPaths(value: JsonValue): JsonValue {
     return value;
 }
 
+/**
+ * Infers the report type based on its directory location.
+ *
+ * @param runDir - The directory path of the report.
+ * @returns The inferred {@link ReportType}.
+ * @throws {Error} If the report type cannot be inferred from the directory.
+ */
 export function inferReportType(runDir: string): ReportType {
     const normalizedRunDir = path.resolve(runDir);
 
@@ -47,6 +67,14 @@ export function inferReportType(runDir: string): ReportType {
     throw new Error(`Could not infer report type from run directory: ${runDir}`);
 }
 
+/**
+ * Parses a report bundle from a directory, including its summary and a preview of the full report.
+ *
+ * @param runDir - The directory containing the report bundle.
+ * @param previewLines - The number of lines to include in the report preview (default: 20).
+ * @returns A promise that resolves to the parsed report data.
+ * @throws {Error} If the files cannot be read or the report type cannot be inferred.
+ */
 export async function parseReportBundle(runDir: string, previewLines = 20): Promise<{
     reportType: ReportType;
     runDir: string;

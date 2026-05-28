@@ -1,3 +1,11 @@
+/**
+ * @fileoverview MCP server entry point.
+ *
+ * Tool registration stays close to the schemas and adapters that invoke
+ * the repository scripts, so the backend can treat MCP as a small,
+ * explicit local capability surface.
+ */
+
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import {z} from "zod";
@@ -16,10 +24,10 @@ import {handleReadReportSummary} from "./tools/readReportSummary.js";
 import {handleS3CloudwatchReport} from "./tools/s3CloudwatchReport.js";
 
 /**
- * MCP server entrypoint.
+ * Formats a tool execution payload into a standardized MCP tool result.
  *
- * Tool registration stays close to the schemas and adapters that actually invoke the repository
- * scripts so the backend can treat MCP as a small, explicit local capability surface.
+ * @param payload - The data to be returned by the tool.
+ * @returns An object containing text and structured content for the MCP response.
  */
 function formatToolResult<T extends Record<string, unknown>>(payload: T) {
     return {
@@ -33,6 +41,13 @@ function formatToolResult<T extends Record<string, unknown>>(payload: T) {
     };
 }
 
+/**
+ * Formats an error into a standardized MCP tool error response.
+ *
+ * @param tool - The name of the tool that encountered the error.
+ * @param error - The error object or message.
+ * @returns An object containing the error status and formatted error message.
+ */
 function formatToolError(tool: string, error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown MCP tool error";
     const payload = toolErrorSchema.parse({

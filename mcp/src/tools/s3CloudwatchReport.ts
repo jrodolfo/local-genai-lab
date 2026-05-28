@@ -5,6 +5,12 @@ import {runCommand} from "../services/processRunner.js";
 import {detectNewRunDirectory, listReportDirectories} from "../services/reportLocator.js";
 import {parseReportBundle} from "../services/reportParser.js";
 
+/**
+ * Builds the command line arguments for the S3 CloudWatch report script based on user input.
+ *
+ * @param input - The S3 CloudWatch report tool input parameters.
+ * @returns An array of string arguments.
+ */
 function buildArgs(input: S3CloudwatchReportInput): string[] {
     const args = ["--bucket", input.bucket];
 
@@ -19,6 +25,15 @@ function buildArgs(input: S3CloudwatchReportInput): string[] {
     return args;
 }
 
+/**
+ * Handler for the S3 CloudWatch report tool.
+ * Executes the `aws-s3-cloudwatch-report.sh` script to analyze S3 bucket usage via CloudWatch metrics.
+ * Involved AWS services: S3, CloudWatch.
+ *
+ * @param input - Configuration for the report, including bucket name, region, and time range.
+ * @returns A promise that resolves to the report result, including execution metadata, report summary, and preview.
+ * @throws {Error} If the report script fails to produce a report directory.
+ */
 export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
     const beforeRunDirectories = new Set(
         (await listReportDirectories("s3_cloudwatch")).map((directory) => directory.runDir),

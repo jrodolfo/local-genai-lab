@@ -3,6 +3,12 @@ import type {ListRecentReportsInput} from "../schemas/toolSchemas.js";
 import {listRecentReportsResultSchema} from "../schemas/toolContracts.js";
 import {listReportDirectories, type ReportDirectory} from "../services/reportLocator.js";
 
+/**
+ * Converts a {@link ReportDirectory} internal object to the standardized report reference response shape.
+ *
+ * @param directory - The internal report directory object.
+ * @returns An object conforming to the report reference schema.
+ */
 function toResponseShape(directory: ReportDirectory) {
     return {
         report_type: directory.reportType,
@@ -14,6 +20,13 @@ function toResponseShape(directory: ReportDirectory) {
     };
 }
 
+/**
+ * Handler for the list recent reports tool.
+ * Retrieves a list of recently generated reports of the specified type, sorted by creation date.
+ *
+ * @param input - Configuration for listing reports, including report type and result limit.
+ * @returns A promise that resolves to the list of recent reports.
+ */
 export async function handleListRecentReports(input: ListRecentReportsInput) {
     const collectedDirectories: ReportDirectory[] =
         input.report_type === "all"
