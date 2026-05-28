@@ -151,6 +151,12 @@ public class InMemoryRagVectorStore implements RagVectorStore {
         return dotProduct / (vectorMagnitude(left.values()) * vectorMagnitude(right.values()));
     }
 
+    /**
+     * Calculates the size (Euclidean norm) of a vector represented as a collection of values.
+     *
+     * @param values The values in the vector.
+     * @return The size of the vector.
+     */
     private static double vectorMagnitude(Collection<Integer> values) {
         double sum = 0.0d;
         for (Integer value : values) {
@@ -159,6 +165,12 @@ public class InMemoryRagVectorStore implements RagVectorStore {
         return Math.sqrt(sum);
     }
 
+    /**
+     * Internal record representing a chunk along with its pre-calculated term frequencies.
+     *
+     * @param chunk           The original {@link RagChunk}.
+     * @param termFrequencies A map of tokens to their frequencies in the chunk's text.
+     */
     private record IndexedChunk(
             RagChunk chunk,
             Map<String, Integer> termFrequencies

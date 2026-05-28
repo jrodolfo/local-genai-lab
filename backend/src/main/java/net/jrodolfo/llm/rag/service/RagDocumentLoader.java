@@ -41,6 +41,14 @@ public class RagDocumentLoader {
         }
     }
 
+    /**
+     * Converts a file path to a {@link RagDocument}.
+     *
+     * @param corpusRoot The root directory of the corpus.
+     * @param file       The file to load.
+     * @return The loaded {@link RagDocument}.
+     * @throws IllegalStateException if the file cannot be read.
+     */
     private RagDocument toDocument(Path corpusRoot, Path file) {
         try {
             String content = Files.readString(file, StandardCharsets.UTF_8);
@@ -52,6 +60,12 @@ public class RagDocumentLoader {
         }
     }
 
+    /**
+     * Extracts the first Markdown heading (starting with #) from the content.
+     *
+     * @param content The Markdown content.
+     * @return The text of the first heading, or null if none found.
+     */
     private String firstMarkdownHeading(String content) {
         for (String line : content.split("\\R")) {
             String trimmed = line.trim();

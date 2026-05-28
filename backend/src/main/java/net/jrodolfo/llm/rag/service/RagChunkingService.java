@@ -30,6 +30,14 @@ public class RagChunkingService {
         return chunks;
     }
 
+    /**
+     * Splits a single document into chunks.
+     *
+     * @param document     The document to chunk.
+     * @param maxChunkSize The maximum size of each chunk.
+     * @param chunkOverlap The number of overlapping characters between chunks.
+     * @return A list of generated {@link RagChunk}s.
+     */
     List<RagChunk> chunkDocument(RagDocument document, int maxChunkSize, int chunkOverlap) {
         List<RagChunk> chunks = new ArrayList<>();
         String normalized = normalize(document.content());
@@ -72,6 +80,12 @@ public class RagChunkingService {
         return chunks;
     }
 
+    /**
+     * Normalizes the content by handling line endings and trimming whitespace.
+     *
+     * @param content The raw content.
+     * @return The normalized content.
+     */
     private String normalize(String content) {
         return content == null ? "" : content.replace("\r\n", "\n").trim();
     }

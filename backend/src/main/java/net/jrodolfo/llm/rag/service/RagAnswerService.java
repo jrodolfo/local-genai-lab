@@ -98,6 +98,13 @@ public class RagAnswerService {
         );
     }
 
+    /**
+     * Builds a prompt for the LLM using the provided question and retrieved matches.
+     *
+     * @param question The user's question.
+     * @param matches  The relevant document matches.
+     * @return A formatted prompt string.
+     */
     private String buildPrompt(String question, List<RagMatch> matches) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("""
@@ -123,6 +130,12 @@ public class RagAnswerService {
         return prompt.toString();
     }
 
+    /**
+     * Rounds a score to three decimal places.
+     *
+     * @param value The raw score.
+     * @return The rounded score.
+     */
     private double roundScore(double value) {
         return Math.round(value * 1000.0d) / 1000.0d;
     }
