@@ -5,7 +5,7 @@ import net.jrodolfo.llm.service.ChatToolRouterService;
 import java.util.List;
 
 /**
- * Represents a tool call that is pending user confirmation or more information.
+ * Represents a tool call pending user confirmation or more information.
  *
  * @param type          the type of decision required (e.g., confirm, clarify)
  * @param reportType    the type of report being generated
