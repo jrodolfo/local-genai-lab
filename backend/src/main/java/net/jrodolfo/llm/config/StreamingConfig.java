@@ -13,6 +13,12 @@ import java.util.concurrent.Executors;
 @Configuration
 public class StreamingConfig {
 
+    /**
+     * Creates an {@link Executor} for handling streaming chat responses.
+     * The executor uses a cached thread pool with daemon threads.
+     *
+     * @return the chat streaming executor
+     */
     @Bean(name = "chatStreamingExecutor", destroyMethod = "shutdown")
     public Executor chatStreamingExecutor() {
         return Executors.newCachedThreadPool(runnable -> {

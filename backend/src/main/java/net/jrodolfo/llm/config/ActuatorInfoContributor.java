@@ -24,6 +24,17 @@ public class ActuatorInfoContributor implements InfoContributor {
     private final BedrockProperties bedrockProperties;
     private final HuggingFaceProperties huggingFaceProperties;
 
+    /**
+     * Constructs a new {@code ActuatorInfoContributor} with the required properties and environment.
+     *
+     * @param environment           the Spring environment
+     * @param appModelProperties    properties for the LLM model provider
+     * @param appStorageProperties  properties for application storage
+     * @param mcpProperties         properties for Model Context Protocol tooling
+     * @param ollamaProperties      properties for Ollama
+     * @param bedrockProperties     properties for Amazon Bedrock
+     * @param huggingFaceProperties properties for Hugging Face
+     */
     public ActuatorInfoContributor(Environment environment,
                                    AppModelProperties appModelProperties,
                                    AppStorageProperties appStorageProperties,
@@ -40,6 +51,11 @@ public class ActuatorInfoContributor implements InfoContributor {
         this.huggingFaceProperties = huggingFaceProperties;
     }
 
+    /**
+     * Contributes details to the {@link Info.Builder}.
+     *
+     * @param builder the builder to which information is added
+     */
     @Override
     public void contribute(Info.Builder builder) {
         builder.withDetail("app", appDetails());
@@ -52,6 +68,11 @@ public class ActuatorInfoContributor implements InfoContributor {
         ));
     }
 
+    /**
+     * Collects application-level details.
+     *
+     * @return a map containing application name and description
+     */
     private Map<String, Object> appDetails() {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("name", environment.getProperty("spring.application.name", "local-genai-lab-backend"));
@@ -59,6 +80,11 @@ public class ActuatorInfoContributor implements InfoContributor {
         return details;
     }
 
+    /**
+     * Collects runtime configuration details, including provider-specific information.
+     *
+     * @return a map containing runtime details
+     */
     private Map<String, Object> runtimeDetails() {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("provider", appModelProperties.provider());
@@ -79,6 +105,11 @@ public class ActuatorInfoContributor implements InfoContributor {
         return details;
     }
 
+    /**
+     * Collects Model Context Protocol (MCP) tooling details.
+     *
+     * @return a map containing MCP configuration and status
+     */
     private Map<String, Object> mcpDetails() {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("enabled", mcpProperties.enabled());

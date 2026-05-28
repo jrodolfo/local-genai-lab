@@ -8,13 +8,13 @@ import java.util.List;
 /**
  * Configuration properties for Model Context Protocol (MCP) tooling.
  * Enables integration with external tools via the MCP protocol.
- * 
- * @param enabled whether MCP tooling is enabled
- * @param command the command to execute the MCP server
- * @param args arguments for the MCP server command
- * @param workingDirectory the working directory for the MCP server
+ *
+ * @param enabled               whether MCP tooling is enabled
+ * @param command               the command to execute the MCP server
+ * @param args                  arguments for the MCP server command
+ * @param workingDirectory      the working directory for the MCP server
  * @param startupTimeoutSeconds timeout in seconds for MCP server startup
- * @param toolTimeoutSeconds timeout in seconds for MCP tool execution
+ * @param toolTimeoutSeconds    timeout in seconds for MCP tool execution
  */
 @ConfigurationProperties(prefix = "mcp")
 public record McpProperties(
@@ -25,10 +25,22 @@ public record McpProperties(
         int startupTimeoutSeconds,
         int toolTimeoutSeconds
 ) {
+    /**
+     * Resolves the MCP working directory against the project root.
+     *
+     * @return the resolved path to the MCP working directory
+     */
     public Path resolvedWorkingDirectory() {
         return resolveAgainstProjectRoot(workingDirectory);
     }
 
+    /**
+     * Resolves a configured path against the project root if it is not already absolute.
+     * If the path is null or blank, the project root itself is returned.
+     *
+     * @param configuredPath the path string to resolve
+     * @return the resolved {@link Path}
+     */
     private Path resolveAgainstProjectRoot(String configuredPath) {
         if (configuredPath == null || configuredPath.isBlank()) {
             return findProjectRoot();
@@ -41,6 +53,12 @@ public record McpProperties(
         return findProjectRoot().resolve(candidate).normalize();
     }
 
+    /**
+     * Traverses up the directory tree to find the project root directory.
+     * The root is identified by the presence of certain markers like backend/pom.xml.
+     *
+     * @return the {@link Path} to the project root
+     */
     private Path findProjectRoot() {
         Path current = Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
         while (current != null) {
@@ -52,6 +70,12 @@ public record McpProperties(
         return Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
     }
 
+    /**
+     * Checks if a candidate directory looks like the project root based on expected files.
+     *
+     * @param candidate the directory to check
+     * @return true if the directory contains project markers
+     */
     private boolean looksLikeProjectRoot(Path candidate) {
         return candidate.resolve("backend/pom.xml").toFile().isFile()
                 && candidate.resolve("frontend/package.json").toFile().isFile()

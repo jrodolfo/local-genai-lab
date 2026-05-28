@@ -1,10 +1,10 @@
 package net.jrodolfo.llm.config;
 
-import org.springdoc.core.models.GroupedOpenApi;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -15,6 +15,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Creates a {@link GroupedOpenApi} for the application endpoints.
+     *
+     * @return the grouped OpenAPI configuration
+     */
     @Bean
     public GroupedOpenApi appApi() {
         return GroupedOpenApi.builder()
@@ -24,6 +29,11 @@ public class OpenApiConfig {
                 .build();
     }
 
+    /**
+     * Configures the {@link OpenAPI} metadata for the Local GenAI Lab API.
+     *
+     * @return the OpenAPI configuration
+     */
     @Bean
     public OpenAPI localGenAiLabOpenApi() {
         return new OpenAPI()
