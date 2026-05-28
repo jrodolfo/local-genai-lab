@@ -1,5 +1,7 @@
 package net.jrodolfo.llm.health;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.config.AppModelProperties;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.config.HuggingFaceProperties;
@@ -13,17 +15,14 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
-import java.io.UncheckedIOException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.function.Supplier;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Health indicator for the active model provider (Ollama, Bedrock, or Hugging Face).
@@ -44,11 +43,11 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
     /**
      * Constructs a new ModelProviderHealthIndicator using Spring-managed beans.
      *
-     * @param appModelProperties     the application model properties.
-     * @param ollamaProperties       the Ollama configuration properties.
-     * @param bedrockProperties      the Bedrock configuration properties.
-     * @param huggingFaceProperties  the Hugging Face configuration properties.
-     * @param objectMapperProvider   the provider for the Jackson object mapper.
+     * @param appModelProperties    the application model properties.
+     * @param ollamaProperties      the Ollama configuration properties.
+     * @param bedrockProperties     the Bedrock configuration properties.
+     * @param huggingFaceProperties the Hugging Face configuration properties.
+     * @param objectMapperProvider  the provider for the Jackson object mapper.
      */
     @Autowired
     public ModelProviderHealthIndicator(
@@ -123,6 +122,11 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
         };
     }
 
+    /**
+     * Checks the health of the Amazon Bedrock provider.
+     *
+     * @return the health status and configuration details for Bedrock.
+     */
     private Health bedrockHealth() {
         boolean regionConfigured = bedrockProperties.region() != null && !bedrockProperties.region().isBlank();
         boolean modelConfigured = bedrockProperties.modelId() != null && !bedrockProperties.modelId().isBlank();
@@ -156,6 +160,11 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                 .build();
     }
 
+    /**
+     * Checks the health of the Ollama provider by querying its API and verifying the default model's presence.
+     *
+     * @return the health status and connection details for Ollama.
+     */
     private Health ollamaHealth() {
         String baseUrl = ollamaProperties.baseUrl();
         String defaultModel = ollamaProperties.defaultModel();
@@ -222,6 +231,11 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
         }
     }
 
+    /**
+     * Checks the health of the Hugging Face provider.
+     *
+     * @return the health status and configuration details for Hugging Face.
+     */
     private Health huggingFaceHealth() {
         boolean tokenConfigured = huggingFaceProperties.apiToken() != null && !huggingFaceProperties.apiToken().isBlank();
         boolean baseUrlConfigured = huggingFaceProperties.baseUrl() != null && !huggingFaceProperties.baseUrl().isBlank();
@@ -246,6 +260,13 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                 .build();
     }
 
+    /**
+     * Checks if the specified model is present in the Ollama response body.
+     *
+     * @param responseBody the JSON response from the Ollama tags API.
+     * @param defaultModel the name of the model to look for.
+     * @return {@code true} if the model is present, {@code false} otherwise.
+     */
     private boolean ollamaModelPresent(String responseBody, String defaultModel) {
         if (defaultModel == null || defaultModel.isBlank()) {
             return true;
@@ -268,6 +289,12 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
         }
     }
 
+    /**
+     * Normalizes the provider name to a standard format.
+     *
+     * @param provider the raw provider name from the properties.
+     * @return the normalized, lowercase provider name.
+     */
     private String normalizeProvider(String provider) {
         if (provider == null || provider.isBlank()) {
             return "ollama";

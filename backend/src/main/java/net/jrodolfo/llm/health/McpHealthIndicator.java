@@ -1,7 +1,7 @@
 package net.jrodolfo.llm.health;
 
-import net.jrodolfo.llm.config.McpProperties;
 import net.jrodolfo.llm.client.McpClient;
+import net.jrodolfo.llm.config.McpProperties;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
