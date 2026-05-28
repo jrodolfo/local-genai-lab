@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
+/**
+ * Compact provider readiness and troubleshooting status for the chat UI.
+ */
 @Schema(description = "Compact provider readiness and troubleshooting status for the chat UI.")
 public record ProviderStatusResponse(
         @Schema(description = "Provider whose status is being reported.", example = "ollama")
@@ -21,10 +24,25 @@ public record ProviderStatusResponse(
         @Schema(description = "Configured models that were rejected during provider validation when applicable.")
         List<String> rejectedModels
 ) {
+    /**
+     * Compact constructor for a simple provider status.
+     *
+     * @param provider provider name
+     * @param status provider status
+     * @param message status message
+     */
     public ProviderStatusResponse(String provider, String status, String message) {
         this(provider, status, message, null, List.of(), List.of(), List.of());
     }
 
+    /**
+     * Compact constructor for a simple provider status with refresh timestamp.
+     *
+     * @param provider provider name
+     * @param status provider status
+     * @param message status message
+     * @param refreshedAt refresh timestamp
+     */
     public ProviderStatusResponse(String provider, String status, String message, String refreshedAt) {
         this(provider, status, message, refreshedAt, List.of(), List.of(), List.of());
     }

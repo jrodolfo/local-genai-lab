@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
+/**
+ * Available model options for the active provider.
+ */
 @Schema(description = "Available model options for the active provider.")
 public record AvailableModelsResponse(
         @Schema(description = "Provider whose models are included in this payload.", example = "ollama")

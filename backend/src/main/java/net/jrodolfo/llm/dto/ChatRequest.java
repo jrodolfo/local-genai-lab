@@ -3,6 +3,9 @@ package net.jrodolfo.llm.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Chat request for normal or streaming chat endpoints.
+ */
 @Schema(description = "Chat request for normal or streaming chat endpoints.")
 public record ChatRequest(
         @Schema(description = "User message to send to the chat model.", example = "Explain recursion with a simple example.")

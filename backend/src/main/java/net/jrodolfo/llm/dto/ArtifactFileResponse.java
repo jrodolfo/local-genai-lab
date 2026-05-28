@@ -2,6 +2,9 @@ package net.jrodolfo.llm.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Artifact file entry under a report run directory.
+ */
 @Schema(description = "Artifact file entry under a report run directory.")
 public record ArtifactFileResponse(
         @Schema(description = "File name.", example = "summary.json")

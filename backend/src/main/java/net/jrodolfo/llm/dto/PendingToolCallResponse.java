@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
+/**
+ * Pending tool clarification state exposed to the frontend.
+ */
 @Schema(description = "Pending tool clarification state exposed to the frontend.")
 public record PendingToolCallResponse(
         String toolName,

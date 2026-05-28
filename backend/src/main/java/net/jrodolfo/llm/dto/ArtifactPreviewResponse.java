@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
 
+/**
+ * Read-only preview of a text or JSON artifact under the reports directory.
+ */
 @Schema(description = "Read-only preview of a text or JSON artifact under the reports directory.")
 public record ArtifactPreviewResponse(
         @Schema(description = "Artifact path relative to the configured reports directory.")

@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Map;
 
+/**
+ * Chat response for non-streaming chat requests.
+ */
 @Schema(description = "Chat response for non-streaming chat requests.")
 public record ChatResponse(
         @Schema(description = "Assistant response text.")

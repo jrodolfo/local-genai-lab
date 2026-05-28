@@ -6,6 +6,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Message entry within a chat session.
+ */
 public record ChatSessionMessageResponse(
         String role,
         String content,

@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Map;
 
+/**
+ * Structured SSE event payload emitted by the streaming chat endpoint.
+ */
 @Schema(description = "Structured SSE event payload emitted by the streaming chat endpoint.")
 public record ChatStreamEvent(
         @Schema(description = "Event type.", example = "start")
@@ -23,6 +26,16 @@ public record ChatStreamEvent(
         @Schema(description = "Optional model provider metadata attached to the event.")
         ModelProviderMetadata metadata
 ) {
+    /**
+     * Creates a start event.
+     *
+     * @param sessionId active session identifier
+     * @param tool optional tool metadata
+     * @param toolResult optional tool result
+     * @param pendingTool optional pending tool call
+     * @param metadata optional provider metadata
+     * @return a start event
+     */
     public static ChatStreamEvent start(
             String sessionId,
             ChatToolMetadata tool,
@@ -33,14 +46,37 @@ public record ChatStreamEvent(
         return new ChatStreamEvent("start", sessionId, null, null, tool, toolResult, pendingTool, metadata);
     }
 
+    /**
+     * Creates a phase event.
+     *
+     * @param type event type
+     * @param toolName tool name
+     * @return a phase event
+     */
     public static ChatStreamEvent phase(String type, String toolName) {
         return new ChatStreamEvent(type, null, null, toolName, null, null, null, null);
     }
 
+    /**
+     * Creates a delta event.
+     *
+     * @param text delta text
+     * @return a delta event
+     */
     public static ChatStreamEvent delta(String text) {
         return new ChatStreamEvent("delta", null, text, null, null, null, null, null);
     }
 
+    /**
+     * Creates a complete event.
+     *
+     * @param sessionId active session identifier
+     * @param tool optional tool metadata
+     * @param toolResult optional tool result
+     * @param pendingTool optional pending tool call
+     * @param metadata optional provider metadata
+     * @return a complete event
+     */
     public static ChatStreamEvent complete(
             String sessionId,
             ChatToolMetadata tool,
