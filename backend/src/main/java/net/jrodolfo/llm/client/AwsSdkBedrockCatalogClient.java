@@ -2,11 +2,7 @@ package net.jrodolfo.llm.client;
 
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.bedrock.BedrockClient;
-import software.amazon.awssdk.services.bedrock.model.InferenceProfileStatus;
-import software.amazon.awssdk.services.bedrock.model.InferenceProfileSummary;
-import software.amazon.awssdk.services.bedrock.model.InferenceProfileType;
-import software.amazon.awssdk.services.bedrock.model.ListInferenceProfilesRequest;
-import software.amazon.awssdk.services.bedrock.model.ListInferenceProfilesResponse;
+import software.amazon.awssdk.services.bedrock.model.*;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

@@ -2,23 +2,9 @@ package net.jrodolfo.llm.client;
 
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.provider.ProviderPromptMessage;
-import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
-import software.amazon.awssdk.services.bedrockruntime.model.ContentBlock;
-import software.amazon.awssdk.services.bedrockruntime.model.ContentBlockDeltaEvent;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseRequest;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseResponse;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamRequest;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetrics;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamResponseHandler;
-import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole;
-import software.amazon.awssdk.services.bedrockruntime.model.Message;
-import software.amazon.awssdk.services.bedrockruntime.model.TokenUsage;
-import software.amazon.awssdk.services.bedrockruntime.model.ConverseStreamMetadataEvent;
-import software.amazon.awssdk.services.bedrockruntime.model.MessageStopEvent;
-import software.amazon.awssdk.services.bedrockruntime.model.SystemContentBlock;
-import software.amazon.awssdk.services.bedrockruntime.model.ValidationException;
+import software.amazon.awssdk.services.bedrockruntime.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,7 +151,7 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                         .onContentBlockDelta(event -> forwardChunk(event, chunkConsumer))
                         .onMessageStop(event -> captureStopReason(event, stopReason))
                         .onMetadata(event -> captureMetadata(event, usage, metrics))
-                .build())
+                        .build())
                 .onError(error -> metadataFuture.completeExceptionally(
                         new ModelProviderException(classifyBedrockFailure(error, true), error)
                 ))
@@ -270,8 +256,10 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
             switch (role) {
                 case "system" -> system.add(SystemContentBlock.fromText(providerMessage.content()));
                 case "user" -> messages.add(toBedrockMessage(ConversationRole.USER, providerMessage.content()));
-                case "assistant" -> messages.add(toBedrockMessage(ConversationRole.ASSISTANT, providerMessage.content()));
-                default -> throw new ModelProviderException("Unsupported Bedrock prompt role: " + providerMessage.role());
+                case "assistant" ->
+                        messages.add(toBedrockMessage(ConversationRole.ASSISTANT, providerMessage.content()));
+                default ->
+                        throw new ModelProviderException("Unsupported Bedrock prompt role: " + providerMessage.role());
             }
         }
 

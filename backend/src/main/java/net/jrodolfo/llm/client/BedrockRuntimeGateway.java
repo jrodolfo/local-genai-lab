@@ -3,8 +3,8 @@ package net.jrodolfo.llm.client;
 import net.jrodolfo.llm.provider.ProviderPromptMessage;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Gateway interface for interacting with the Amazon Bedrock Runtime.
