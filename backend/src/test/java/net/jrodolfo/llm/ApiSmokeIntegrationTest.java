@@ -329,7 +329,7 @@ class ApiSmokeIntegrationTest {
             this.lastSessionId = sessionId;
             this.lastRequestId = requestId;
             if (emitToolPhases) {
-                toolPhaseListener.onPhase("tool-decision-started", null);
+                toolPhaseListener.onPhase("tool-decision-started", "aws_region_audit");
                 toolPhaseListener.onPhase("tool-execution-started", "aws_region_audit");
                 toolPhaseListener.onPhase("tool-execution-completed", "aws_region_audit");
             }

@@ -177,7 +177,6 @@ public class ChatOrchestratorService {
             String requestId,
             ToolPhaseListener toolPhaseListener
     ) {
-        toolPhaseListener.onPhase("tool-decision-started", null);
         ChatModelProvider chatModelProvider = chatModelProviderRegistry.get(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
         ChatSession session = chatMemoryService.startTurn(sessionId, model, resolvedModel, message);
@@ -194,6 +193,9 @@ public class ChatOrchestratorService {
                 decision.needsClarification(),
                 decision.shouldUseTool()
         );
+        if (decision.needsClarification() || decision.shouldUseTool()) {
+            toolPhaseListener.onPhase("tool-decision-started", toolNameForDecision(decision));
+        }
         if (decision.needsClarification()) {
             ChatToolMetadata metadata = new ChatToolMetadata(
                     true,
