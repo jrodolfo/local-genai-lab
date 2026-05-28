@@ -18,7 +18,7 @@ test_env_file_populates_unset_values() {
 
   tmp_dir="$(mktemp -d)"
   env_file="${tmp_dir}/test.env"
-  cat > "${env_file}" <<'EOF'
+  cat >"${env_file}" <<'EOF'
 APP_MODEL_PROVIDER=bedrock
 BEDROCK_REGION=us-west-2
 BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0
@@ -39,7 +39,7 @@ test_shell_env_overrides_env_file() {
 
   tmp_dir="$(mktemp -d)"
   env_file="${tmp_dir}/test.env"
-  cat > "${env_file}" <<'EOF'
+  cat >"${env_file}" <<'EOF'
 APP_MODEL_PROVIDER=ollama
 BEDROCK_REGION=us-east-1
 EOF
@@ -56,7 +56,7 @@ test_invalid_default_provider_fails_clearly() {
 
   tmp_dir="$(mktemp -d)"
   env_file="${tmp_dir}/test.env"
-  : > "${env_file}"
+  : >"${env_file}"
 
   if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=invalid bash "${SCRIPT_PATH}" >/tmp/start-backend-helper-invalid.out 2>/tmp/start-backend-helper-invalid.err; then
     printf 'expected invalid APP_MODEL_PROVIDER to fail\n' >&2
@@ -73,7 +73,7 @@ test_huggingface_default_requires_token() {
 
   tmp_dir="$(mktemp -d)"
   env_file="${tmp_dir}/test.env"
-  : > "${env_file}"
+  : >"${env_file}"
 
   if ENV_FILE="${env_file}" DRY_RUN=true APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN= bash "${SCRIPT_PATH}" >/tmp/start-backend-helper-hf.out 2>/tmp/start-backend-helper-hf.err; then
     printf 'expected Hugging Face default provider without token to fail\n' >&2

@@ -38,9 +38,9 @@ run_audit() {
   local reports_dir="$1"
   shift
   REPORTS_DIR="$reports_dir" \
-  TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
-  AWS_BIN="$MOCK_AWS" \
-  "$SCRIPT_PATH" "$@" >/dev/null
+    TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
+    AWS_BIN="$MOCK_AWS" \
+    "$SCRIPT_PATH" "$@" >/dev/null
 }
 
 test_default_run_creates_outputs() {
@@ -108,14 +108,14 @@ test_failed_service_is_recorded() {
   reports_dir="$tmp_dir/reports"
 
   REPORTS_DIR="$reports_dir" \
-  TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
-  AWS_BIN="$MOCK_AWS" \
-  MOCK_FAIL_SERVICE="opensearch" \
-  "$SCRIPT_PATH" --regions us-east-2 --services opensearch >/dev/null
+    TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
+    AWS_BIN="$MOCK_AWS" \
+    MOCK_FAIL_SERVICE="opensearch" \
+    "$SCRIPT_PATH" --regions us-east-2 --services opensearch >/dev/null
 
   outdir="$reports_dir/aws-audit-2026-04-06_00-00-00"
   assert_eq "1" "$("$JQ_BIN" -r '.failure_count' "$outdir/summary.json")"
-  assert_eq "mock failure for service: opensearch" "$(tr -d '\n' < "$outdir/stderr/us_east_2_opensearch_list_domain_names.stderr")"
+  assert_eq "mock failure for service: opensearch" "$(tr -d '\n' <"$outdir/stderr/us_east_2_opensearch_list_domain_names.stderr")"
   rm -rf "$tmp_dir"
 }
 

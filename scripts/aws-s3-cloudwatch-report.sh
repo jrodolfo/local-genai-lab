@@ -80,7 +80,7 @@ init_output() {
   STATUS_TSV="$META_DIR/status.tsv"
 
   mkdir -p "$OUTDIR" "$JSON_DIR" "$TEXT_DIR" "$STDERR_DIR" "$META_DIR"
-  : > "$STATUS_TSV"
+  : >"$STATUS_TSV"
   OUTPUT_INITIALIZED=1
 }
 
@@ -107,7 +107,7 @@ log_console() {
 }
 
 report_line() {
-  printf '%s\n' "$*" >> "$TEXT_REPORT"
+  printf '%s\n' "$*" >>"$TEXT_REPORT"
 }
 
 write_section_separator() {
@@ -121,15 +121,15 @@ normalize_bucket_region() {
   local value="$1"
 
   case "$value" in
-    ""|"null"|"None")
-      printf 'us-east-1'
-      ;;
-    "EU")
-      printf 'eu-west-1'
-      ;;
-    *)
-      printf '%s' "$value"
-      ;;
+  "" | "null" | "None")
+    printf 'us-east-1'
+    ;;
+  "EU")
+    printf 'eu-west-1'
+    ;;
+  *)
+    printf '%s' "$value"
+    ;;
   esac
 }
 
@@ -188,15 +188,15 @@ duration_human() {
   local seconds="$1"
 
   case "$seconds" in
-    86400)
-      printf '24 hours'
-      ;;
-    3600)
-      printf '1 hour'
-      ;;
-    *)
-      printf '%s seconds' "$seconds"
-      ;;
+  86400)
+    printf '24 hours'
+    ;;
+  3600)
+    printf '1 hour'
+    ;;
+  *)
+    printf '%s seconds' "$seconds"
+    ;;
   esac
 }
 
@@ -266,7 +266,7 @@ record_status() {
     "$STATUS_DELIM" \
     "$stderr_path" \
     "$STATUS_DELIM" \
-    "$note" >> "$STATUS_TSV"
+    "$note" >>"$STATUS_TSV"
 }
 
 run_cmd() {
@@ -280,8 +280,8 @@ run_cmd() {
   local exit_code=0
   local status="success"
 
-  : > "$stdout_path"
-  : > "$stderr_path"
+  : >"$stdout_path"
+  : >"$stderr_path"
 
   if "$@" >"$stdout_path" 2>"$stderr_path"; then
     SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
@@ -312,27 +312,27 @@ record_skipped() {
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --bucket)
-        shift
-        BUCKET="${1:-}"
-        ;;
-      --region)
-        shift
-        REQUEST_REGION="${1:-}"
-        ;;
-      --days)
-        shift
-        DAYS="${1:-}"
-        ;;
-      -h|--help)
-        usage
-        exit 0
-        ;;
-      *)
-        printf 'Error: unknown argument: %s\n' "$1" >&2
-        usage >&2
-        exit 1
-        ;;
+    --bucket)
+      shift
+      BUCKET="${1:-}"
+      ;;
+    --region)
+      shift
+      REQUEST_REGION="${1:-}"
+      ;;
+    --days)
+      shift
+      DAYS="${1:-}"
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Error: unknown argument: %s\n' "$1" >&2
+      usage >&2
+      exit 1
+      ;;
     esac
     shift || true
   done
@@ -344,10 +344,10 @@ parse_args() {
   fi
 
   case "$DAYS" in
-    ''|*[!0-9]*)
-      printf 'Error: --days must be a positive integer.\n' >&2
-      exit 1
-      ;;
+  '' | *[!0-9]*)
+    printf 'Error: --days must be a positive integer.\n' >&2
+    exit 1
+    ;;
   esac
 
   if [ "$DAYS" -le 0 ]; then
@@ -415,42 +415,42 @@ request_metric_unit() {
   local metric_name="$1"
 
   case "$metric_name" in
-    4xxErrors)
-      printf 'client-error responses'
-      ;;
-    5xxErrors)
-      printf 'server-error responses'
-      ;;
-    AllRequests)
-      printf 'total requests'
-      ;;
-    GetRequests)
-      printf 'GET requests'
-      ;;
-    PutRequests)
-      printf 'PUT requests'
-      ;;
-    PostRequests)
-      printf 'POST requests'
-      ;;
-    DeleteRequests)
-      printf 'DELETE requests'
-      ;;
-    HeadRequests)
-      printf 'HEAD requests'
-      ;;
-    BytesDownloaded)
-      printf 'bytes downloaded'
-      ;;
-    BytesUploaded)
-      printf 'bytes uploaded'
-      ;;
-    FirstByteLatency|TotalRequestLatency)
-      printf 'ms'
-      ;;
-    *)
-      printf 'value'
-      ;;
+  4xxErrors)
+    printf 'client-error responses'
+    ;;
+  5xxErrors)
+    printf 'server-error responses'
+    ;;
+  AllRequests)
+    printf 'total requests'
+    ;;
+  GetRequests)
+    printf 'GET requests'
+    ;;
+  PutRequests)
+    printf 'PUT requests'
+    ;;
+  PostRequests)
+    printf 'POST requests'
+    ;;
+  DeleteRequests)
+    printf 'DELETE requests'
+    ;;
+  HeadRequests)
+    printf 'HEAD requests'
+    ;;
+  BytesDownloaded)
+    printf 'bytes downloaded'
+    ;;
+  BytesUploaded)
+    printf 'bytes uploaded'
+    ;;
+  FirstByteLatency | TotalRequestLatency)
+    printf 'ms'
+    ;;
+  *)
+    printf 'value'
+    ;;
   esac
 }
 
@@ -458,45 +458,45 @@ request_metric_description() {
   local metric_name="$1"
 
   case "$metric_name" in
-    4xxErrors)
-      printf 'requests that returned an HTTP 4xx status code'
-      ;;
-    5xxErrors)
-      printf 'requests that returned an HTTP 5xx status code'
-      ;;
-    AllRequests)
-      printf 'all requests handled by this bucket metric filter'
-      ;;
-    GetRequests)
-      printf 'GET object requests handled by this bucket metric filter'
-      ;;
-    PutRequests)
-      printf 'PUT object requests handled by this bucket metric filter'
-      ;;
-    PostRequests)
-      printf 'POST requests handled by this bucket metric filter'
-      ;;
-    DeleteRequests)
-      printf 'DELETE requests handled by this bucket metric filter'
-      ;;
-    HeadRequests)
-      printf 'HEAD requests handled by this bucket metric filter'
-      ;;
-    BytesDownloaded)
-      printf 'total bytes sent from S3 to clients'
-      ;;
-    BytesUploaded)
-      printf 'total bytes sent by clients to S3'
-      ;;
-    FirstByteLatency)
-      printf 'average time until S3 returned the first byte'
-      ;;
-    TotalRequestLatency)
-      printf 'average end-to-end request time in S3'
-      ;;
-    *)
-      printf 'latest CloudWatch datapoint returned for this metric'
-      ;;
+  4xxErrors)
+    printf 'requests that returned an HTTP 4xx status code'
+    ;;
+  5xxErrors)
+    printf 'requests that returned an HTTP 5xx status code'
+    ;;
+  AllRequests)
+    printf 'all requests handled by this bucket metric filter'
+    ;;
+  GetRequests)
+    printf 'GET object requests handled by this bucket metric filter'
+    ;;
+  PutRequests)
+    printf 'PUT object requests handled by this bucket metric filter'
+    ;;
+  PostRequests)
+    printf 'POST requests handled by this bucket metric filter'
+    ;;
+  DeleteRequests)
+    printf 'DELETE requests handled by this bucket metric filter'
+    ;;
+  HeadRequests)
+    printf 'HEAD requests handled by this bucket metric filter'
+    ;;
+  BytesDownloaded)
+    printf 'total bytes sent from S3 to clients'
+    ;;
+  BytesUploaded)
+    printf 'total bytes sent by clients to S3'
+    ;;
+  FirstByteLatency)
+    printf 'average time until S3 returned the first byte'
+    ;;
+  TotalRequestLatency)
+    printf 'average end-to-end request time in S3'
+    ;;
+  *)
+    printf 'latest CloudWatch datapoint returned for this metric'
+    ;;
   esac
 }
 
@@ -513,18 +513,18 @@ format_request_metric_value() {
   rounded_value="$(format_decimal "$value")"
 
   case "$metric_name" in
-    BytesDownloaded|BytesUploaded)
-      printf '%s %s (%s)' "$rounded_value" "$(request_metric_unit "$metric_name")" "$(bytes_human "$value")"
-      ;;
-    FirstByteLatency|TotalRequestLatency)
-      printf '%s %s' "$rounded_value" "$(request_metric_unit "$metric_name")"
-      ;;
-    4xxErrors|5xxErrors|AllRequests|GetRequests|PutRequests|PostRequests|DeleteRequests|HeadRequests)
-      printf '%s %s' "$rounded_value" "$(request_metric_unit "$metric_name")"
-      ;;
-    *)
-      printf '%s' "$rounded_value"
-      ;;
+  BytesDownloaded | BytesUploaded)
+    printf '%s %s (%s)' "$rounded_value" "$(request_metric_unit "$metric_name")" "$(bytes_human "$value")"
+    ;;
+  FirstByteLatency | TotalRequestLatency)
+    printf '%s %s' "$rounded_value" "$(request_metric_unit "$metric_name")"
+    ;;
+  4xxErrors | 5xxErrors | AllRequests | GetRequests | PutRequests | PostRequests | DeleteRequests | HeadRequests)
+    printf '%s %s' "$rounded_value" "$(request_metric_unit "$metric_name")"
+    ;;
+  *)
+    printf '%s' "$rounded_value"
+    ;;
   esac
 }
 
@@ -536,42 +536,42 @@ request_metric_short_note() {
   local metric_name="$1"
 
   case "$metric_name" in
-    4xxErrors)
-      printf 'HTTP 4xx'
-      ;;
-    5xxErrors)
-      printf 'HTTP 5xx'
-      ;;
-    AllRequests)
-      printf 'all requests'
-      ;;
-    GetRequests)
-      printf 'GET'
-      ;;
-    PutRequests)
-      printf 'PUT'
-      ;;
-    PostRequests)
-      printf 'POST'
-      ;;
-    DeleteRequests)
-      printf 'DELETE'
-      ;;
-    HeadRequests)
-      printf 'HEAD'
-      ;;
-    BytesDownloaded)
-      printf 'to clients'
-      ;;
-    BytesUploaded)
-      printf 'from clients'
-      ;;
-    FirstByteLatency|TotalRequestLatency)
-      printf 'average'
-      ;;
-    *)
-      printf ''
-      ;;
+  4xxErrors)
+    printf 'HTTP 4xx'
+    ;;
+  5xxErrors)
+    printf 'HTTP 5xx'
+    ;;
+  AllRequests)
+    printf 'all requests'
+    ;;
+  GetRequests)
+    printf 'GET'
+    ;;
+  PutRequests)
+    printf 'PUT'
+    ;;
+  PostRequests)
+    printf 'POST'
+    ;;
+  DeleteRequests)
+    printf 'DELETE'
+    ;;
+  HeadRequests)
+    printf 'HEAD'
+    ;;
+  BytesDownloaded)
+    printf 'to clients'
+    ;;
+  BytesUploaded)
+    printf 'from clients'
+    ;;
+  FirstByteLatency | TotalRequestLatency)
+    printf 'average'
+    ;;
+  *)
+    printf ''
+    ;;
   esac
 }
 
@@ -692,12 +692,12 @@ request_metric_statistic() {
   local metric_name="$1"
 
   case "$metric_name" in
-    FirstByteLatency|TotalRequestLatency)
-      printf 'Average'
-      ;;
-    *)
-      printf 'Sum'
-      ;;
+  FirstByteLatency | TotalRequestLatency)
+    printf 'Average'
+    ;;
+  *)
+    printf 'Sum'
+    ;;
   esac
 }
 
@@ -760,10 +760,10 @@ collect_storage_metrics() {
     "cloudwatch-storage" \
     "$catalog_json" \
     "$AWS_BIN" cloudwatch list-metrics \
-      --namespace AWS/S3 \
-      --dimensions Name=BucketName,Value="$BUCKET" \
-      --region "$STORAGE_METRICS_REGION" \
-      --output json; then
+    --namespace AWS/S3 \
+    --dimensions Name=BucketName,Value="$BUCKET" \
+    --region "$STORAGE_METRICS_REGION" \
+    --output json; then
     return 0
   fi
 
@@ -774,10 +774,10 @@ collect_storage_metrics() {
       "cloudwatch-storage" \
       "$catalog_bucket_region_json" \
       "$AWS_BIN" cloudwatch list-metrics \
-        --namespace AWS/S3 \
-        --dimensions Name=BucketName,Value="$BUCKET" \
-        --region "$BUCKET_REGION" \
-        --output json; then
+      --namespace AWS/S3 \
+      --dimensions Name=BucketName,Value="$BUCKET" \
+      --region "$BUCKET_REGION" \
+      --output json; then
       if storage_catalog_has_metrics "$catalog_bucket_region_json"; then
         selected_catalog_json="$catalog_bucket_region_json"
       fi
@@ -795,15 +795,15 @@ collect_storage_metrics() {
       "cloudwatch-storage" \
       "$output_json" \
       "$AWS_BIN" cloudwatch get-metric-statistics \
-        --namespace AWS/S3 \
-        --metric-name BucketSizeBytes \
-        --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value="$storage_type" \
-        --start-time "$start_time" \
-        --end-time "$end_time" \
-        --period 86400 \
-        --statistics Average \
-        --region "$STORAGE_METRICS_REGION" \
-        --output json
+      --namespace AWS/S3 \
+      --metric-name BucketSizeBytes \
+      --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value="$storage_type" \
+      --start-time "$start_time" \
+      --end-time "$end_time" \
+      --period 86400 \
+      --statistics Average \
+      --region "$STORAGE_METRICS_REGION" \
+      --output json
   done < <(discover_storage_type_values "$selected_catalog_json" "BucketSizeBytes")
 
   while IFS= read -r storage_type; do
@@ -817,15 +817,15 @@ collect_storage_metrics() {
       "cloudwatch-storage" \
       "$output_json" \
       "$AWS_BIN" cloudwatch get-metric-statistics \
-        --namespace AWS/S3 \
-        --metric-name NumberOfObjects \
-        --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value="$storage_type" \
-        --start-time "$start_time" \
-        --end-time "$end_time" \
-        --period 86400 \
-        --statistics Average \
-        --region "$STORAGE_METRICS_REGION" \
-        --output json
+      --namespace AWS/S3 \
+      --metric-name NumberOfObjects \
+      --dimensions Name=BucketName,Value="$BUCKET" Name=StorageType,Value="$storage_type" \
+      --start-time "$start_time" \
+      --end-time "$end_time" \
+      --period 86400 \
+      --statistics Average \
+      --region "$STORAGE_METRICS_REGION" \
+      --output json
   done < <(discover_storage_type_values "$selected_catalog_json" "NumberOfObjects")
 
   if [ "$found_any" -eq 0 ]; then
@@ -849,8 +849,8 @@ collect_request_metrics() {
     "bucket" \
     "$metrics_config_json" \
     "$AWS_BIN" s3api list-bucket-metrics-configurations \
-      --bucket "$BUCKET" \
-      --output json; then
+    --bucket "$BUCKET" \
+    --output json; then
     return 0
   fi
 
@@ -874,10 +874,10 @@ collect_request_metrics() {
     "cloudwatch-request" \
     "$catalog_json" \
     "$AWS_BIN" cloudwatch list-metrics \
-      --namespace AWS/S3 \
-      --dimensions Name=BucketName,Value="$BUCKET" \
-      --region "$REQUEST_REGION" \
-      --output json; then
+    --namespace AWS/S3 \
+    --dimensions Name=BucketName,Value="$BUCKET" \
+    --region "$REQUEST_REGION" \
+    --output json; then
     return 0
   fi
 
@@ -897,15 +897,15 @@ collect_request_metrics() {
         "cloudwatch-request" \
         "$output_json" \
         "$AWS_BIN" cloudwatch get-metric-statistics \
-          --namespace AWS/S3 \
-          --metric-name "$metric_name" \
-          --dimensions Name=BucketName,Value="$BUCKET" Name=FilterId,Value="$filter_id" \
-          --start-time "$start_time" \
-          --end-time "$end_time" \
-          --period 86400 \
-          --statistics "$statistic" \
-          --region "$REQUEST_REGION" \
-          --output json
+        --namespace AWS/S3 \
+        --metric-name "$metric_name" \
+        --dimensions Name=BucketName,Value="$BUCKET" Name=FilterId,Value="$filter_id" \
+        --start-time "$start_time" \
+        --end-time "$end_time" \
+        --period 86400 \
+        --statistics "$statistic" \
+        --region "$REQUEST_REGION" \
+        --output json
     done < <(discover_request_metric_names "$catalog_json" "$filter_id")
   done < <(discover_request_filter_ids "$metrics_config_json")
 
@@ -1028,7 +1028,7 @@ write_summary_section() {
         current_filter_id="$filter_id"
         report_line "Filter: $(humanize_filter_id "$current_filter_id")"
       fi
-      describe_request_metric_entry "$path" >> "$TEXT_REPORT"
+      describe_request_metric_entry "$path" >>"$TEXT_REPORT"
     else
       report_line "- $(basename "$path" .json): metric definition found, but CloudWatch returned no datapoints"
     fi
@@ -1043,7 +1043,7 @@ write_summary_section() {
         report_line "  stderr file: $stderr_path"
       fi
     fi
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 
   report_line
   report_line "Skipped steps:"
@@ -1051,7 +1051,7 @@ write_summary_section() {
     if [ "$status" = "skipped" ]; then
       report_line "- [$scope] $step: $note"
     fi
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 }
 
 write_details_section() {
@@ -1082,27 +1082,27 @@ write_details_section() {
     report_line
 
     case "$status" in
-      success)
-        if [ "$HAS_JQ" -eq 1 ] && [ -s "$stdout_path" ]; then
-          "$JQ_BIN" . "$stdout_path" >> "$TEXT_REPORT" 2>/dev/null || cat "$stdout_path" >> "$TEXT_REPORT"
-        elif [ -n "$stdout_path" ] && [ -s "$stdout_path" ]; then
-          cat "$stdout_path" >> "$TEXT_REPORT"
-        else
-          report_line "(no stdout)"
-        fi
-        ;;
-      failed)
-        if [ -n "$stderr_path" ] && [ -s "$stderr_path" ]; then
-          cat "$stderr_path" >> "$TEXT_REPORT"
-        else
-          report_line "(no stderr)"
-        fi
-        ;;
-      skipped)
-        report_line "(skipped)"
-        ;;
+    success)
+      if [ "$HAS_JQ" -eq 1 ] && [ -s "$stdout_path" ]; then
+        "$JQ_BIN" . "$stdout_path" >>"$TEXT_REPORT" 2>/dev/null || cat "$stdout_path" >>"$TEXT_REPORT"
+      elif [ -n "$stdout_path" ] && [ -s "$stdout_path" ]; then
+        cat "$stdout_path" >>"$TEXT_REPORT"
+      else
+        report_line "(no stdout)"
+      fi
+      ;;
+    failed)
+      if [ -n "$stderr_path" ] && [ -s "$stderr_path" ]; then
+        cat "$stderr_path" >>"$TEXT_REPORT"
+      else
+        report_line "(no stderr)"
+      fi
+      ;;
+    skipped)
+      report_line "(skipped)"
+      ;;
     esac
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 }
 
 write_summary_json() {
@@ -1125,7 +1125,7 @@ write_summary_json() {
          stderr_path: .[5]
        }
      | select(.status == "failed")]
-  ' < "$STATUS_TSV")"
+  ' <"$STATUS_TSV")"
 
   skipped_json="$("$JQ_BIN" -Rn --arg delim "$STATUS_DELIM" '
     [inputs
@@ -1138,7 +1138,7 @@ write_summary_json() {
          note: .[6]
        }
      | select(.status == "skipped")]
-  ' < "$STATUS_TSV")"
+  ' <"$STATUS_TSV")"
 
   if [ -f "$JSON_DIR/bucket_metrics_configurations.json" ] && [ -s "$JSON_DIR/bucket_metrics_configurations.json" ] && [ -f "$JSON_DIR/request_metrics_catalog.json" ] && [ -s "$JSON_DIR/request_metrics_catalog.json" ]; then
     request_configs_json="$("$JQ_BIN" -n \
@@ -1215,7 +1215,7 @@ write_summary_json() {
       request_metric_configurations: $request_metric_configurations,
       failed_steps: $failed_steps,
       skipped_steps: $skipped_steps
-    }' > "$SUMMARY_JSON"
+    }' >"$SUMMARY_JSON"
 }
 
 main() {

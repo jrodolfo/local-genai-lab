@@ -122,18 +122,18 @@ parse_regions_values() {
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --*)
-        break
-        ;;
-      *)
-        normalized="${1//,/ }"
-        for value in $normalized; do
-          if [ -n "$value" ]; then
-            REGIONS+=("$value")
-          fi
-        done
-        shift
-        ;;
+    --*)
+      break
+      ;;
+    *)
+      normalized="${1//,/ }"
+      for value in $normalized; do
+        if [ -n "$value" ]; then
+          REGIONS+=("$value")
+        fi
+      done
+      shift
+      ;;
     esac
   done
 
@@ -154,32 +154,32 @@ parse_services_values() {
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --*)
-        break
-        ;;
-      *)
-        normalized="${1//,/ }"
-        for value in $normalized; do
-          lowered="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
-          if [ -z "$lowered" ]; then
-            continue
-          fi
-          if [ "$lowered" = "all" ]; then
-            SERVICE_FILTER_ENABLED=0
-            SELECTED_SERVICES=("${ALL_SERVICES[@]}")
-            return 0
-          fi
-          if ! service_key_is_known "$lowered"; then
-            printf 'Error: unknown service key: %s\n' "$value" >&2
-            usage >&2
-            exit 1
-          fi
-          if ! service_is_selected_parse_only "$lowered"; then
-            SELECTED_SERVICES+=("$lowered")
-          fi
-        done
-        shift
-        ;;
+    --*)
+      break
+      ;;
+    *)
+      normalized="${1//,/ }"
+      for value in $normalized; do
+        lowered="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+        if [ -z "$lowered" ]; then
+          continue
+        fi
+        if [ "$lowered" = "all" ]; then
+          SERVICE_FILTER_ENABLED=0
+          SELECTED_SERVICES=("${ALL_SERVICES[@]}")
+          return 0
+        fi
+        if ! service_key_is_known "$lowered"; then
+          printf 'Error: unknown service key: %s\n' "$value" >&2
+          usage >&2
+          exit 1
+        fi
+        if ! service_is_selected_parse_only "$lowered"; then
+          SELECTED_SERVICES+=("$lowered")
+        fi
+      done
+      shift
+      ;;
     esac
   done
 
@@ -210,43 +210,43 @@ service_is_selected_parse_only() {
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      --regions)
-        shift
-        parse_regions_values "$@"
-        while [ "$#" -gt 0 ]; do
-          case "$1" in
-            --*)
-              break
-              ;;
-            *)
-              shift
-              ;;
-          esac
-        done
-        ;;
-      --services)
-        shift
-        parse_services_values "$@"
-        while [ "$#" -gt 0 ]; do
-          case "$1" in
-            --*)
-              break
-              ;;
-            *)
-              shift
-              ;;
-          esac
-        done
-        ;;
-      -h|--help)
-        usage
-        exit 0
-        ;;
-      *)
-        printf 'Error: unknown argument: %s\n' "$1" >&2
-        usage >&2
-        exit 1
-        ;;
+    --regions)
+      shift
+      parse_regions_values "$@"
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+        --*)
+          break
+          ;;
+        *)
+          shift
+          ;;
+        esac
+      done
+      ;;
+    --services)
+      shift
+      parse_services_values "$@"
+      while [ "$#" -gt 0 ]; do
+        case "$1" in
+        --*)
+          break
+          ;;
+        *)
+          shift
+          ;;
+        esac
+      done
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'Error: unknown argument: %s\n' "$1" >&2
+      usage >&2
+      exit 1
+      ;;
     esac
   done
 
@@ -273,8 +273,8 @@ init_output() {
   STATUS_TSV="$META_DIR/status.tsv"
 
   mkdir -p "$OUTDIR" "$JSON_DIR" "$TEXT_DIR" "$STDERR_DIR" "$META_DIR"
-  : > "$TEXT_REPORT"
-  : > "$STATUS_TSV"
+  : >"$TEXT_REPORT"
+  : >"$STATUS_TSV"
 }
 
 log_console() {
@@ -282,7 +282,7 @@ log_console() {
 }
 
 report_line() {
-  printf '%s\n' "$*" >> "$TEXT_REPORT"
+  printf '%s\n' "$*" >>"$TEXT_REPORT"
 }
 
 write_section_separator() {
@@ -333,16 +333,16 @@ render_stdout_to_report() {
   fi
 
   case "$output_format" in
-    json)
-      if [ "$HAS_JQ" -eq 1 ]; then
-        "$JQ_BIN" . "$stdout_path" >> "$TEXT_REPORT" 2>/dev/null || cat "$stdout_path" >> "$TEXT_REPORT"
-      else
-        cat "$stdout_path" >> "$TEXT_REPORT"
-      fi
-      ;;
-    *)
-      cat "$stdout_path" >> "$TEXT_REPORT"
-      ;;
+  json)
+    if [ "$HAS_JQ" -eq 1 ]; then
+      "$JQ_BIN" . "$stdout_path" >>"$TEXT_REPORT" 2>/dev/null || cat "$stdout_path" >>"$TEXT_REPORT"
+    else
+      cat "$stdout_path" >>"$TEXT_REPORT"
+    fi
+    ;;
+  *)
+    cat "$stdout_path" >>"$TEXT_REPORT"
+    ;;
   esac
 }
 
@@ -380,7 +380,7 @@ record_status() {
     "$STATUS_DELIM" \
     "$stderr_path" \
     "$STATUS_DELIM" \
-    "$command_string" >> "$STATUS_TSV"
+    "$command_string" >>"$STATUS_TSV"
 }
 
 run_audit_cmd() {
@@ -421,20 +421,20 @@ run_audit_cmd() {
   fi
 
   case "$output_format" in
-    json)
-      stdout_path="$JSON_DIR/${base_name}.json"
-      ;;
-    text)
-      stdout_path="$TEXT_DIR/${base_name}.txt"
-      ;;
-    *)
-      stdout_path="$TEXT_DIR/${base_name}.out"
-      ;;
+  json)
+    stdout_path="$JSON_DIR/${base_name}.json"
+    ;;
+  text)
+    stdout_path="$TEXT_DIR/${base_name}.txt"
+    ;;
+  *)
+    stdout_path="$TEXT_DIR/${base_name}.out"
+    ;;
   esac
 
   stderr_path="$STDERR_DIR/${base_name}.stderr"
-  : > "$stdout_path"
-  : > "$stderr_path"
+  : >"$stdout_path"
+  : >"$stderr_path"
 
   log_console "Running: $title"
 
@@ -495,7 +495,7 @@ collect_global_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" s3api list-buckets --output json \
-      --query 'Buckets[].{Name:Name,CreationDate:CreationDate}'
+    --query 'Buckets[].{Name:Name,CreationDate:CreationDate}'
 }
 
 collect_region_audits() {
@@ -510,9 +510,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" ec2 describe-instances \
-      --region "$region" \
-      --output json \
-      --query 'Reservations[].Instances[].{Id:InstanceId,State:State.Name,Type:InstanceType,Name:Tags[?Key==`Name`]|[0].Value,LaunchTime:LaunchTime}'
+    --region "$region" \
+    --output json \
+    --query 'Reservations[].Instances[].{Id:InstanceId,State:State.Name,Type:InstanceType,Name:Tags[?Key==`Name`]|[0].Value,LaunchTime:LaunchTime}'
 
   run_audit_cmd \
     "$region" \
@@ -522,9 +522,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" ec2 describe-volumes \
-      --region "$region" \
-      --output json \
-      --query 'Volumes[].{Id:VolumeId,Size:Size,State:State,Type:VolumeType,Encrypted:Encrypted}'
+    --region "$region" \
+    --output json \
+    --query 'Volumes[].{Id:VolumeId,Size:Size,State:State,Type:VolumeType,Encrypted:Encrypted}'
 
   run_audit_cmd \
     "$region" \
@@ -534,9 +534,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" ec2 describe-addresses \
-      --region "$region" \
-      --output json \
-      --query 'Addresses[].{PublicIp:PublicIp,AllocationId:AllocationId,AssociationId:AssociationId,InstanceId:InstanceId}'
+    --region "$region" \
+    --output json \
+    --query 'Addresses[].{PublicIp:PublicIp,AllocationId:AllocationId,AssociationId:AssociationId,InstanceId:InstanceId}'
 
   run_audit_cmd \
     "$region" \
@@ -546,9 +546,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" elbv2 describe-load-balancers \
-      --region "$region" \
-      --output json \
-      --query 'LoadBalancers[].{Name:LoadBalancerName,Type:Type,State:State.Code,Scheme:Scheme,DNS:DNSName}'
+    --region "$region" \
+    --output json \
+    --query 'LoadBalancers[].{Name:LoadBalancerName,Type:Type,State:State.Code,Scheme:Scheme,DNS:DNSName}'
 
   run_audit_cmd \
     "$region" \
@@ -558,9 +558,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" rds describe-db-instances \
-      --region "$region" \
-      --output json \
-      --query 'DBInstances[].{Id:DBInstanceIdentifier,Engine:Engine,Class:DBInstanceClass,Status:DBInstanceStatus,MultiAZ:MultiAZ}'
+    --region "$region" \
+    --output json \
+    --query 'DBInstances[].{Id:DBInstanceIdentifier,Engine:Engine,Class:DBInstanceClass,Status:DBInstanceStatus,MultiAZ:MultiAZ}'
 
   run_audit_cmd \
     "$region" \
@@ -570,9 +570,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" lambda list-functions \
-      --region "$region" \
-      --output json \
-      --query 'Functions[].{Name:FunctionName,Runtime:Runtime,LastModified:LastModified,MemorySize:MemorySize}'
+    --region "$region" \
+    --output json \
+    --query 'Functions[].{Name:FunctionName,Runtime:Runtime,LastModified:LastModified,MemorySize:MemorySize}'
 
   run_audit_cmd \
     "$region" \
@@ -582,8 +582,8 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" ecs list-clusters \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 
   run_audit_cmd \
     "$region" \
@@ -593,8 +593,8 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" eks list-clusters \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 
   run_audit_cmd \
     "$region" \
@@ -604,8 +604,8 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" sagemaker list-domains \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 
   run_audit_cmd \
     "$region" \
@@ -615,8 +615,8 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" sagemaker list-notebook-instances \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 
   run_audit_cmd \
     "$region" \
@@ -626,8 +626,8 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" opensearch list-domain-names \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 
   run_audit_cmd \
     "$region" \
@@ -637,9 +637,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" secretsmanager list-secrets \
-      --region "$region" \
-      --output json \
-      --query 'SecretList[].{Name:Name,LastChangedDate:LastChangedDate,PrimaryRegion:PrimaryRegion}'
+    --region "$region" \
+    --output json \
+    --query 'SecretList[].{Name:Name,LastChangedDate:LastChangedDate,PrimaryRegion:PrimaryRegion}'
 
   run_audit_cmd \
     "$region" \
@@ -649,9 +649,9 @@ collect_region_audits() {
     "json" \
     "yes" \
     "$AWS_BIN" logs describe-log-groups \
-      --region "$region" \
-      --output json \
-      --query 'logGroups[].{Name:logGroupName,StoredBytes:storedBytes,RetentionInDays:retentionInDays}'
+    --region "$region" \
+    --output json \
+    --query 'logGroups[].{Name:logGroupName,StoredBytes:storedBytes,RetentionInDays:retentionInDays}'
 
   run_audit_cmd \
     "$region" \
@@ -661,9 +661,9 @@ collect_region_audits() {
     "json" \
     "no" \
     "$AWS_BIN" ec2 describe-vpcs \
-      --region "$region" \
-      --output json \
-      --query 'Vpcs[].{VpcId:VpcId,CidrBlock:CidrBlock,IsDefault:IsDefault,State:State}'
+    --region "$region" \
+    --output json \
+    --query 'Vpcs[].{VpcId:VpcId,CidrBlock:CidrBlock,IsDefault:IsDefault,State:State}'
 
   run_audit_cmd \
     "$region" \
@@ -673,9 +673,9 @@ collect_region_audits() {
     "json" \
     "no" \
     "$AWS_BIN" ec2 describe-subnets \
-      --region "$region" \
-      --output json \
-      --query 'Subnets[].{SubnetId:SubnetId,VpcId:VpcId,CidrBlock:CidrBlock,AvailableIpAddressCount:AvailableIpAddressCount}'
+    --region "$region" \
+    --output json \
+    --query 'Subnets[].{SubnetId:SubnetId,VpcId:VpcId,CidrBlock:CidrBlock,AvailableIpAddressCount:AvailableIpAddressCount}'
 
   run_audit_cmd \
     "$region" \
@@ -685,9 +685,9 @@ collect_region_audits() {
     "json" \
     "no" \
     "$AWS_BIN" ec2 describe-security-groups \
-      --region "$region" \
-      --output json \
-      --query 'SecurityGroups[].{GroupId:GroupId,GroupName:GroupName,VpcId:VpcId,Description:Description}'
+    --region "$region" \
+    --output json \
+    --query 'SecurityGroups[].{GroupId:GroupId,GroupName:GroupName,VpcId:VpcId,Description:Description}'
 
   run_audit_cmd \
     "$region" \
@@ -697,8 +697,8 @@ collect_region_audits() {
     "json" \
     "no" \
     "$AWS_BIN" resourcegroupstaggingapi get-resources \
-      --region "$region" \
-      --output json
+    --region "$region" \
+    --output json
 }
 
 write_report_header() {
@@ -709,7 +709,7 @@ write_report_header() {
   report_line "AWS caller user ID: $CALLER_USER_ID"
   report_line "Regions: ${REGIONS[*]}"
   report_line "Services: ${SELECTED_SERVICES[*]}"
-  report_line "Service filter applied: $( [ "$SERVICE_FILTER_ENABLED" -eq 1 ] && printf 'yes' || printf 'no' )"
+  report_line "Service filter applied: $([ "$SERVICE_FILTER_ENABLED" -eq 1 ] && printf 'yes' || printf 'no')"
   report_line "Output directory: $OUTDIR"
   report_line "Summary JSON: $SUMMARY_JSON"
   report_line "JSON outputs: $JSON_DIR"
@@ -735,7 +735,7 @@ write_summary_section() {
     if [ "$billable" = "yes" ] && [ "$status" = "success" ] && [ "$resource_count" != "0" ] && [ "$resource_count" != "n/a" ]; then
       report_line "- [$scope] $title: $resource_count"
     fi
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 
   report_line
   report_line "Failed commands:"
@@ -746,7 +746,7 @@ write_summary_section() {
         report_line "  stderr file: $stderr_path"
       fi
     fi
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 
   report_line
   report_line "Skipped commands:"
@@ -754,7 +754,7 @@ write_summary_section() {
     if [ "$status" = "skipped" ]; then
       report_line "- [$scope] $title"
     fi
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 }
 
 write_region_overview_section() {
@@ -780,7 +780,7 @@ write_region_overview_section() {
         fi
         report_line "- $title$suffix"
       fi
-    done < "$STATUS_TSV"
+    done <"$STATUS_TSV"
 
     report_line
   done
@@ -815,24 +815,24 @@ write_detailed_results_section() {
     report_line
 
     case "$status" in
-      success)
-        render_stdout_to_report "$output_format" "$stdout_path"
-        ;;
-      failed)
-        report_line "stderr contents:"
-        if [ -n "$stderr_path" ] && [ -s "$stderr_path" ]; then
-          cat "$stderr_path" >> "$TEXT_REPORT"
-        else
-          report_line "(no stderr captured)"
-        fi
-        ;;
-      skipped)
-        report_line "(skipped by service filter)"
-        ;;
+    success)
+      render_stdout_to_report "$output_format" "$stdout_path"
+      ;;
+    failed)
+      report_line "stderr contents:"
+      if [ -n "$stderr_path" ] && [ -s "$stderr_path" ]; then
+        cat "$stderr_path" >>"$TEXT_REPORT"
+      else
+        report_line "(no stderr captured)"
+      fi
+      ;;
+    skipped)
+      report_line "(skipped by service filter)"
+      ;;
     esac
 
     report_line
-  done < "$STATUS_TSV"
+  done <"$STATUS_TSV"
 }
 
 write_summary_json() {
@@ -861,7 +861,7 @@ write_summary_json() {
          stderr_path: .[9]
        }
      | select(.status == "failed")]
-  ' < "$STATUS_TSV")"
+  ' <"$STATUS_TSV")"
   skipped_json="$("$JQ_BIN" -Rn --arg delim "$STATUS_DELIM" '
     [inputs
      | select(length > 0)
@@ -873,7 +873,7 @@ write_summary_json() {
          status: .[5]
        }
      | select(.status == "skipped")]
-  ' < "$STATUS_TSV")"
+  ' <"$STATUS_TSV")"
 
   "$JQ_BIN" -n \
     --arg timestamp "$TIMESTAMP" \
@@ -887,7 +887,7 @@ write_summary_json() {
     --arg caller_user_id "$CALLER_USER_ID" \
     --argjson selected_regions "$regions_json" \
     --argjson selected_services "$services_json" \
-    --argjson service_filter_applied "$( [ "$SERVICE_FILTER_ENABLED" -eq 1 ] && printf 'true' || printf 'false' )" \
+    --argjson service_filter_applied "$([ "$SERVICE_FILTER_ENABLED" -eq 1 ] && printf 'true' || printf 'false')" \
     --argjson total_commands "$total_commands" \
     --argjson success_count "$SUCCESS_COUNT" \
     --argjson failure_count "$FAILURE_COUNT" \
@@ -913,7 +913,7 @@ write_summary_json() {
       skipped_count: $skipped_count,
       failed_commands: $failed_commands,
       skipped_commands: $skipped_commands
-    }' > "$SUMMARY_JSON"
+    }' >"$SUMMARY_JSON"
 }
 
 main() {

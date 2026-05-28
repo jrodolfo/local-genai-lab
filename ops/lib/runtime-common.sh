@@ -38,7 +38,7 @@ load_env_defaults() {
       value="${value:1:${#value}-2}"
     fi
     export "${key}=${value}"
-  done < "${env_file}"
+  done <"${env_file}"
 }
 
 ensure_run_dir() {
@@ -53,7 +53,7 @@ is_process_alive() {
 read_pid_file() {
   local pid_file="$1"
   if [ -f "${pid_file}" ]; then
-    tr -d '[:space:]' < "${pid_file}"
+    tr -d '[:space:]' <"${pid_file}"
   fi
 }
 

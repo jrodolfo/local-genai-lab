@@ -48,9 +48,9 @@ test_successful_run_generates_report() {
   reports_dir="$tmp_dir/reports"
 
   REPORTS_DIR="$reports_dir" \
-  TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
-  AWS_BIN="$MOCK_AWS" \
-  "$SCRIPT_PATH" --bucket example.com >/dev/null
+    TIMESTAMP_OVERRIDE="2026-04-06_00-00-00" \
+    AWS_BIN="$MOCK_AWS" \
+    "$SCRIPT_PATH" --bucket example.com >/dev/null
 
   outdir="$reports_dir/s3-cloudwatch-2026-04-06_00-00-00"
   assert_file_exists "$outdir/report.txt"
