@@ -21,9 +21,9 @@ public class RagRetrievalService {
     /**
      * Constructs a new RagRetrievalService.
      *
-     * @param ragProperties configuration properties for RAG
+     * @param ragProperties    configuration properties for RAG
      * @param ragCorpusService service for managing the RAG corpus indexing
-     * @param ragVectorStore the vector store used for document retrieval
+     * @param ragVectorStore   the vector store used for document retrieval
      */
     public RagRetrievalService(
             RagProperties ragProperties,

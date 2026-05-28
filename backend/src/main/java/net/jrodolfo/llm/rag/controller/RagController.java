@@ -36,7 +36,7 @@ public class RagController {
     /**
      * Constructs a new RagController with the necessary services.
      *
-     * @param ragProperties   The configuration properties for RAG.
+     * @param ragProperties    The configuration properties for RAG.
      * @param ragCorpusService The service responsible for managing the document corpus.
      * @param ragAnswerService The service responsible for generating RAG-based answers.
      */
@@ -54,7 +54,7 @@ public class RagController {
      * Retrieves the current status of the RAG system.
      *
      * @return A response containing status information, such as whether RAG is enabled,
-     *         if an index is loaded, and the number of documents/chunks.
+     * if an index is loaded, and the number of documents/chunks.
      */
     @GetMapping("/status")
     public RagStatusResponse status() {

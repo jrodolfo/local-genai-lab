@@ -17,7 +17,7 @@ public class RagChunkingService {
     /**
      * Splits a list of documents into chunks.
      *
-     * @param documents the list of documents to chunk
+     * @param documents    the list of documents to chunk
      * @param maxChunkSize the maximum size of each chunk (in characters)
      * @param chunkOverlap the number of characters to overlap between consecutive chunks
      * @return a list of {@link RagChunk} objects

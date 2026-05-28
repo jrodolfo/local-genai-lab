@@ -26,10 +26,10 @@ public class RagCorpusService {
     /**
      * Constructs a new RagCorpusService.
      *
-     * @param ragProperties configuration properties for RAG
-     * @param documentLoader service for loading documents
+     * @param ragProperties   configuration properties for RAG
+     * @param documentLoader  service for loading documents
      * @param chunkingService service for splitting documents into chunks
-     * @param vectorStore the vector store for indexing chunks
+     * @param vectorStore     the vector store for indexing chunks
      */
     public RagCorpusService(
             RagProperties ragProperties,
@@ -89,8 +89,8 @@ public class RagCorpusService {
      * A snapshot of the indexed corpus.
      *
      * @param corpusRoot the root directory of the corpus
-     * @param documents the list of loaded documents
-     * @param chunks the list of generated chunks
+     * @param documents  the list of loaded documents
+     * @param chunks     the list of generated chunks
      */
     public record CorpusSnapshot(
             Path corpusRoot,

@@ -25,9 +25,9 @@ public class RagSessionService {
     /**
      * Constructs a new RagSessionService.
      *
-     * @param sessionStore the store used for persisting chat sessions
+     * @param sessionStore               the store used for persisting chat sessions
      * @param chatSessionMetadataService the service used for enriching session metadata
-     * @param sessionIdPolicy the policy used for generating and validating session IDs
+     * @param sessionIdPolicy            the policy used for generating and validating session IDs
      */
     public RagSessionService(
             FileChatSessionStore sessionStore,
@@ -43,8 +43,8 @@ public class RagSessionService {
      * Starts a new turn in a chat session.
      *
      * @param requestedSessionId the ID requested by the user, or null/empty to generate a new one
-     * @param resolvedModel the resolved name of the model being used
-     * @param question the user's question
+     * @param resolvedModel      the resolved name of the model being used
+     * @param question           the user's question
      * @return the {@link ChatSession} with the new user message appended
      */
     public ChatSession startTurn(String requestedSessionId, String resolvedModel, String question) {
@@ -66,10 +66,10 @@ public class RagSessionService {
     /**
      * Finishes a chat turn by appending the assistant's answer and source metadata, then saving the session.
      *
-     * @param session the current chat session
-     * @param answer the assistant's generated answer
+     * @param session          the current chat session
+     * @param answer           the assistant's generated answer
      * @param providerMetadata metadata from the LLM provider
-     * @param ragSources the source chunks used to generate the answer
+     * @param ragSources       the source chunks used to generate the answer
      * @return the updated and persisted {@link ChatSession}
      */
     public ChatSession finishTurn(
