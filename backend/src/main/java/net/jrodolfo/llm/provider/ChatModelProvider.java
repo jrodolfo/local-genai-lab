@@ -2,7 +2,6 @@ package net.jrodolfo.llm.provider;
 
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
-import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 
 import java.util.Map;
@@ -16,12 +15,12 @@ public interface ChatModelProvider {
     /**
      * Executes a synchronous chat request.
      *
-     * @param prompt the prompt containing the user input or message history
-     * @param model the model identifier to use (optional)
+     * @param prompt       the prompt containing the user input or message history
+     * @param model        the model identifier to use (optional)
      * @param toolMetadata metadata about available tools (optional)
-     * @param toolResult results from previously executed tools (optional)
-     * @param sessionId the session identifier for tracking the conversation
-     * @param pendingTool information about a tool call that is pending completion (optional)
+     * @param toolResult   results from previously executed tools (optional)
+     * @param sessionId    the session identifier for tracking the conversation
+     * @param pendingTool  information about a tool call that is pending completion (optional)
      * @return the chat response containing the generated text and metadata
      */
     ChatResponse chat(
@@ -36,8 +35,8 @@ public interface ChatModelProvider {
     /**
      * Executes a streaming chat request.
      *
-     * @param prompt the prompt containing the user input or message history
-     * @param model the model identifier to use (optional)
+     * @param prompt        the prompt containing the user input or message history
+     * @param model         the model identifier to use (optional)
      * @param tokenConsumer a consumer that will receive generated tokens as they arrive
      * @return a result object containing the completion future and a cancellation handle
      */

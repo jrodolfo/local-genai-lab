@@ -6,7 +6,7 @@ import java.util.List;
  * Represents a prompt sent to a model provider.
  * Can contain either a simple prompt string or a list of structured messages.
  *
- * @param prompt the simple prompt string (used as fallback or for providers that don't support structured messages)
+ * @param prompt   the simple prompt string (used as fallback or for providers that don't support structured messages)
  * @param messages the list of structured messages (role and content)
  */
 public record ProviderPrompt(
@@ -31,7 +31,7 @@ public record ProviderPrompt(
     /**
      * Creates a new ProviderPrompt with a list of messages and a fallback prompt string.
      *
-     * @param messages the list of structured messages
+     * @param messages       the list of structured messages
      * @param fallbackPrompt the fallback prompt string
      * @return a new ProviderPrompt instance
      */

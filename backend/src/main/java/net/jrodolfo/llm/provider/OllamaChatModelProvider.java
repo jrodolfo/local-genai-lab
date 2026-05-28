@@ -2,8 +2,8 @@ package net.jrodolfo.llm.provider;
 
 import net.jrodolfo.llm.client.OllamaClient;
 import net.jrodolfo.llm.dto.ChatResponse;
-import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 
 import java.util.Map;
@@ -72,7 +72,8 @@ public class OllamaChatModelProvider implements ChatModelProvider {
                 CompletableFuture.completedFuture(
                         new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null, null, null)
                 ),
-                () -> { }
+                () -> {
+                }
         );
     }
 

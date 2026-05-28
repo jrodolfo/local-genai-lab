@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
  * Result of a streaming chat request.
  *
  * @param completion a future that completes when the stream is finished, providing the final metadata
- * @param cancel a runnable to cancel the ongoing stream
+ * @param cancel     a runnable to cancel the ongoing stream
  */
 public record StreamingChatResult(
         CompletableFuture<ModelProviderMetadata> completion,
@@ -19,10 +19,11 @@ public record StreamingChatResult(
      * Constructs a new StreamingChatResult.
      *
      * @param completion a future that completes when the stream is finished
-     * @param cancel a runnable to cancel the ongoing stream
+     * @param cancel     a runnable to cancel the ongoing stream
      */
     public StreamingChatResult {
-        cancel = cancel != null ? cancel : () -> { };
+        cancel = cancel != null ? cancel : () -> {
+        };
     }
 
     /**

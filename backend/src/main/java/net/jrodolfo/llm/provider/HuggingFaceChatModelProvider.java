@@ -27,7 +27,7 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
     /**
      * Constructs a new HuggingFaceChatModelProvider.
      *
-     * @param huggingFaceClient the client to communicate with Hugging Face API
+     * @param huggingFaceClient     the client to communicate with Hugging Face API
      * @param huggingFaceProperties the configuration properties for Hugging Face
      */
     public HuggingFaceChatModelProvider(HuggingFaceClient huggingFaceClient, HuggingFaceProperties huggingFaceProperties) {
@@ -61,7 +61,8 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         tokenConsumer.accept(response.response());
         return new StreamingChatResult(
                 CompletableFuture.completedFuture(response.metadata()),
-                () -> { }
+                () -> {
+                }
         );
     }
 

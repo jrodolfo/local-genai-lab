@@ -1,12 +1,11 @@
 package net.jrodolfo.llm.provider;
 
 import net.jrodolfo.llm.client.BedrockRuntimeGateway;
-import net.jrodolfo.llm.client.ModelProviderReply;
 import net.jrodolfo.llm.client.ModelProviderException;
+import net.jrodolfo.llm.client.ModelProviderReply;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
-import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 
 import java.util.Map;
@@ -24,7 +23,7 @@ public class BedrockChatModelProvider implements ChatModelProvider {
      * Constructs a new BedrockChatModelProvider.
      *
      * @param bedrockRuntimeGateway the gateway to communicate with Amazon Bedrock
-     * @param bedrockProperties the configuration properties for Bedrock
+     * @param bedrockProperties     the configuration properties for Bedrock
      */
     public BedrockChatModelProvider(BedrockRuntimeGateway bedrockRuntimeGateway, BedrockProperties bedrockProperties) {
         this.bedrockRuntimeGateway = bedrockRuntimeGateway;

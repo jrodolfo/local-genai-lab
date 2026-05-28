@@ -19,7 +19,7 @@ public class ChatModelProviderRegistry {
      * Constructs a new ChatModelProviderRegistry.
      *
      * @param appModelProperties the application configuration properties for model providers
-     * @param providers a map of available providers, keyed by their identifier
+     * @param providers          a map of available providers, keyed by their identifier
      */
     public ChatModelProviderRegistry(AppModelProperties appModelProperties, Map<String, ChatModelProvider> providers) {
         this.providers = Map.copyOf(providers);
