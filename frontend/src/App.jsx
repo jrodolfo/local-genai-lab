@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Main App component that handles navigation between Chat and RAG modes.
+ * It also checks if RAG is enabled in the backend on mount.
+ */
 import {useEffect, useState} from 'react';
 import {getRagStatus} from './api/ragApi';
 import {retryAsync} from './api/retry';
@@ -5,6 +9,12 @@ import Home from './pages/Home';
 import RagWorkspace from './pages/RagWorkspace';
 import './App.css';
 
+/**
+ * Root component of the application.
+ * Manages the application mode ('chat' or 'rag') and RAG availability state.
+ *
+ * @returns {React.JSX.Element} The rendered App component.
+ */
 function App() {
     const [mode, setMode] = useState('chat');
     const [ragEnabled, setRagEnabled] = useState(false);

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Integration tests for the RagWorkspace page.
+ * Uses MSW to mock backend API responses for RAG status, model listing, and RAG queries.
+ */
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse, server} from '../test/mswServer';

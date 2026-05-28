@@ -1,5 +1,15 @@
+/**
+ * @fileoverview Tests for the chat API client.
+ * Covers sending messages and streaming responses with SSE.
+ */
 import {sendMessage, streamMessage} from './chatApi';
 
+/**
+ * Helper to create a mocked ReadableStream for SSE response testing.
+ *
+ * @param {string[]} chunks - Array of string chunks to be enqueued in the stream.
+ * @returns {Object} A mocked response object with a body stream.
+ */
 function createStreamResponse(chunks) {
     return {
         ok: true,

@@ -1,7 +1,24 @@
+/**
+ * @fileoverview MessageBubble component for displaying a single message in the chat.
+ * Supports rendering a subset of Markdown, tool usage details, and technical metadata.
+ */
 import ToolResultCard from './ToolResultCard';
 
-// Assistant replies are stored as plain text. The frontend renders a small, safe Markdown subset
-// so model output stays readable without enabling raw HTML rendering.
+/**
+ * MessageBubble component.
+ *
+ * @param {Object} props - Component props.
+ * @param {string} props.role - The role of the message sender ('user' or 'assistant').
+ * @param {string} props.content - The message text content.
+ * @param {Object} [props.tool] - Information about tool usage.
+ * @param {Object} [props.toolResult] - Structured result of a tool execution.
+ * @param {Object} [props.metadata] - Technical metadata (tokens, duration, etc.).
+ * @param {boolean} [props.showTechnicalDetails=false] - Whether to show verbose technical details.
+ * @param {Function} props.onPreviewArtifact - Callback to preview an artifact.
+ * @param {Function} props.onListArtifacts - Callback to list artifacts for a run.
+ * @param {Function} props.onCopyPath - Callback to copy a file path to clipboard.
+ * @returns {React.JSX.Element} The rendered MessageBubble component.
+ */
 function MessageBubble({
                            role,
                            content,
@@ -86,6 +103,12 @@ function MessageBubble({
     );
 }
 
+/**
+ * Formats a duration in milliseconds into a human-readable string (m, s, ms).
+ *
+ * @param {number} totalMs - The duration in milliseconds.
+ * @returns {string} The formatted duration string.
+ */
 function formatDuration(totalMs) {
     const durationMs = Math.max(0, totalMs ?? 0);
     const minutes = Math.floor(durationMs / 60000);
@@ -104,6 +127,12 @@ function formatDuration(totalMs) {
     return parts.join(' ');
 }
 
+/**
+ * Formats the provider and model information for the summary line.
+ *
+ * @param {Object} [metadata={}] - Technical metadata.
+ * @returns {string} The formatted provider summary.
+ */
 function formatProviderSummary(metadata = {}) {
     const providerName = formatProviderName(metadata.provider);
     if (providerName && metadata.modelId) {
@@ -150,6 +179,12 @@ function formatToolStatus(status) {
     return status;
 }
 
+/**
+ * Renders Markdown-like blocks (code, headings, lists, paragraphs) into React elements.
+ *
+ * @param {string} [content=''] - The raw text content.
+ * @returns {React.JSX.Element|React.JSX.Element[]} The rendered React elements.
+ */
 function renderMarkdownBlocks(content = '') {
     const lines = content.replace(/\r\n/g, '\n').split('\n');
     const blocks = [];
@@ -280,6 +315,12 @@ function renderMarkdownBlocks(content = '') {
     return blocks;
 }
 
+/**
+ * Renders inline Markdown (bold, inline code) into React elements.
+ *
+ * @param {string} [content=''] - The inline text content.
+ * @returns {(string|React.JSX.Element)[]} An array of strings and React elements.
+ */
 function renderInlineMarkdown(content = '') {
     const parts = [];
     const pattern = /(\*\*[^*\n][\s\S]*?\*\*|`[^`\n]+`)/g;

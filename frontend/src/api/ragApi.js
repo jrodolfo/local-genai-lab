@@ -1,3 +1,13 @@
+/**
+ * @fileoverview API client for RAG (Retrieval-Augmented Generation) operations.
+ */
+
+/**
+ * Safely parses a JSON response, returning an empty object on failure.
+ *
+ * @param {Response} response - The fetch response object.
+ * @returns {Promise<Object>} The parsed JSON payload or an empty object.
+ */
 async function parseJson(response) {
     try {
         return await response.json();
@@ -6,6 +16,12 @@ async function parseJson(response) {
     }
 }
 
+/**
+ * Fetches the current RAG status from the backend.
+ *
+ * @returns {Promise<Object>} A promise that resolves to the RAG status object.
+ * @throws {Error} If the request fails.
+ */
 export async function getRagStatus() {
     const response = await fetch('/api/rag/status');
     if (!response.ok) {
@@ -15,6 +31,12 @@ export async function getRagStatus() {
     return response.json();
 }
 
+/**
+ * Triggers a rebuild of the RAG index in the backend.
+ *
+ * @returns {Promise<Object>} A promise that resolves to the response payload.
+ * @throws {Error} If the request fails.
+ */
 export async function rebuildRagIndex() {
     const response = await fetch('/api/rag/index', {method: 'POST'});
     if (!response.ok) {
@@ -24,6 +46,17 @@ export async function rebuildRagIndex() {
     return response.json();
 }
 
+/**
+ * Sends a question to the RAG workspace and retrieves an answer with sources.
+ *
+ * @param {Object} params - The query parameters.
+ * @param {string} params.question - The user's question.
+ * @param {string} params.provider - The LLM provider.
+ * @param {string} params.model - The model ID.
+ * @param {string} params.sessionId - The active session ID.
+ * @returns {Promise<Object>} A promise that resolves to the RAG query response.
+ * @throws {Error} If the request fails.
+ */
 export async function queryRag({question, provider, model, sessionId}) {
     const response = await fetch('/api/rag/query', {
         method: 'POST',

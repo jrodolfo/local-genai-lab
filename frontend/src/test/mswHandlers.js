@@ -1,5 +1,18 @@
+/**
+ * @fileoverview MSW (Mock Service Worker) handlers for API mocking in tests.
+ */
 import {http, HttpResponse} from './mswServer';
 
+/**
+ * Generates default runtime handlers for MSW.
+ *
+ * @param {Object} [overrides={}] - Mock data overrides.
+ * @param {Object} [overrides.models] - Mock model list response.
+ * @param {Object} [overrides.status] - Mock provider status response.
+ * @param {Array} [overrides.sessions] - Mock sessions list response.
+ * @param {Object} [overrides.ragStatus] - Mock RAG status response.
+ * @returns {Array} Array of MSW http handlers.
+ */
 export function defaultRuntimeHandlers(overrides = {}) {
     const {
         models,

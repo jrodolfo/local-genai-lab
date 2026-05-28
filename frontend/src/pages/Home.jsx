@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Home page component that provides the main chat interface.
+ * Handles session management, model/provider selection, message sending (streaming/non-streaming),
+ * and artifact inspection.
+ */
 import {useEffect, useRef, useState} from 'react';
 import {listArtifacts, previewArtifact} from '../api/artifactApi';
 import {sendMessage, streamMessage} from '../api/chatApi';
@@ -11,6 +16,11 @@ import './Home.css';
 const DEBUG_MODE_STORAGE_KEY = 'local-genai-lab.debug-mode';
 const SLOW_PROVIDER_HINT_THRESHOLD_SECONDS = 10;
 
+/**
+ * Home page component.
+ *
+ * @returns {React.JSX.Element} The rendered Home page.
+ */
 function Home() {
     const importInputRef = useRef(null);
     const chatWindowRef = useRef(null);
@@ -119,6 +129,15 @@ function Home() {
         });
     }, [messages, loading, loadingMessage]);
 
+    /**
+     * Adds a new message to the chat history.
+     *
+     * @param {string} role - Message sender role ('user' or 'assistant').
+     * @param {string} content - Message content.
+     * @param {Object} [tool=null] - Tool usage metadata.
+     * @param {Object} [toolResult=null] - Tool execution result.
+     * @param {Object} [metadata=null] - Technical metadata.
+     */
     const addMessage = (role, content, tool = null, toolResult = null, metadata = null) => {
         setMessages((current) => [...current, {id: crypto.randomUUID(), role, content, tool, toolResult, metadata}]);
     };
@@ -188,6 +207,12 @@ function Home() {
         );
     };
 
+    /**
+     * Fetches and updates the session list based on filters.
+     *
+     * @param {Object} [filters={}] - Filter criteria.
+     * @returns {Promise<void>}
+     */
     async function loadSessions(filters = {}) {
         try {
             const payload = await retryAsync(() => listSessions(filters), {retries: 4, delayMs: 500});
@@ -198,6 +223,12 @@ function Home() {
         }
     }
 
+    /**
+     * Loads available models for a specific provider (or all providers if none specified).
+     *
+     * @param {string} [provider] - Optional provider ID.
+     * @returns {Promise<void>}
+     */
     async function loadAvailableModels(provider) {
         try {
             setModelsLoading(true);
@@ -246,6 +277,14 @@ function Home() {
         }
     }
 
+    /**
+     * Fetches the status of a specific provider.
+     *
+     * @param {string} provider - The provider ID.
+     * @param {Object} [options={}] - Options.
+     * @param {boolean} [options.manual=false] - Whether this was triggered manually by the user.
+     * @returns {Promise<void>}
+     */
     async function loadProviderStatus(provider, options = {}) {
         const {manual = false} = options;
         if (manual) {
@@ -308,6 +347,12 @@ function Home() {
         }
     };
 
+    /**
+     * Opens a specific session by ID and loads its messages.
+     *
+     * @param {string} targetSessionId - The session ID to open.
+     * @returns {Promise<void>}
+     */
     const openSession = async (targetSessionId) => {
         setError('');
         setLoading(true);
@@ -335,6 +380,12 @@ function Home() {
         }
     };
 
+    /**
+     * Deletes a session and resets the view if it was the active session.
+     *
+     * @param {string} targetSessionId - The session ID to delete.
+     * @returns {Promise<void>}
+     */
     const removeSession = async (targetSessionId) => {
         setError('');
         setLoading(true);
@@ -351,6 +402,13 @@ function Home() {
         }
     };
 
+    /**
+     * Triggers a file download for a session export.
+     *
+     * @param {string} targetSessionId - The session ID to export.
+     * @param {string} [format='json'] - Export format ('json' or 'markdown').
+     * @returns {Promise<void>}
+     */
     const downloadSession = async (targetSessionId, format = 'json') => {
         setError('');
         setLoading(true);
@@ -371,6 +429,13 @@ function Home() {
         }
     };
 
+    /**
+     * Lists all artifact files in a specific run directory.
+     *
+     * @param {string} runDir - The directory path.
+     * @param {string} [title='artifact files'] - Title for the artifact panel.
+     * @returns {Promise<void>}
+     */
     const handleListArtifacts = async (runDir, title = 'artifact files') => {
         setError('');
         setLoading(true);
@@ -396,6 +461,13 @@ function Home() {
         }
     };
 
+    /**
+     * Previews a specific artifact file.
+     *
+     * @param {string} path - Full path to the artifact.
+     * @param {string} [title='artifact preview'] - Title for the artifact panel.
+     * @returns {Promise<void>}
+     */
     const handlePreviewArtifact = async (path, title = 'artifact preview') => {
         setError('');
         setLoading(true);
@@ -447,6 +519,17 @@ function Home() {
         activeRequestControllerRef.current?.abort();
     };
 
+    /**
+     * Handles sending a message to the backend.
+     * Supports both streaming and non-streaming modes.
+     *
+     * @param {Object} params - Send parameters.
+     * @param {string} params.message - The prompt text.
+     * @param {string} params.provider - Selected provider.
+     * @param {string} params.model - Selected model.
+     * @param {boolean} params.streaming - Whether to use SSE streaming.
+     * @returns {Promise<void>}
+     */
     const handleSend = async ({message, provider, model, streaming}) => {
         const requestStartedAt = Date.now();
         const requestController = new AbortController();

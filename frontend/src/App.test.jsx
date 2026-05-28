@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Tests for the main App component.
+ * Verifies navigation between Chat and RAG modes based on backend RAG status.
+ */
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';

@@ -1,3 +1,18 @@
+/**
+ * @fileoverview RagAnswerWithSources component for displaying a RAG query answer and its source documents.
+ */
+
+/**
+ * RagAnswerWithSources component.
+ *
+ * @param {Object} props - Component props.
+ * @param {Object} props.result - The RAG query result object.
+ * @param {string} props.result.answer - The generated answer text.
+ * @param {string} props.result.provider - The LLM provider used.
+ * @param {string} props.result.model - The model ID used.
+ * @param {Array<Object>} props.result.sources - Array of source objects.
+ * @returns {React.JSX.Element|null} The rendered component or null if no result.
+ */
 function RagAnswerWithSources({result}) {
     if (!result) {
         return null;
@@ -33,6 +48,12 @@ function RagAnswerWithSources({result}) {
     );
 }
 
+/**
+ * Formats a provider ID into a human-readable label.
+ *
+ * @param {string} provider - The provider ID.
+ * @returns {string} The formatted label.
+ */
 function labelForProvider(provider) {
     if (!provider) {
         return 'Provider';

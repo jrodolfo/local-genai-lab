@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Tests for the MessageBubble component.
+ * Verifies rendering of assistant and user messages, tool usage information,
+ * markdown content, and structured tool results.
+ */
 import {render, screen} from '@testing-library/react';
 import MessageBubble from './MessageBubble';
 

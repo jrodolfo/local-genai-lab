@@ -1,3 +1,7 @@
+/**
+ * @fileoverview RagWorkspace page component for experimental RAG (Retrieval-Augmented Generation) mode.
+ * Allows users to query a local document corpus and view cited answers.
+ */
 import {useEffect, useRef, useState} from 'react';
 import {listAvailableModels} from '../api/modelApi';
 import {getRagStatus, queryRag, rebuildRagIndex} from '../api/ragApi';
@@ -6,6 +10,11 @@ import {deleteSession, exportSession, getSession, importSession, listSessions} f
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
 
+/**
+ * RagWorkspace component.
+ *
+ * @returns {React.JSX.Element} The rendered RagWorkspace page.
+ */
 function RagWorkspace() {
     const importInputRef = useRef(null);
     const [ragStatus, setRagStatus] = useState(null);
@@ -34,6 +43,11 @@ function RagWorkspace() {
         loadModelsForProvider(selectedProvider);
     }, [selectedProvider]);
 
+    /**
+     * Loads the initial workspace state, including RAG status, available models, and sessions.
+     *
+     * @returns {Promise<void>}
+     */
     async function loadWorkspace() {
         try {
             setLoading(true);
@@ -112,6 +126,11 @@ function RagWorkspace() {
         }
     }
 
+    /**
+     * Rebuilds the RAG index in the backend.
+     *
+     * @returns {Promise<void>}
+     */
     async function handleRebuildIndex() {
         try {
             setRebuilding(true);
@@ -133,6 +152,12 @@ function RagWorkspace() {
         }
     }
 
+    /**
+     * Opens a specific RAG session and loads its messages.
+     *
+     * @param {string} targetSessionId - The session ID to open.
+     * @returns {Promise<void>}
+     */
     async function openSession(targetSessionId) {
         try {
             setError('');

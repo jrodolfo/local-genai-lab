@@ -1,5 +1,29 @@
+/**
+ * @fileoverview InputBox component for composing and sending chat messages.
+ * Includes provider and model selection, and streaming toggle.
+ */
 import {useState} from 'react';
 
+/**
+ * InputBox component.
+ *
+ * @param {Object} props - Component props.
+ * @param {boolean} props.disabled - Whether the entire input box is disabled.
+ * @param {boolean} [props.loading=false] - Whether a message is currently being sent/processed.
+ * @param {string} [props.loadingMessage=''] - Primary status message during loading.
+ * @param {string} [props.loadingDetail=''] - Secondary status detail during loading.
+ * @param {string} [props.loadingHint=''] - Hint or action during loading.
+ * @param {string} [props.statusMessage=''] - Status message to show when not loading.
+ * @param {string[]} [props.providers=[]] - List of available provider IDs.
+ * @param {string} [props.selectedProvider=''] - Currently selected provider ID.
+ * @param {Function} props.onProviderChange - Callback when the provider selection changes.
+ * @param {string[]} [props.models=[]] - List of available model IDs for the selected provider.
+ * @param {string} [props.selectedModel=''] - Currently selected model ID.
+ * @param {Function} props.onModelChange - Callback when the model selection changes.
+ * @param {Function} props.onSend - Callback when the user submits a message.
+ * @param {Function} props.onCancel - Callback when the user cancels a loading request.
+ * @returns {React.JSX.Element} The rendered InputBox component.
+ */
 function InputBox({
                       disabled,
                       loading = false,

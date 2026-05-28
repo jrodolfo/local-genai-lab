@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Unit tests for the Home page component.
+ * Mocks API calls to test session management, message sending, and artifact previewing.
+ */
 import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from './Home';

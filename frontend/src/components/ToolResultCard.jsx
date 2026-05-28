@@ -1,3 +1,19 @@
+/**
+ * @fileoverview ToolResultCard component for displaying structured results from tool executions.
+ * Supports different report types such as report_list, report_summary, audit_summary, and s3_report_summary.
+ */
+
+/**
+ * ToolResultCard component.
+ *
+ * @param {Object} props - Component props.
+ * @param {Object} props.toolResult - The structured tool result data.
+ * @param {string} props.toolResult.type - The type of the tool result.
+ * @param {Function} props.onPreviewArtifact - Callback to preview an artifact file.
+ * @param {Function} props.onListArtifacts - Callback to list all artifact files for a run.
+ * @param {Function} props.onCopyPath - Callback to copy a path to the clipboard.
+ * @returns {React.JSX.Element|null} The rendered component or null if no valid result type.
+ */
 function ToolResultCard({toolResult, onPreviewArtifact, onListArtifacts, onCopyPath}) {
     if (!toolResult?.type) {
         return null;

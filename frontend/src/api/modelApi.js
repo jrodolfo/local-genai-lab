@@ -1,3 +1,13 @@
+/**
+ * @fileoverview API client for retrieving model and provider information.
+ */
+
+/**
+ * Safely parses a JSON response, returning an empty object on failure.
+ *
+ * @param {Response} response - The fetch response object.
+ * @returns {Promise<Object>} The parsed JSON payload or an empty object.
+ */
 async function parseJson(response) {
     try {
         return await response.json();
@@ -6,6 +16,13 @@ async function parseJson(response) {
     }
 }
 
+/**
+ * Fetches the list of available models, optionally filtered by provider.
+ *
+ * @param {string} [provider] - Optional provider ID to filter models.
+ * @returns {Promise<Object[]>} A promise that resolves to an array of model objects.
+ * @throws {Error} If the request fails.
+ */
 export async function listAvailableModels(provider) {
     const params = new URLSearchParams();
     if (provider) {
@@ -22,6 +39,13 @@ export async function listAvailableModels(provider) {
     return response.json();
 }
 
+/**
+ * Fetches the status of model providers.
+ *
+ * @param {string} [provider] - Optional provider ID to check status for.
+ * @returns {Promise<Object>} A promise that resolves to the provider status object.
+ * @throws {Error} If the request fails.
+ */
 export async function getProviderStatus(provider) {
     const params = new URLSearchParams();
     if (provider) {
