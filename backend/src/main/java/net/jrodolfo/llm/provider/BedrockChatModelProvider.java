@@ -30,10 +30,10 @@ public class BedrockChatModelProvider implements ChatModelProvider {
         this.bedrockProperties = bedrockProperties;
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public ChatResponse chat(
             ProviderPrompt prompt,
             String model,
@@ -49,10 +49,10 @@ public class BedrockChatModelProvider implements ChatModelProvider {
         return new ChatResponse(reply.text(), resolvedModel, toolMetadata, toolResult, sessionId, pendingTool, reply.metadata());
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         String resolvedModel = resolveModel(model);
         var completion = prompt.hasMessages()
@@ -61,10 +61,10 @@ public class BedrockChatModelProvider implements ChatModelProvider {
         return new StreamingChatResult(completion, () -> completion.cancel(true));
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public String resolveModel(String model) {
         if (model == null || model.isBlank()) {
             if (bedrockProperties.modelId() == null || bedrockProperties.modelId().isBlank()) {

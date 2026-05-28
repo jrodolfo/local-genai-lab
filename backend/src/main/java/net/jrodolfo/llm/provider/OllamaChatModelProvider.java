@@ -26,10 +26,10 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         this.ollamaClient = ollamaClient;
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public ChatResponse chat(
             ProviderPrompt prompt,
             String model,
@@ -55,10 +55,10 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         );
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         String resolvedModel = ollamaClient.resolveModel(model);
         long startedAt = System.nanoTime();
@@ -77,10 +77,10 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         );
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public String resolveModel(String model) {
         return ollamaClient.resolveModel(model);
     }

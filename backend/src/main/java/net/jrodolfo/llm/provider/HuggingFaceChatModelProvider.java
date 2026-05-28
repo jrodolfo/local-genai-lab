@@ -35,10 +35,10 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         this.huggingFaceProperties = huggingFaceProperties;
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public ChatResponse chat(
             ProviderPrompt prompt,
             String model,
@@ -52,10 +52,10 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         return new ChatResponse(reply.text(), resolvedModel, toolMetadata, toolResult, sessionId, pendingTool, reply.metadata());
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public StreamingChatResult streamChat(ProviderPrompt prompt, String model, Consumer<String> tokenConsumer) {
         ChatResponse response = chat(prompt, model, null, null, null, null);
         tokenConsumer.accept(response.response());
@@ -66,10 +66,10 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         );
     }
 
-    @Override
     /**
      * {@inheritDoc}
      */
+    @Override
     public String resolveModel(String model) {
         String resolvedModel = normalizeModel(model);
         if (resolvedModel == null) {
