@@ -4,7 +4,6 @@ import net.jrodolfo.llm.client.BedrockCatalogClient;
 import net.jrodolfo.llm.client.HuggingFaceClient;
 import net.jrodolfo.llm.client.ModelDiscoveryException;
 import net.jrodolfo.llm.client.OllamaClient;
-import net.jrodolfo.llm.config.AppModelProperties;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
@@ -46,12 +45,12 @@ public class AvailableModelsService {
      * Constructs a new AvailableModelsService.
      *
      * @param chatModelProviderRegistry the registry of chat model providers
-     * @param ollamaProperties properties for Ollama
-     * @param bedrockProperties properties for AWS Bedrock
-     * @param huggingFaceProperties properties for Hugging Face
-     * @param ollamaClient client for Ollama
-     * @param bedrockCatalogClient client for AWS Bedrock catalog
-     * @param huggingFaceClient client for Hugging Face
+     * @param ollamaProperties          properties for Ollama
+     * @param bedrockProperties         properties for AWS Bedrock
+     * @param huggingFaceProperties     properties for Hugging Face
+     * @param ollamaClient              client for Ollama
+     * @param bedrockCatalogClient      client for AWS Bedrock catalog
+     * @param huggingFaceClient         client for Hugging Face
      */
     public AvailableModelsService(
             ChatModelProviderRegistry chatModelProviderRegistry,

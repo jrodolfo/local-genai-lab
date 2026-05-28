@@ -83,7 +83,7 @@ public class ChatToolRouterService {
      * Resolves a pending tool call based on a new user message.
      *
      * @param pendingToolCall the pending tool call
-     * @param message the new user message
+     * @param message         the new user message
      * @return the tool decision
      */
     public ToolDecision resolvePending(PendingToolCall pendingToolCall, String message) {
@@ -162,7 +162,7 @@ public class ChatToolRouterService {
     /**
      * Matches S3 CloudWatch report intent.
      *
-     * @param normalized the normalized message
+     * @param normalized      the normalized message
      * @param originalMessage the original message
      * @return the tool decision or null
      */
@@ -228,7 +228,7 @@ public class ChatToolRouterService {
     /**
      * Resolves a pending S3 report request.
      *
-     * @param normalized the normalized message
+     * @param normalized      the normalized message
      * @param originalMessage the original message
      * @param pendingToolCall the pending tool call
      * @return the tool decision
@@ -259,7 +259,7 @@ public class ChatToolRouterService {
     /**
      * Resolves a pending latest report request.
      *
-     * @param normalized the normalized message
+     * @param normalized      the normalized message
      * @param pendingToolCall the pending tool call
      * @return the tool decision
      */
@@ -434,13 +434,13 @@ public class ChatToolRouterService {
     /**
      * Record representing a tool routing decision.
      *
-     * @param type the type of decision
-     * @param reportType the report type, if applicable
-     * @param bucket the bucket name, if applicable
-     * @param region the AWS region, if applicable
-     * @param days the number of days, if applicable
-     * @param reason the reason for the decision
-     * @param services the list of AWS services, if applicable
+     * @param type          the type of decision
+     * @param reportType    the report type, if applicable
+     * @param bucket        the bucket name, if applicable
+     * @param region        the AWS region, if applicable
+     * @param days          the number of days, if applicable
+     * @param reason        the reason for the decision
+     * @param services      the list of AWS services, if applicable
      * @param clarification clarification text if needed
      */
     public record ToolDecision(
@@ -456,12 +456,12 @@ public class ChatToolRouterService {
         /**
          * Constructor for a tool decision without services and clarification.
          *
-         * @param type the type of decision
+         * @param type       the type of decision
          * @param reportType the report type
-         * @param bucket the bucket name
-         * @param region the AWS region
-         * @param days the number of days
-         * @param reason the reason for the decision
+         * @param bucket     the bucket name
+         * @param region     the AWS region
+         * @param days       the number of days
+         * @param reason     the reason for the decision
          */
         public ToolDecision(
                 DecisionType type,
@@ -477,13 +477,13 @@ public class ChatToolRouterService {
         /**
          * Constructor for a tool decision with services but without clarification.
          *
-         * @param type the type of decision
+         * @param type       the type of decision
          * @param reportType the report type
-         * @param bucket the bucket name
-         * @param region the AWS region
-         * @param days the number of days
-         * @param reason the reason for the decision
-         * @param services the list of AWS services
+         * @param bucket     the bucket name
+         * @param region     the AWS region
+         * @param days       the number of days
+         * @param reason     the reason for the decision
+         * @param services   the list of AWS services
          */
         public ToolDecision(
                 DecisionType type,
@@ -509,7 +509,7 @@ public class ChatToolRouterService {
         /**
          * Creates a decision representing a need for clarification.
          *
-         * @param type the type of decision
+         * @param type          the type of decision
          * @param clarification the clarification text
          * @return a tool decision with clarification
          */
@@ -540,7 +540,7 @@ public class ChatToolRouterService {
      * Internal record to map service aliases to service keys.
      *
      * @param serviceKey the canonical service key
-     * @param aliases the list of aliases for the service
+     * @param aliases    the list of aliases for the service
      */
     private record ServiceAlias(String serviceKey, List<String> aliases) {
     }

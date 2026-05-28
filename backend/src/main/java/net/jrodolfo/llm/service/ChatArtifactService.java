@@ -222,7 +222,7 @@ public class ChatArtifactService {
     /**
      * Internal record to hold preview content and its truncation status.
      *
-     * @param content the preview content
+     * @param content   the preview content
      * @param truncated true if the content was truncated, false otherwise
      */
     private record PreviewContent(String content, boolean truncated) {

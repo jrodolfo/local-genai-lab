@@ -27,8 +27,8 @@ public class FileChatSessionStore {
     /**
      * Constructs a new FileChatSessionStore.
      *
-     * @param objectMapper the object mapper for JSON serialization
-     * @param properties application storage properties
+     * @param objectMapper    the object mapper for JSON serialization
+     * @param properties      application storage properties
      * @param sessionIdPolicy the policy for session IDs
      */
     public FileChatSessionStore(ObjectMapper objectMapper, AppStorageProperties properties, SessionIdPolicy sessionIdPolicy) {

@@ -29,7 +29,7 @@ public class McpService {
     /**
      * Constructs a new McpService.
      *
-     * @param mcpClient the MCP client
+     * @param mcpClient     the MCP client
      * @param mcpProperties properties for MCP configuration
      */
     public McpService(McpClient mcpClient, McpProperties mcpProperties) {

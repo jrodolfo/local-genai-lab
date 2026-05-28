@@ -65,7 +65,7 @@ public class ChatSessionExportService {
     /**
      * Appends information about a pending tool call to the Markdown builder.
      *
-     * @param markdown the Markdown builder
+     * @param markdown    the Markdown builder
      * @param pendingTool the pending tool call details
      */
     private void appendPendingTool(StringBuilder markdown, PendingToolCallResponse pendingTool) {
@@ -130,7 +130,7 @@ public class ChatSessionExportService {
     /**
      * Appends RAG sources to the Markdown builder.
      *
-     * @param markdown the Markdown builder
+     * @param markdown   the Markdown builder
      * @param ragSources the list of RAG sources
      */
     private void appendRagSources(StringBuilder markdown, java.util.List<net.jrodolfo.llm.model.ChatRagSourceChunk> ragSources) {
@@ -162,7 +162,7 @@ public class ChatSessionExportService {
     /**
      * Returns the value or a fallback string if the value is blank.
      *
-     * @param value the string value
+     * @param value    the string value
      * @param fallback the fallback string
      * @return the value or the fallback
      */

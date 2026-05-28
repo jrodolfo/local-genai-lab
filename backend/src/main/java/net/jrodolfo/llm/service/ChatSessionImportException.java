@@ -18,7 +18,7 @@ public class ChatSessionImportException extends RuntimeException {
      * Constructs a new ChatSessionImportException with the specified detail message and cause.
      *
      * @param message the detail message
-     * @param cause the cause of the exception
+     * @param cause   the cause of the exception
      */
     public ChatSessionImportException(String message, Throwable cause) {
         super(message, cause);

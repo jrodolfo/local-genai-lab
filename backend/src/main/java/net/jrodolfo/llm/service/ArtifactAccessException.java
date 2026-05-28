@@ -12,7 +12,7 @@ public class ArtifactAccessException extends RuntimeException {
     /**
      * Constructs a new ArtifactAccessException.
      *
-     * @param status the HTTP status code related to the error
+     * @param status  the HTTP status code related to the error
      * @param message the detail message
      */
     public ArtifactAccessException(HttpStatus status, String message) {

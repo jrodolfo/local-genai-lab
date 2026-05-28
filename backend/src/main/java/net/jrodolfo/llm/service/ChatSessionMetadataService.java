@@ -67,7 +67,7 @@ public class ChatSessionMetadataService {
      * Generates a summary based on the latest assistant message.
      *
      * @param messages the session messages
-     * @param title the session title
+     * @param title    the session title
      * @return the generated summary
      */
     private String generateSummary(List<ChatSessionMessage> messages, String title) {

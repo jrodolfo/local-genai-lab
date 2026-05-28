@@ -3,8 +3,8 @@ package net.jrodolfo.llm.service;
 import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ChatSessionSummaryResponse;
-import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.ChatSessionMessage;
@@ -27,7 +27,7 @@ public class ChatSessionService {
     /**
      * Constructs a new ChatSessionService.
      *
-     * @param sessionStore the store for chat sessions
+     * @param sessionStore               the store for chat sessions
      * @param chatSessionMetadataService the service for session metadata
      */
     public ChatSessionService(FileChatSessionStore sessionStore, ChatSessionMetadataService chatSessionMetadataService) {
@@ -38,11 +38,11 @@ public class ChatSessionService {
     /**
      * Lists chat sessions based on various filters.
      *
-     * @param query search query
-     * @param provider filter by provider
+     * @param query     search query
+     * @param provider  filter by provider
      * @param toolUsage filter by tool usage
-     * @param pending filter by pending status
-     * @param mode filter by mode
+     * @param pending   filter by pending status
+     * @param mode      filter by mode
      * @return a list of chat session summaries
      */
     public List<ChatSessionSummaryResponse> listSessions(String query, String provider, String toolUsage, Boolean pending, String mode) {
@@ -103,7 +103,7 @@ public class ChatSessionService {
      * Checks if a session matches a search query.
      *
      * @param session the chat session
-     * @param query the search query
+     * @param query   the search query
      * @return true if it matches, false otherwise
      */
     private boolean matchesQuery(ChatSession session, String query) {
@@ -129,7 +129,7 @@ public class ChatSessionService {
     /**
      * Checks if a session matches a provider filter.
      *
-     * @param session the chat session
+     * @param session  the chat session
      * @param provider the provider name
      * @return true if it matches, false otherwise
      */
@@ -155,7 +155,7 @@ public class ChatSessionService {
     /**
      * Checks if a session matches a tool usage filter.
      *
-     * @param session the chat session
+     * @param session   the chat session
      * @param toolUsage the tool usage filter ("used" or "unused")
      * @return true if it matches, false otherwise
      */
@@ -194,7 +194,7 @@ public class ChatSessionService {
      * Checks if a session matches a mode filter.
      *
      * @param session the chat session
-     * @param mode the mode
+     * @param mode    the mode
      * @return true if it matches, false otherwise
      */
     private boolean matchesMode(ChatSession session, String mode) {

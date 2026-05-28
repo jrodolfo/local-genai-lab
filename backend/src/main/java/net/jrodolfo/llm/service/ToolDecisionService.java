@@ -36,9 +36,9 @@ public class ToolDecisionService {
     /**
      * Constructs a new ToolDecisionService.
      *
-     * @param appToolsProperties properties for application tools
+     * @param appToolsProperties    properties for application tools
      * @param llmToolPlannerService the service for LLM-based tool planning
-     * @param ruleBasedRouter the service for rule-based tool routing
+     * @param ruleBasedRouter       the service for rule-based tool routing
      */
     public ToolDecisionService(
             AppToolsProperties appToolsProperties,
@@ -53,9 +53,9 @@ public class ToolDecisionService {
     /**
      * Routes a user message to a tool decision.
      *
-     * @param message the user message
+     * @param message  the user message
      * @param provider the model provider
-     * @param model the model name
+     * @param model    the model name
      * @return the tool decision
      */
     public ChatToolRouterService.ToolDecision route(String message, String provider, String model) {
@@ -66,9 +66,9 @@ public class ToolDecisionService {
      * Resolves a pending tool call based on a follow-up message.
      *
      * @param pendingToolCall the pending tool call
-     * @param message the follow-up message
-     * @param provider the model provider
-     * @param model the model name
+     * @param message         the follow-up message
+     * @param provider        the model provider
+     * @param model           the model name
      * @return the resolved tool decision
      */
     public ChatToolRouterService.ToolDecision resolvePending(PendingToolCall pendingToolCall, String message, String provider, String model) {
@@ -78,9 +78,9 @@ public class ToolDecisionService {
     /**
      * Routes a user message to a tool decision and returns a detailed trace.
      *
-     * @param message the user message
+     * @param message  the user message
      * @param provider the model provider
-     * @param model the model name
+     * @param model    the model name
      * @return the decision trace
      */
     public DecisionTrace routeDetailed(String message, String provider, String model) {
@@ -152,9 +152,9 @@ public class ToolDecisionService {
      * Resolves a pending tool call and returns a detailed trace.
      *
      * @param pendingToolCall the pending tool call
-     * @param message the follow-up message
-     * @param provider the model provider
-     * @param model the model name
+     * @param message         the follow-up message
+     * @param provider        the model provider
+     * @param model           the model name
      * @return the decision trace
      */
     public DecisionTrace resolvePendingDetailed(PendingToolCall pendingToolCall, String message, String provider, String model) {
@@ -244,8 +244,8 @@ public class ToolDecisionService {
     /**
      * Logs the decision trace for troubleshooting.
      *
-     * @param phase the decision phase ("route" or "resolve_pending")
-     * @param trace the decision trace
+     * @param phase   the decision phase ("route" or "resolve_pending")
+     * @param trace   the decision trace
      * @param message the user message
      */
     private void logTrace(String phase, DecisionTrace trace, String message) {
@@ -269,12 +269,12 @@ public class ToolDecisionService {
     /**
      * Record representing a detailed trace of a tool decision.
      *
-     * @param routingMode the routing mode used
-     * @param plannerAttempted whether the LLM planner was attempted
-     * @param fallbackUsed whether a fallback decision was used
-     * @param rawPlannerOutput the raw output from the LLM planner
+     * @param routingMode           the routing mode used
+     * @param plannerAttempted      whether the LLM planner was attempted
+     * @param fallbackUsed          whether a fallback decision was used
+     * @param rawPlannerOutput      the raw output from the LLM planner
      * @param parsedPlannerDecision the decision parsed from the planner output
-     * @param finalDecision the final tool decision
+     * @param finalDecision         the final tool decision
      */
     public record DecisionTrace(
             String routingMode,

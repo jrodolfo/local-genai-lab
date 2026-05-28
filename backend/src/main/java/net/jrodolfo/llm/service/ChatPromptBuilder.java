@@ -47,7 +47,7 @@ public class ChatPromptBuilder {
      * Builds a plain chat prompt string.
      *
      * @param currentUserMessage the current user message
-     * @param history the conversation history
+     * @param history            the conversation history
      * @return the built prompt string
      */
     public String buildPlainChatPrompt(String currentUserMessage, List<ChatSessionMessage> history) {
@@ -67,7 +67,7 @@ public class ChatPromptBuilder {
      * Builds a plain chat provider prompt object.
      *
      * @param currentUserMessage the current user message
-     * @param history the conversation history
+     * @param history            the conversation history
      * @return the provider prompt object
      */
     public ProviderPrompt buildPlainChatProviderPrompt(String currentUserMessage, List<ChatSessionMessage> history) {
@@ -96,8 +96,8 @@ public class ChatPromptBuilder {
      * Builds a tool-assisted prompt string.
      *
      * @param currentUserMessage the current user message
-     * @param history the conversation history
-     * @param toolContext the tool context
+     * @param history            the conversation history
+     * @param toolContext        the tool context
      * @return the built prompt string
      */
     public String buildToolAssistedPrompt(String currentUserMessage, List<ChatSessionMessage> history, ToolContext toolContext) {
@@ -153,7 +153,7 @@ public class ChatPromptBuilder {
     /**
      * Appends the current user message with tags to the prompt builder.
      *
-     * @param builder the string builder
+     * @param builder            the string builder
      * @param currentUserMessage the current user message
      */
     private void appendCurrentUserMessage(StringBuilder builder, String currentUserMessage) {
@@ -165,7 +165,7 @@ public class ChatPromptBuilder {
     /**
      * Appends tool context with tags to the prompt builder.
      *
-     * @param builder the string builder
+     * @param builder     the string builder
      * @param toolContext the tool context
      */
     private void appendToolContext(StringBuilder builder, ToolContext toolContext) {
@@ -246,8 +246,8 @@ public class ChatPromptBuilder {
      * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
      *
      * @param currentUserMessage the current user message
-     * @param history the conversation history
-     * @param toolContext the tool context
+     * @param history            the conversation history
+     * @param toolContext        the tool context
      */
     public record PromptContext(
             String currentUserMessage,
@@ -259,10 +259,10 @@ public class ChatPromptBuilder {
     /**
      * Structured tool facts forwarded into a tool-assisted prompt.
      *
-     * @param name the tool name
-     * @param reason the reason for using the tool
+     * @param name    the tool name
+     * @param reason  the reason for using the tool
      * @param summary a summary of the tool result
-     * @param result the tool result map
+     * @param result  the tool result map
      */
     public record ToolContext(
             String name,

@@ -4,7 +4,6 @@ import net.jrodolfo.llm.client.HuggingFaceClient;
 import net.jrodolfo.llm.client.ModelDiscoveryException;
 import net.jrodolfo.llm.client.OllamaClient;
 import net.jrodolfo.llm.client.OllamaClientException;
-import net.jrodolfo.llm.config.AppModelProperties;
 import net.jrodolfo.llm.config.BedrockProperties;
 import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
@@ -16,9 +15,9 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Provides a compact provider-level troubleshooting summary for the chat UI.
@@ -47,11 +46,11 @@ public class ProviderStatusService {
      * Constructs a new ProviderStatusService.
      *
      * @param chatModelProviderRegistry the registry of chat model providers
-     * @param ollamaProperties properties for Ollama
-     * @param bedrockProperties properties for AWS Bedrock
-     * @param huggingFaceProperties properties for Hugging Face
-     * @param ollamaClient client for Ollama
-     * @param huggingFaceClient client for Hugging Face
+     * @param ollamaProperties          properties for Ollama
+     * @param bedrockProperties         properties for AWS Bedrock
+     * @param huggingFaceProperties     properties for Hugging Face
+     * @param ollamaClient              client for Ollama
+     * @param huggingFaceClient         client for Hugging Face
      */
     @Autowired
     public ProviderStatusService(
@@ -78,13 +77,13 @@ public class ProviderStatusService {
      * Package-private constructor for testing purposes.
      *
      * @param chatModelProviderRegistry the registry of chat model providers
-     * @param ollamaProperties properties for Ollama
-     * @param bedrockProperties properties for AWS Bedrock
-     * @param huggingFaceProperties properties for Hugging Face
-     * @param ollamaClient client for Ollama
-     * @param huggingFaceClient client for Hugging Face
-     * @param clock the clock to use for timestamps
-     * @param statusCacheTtl the TTL for cached statuses
+     * @param ollamaProperties          properties for Ollama
+     * @param bedrockProperties         properties for AWS Bedrock
+     * @param huggingFaceProperties     properties for Hugging Face
+     * @param ollamaClient              client for Ollama
+     * @param huggingFaceClient         client for Hugging Face
+     * @param clock                     the clock to use for timestamps
+     * @param statusCacheTtl            the TTL for cached statuses
      */
     ProviderStatusService(
             ChatModelProviderRegistry chatModelProviderRegistry,
@@ -285,7 +284,7 @@ public class ProviderStatusService {
     /**
      * Internal record to store cached provider status.
      *
-     * @param response the provider status response
+     * @param response  the provider status response
      * @param checkedAt the timestamp when the status was checked
      */
     private record CachedStatus(

@@ -36,7 +36,7 @@ public class LlmToolPlannerService {
      * Constructs a new LlmToolPlannerService.
      *
      * @param chatModelProviderRegistry the registry of chat model providers
-     * @param objectMapper the object mapper for JSON parsing
+     * @param objectMapper              the object mapper for JSON parsing
      */
     public LlmToolPlannerService(ChatModelProviderRegistry chatModelProviderRegistry, ObjectMapper objectMapper) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
@@ -46,9 +46,9 @@ public class LlmToolPlannerService {
     /**
      * Plans a tool decision based on a user message.
      *
-     * @param message the user message
+     * @param message  the user message
      * @param provider the model provider
-     * @param model the model name
+     * @param model    the model name
      * @return an Optional containing the tool decision
      */
     public Optional<ChatToolRouterService.ToolDecision> plan(String message, String provider, String model) {
@@ -58,9 +58,9 @@ public class LlmToolPlannerService {
     /**
      * Plans a tool decision and returns detailed planning results.
      *
-     * @param message the user message
+     * @param message  the user message
      * @param provider the model provider
-     * @param model the model name
+     * @param model    the model name
      * @return the detailed planning result
      */
     public PlanningResult planDetailed(String message, String provider, String model) {
@@ -68,20 +68,20 @@ public class LlmToolPlannerService {
                 <tool_planning_request>
                 You are a routing planner for a local chat application.
                 Decide whether the backend should use one of its existing tools.
-
+                
                 Respond with JSON only. Do not add markdown. Do not answer the user directly.
-
+                
                 Allowed actions:
                 - none
                 - use_tool
                 - clarification_needed
-
+                
                 Allowed tool names:
                 - list_recent_reports
                 - read_report_summary
                 - aws_region_audit
                 - s3_cloudwatch_report
-
+                
                 Return this shape:
                 {
                   "action": "none | use_tool | clarification_needed",
@@ -96,7 +96,7 @@ public class LlmToolPlannerService {
                   "missingFields": ["bucket"],
                   "reason": "short reason"
                 }
-
+                
                 Use clarification_needed only when the intent is clearly a supported tool request but required arguments are missing or ambiguous.
                 Use none when no supported tool should run.
                 For "read the latest report" ambiguity, use toolName "read_report_summary" and missingFields ["reportType"].
@@ -104,7 +104,7 @@ public class LlmToolPlannerService {
                 For latest report reading, use toolName "read_report_summary".
                 For aws audits, services must be from this allowlist:
                 %s
-
+                
                 <user_message>
                 %s
                 </user_message>
@@ -120,9 +120,9 @@ public class LlmToolPlannerService {
      * Resolves a pending tool call based on a follow-up message.
      *
      * @param pendingToolCall the pending tool call
-     * @param message the follow-up message
-     * @param provider the model provider
-     * @param model the model name
+     * @param message         the follow-up message
+     * @param provider        the model provider
+     * @param model           the model name
      * @return an Optional containing the resolved tool decision
      */
     public Optional<ChatToolRouterService.ToolDecision> resolvePending(PendingToolCall pendingToolCall, String message, String provider, String model) {
@@ -133,9 +133,9 @@ public class LlmToolPlannerService {
      * Resolves a pending tool call and returns detailed planning results.
      *
      * @param pendingToolCall the pending tool call
-     * @param message the follow-up message
-     * @param provider the model provider
-     * @param model the model name
+     * @param message         the follow-up message
+     * @param provider        the model provider
+     * @param model           the model name
      * @return the detailed planning result
      */
     public PlanningResult resolvePendingDetailed(PendingToolCall pendingToolCall, String message, String provider, String model) {
@@ -143,18 +143,18 @@ public class LlmToolPlannerService {
                 <tool_planning_request>
                 You are resolving a follow-up message for a pending tool request.
                 Respond with JSON only. Do not add markdown. Do not answer the user directly.
-
+                
                 Allowed actions:
                 - none
                 - use_tool
                 - clarification_needed
-
+                
                 Allowed tool names:
                 - list_recent_reports
                 - read_report_summary
                 - aws_region_audit
                 - s3_cloudwatch_report
-
+                
                 Return this shape:
                 {
                   "action": "none | use_tool | clarification_needed",
@@ -169,7 +169,7 @@ public class LlmToolPlannerService {
                   "missingFields": ["bucket"],
                   "reason": "short reason"
                 }
-
+                
                 Pending tool:
                 - type: %s
                 - current reportType: %s
@@ -179,10 +179,10 @@ public class LlmToolPlannerService {
                 - current services: %s
                 - missing fields: %s
                 - reason: %s
-
+                
                 If the follow-up still does not resolve the pending tool request, return clarification_needed with the remaining missing fields.
                 If the message is clearly unrelated, return none.
-
+                
                 <user_message>
                 %s
                 </user_message>
@@ -207,8 +207,8 @@ public class LlmToolPlannerService {
     /**
      * Parses the LLM response into a tool decision.
      *
-     * @param rawResponse the raw response from the LLM
-     * @param originalMessage the original user message
+     * @param rawResponse        the raw response from the LLM
+     * @param originalMessage    the original user message
      * @param strictIntentChecks whether to perform strict intent checks
      * @return an Optional containing the parsed tool decision
      */
@@ -417,7 +417,7 @@ public class LlmToolPlannerService {
     /**
      * Generates a clarification message based on the tool type and missing fields.
      *
-     * @param type the tool type
+     * @param type          the tool type
      * @param missingFields the list of missing fields
      * @return the clarification message
      */
@@ -444,8 +444,8 @@ public class LlmToolPlannerService {
     /**
      * Applies guardrails to a tool decision to prevent unexpected or invalid tool usage.
      *
-     * @param decision the tool decision
-     * @param originalMessage the original user message
+     * @param decision           the tool decision
+     * @param originalMessage    the original user message
      * @param strictIntentChecks whether to perform strict intent checks
      * @return the validated tool decision
      */
@@ -525,7 +525,7 @@ public class LlmToolPlannerService {
     /**
      * Checks if a report decision is unexpected given the user message.
      *
-     * @param decision the tool decision
+     * @param decision        the tool decision
      * @param originalMessage the user message
      * @return true if unexpected, false otherwise
      */
@@ -552,7 +552,7 @@ public class LlmToolPlannerService {
     /**
      * Checks if an S3 decision is unexpected given the user message.
      *
-     * @param decision the tool decision
+     * @param decision        the tool decision
      * @param originalMessage the user message
      * @return true if unexpected, false otherwise
      */
@@ -573,7 +573,7 @@ public class LlmToolPlannerService {
     /**
      * Checks if an AWS audit decision is unexpected given the user message.
      *
-     * @param decision the tool decision
+     * @param decision        the tool decision
      * @param originalMessage the user message
      * @return true if unexpected, false otherwise
      */
@@ -589,7 +589,7 @@ public class LlmToolPlannerService {
     /**
      * Record representing the result of tool planning.
      *
-     * @param rawResponse the raw response from the LLM
+     * @param rawResponse    the raw response from the LLM
      * @param parsedDecision the parsed tool decision
      */
     public record PlanningResult(

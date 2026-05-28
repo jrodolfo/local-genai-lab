@@ -31,10 +31,10 @@ public class ChatSessionImportService {
     /**
      * Constructs a new ChatSessionImportService.
      *
-     * @param objectMapper the object mapper for JSON parsing
-     * @param sessionStore the store for chat sessions
+     * @param objectMapper               the object mapper for JSON parsing
+     * @param sessionStore               the store for chat sessions
      * @param chatSessionMetadataService the service for session metadata
-     * @param sessionIdPolicy the policy for session IDs
+     * @param sessionIdPolicy            the policy for session IDs
      */
     public ChatSessionImportService(
             ObjectMapper objectMapper,
@@ -133,7 +133,7 @@ public class ChatSessionImportService {
      * Normalizes a list of imported message responses into internal session messages.
      *
      * @param importedMessages the list of imported messages
-     * @param fallbackTime the fallback timestamp to use
+     * @param fallbackTime     the fallback timestamp to use
      * @return a list of normalized session messages
      */
     private List<ChatSessionMessage> normalizeMessages(List<ChatSessionMessageResponse> importedMessages, Instant fallbackTime) {
@@ -180,7 +180,8 @@ public class ChatSessionImportService {
                     case "read_report_summary" -> ChatToolRouterService.DecisionType.READ_LATEST_REPORT;
                     case "aws_region_audit" -> ChatToolRouterService.DecisionType.AWS_REGION_AUDIT;
                     case "s3_cloudwatch_report" -> ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT;
-                    default -> throw new ChatSessionImportException("Unsupported pending tool: " + pendingTool.toolName());
+                    default ->
+                            throw new ChatSessionImportException("Unsupported pending tool: " + pendingTool.toolName());
                 },
                 pendingTool.reportType(),
                 pendingTool.bucket(),
