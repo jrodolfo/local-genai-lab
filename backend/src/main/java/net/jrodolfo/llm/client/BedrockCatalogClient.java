@@ -7,5 +7,10 @@ import java.util.List;
  */
 public interface BedrockCatalogClient {
 
+    /**
+     * Lists the available inference profile IDs in Amazon Bedrock.
+     *
+     * @return a list of inference profile IDs
+     */
     List<String> listInferenceProfiles();
 }

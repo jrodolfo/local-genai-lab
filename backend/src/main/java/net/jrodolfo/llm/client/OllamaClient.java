@@ -36,6 +36,12 @@ public class OllamaClient {
     private final OllamaProperties properties;
     private final HttpClient httpClient;
 
+    /**
+     * Constructs an {@code OllamaClient} with the specified object mapper and configuration properties.
+     *
+     * @param objectMapper the object mapper for JSON processing
+     * @param properties   the Ollama configuration properties
+     */
     public OllamaClient(ObjectMapper objectMapper, OllamaProperties properties) {
         this.objectMapper = objectMapper;
         this.properties = properties;
@@ -44,6 +50,14 @@ public class OllamaClient {
                 .build();
     }
 
+    /**
+     * Generates a response from the model for the given prompt synchronously.
+     *
+     * @param prompt the prompt for the model
+     * @param model  the model ID to use
+     * @return the model's response text
+     * @throws OllamaClientException if the request fails
+     */
     public String generate(String prompt, String model) {
         try {
             HttpRequest request = buildGenerateRequest(prompt, model, false);
@@ -67,6 +81,14 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Performs a synchronous chat conversation with the model.
+     *
+     * @param messages the conversation history
+     * @param model    the model ID to use
+     * @return the model's response text
+     * @throws OllamaClientException if the request fails
+     */
     public String chat(List<ProviderPromptMessage> messages, String model) {
         try {
             HttpRequest request = buildChatRequest(messages, model, false);
@@ -90,6 +112,14 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Generates a response from the model for the given prompt and streams the tokens.
+     *
+     * @param prompt        the prompt for the model
+     * @param model         the model ID to use
+     * @param tokenConsumer a consumer for the generated tokens
+     * @throws OllamaClientException if the request fails
+     */
     public void streamGenerate(String prompt, String model, Consumer<String> tokenConsumer) {
         try {
             HttpRequest request = buildGenerateRequest(prompt, model, true);
@@ -125,6 +155,14 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Performs a streaming chat conversation with the model.
+     *
+     * @param messages      the conversation history
+     * @param model         the model ID to use
+     * @param tokenConsumer a consumer for the generated tokens
+     * @throws OllamaClientException if the request fails
+     */
     public void streamChat(List<ProviderPromptMessage> messages, String model, Consumer<String> tokenConsumer) {
         try {
             HttpRequest request = buildChatRequest(messages, model, true);
@@ -160,6 +198,12 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Lists the models available on the Ollama server.
+     *
+     * @return a list of model names
+     * @throws OllamaClientException if the request fails
+     */
     public List<String> listModels() {
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -195,6 +239,15 @@ public class OllamaClient {
         }
     }
 
+    /**
+     * Builds an {@link HttpRequest} for the generation endpoint.
+     *
+     * @param prompt the prompt for the model
+     * @param model  the model ID to use
+     * @param stream whether to stream the response
+     * @return the constructed HTTP request
+     * @throws IOException if the request body cannot be serialized to JSON
+     */
     private HttpRequest buildGenerateRequest(String prompt, String model, boolean stream) throws IOException {
         Map<String, Object> body = new HashMap<>();
         body.put("model", resolveModel(model));
@@ -209,6 +262,15 @@ public class OllamaClient {
                 .build();
     }
 
+    /**
+     * Builds an {@link HttpRequest} for the chat endpoint.
+     *
+     * @param messages the conversation history
+     * @param model    the model ID to use
+     * @param stream   whether to stream the response
+     * @return the constructed HTTP request
+     * @throws IOException if the request body cannot be serialized to JSON
+     */
     private HttpRequest buildChatRequest(List<ProviderPromptMessage> messages, String model, boolean stream) throws IOException {
         Map<String, Object> body = new HashMap<>();
         body.put("model", resolveModel(model));
@@ -227,6 +289,12 @@ public class OllamaClient {
                 .build();
     }
 
+    /**
+     * Resolves the model name to use, falling back to the default if none is provided.
+     *
+     * @param model the requested model name
+     * @return the resolved model name
+     */
     public String resolveModel(String model) {
         if (model == null || model.isBlank()) {
             return properties.defaultModel();
@@ -234,6 +302,13 @@ public class OllamaClient {
         return model.trim();
     }
 
+    /**
+     * Builds a descriptive failure message for a given operation and exception.
+     *
+     * @param operation the name of the operation that failed
+     * @param ex        the exception that occurred
+     * @return a descriptive failure message
+     */
     private String buildRequestFailureMessage(String operation, Exception ex) {
         if (ex instanceof HttpTimeoutException) {
             return "Ollama " + operation + " request timed out after " + properties.readTimeoutSeconds()

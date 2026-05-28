@@ -20,10 +20,22 @@ public class AwsSdkBedrockCatalogClient implements BedrockCatalogClient {
 
     private final BedrockClient bedrockClient;
 
+    /**
+     * Constructs a new {@code AwsSdkBedrockCatalogClient} with the specified {@link BedrockClient}.
+     *
+     * @param bedrockClient the Amazon Bedrock client to use
+     */
     public AwsSdkBedrockCatalogClient(BedrockClient bedrockClient) {
         this.bedrockClient = bedrockClient;
     }
 
+    /**
+     * Lists the available system-defined inference profiles in Amazon Bedrock.
+     * Only profiles with an {@code ACTIVE} status are included in the result.
+     *
+     * @return a list of active inference profile IDs
+     * @throws ModelDiscoveryException if the discovery process fails
+     */
     @Override
     public List<String> listInferenceProfiles() {
         try {

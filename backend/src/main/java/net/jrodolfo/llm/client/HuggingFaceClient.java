@@ -45,6 +45,12 @@ public class HuggingFaceClient {
     private volatile Set<String> cachedCandidateModels = Set.of();
     private volatile Instant cachedUsableModelsAt = Instant.EPOCH;
 
+    /**
+     * Constructs a {@code HuggingFaceClient} with default HTTP client and settings.
+     *
+     * @param objectMapper           the object mapper for JSON serialization/deserialization
+     * @param huggingFaceProperties  the configuration properties for Hugging Face
+     */
     public HuggingFaceClient(ObjectMapper objectMapper, HuggingFaceProperties huggingFaceProperties) {
         this(
                 objectMapper,
@@ -57,6 +63,13 @@ public class HuggingFaceClient {
         );
     }
 
+    /**
+     * Internal constructor for {@code HuggingFaceClient} with a custom HTTP client.
+     *
+     * @param objectMapper           the object mapper for JSON serialization/deserialization
+     * @param huggingFaceProperties  the configuration properties for Hugging Face
+     * @param httpClient             the HTTP client to use for requests
+     */
     HuggingFaceClient(
             ObjectMapper objectMapper,
             HuggingFaceProperties huggingFaceProperties,
@@ -65,6 +78,15 @@ public class HuggingFaceClient {
         this(objectMapper, huggingFaceProperties, httpClient, Clock.systemUTC(), Duration.ofSeconds(30));
     }
 
+    /**
+     * Comprehensive internal constructor for {@code HuggingFaceClient} allowing full dependency injection.
+     *
+     * @param objectMapper           the object mapper for JSON serialization/deserialization
+     * @param huggingFaceProperties  the configuration properties for Hugging Face
+     * @param httpClient             the HTTP client to use for requests
+     * @param clock                  the clock for timing and cache expiration
+     * @param discoveryCacheTtl      the duration for which discovery results are cached
+     */
     HuggingFaceClient(
             ObjectMapper objectMapper,
             HuggingFaceProperties huggingFaceProperties,
@@ -79,6 +101,14 @@ public class HuggingFaceClient {
         this.discoveryCacheTtl = discoveryCacheTtl;
     }
 
+    /**
+     * Performs a synchronous chat completion request to Hugging Face.
+     *
+     * @param messages  the conversation history
+     * @param model     the model ID to use
+     * @return a {@link ModelProviderReply} containing the model's response
+     * @throws ModelProviderException if the request fails
+     */
     public ModelProviderReply chat(List<ProviderPromptMessage> messages, String model) {
         long startedAt = System.nanoTime();
         try {
@@ -128,13 +158,19 @@ public class HuggingFaceClient {
 
     /**
      * Returns the subset of configured candidate models that are currently usable through the
-     * configured hosted chat endpoint. The result is cached briefly so the UI can refresh provider
+     * configured hosted chat endpoint. The result is cached briefly so the UI can refresh the provider
      * state without triggering repeated probe requests.
      */
     public List<String> discoverUsableModels(List<String> candidateModels) {
         return discoverUsableModelsSnapshot(candidateModels).usableModels();
     }
 
+    /**
+     * Probes candidate models and returns a snapshot of usable ones.
+     *
+     * @param candidateModels the list of models to probe
+     * @return a {@link DiscoverySnapshot} containing the usable models and the probe time
+     */
     public DiscoverySnapshot discoverUsableModelsSnapshot(List<String> candidateModels) {
         List<String> normalizedCandidates = candidateModels == null ? List.of() : candidateModels.stream()
                 .filter(model -> model != null && !model.isBlank())
@@ -169,6 +205,12 @@ public class HuggingFaceClient {
         return new DiscoverySnapshot(immutableUsableModels, now);
     }
 
+    /**
+     * Checks if a specific model is currently usable.
+     *
+     * @param model the model ID to check
+     * @return {@code true} if the model is usable, {@code false} otherwise
+     */
     private boolean isModelUsable(String model) {
         try {
             String requestBody = objectMapper.writeValueAsString(Map.of(
@@ -194,6 +236,13 @@ public class HuggingFaceClient {
         }
     }
 
+    /**
+     * Parses the chat response text from the JSON root node.
+     *
+     * @param root the JSON root node of the response
+     * @return the extracted chat content
+     * @throws ModelProviderException if the response does not contain chat content
+     */
     private String parseResponseText(JsonNode root) {
         JsonNode contentNode = root.path("choices").path(0).path("message").path("content");
         if (contentNode.isTextual()) {
@@ -215,6 +264,13 @@ public class HuggingFaceClient {
         throw new ModelProviderException("Hugging Face response did not contain chat content.");
     }
 
+    /**
+     * Parses the error message from the response body and status code.
+     *
+     * @param responseBody the body of the error response
+     * @param statusCode   the HTTP status code
+     * @return a formatted error message
+     */
     private String parseErrorMessage(String responseBody, int statusCode) {
         String providerMessage = null;
         try {
@@ -246,6 +302,12 @@ public class HuggingFaceClient {
         };
     }
 
+    /**
+     * Builds a descriptive failure message for a given {@link IOException}.
+     *
+     * @param ex the exception that occurred
+     * @return a descriptive failure message
+     */
     private String buildRequestFailureMessage(IOException ex) {
         if (ex instanceof HttpTimeoutException) {
             return "Hugging Face request timed out after " + Math.max(1, huggingFaceProperties.readTimeoutSeconds())
@@ -264,6 +326,12 @@ public class HuggingFaceClient {
         return "Hugging Face request failed. Check network access, model availability, or provider configuration.";
     }
 
+    /**
+     * Appends the provider's error message to a generic message if available.
+     *
+     * @param providerMessage the error message from the provider
+     * @return the formatted provider message or an empty string
+     */
     private String appendProviderMessage(String providerMessage) {
         if (providerMessage == null || providerMessage.isBlank()) {
             return "";
@@ -271,10 +339,22 @@ public class HuggingFaceClient {
         return " Provider message: " + providerMessage;
     }
 
+    /**
+     * Extracts an integer value from a JSON node.
+     *
+     * @param node the JSON node to extract from
+     * @return the integer value or {@code null} if the node is not a number
+     */
     private Integer intValue(JsonNode node) {
         return node.isNumber() ? node.asInt() : null;
     }
 
+    /**
+     * Extracts a trimmed string value from a JSON node.
+     *
+     * @param node the JSON node to extract from
+     * @return the trimmed string value or {@code null} if the node is not textual or is blank
+     */
     private String textValue(JsonNode node) {
         if (!node.isTextual()) {
             return null;
@@ -283,6 +363,12 @@ public class HuggingFaceClient {
         return value == null || value.isBlank() ? null : value;
     }
 
+    /**
+     * Snapshot of the model discovery result.
+     *
+     * @param usableModels the list of models that were found to be usable
+     * @param checkedAt    the time when the discovery probe was performed
+     */
     public record DiscoverySnapshot(
             List<String> usableModels,
             Instant checkedAt

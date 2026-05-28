@@ -40,11 +40,23 @@ public class McpClient {
     private final ObjectMapper objectMapper;
     private final McpProperties properties;
 
+    /**
+     * Constructs an {@code McpClient} with the specified object mapper and configuration properties.
+     *
+     * @param objectMapper the object mapper for JSON processing
+     * @param properties   the MCP configuration properties
+     */
     public McpClient(ObjectMapper objectMapper, McpProperties properties) {
         this.objectMapper = objectMapper;
         this.properties = properties;
     }
 
+    /**
+     * Lists the tools available on the MCP server.
+     *
+     * @return a list of available tools
+     * @throws McpClientException if the tool list cannot be retrieved
+     */
     public List<McpToolDescriptor> listTools() {
         ensureEnabled();
         try (McpSession session = openSession()) {
@@ -69,6 +81,14 @@ public class McpClient {
         }
     }
 
+    /**
+     * Calls a specific tool on the MCP server with the given arguments.
+     *
+     * @param toolName  the name of the tool to call
+     * @param arguments the arguments to pass to the tool
+     * @return the result of the tool call
+     * @throws McpClientException if the tool call fails
+     */
     public Map<String, Object> callTool(String toolName, Map<String, Object> arguments) {
         ensureEnabled();
         try (McpSession session = openSession()) {
@@ -128,12 +148,25 @@ public class McpClient {
         }
     }
 
+    /**
+     * Ensures that MCP is enabled in the configuration.
+     *
+     * @throws McpClientException if MCP is disabled
+     */
     private void ensureEnabled() {
         if (!properties.enabled()) {
             throw new McpClientException("MCP integration is disabled.");
         }
     }
 
+    /**
+     * Descriptor for an MCP tool.
+     *
+     * @param name        the name of the tool
+     * @param title       the title of the tool (optional)
+     * @param description the description of the tool (optional)
+     * @param inputSchema the JSON schema for the tool's input
+     */
     public record McpToolDescriptor(
             String name,
             String title,
@@ -142,6 +175,9 @@ public class McpClient {
     ) {
     }
 
+    /**
+     * Internal session class for managing a single MCP server connection.
+     */
     private final class McpSession implements Closeable {
         private final Process process;
         private final BufferedReader inputReader;
@@ -311,6 +347,9 @@ public class McpClient {
             }
         }
 
+        /**
+         * Closes the MCP session, terminating the process and cleaning up resources.
+         */
         @Override
         public void close() {
             try {
