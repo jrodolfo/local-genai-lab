@@ -91,6 +91,13 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         return resolvedModel;
     }
 
+    /**
+     * Extracts and filters structured messages from a provider prompt.
+     * If no structured messages are present, creates a single user message from the simple prompt string.
+     *
+     * @param prompt the provider prompt to extract messages from
+     * @return a list of structured prompt messages
+     */
     private List<ProviderPromptMessage> messagesFor(ProviderPrompt prompt) {
         if (prompt.hasMessages()) {
             return prompt.messages().stream()
@@ -100,6 +107,11 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         return List.of(new ProviderPromptMessage("user", prompt.prompt().trim()));
     }
 
+    /**
+     * Gets the set of all configured and allowed model identifiers for Hugging Face.
+     *
+     * @return a set of normalized model identifiers
+     */
     private Set<String> configuredModels() {
         LinkedHashSet<String> models = new LinkedHashSet<>();
         if (huggingFaceProperties.models() != null) {
@@ -117,6 +129,12 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         return models;
     }
 
+    /**
+     * Normalizes a model identifier by trimming it.
+     *
+     * @param model the raw model identifier
+     * @return the normalized model identifier, or null if it was null or blank
+     */
     private String normalizeModel(String model) {
         if (model == null || model.isBlank()) {
             return null;

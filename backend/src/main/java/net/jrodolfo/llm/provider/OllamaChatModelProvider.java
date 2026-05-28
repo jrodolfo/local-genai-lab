@@ -85,6 +85,12 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         return ollamaClient.resolveModel(model);
     }
 
+    /**
+     * Calculates the elapsed time in milliseconds since the given start time in nanoseconds.
+     *
+     * @param startedAt the start time in nanoseconds (from {@link System#nanoTime()})
+     * @return the elapsed time in milliseconds
+     */
     private long elapsedMillis(long startedAt) {
         return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }

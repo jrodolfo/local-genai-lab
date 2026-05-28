@@ -14,6 +14,12 @@ public record ProviderPrompt(
         List<ProviderPromptMessage> messages
 ) {
 
+    /**
+     * Compact constructor for ProviderPrompt to ensure messages is never null and is immutable.
+     *
+     * @param prompt   the simple prompt string
+     * @param messages the list of structured messages
+     */
     public ProviderPrompt {
         messages = messages == null ? List.of() : List.copyOf(messages);
     }
