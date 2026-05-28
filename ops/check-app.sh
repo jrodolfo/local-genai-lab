@@ -1,12 +1,36 @@
 #!/bin/bash
-# Performs a lightweight local stack check for daily development use.
 #
-# This script distinguishes backend reachability from backend readiness, then checks the frontend
-# dev server and optionally the Ollama tags endpoint. It is broader than backend actuator health
-# because it validates the full local setup, not only the Spring Boot process.
+# check-app.sh
+#
+# Purpose:
+#   Performs a lightweight local stack check for daily development use.
+#   Distinguishes backend reachability from backend readiness, then checks the
+#   frontend dev server and optionally the Ollama tags endpoint.
+#
+# Usage:
+#   ./ops/check-app.sh
+#
+# Required Tools:
+#   - curl
+#   - grep
+#   - sed
+#
+# Expected Output:
+#   Status for backend, models, frontend, and ollama.
+#   Example:
+#     backend: ok (http://localhost:8080/actuator/health)
+#     models: ok (provider=ollama)
+#     frontend: ok (http://localhost:5173)
+#     ollama: ok (http://localhost:11434/api/tags)
+#     overall: healthy
+#
+# Exit Behavior:
+#   Exits with 0 if all checks pass, 1 if any check fails.
+#
 
 set -u
 
+# --- Configuration ---
 BACKEND_URL="${BACKEND_URL:-http://localhost:8080}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:5173}"
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:11434}"
@@ -16,6 +40,16 @@ MODELS_URL="${MODELS_URL:-${BACKEND_URL}/api/models}"
 
 failures=0
 
+# --- Functions ---
+
+# print_status
+# Purpose: Prints a formatted status message.
+# Inputs:
+#   $1 - Name of the component.
+#   $2 - Status (e.g., ok, failed).
+#   $3 - Optional detail message.
+# Outputs: Prints to stdout.
+# Exit Behavior: Returns 0.
 print_status() {
   local name="$1"
   local status="$2"
@@ -28,6 +62,11 @@ print_status() {
   fi
 }
 
+# check_backend
+# Purpose: Checks the backend health via Spring Boot Actuator.
+# Inputs: None.
+# Outputs: Updates failures count and prints status.
+# Exit Behavior: Returns 0.
 check_backend() {
   local body_file http_code response compact
   body_file="$(mktemp)"
@@ -69,6 +108,11 @@ check_backend() {
   fi
 }
 
+# check_models
+# Purpose: Checks if the backend has models available.
+# Inputs: None.
+# Outputs: Updates failures count and prints status.
+# Exit Behavior: Returns 0.
 check_models() {
   local body_file http_code response compact provider
 
@@ -107,6 +151,11 @@ check_models() {
   print_status "models" "ok" "provider=${provider:-unknown}"
 }
 
+# check_frontend
+# Purpose: Checks if the frontend dev server is reachable.
+# Inputs: None.
+# Outputs: Updates failures count and prints status.
+# Exit Behavior: Returns 0.
 check_frontend() {
   if curl -fsS "${FRONTEND_URL}" >/dev/null 2>&1; then
     print_status "frontend" "ok" "${FRONTEND_URL}"
@@ -116,6 +165,11 @@ check_frontend() {
   fi
 }
 
+# check_ollama
+# Purpose: Checks if the local Ollama service is reachable.
+# Inputs: None.
+# Outputs: Updates failures count and prints status.
+# Exit Behavior: Returns 0.
 check_ollama() {
   if [ "$CHECK_OLLAMA" != "true" ]; then
     print_status "ollama" "skipped" "CHECK_OLLAMA=${CHECK_OLLAMA}"
@@ -130,6 +184,7 @@ check_ollama() {
   fi
 }
 
+# --- Execution ---
 check_backend
 check_models
 check_frontend

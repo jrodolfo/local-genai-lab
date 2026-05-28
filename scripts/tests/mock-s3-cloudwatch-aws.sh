@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
+#
+# mock-s3-cloudwatch-aws.sh
+#
+# Purpose:
+#   Mocks AWS CLI commands specifically for S3 and CloudWatch reporting tests.
+#   Parses common AWS CLI arguments to return context-specific mock data.
+#
+# Usage:
+#   ./scripts/tests/mock-s3-cloudwatch-aws.sh <service> <command> [args...]
+#
+# Required Tools:
+#   - bash
+#
+# Expected Output:
+#   JSON response for the mocked AWS command.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 42 if MOCK_FAIL_CALL matches the service:command.
+#
+
 set -eu
 
+# --- Arguments and Parsing ---
 service="${1:-}"
 command="${2:-}"
 metric_name=""
 bucket_name=""
 filter_id=""
 
+# --- Mock Failure Logic ---
 if [ -n "${MOCK_FAIL_CALL:-}" ] && [ "${service}:${command}" = "$MOCK_FAIL_CALL" ]; then
   printf 'mock failure for call: %s:%s\n' "$service" "$command" >&2
   exit 42
 fi
 
+# Parse CLI arguments to extract key parameters for mocking
 while [ "$#" -gt 0 ]; do
   case "$1" in
   --metric-name)
@@ -38,6 +61,7 @@ while [ "$#" -gt 0 ]; do
   shift || true
 done
 
+# --- Mock Responses ---
 case "${service}:${command}:${metric_name}:${filter_id}" in
 "sts:get-caller-identity::")
   printf '%s\n' '{"Account":"123456789012","Arn":"arn:aws:iam::123456789012:user/test","UserId":"test-user"}'

@@ -1,14 +1,37 @@
 #!/usr/bin/env bash
+#
+# mock-aws.sh
+#
+# Purpose:
+#   Mocks various AWS CLI commands for testing. Returns predefined JSON or text
+#   responses based on the service and command provided.
+#
+# Usage:
+#   ./scripts/tests/mock-aws.sh <service> <command> [args...]
+#
+# Required Tools:
+#   - bash
+#
+# Expected Output:
+#   JSON or text response for the mocked AWS command.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 42 if MOCK_FAIL_SERVICE matches the service.
+#
+
 set -eu
 
+# --- Arguments ---
 service="${1:-}"
 command="${2:-}"
 
+# --- Mock Failure Logic ---
 if [ -n "${MOCK_FAIL_SERVICE:-}" ] && [ "$service" = "$MOCK_FAIL_SERVICE" ]; then
   printf 'mock failure for service: %s\n' "$service" >&2
   exit 42
 fi
 
+# --- Mock Responses ---
 case "${service}:${command}" in
 "sts:get-caller-identity")
   printf '%s\n' '{"Account":"123456789012","Arn":"arn:aws:iam::123456789012:user/test","UserId":"test-user"}'

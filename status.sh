@@ -1,7 +1,29 @@
 #!/usr/bin/env bash
+#
+# status.sh
+#
+# Purpose:
+#   Displays the current status of the local-genai-lab application, including
+#   process PIDs, URLs, health check results, and log file locations.
+#
+# Usage:
+#   ./status.sh
+#
+# Required Tools:
+#   - bash
+#   - curl (for health checks)
+#
+# Expected Output:
+#   Status summary for backend and frontend, health check results, and log
+#   file paths.
+#
+# Exit Behavior:
+#   Exits with 0.
+#
 
 set -euo pipefail
 
+# --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
 source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
@@ -11,11 +33,13 @@ ensure_run_dir
 clear_stale_pid_file "${BACKEND_PID_FILE}"
 clear_stale_pid_file "${FRONTEND_PID_FILE}"
 
+# --- Configuration ---
 SERVER_PORT="${SERVER_PORT:-8080}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:${SERVER_PORT}}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:${FRONTEND_PORT}}"
 
+# --- Process Status ---
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
 frontend_pid="$(read_pid_file "${FRONTEND_PID_FILE}")"
 
@@ -44,6 +68,7 @@ else
   fi
 fi
 
+# --- Health Checks ---
 if curl -fsS "${BACKEND_URL}/actuator/health" >/dev/null 2>&1; then
   printf '%s\n' 'backend health: ok'
 else
@@ -56,6 +81,7 @@ else
   printf '%s\n' 'frontend http: unavailable'
 fi
 
+# --- Logs ---
 printf '%s\n' \
   "backend log: ${BACKEND_LOG_FILE}" \
   "frontend log: ${FRONTEND_LOG_FILE}"

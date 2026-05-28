@@ -1,7 +1,29 @@
 #!/usr/bin/env bash
+#
+# stop.sh
+#
+# Purpose:
+#   Stops the local-genai-lab application by terminating the backend and
+#   frontend processes.
+#
+# Usage:
+#   ./stop.sh
+#
+# Required Tools:
+#   - bash
+#   - kill (via terminate_pid in runtime-common.sh)
+#
+# Expected Output:
+#   Status messages indicating which processes were stopped, or a message if
+#   no managed processes were running.
+#
+# Exit Behavior:
+#   Exits with 0.
+#
 
 set -euo pipefail
 
+# --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
 source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
@@ -10,6 +32,7 @@ ensure_run_dir
 clear_stale_pid_file "${BACKEND_PID_FILE}"
 clear_stale_pid_file "${FRONTEND_PID_FILE}"
 
+# --- Execution ---
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
 frontend_pid="$(read_pid_file "${FRONTEND_PID_FILE}")"
 

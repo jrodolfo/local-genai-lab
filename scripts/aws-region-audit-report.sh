@@ -1,18 +1,35 @@
 #!/usr/bin/env bash
-# Runs a multi-region AWS audit and writes structured artifacts under reports/audit.
 #
-# Inputs:
-#   - optional region list
-#   - optional service filter
-# Environment assumptions:
-#   - aws CLI is configured and authenticated
-#   - jq is optional but improves JSON formatting
-# Outputs:
-#   - report.txt summary
-#   - summary.json machine-readable result
-#   - per-step JSON/text/stderr artifacts
+# aws-region-audit-report.sh
+#
+# Purpose:
+#   Runs a multi-region AWS audit and writes structured artifacts (JSON, text,
+#   and TSV status) under reports/audit.
+#
+# Usage:
+#   ./scripts/aws-region-audit-report.sh [--regions us-east-1,us-east-2] [--services sagemaker,ec2]
+#   ./scripts/aws-region-audit-report.sh [--regions us-east-1 us-east-2] [--services sagemaker ec2]
+#
+# Required Tools:
+#   - aws CLI (configured and authenticated)
+#   - jq (optional, for JSON formatting and summary generation)
+#
+# Expected Output:
+#   - report.txt: Human-readable summary.
+#   - summary.json: Machine-readable summary.
+#   - json/: Raw JSON artifacts from AWS CLI.
+#   - text/: Text artifacts.
+#   - stderr/: Captured errors from AWS CLI calls.
+#   - meta/status.tsv: Internal record of all audit steps.
+#
+# Exit Behavior:
+#   Exits with 0 on successful execution of the audit flow.
+#   Exits with 1 on invalid arguments.
+#
+
 set -uo pipefail
 
+# --- Configuration and Globals ---
 DEFAULT_REGIONS=("us-east-1" "us-east-2")
 ALL_SERVICES=(
   "sts"
@@ -59,12 +76,17 @@ STDERR_DIR=""
 META_DIR=""
 STATUS_TSV=""
 
+# --- Initialization ---
 if command -v "$JQ_BIN" >/dev/null 2>&1; then
   HAS_JQ=1
 fi
 
 export AWS_PAGER=""
 
+# --- Functions ---
+
+# usage
+# Purpose: Prints the script usage information.
 usage() {
   cat <<'EOF'
 Usage:
@@ -80,6 +102,10 @@ Options:
 EOF
 }
 
+# service_key_is_known
+# Purpose: Checks if a service key is in the ALL_SERVICES list.
+# Inputs: $1 - Service key candidate.
+# Exit Behavior: Returns 0 if known, 1 otherwise.
 service_key_is_known() {
   local candidate="$1"
   local service
@@ -93,6 +119,10 @@ service_key_is_known() {
   return 1
 }
 
+# service_is_selected
+# Purpose: Checks if a service should be audited based on filters.
+# Inputs: $1 - Service key.
+# Exit Behavior: Returns 0 if selected, 1 otherwise.
 service_is_selected() {
   local candidate="$1"
   local service
@@ -114,6 +144,8 @@ service_is_selected() {
   return 1
 }
 
+# parse_regions_values
+# Purpose: Parses region values from CLI arguments.
 parse_regions_values() {
   local value
   local normalized
@@ -144,6 +176,8 @@ parse_regions_values() {
   fi
 }
 
+# parse_services_values
+# Purpose: Parses service filter values from CLI arguments.
 parse_services_values() {
   local value
   local normalized
@@ -190,6 +224,8 @@ parse_services_values() {
   fi
 }
 
+# service_is_selected_parse_only
+# Purpose: Helper for parse_services_values to avoid duplicates in selection.
 service_is_selected_parse_only() {
   local candidate="$1"
   local service
@@ -207,6 +243,8 @@ service_is_selected_parse_only() {
   return 1
 }
 
+# parse_args
+# Purpose: Main CLI argument parser.
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -255,6 +293,8 @@ parse_args() {
   fi
 }
 
+# init_output
+# Purpose: Initializes output directory and subdirectories, ensuring uniqueness.
 init_output() {
   OUTDIR="$BASE_OUTDIR"
   RUN_SUFFIX=0
@@ -277,14 +317,20 @@ init_output() {
   : >"$STATUS_TSV"
 }
 
+# log_console
+# Purpose: Prints a message to stdout.
 log_console() {
   printf '%s\n' "$*"
 }
 
+# report_line
+# Purpose: Appends a line to the text report.
 report_line() {
   printf '%s\n' "$*" >>"$TEXT_REPORT"
 }
 
+# write_section_separator
+# Purpose: Writes a section header to the text report.
 write_section_separator() {
   report_line
   report_line "============================================================"
@@ -292,6 +338,10 @@ write_section_separator() {
   report_line "============================================================"
 }
 
+# json_count
+# Purpose: Counts items in a JSON response using jq.
+# Inputs: $1 - Path to JSON file.
+# Outputs: Prints count to stdout.
 json_count() {
   local path="$1"
 
@@ -311,6 +361,8 @@ json_count() {
   ' "$path" 2>/dev/null || printf 'n/a'
 }
 
+# load_account_identity
+# Purpose: Loads AWS account identity from captured STS JSON.
 load_account_identity() {
   local caller_identity_json="$JSON_DIR/sts_get_caller_identity.json"
 
@@ -323,6 +375,11 @@ load_account_identity() {
   CALLER_USER_ID="$("$JQ_BIN" -r '.UserId // "n/a"' "$caller_identity_json" 2>/dev/null || printf 'n/a')"
 }
 
+# render_stdout_to_report
+# Purpose: Appends command output to the text report, formatting JSON if possible.
+# Inputs:
+#   $1 - Format (json/text).
+#   $2 - Path to captured stdout.
 render_stdout_to_report() {
   local output_format="$1"
   local stdout_path="$2"
@@ -346,6 +403,8 @@ render_stdout_to_report() {
   esac
 }
 
+# record_status
+# Purpose: Records the result of an audit step into the TSV status file.
 record_status() {
   local scope="$1"
   local service_key="$2"
@@ -383,6 +442,16 @@ record_status() {
     "$command_string" >>"$STATUS_TSV"
 }
 
+# run_audit_cmd
+# Purpose: Executes an AWS CLI command, captures artifacts, and records status.
+# Inputs:
+#   $1 - Scope (global or region name).
+#   $2 - Service key.
+#   $3 - Human-readable title.
+#   $4 - Base filename for artifacts.
+#   $5 - Output format (json/text).
+#   $6 - Billable flag (yes/no).
+#   $@ - Command and arguments to execute.
 run_audit_cmd() {
   local scope="$1"
   local service_key="$2"
@@ -468,6 +537,8 @@ run_audit_cmd() {
     "$command_string"
 }
 
+# collect_global_audits
+# Purpose: Runs audit commands that are not specific to any region.
 collect_global_audits() {
   run_audit_cmd \
     "global" \
@@ -498,6 +569,9 @@ collect_global_audits() {
     --query 'Buckets[].{Name:Name,CreationDate:CreationDate}'
 }
 
+# collect_region_audits
+# Purpose: Runs audit commands for a specific AWS region.
+# Inputs: $1 - AWS region name.
 collect_region_audits() {
   local region="$1"
   local safe_region="${region//-/_}"
@@ -701,6 +775,8 @@ collect_region_audits() {
     --output json
 }
 
+# write_report_header
+# Purpose: Writes the human-readable header to the text report.
 write_report_header() {
   report_line "AWS regional audit"
   report_line "Generated at: $(date)"
@@ -719,6 +795,8 @@ write_report_header() {
   report_line
 }
 
+# write_summary_section
+# Purpose: Writes a high-level summary of results to the text report.
 write_summary_section() {
   local total_commands=$((SUCCESS_COUNT + FAILURE_COUNT + SKIPPED_COUNT))
   local scope service_key title output_format billable status exit_code resource_count stdout_path stderr_path command_string
@@ -757,6 +835,8 @@ write_summary_section() {
   done <"$STATUS_TSV"
 }
 
+# write_region_overview_section
+# Purpose: Writes a per-region summary of audited resources to the text report.
 write_region_overview_section() {
   local region
   local scope service_key title output_format billable status exit_code resource_count stdout_path stderr_path command_string
@@ -786,6 +866,8 @@ write_region_overview_section() {
   done
 }
 
+# write_detailed_results_section
+# Purpose: Appends full output and metadata for every audit step to the text report.
 write_detailed_results_section() {
   local scope service_key title output_format billable status exit_code resource_count stdout_path stderr_path command_string
 
@@ -835,6 +917,8 @@ write_detailed_results_section() {
   done <"$STATUS_TSV"
 }
 
+# write_summary_json
+# Purpose: Generates the machine-readable summary.json file using jq.
 write_summary_json() {
   local total_commands=$((SUCCESS_COUNT + FAILURE_COUNT + SKIPPED_COUNT))
   local regions_json
@@ -916,6 +1000,8 @@ write_summary_json() {
     }' >"$SUMMARY_JSON"
 }
 
+# main
+# Purpose: Entry point for the audit script.
 main() {
   parse_args "$@"
   init_output
@@ -930,6 +1016,7 @@ main() {
     collect_region_audits "$region"
   done
 
+  # Process and write reports
   load_account_identity
   write_report_header
   write_summary_section

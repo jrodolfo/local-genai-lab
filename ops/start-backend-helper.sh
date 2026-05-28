@@ -1,17 +1,44 @@
 #!/usr/bin/env bash
-# Starts only the Spring Boot backend with the providers configured for the current local environment.
 #
-# The script auto-loads the repo-local .env file for unset variables only, so explicit shell
-# overrides still win. Use APP_MODEL_PROVIDER to choose the startup default provider while keeping
-# any other configured providers available for runtime switching in the UI.
+# start-backend-helper.sh
+#
+# Purpose:
+#   Starts only the Spring Boot backend with the providers configured for the
+#   current local environment.
+#   Auto-loads repo-local .env file for unset variables, allowing shell overrides.
+#
+# Usage:
+#   ./ops/start-backend-helper.sh
+#
+# Required Tools:
+#   - bash
+#   - mvn (Maven)
+#
+# Expected Output:
+#   Startup configuration summary and Maven build/run output.
+#
+# Exit Behavior:
+#   Exits with 0 on successful configuration (or dry run), non-zero on error.
+#   On successful start, replaces current shell with Maven process.
+#
 
 set -euo pipefail
 
+# --- Path Definitions ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BACKEND_DIR="${REPO_ROOT}/backend"
 ENV_FILE="${ENV_FILE:-${REPO_ROOT}/.env}"
 
+# --- Functions ---
+
+# load_env_defaults
+# Purpose: Loads environment variables from a .env file if they are not already set.
+# Inputs:
+#   $1 - Path to the environment file.
+# Outputs:
+#   Exports variables to the current shell.
+# Exit Behavior: Returns 0.
 load_env_defaults() {
   local env_file="$1"
   local line key value
@@ -41,8 +68,10 @@ load_env_defaults() {
   done < "${env_file}"
 }
 
+# --- Environment Loading ---
 load_env_defaults "${ENV_FILE}"
 
+# --- Default Configuration ---
 APP_MODEL_PROVIDER="${APP_MODEL_PROVIDER:-ollama}"
 SERVER_PORT="${SERVER_PORT:-8080}"
 OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://localhost:11434}"
@@ -69,6 +98,7 @@ export HUGGINGFACE_API_TOKEN
 export MCP_ENABLED
 export DRY_RUN
 
+# --- Validation ---
 case "${APP_MODEL_PROVIDER}" in
   ollama|bedrock|huggingface)
     ;;
@@ -83,6 +113,7 @@ if [ "${APP_MODEL_PROVIDER}" = "huggingface" ] && [ -z "${HUGGINGFACE_API_TOKEN}
   exit 1
 fi
 
+# --- Summary ---
 printf '%s\n' \
   "Starting backend with provider=${APP_MODEL_PROVIDER}" \
   "  server_port=${SERVER_PORT}" \
@@ -101,6 +132,7 @@ if [ "${DRY_RUN}" = "true" ]; then
   exit 0
 fi
 
+# --- Execution ---
 cd "${BACKEND_DIR}"
 
 exec mvn spring-boot:run

@@ -1,11 +1,41 @@
 #!/usr/bin/env bash
+#
+# test-s3-cloudwatch.sh
+#
+# Purpose:
+#   Integration tests for the aws-s3-cloudwatch-report.sh script.
+#   Uses a mock AWS CLI to verify report generation, bucket location lookup,
+#   CloudWatch metric retrieval, and error handling.
+#
+# Usage:
+#   ./scripts/tests/test-s3-cloudwatch.sh
+#
+# Required Tools:
+#   - bash
+#   - jq
+#   - grep
+#   - mktemp
+#
+# Expected Output:
+#   Success message: "s3 cloudwatch tests passed"
+#   Failure message and non-zero exit code if assertions fail.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 1 on any test failure.
+#
+
 set -euo pipefail
 
+# --- Path Definitions ---
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT_PATH="$ROOT_DIR/aws-s3-cloudwatch-report.sh"
 MOCK_AWS="$ROOT_DIR/tests/mock-s3-cloudwatch-aws.sh"
 JQ_BIN="${JQ_BIN:-jq}"
 
+# --- Assertion Helpers ---
+
+# assert_file_exists
+# Purpose: Verifies that a file exists.
 assert_file_exists() {
   if [ ! -f "$1" ]; then
     printf 'missing expected file: %s\n' "$1" >&2
@@ -13,6 +43,8 @@ assert_file_exists() {
   fi
 }
 
+# assert_eq
+# Purpose: Verifies that two strings are equal.
 assert_eq() {
   if [ "$1" != "$2" ]; then
     printf 'assertion failed: expected [%s], got [%s]\n' "$1" "$2" >&2
@@ -20,6 +52,8 @@ assert_eq() {
   fi
 }
 
+# assert_dir_not_exists
+# Purpose: Verifies that a directory does not exist.
 assert_dir_not_exists() {
   if [ -d "$1" ]; then
     printf 'directory should not exist: %s\n' "$1" >&2
@@ -27,6 +61,8 @@ assert_dir_not_exists() {
   fi
 }
 
+# assert_file_contains
+# Purpose: Verifies that a file contains a specific string.
 assert_file_contains() {
   if ! grep -Fq -- "$2" "$1"; then
     printf 'expected file [%s] to contain [%s]\n' "$1" "$2" >&2
@@ -34,6 +70,8 @@ assert_file_contains() {
   fi
 }
 
+# assert_dir_exists
+# Purpose: Verifies that a directory exists.
 assert_dir_exists() {
   if [ ! -d "$1" ]; then
     printf 'missing expected directory: %s\n' "$1" >&2
@@ -41,6 +79,10 @@ assert_dir_exists() {
   fi
 }
 
+# --- Test Cases ---
+
+# test_successful_run_generates_report
+# Purpose: Verifies that a successful run generates all expected artifacts and report content.
 test_successful_run_generates_report() {
   local tmp_dir reports_dir outdir
 
@@ -86,6 +128,8 @@ test_successful_run_generates_report() {
   rm -rf "$tmp_dir"
 }
 
+# test_missing_bucket_fails_without_creating_outputs
+# Purpose: Verifies that missing mandatory --bucket argument prevents directory creation.
 test_missing_bucket_fails_without_creating_outputs() {
   local tmp_dir reports_dir
 
@@ -101,6 +145,8 @@ test_missing_bucket_fails_without_creating_outputs() {
   rm -rf "$tmp_dir"
 }
 
+# test_invalid_days_fails_without_creating_outputs
+# Purpose: Verifies that invalid --days value prevents directory creation.
 test_invalid_days_fails_without_creating_outputs() {
   local tmp_dir reports_dir
 
@@ -116,6 +162,8 @@ test_invalid_days_fails_without_creating_outputs() {
   rm -rf "$tmp_dir"
 }
 
+# test_failed_aws_call_keeps_error_artifacts
+# Purpose: Verifies that AWS CLI call failures are recorded and stderr is preserved.
 test_failed_aws_call_keeps_error_artifacts() {
   local tmp_dir reports_dir outdir
 
@@ -132,6 +180,10 @@ test_failed_aws_call_keeps_error_artifacts() {
   rm -rf "$tmp_dir"
 }
 
+# --- Main ---
+
+# main
+# Purpose: Entry point for the test suite.
 main() {
   test_successful_run_generates_report
   test_missing_bucket_fails_without_creating_outputs

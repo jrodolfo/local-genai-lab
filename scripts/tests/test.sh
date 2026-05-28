@@ -1,11 +1,41 @@
 #!/usr/bin/env bash
+#
+# test.sh
+#
+# Purpose:
+#   Integration tests for the aws-region-audit-report.sh script.
+#   Uses a mock AWS CLI to verify report generation, service filtering,
+#   output directory uniqueness, and error handling.
+#
+# Usage:
+#   ./scripts/tests/test.sh
+#
+# Required Tools:
+#   - bash
+#   - jq
+#   - grep
+#   - mktemp
+#
+# Expected Output:
+#   Success message: "all tests passed"
+#   Failure message and non-zero exit code if assertions fail.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 1 on any test failure.
+#
+
 set -euo pipefail
 
+# --- Path Definitions ---
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT_PATH="$ROOT_DIR/aws-region-audit-report.sh"
 MOCK_AWS="$ROOT_DIR/tests/mock-aws.sh"
 JQ_BIN="${JQ_BIN:-jq}"
 
+# --- Assertion Helpers ---
+
+# assert_file_exists
+# Purpose: Verifies that a file exists.
 assert_file_exists() {
   if [ ! -f "$1" ]; then
     printf 'missing expected file: %s\n' "$1" >&2
@@ -13,6 +43,8 @@ assert_file_exists() {
   fi
 }
 
+# assert_dir_exists
+# Purpose: Verifies that a directory exists.
 assert_dir_exists() {
   if [ ! -d "$1" ]; then
     printf 'missing expected directory: %s\n' "$1" >&2
@@ -20,6 +52,8 @@ assert_dir_exists() {
   fi
 }
 
+# assert_eq
+# Purpose: Verifies that two strings are equal.
 assert_eq() {
   if [ "$1" != "$2" ]; then
     printf 'assertion failed: expected [%s], got [%s]\n' "$1" "$2" >&2
@@ -27,6 +61,8 @@ assert_eq() {
   fi
 }
 
+# assert_file_contains
+# Purpose: Verifies that a file contains a specific string.
 assert_file_contains() {
   if ! grep -Fq -- "$2" "$1"; then
     printf 'expected file [%s] to contain [%s]\n' "$1" "$2" >&2
@@ -34,6 +70,13 @@ assert_file_contains() {
   fi
 }
 
+# --- Test Execution Helper ---
+
+# run_audit
+# Purpose: Runs the audit script with mocked AWS and controlled timestamp.
+# Inputs:
+#   $1 - Reports directory.
+#   $@ - Additional arguments for the audit script.
 run_audit() {
   local reports_dir="$1"
   shift
@@ -43,6 +86,10 @@ run_audit() {
     "$SCRIPT_PATH" "$@" >/dev/null
 }
 
+# --- Test Cases ---
+
+# test_default_run_creates_outputs
+# Purpose: Verifies that a default run creates all expected artifact files.
 test_default_run_creates_outputs() {
   local tmp_dir reports_dir outdir
 
@@ -70,6 +117,8 @@ test_default_run_creates_outputs() {
   rm -rf "$tmp_dir"
 }
 
+# test_service_filter_records_skips
+# Purpose: Verifies that service filtering correctly records skipped services.
 test_service_filter_records_skips() {
   local tmp_dir reports_dir outdir
 
@@ -87,6 +136,8 @@ test_service_filter_records_skips() {
   rm -rf "$tmp_dir"
 }
 
+# test_unique_output_directories
+# Purpose: Verifies that consecutive runs with the same timestamp use unique directories.
 test_unique_output_directories() {
   local tmp_dir reports_dir
 
@@ -101,6 +152,8 @@ test_unique_output_directories() {
   rm -rf "$tmp_dir"
 }
 
+# test_failed_service_is_recorded
+# Purpose: Verifies that service-level failures are correctly recorded in the summary.
 test_failed_service_is_recorded() {
   local tmp_dir reports_dir outdir
 
@@ -119,6 +172,8 @@ test_failed_service_is_recorded() {
   rm -rf "$tmp_dir"
 }
 
+# test_invalid_service_does_not_create_outputs
+# Purpose: Verifies that invalid arguments prevent directory creation.
 test_invalid_service_does_not_create_outputs() {
   local tmp_dir reports_dir
 
@@ -138,6 +193,10 @@ test_invalid_service_does_not_create_outputs() {
   rm -rf "$tmp_dir"
 }
 
+# --- Main ---
+
+# main
+# Purpose: Entry point for the test suite.
 main() {
   test_default_run_creates_outputs
   test_service_filter_records_skips

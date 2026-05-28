@@ -1,16 +1,36 @@
 #!/usr/bin/env bash
-# Runs an S3 CloudWatch usage report for one bucket and writes artifacts under
-# reports/s3-cloudwatch.
 #
-# Inputs:
-#   - required bucket name
-#   - optional request region
-#   - optional lookback window in days
-# Environment assumptions:
-#   - aws CLI is configured and authenticated
-#   - jq is optional but improves JSON formatting
+# aws-s3-cloudwatch-report.sh
+#
+# Purpose:
+#   Runs an S3 CloudWatch usage report for a specific bucket and writes structured
+#   artifacts (JSON, text, and TSV status) under reports/s3-cloudwatch.
+#   It collects storage metrics and request metrics if configured.
+#
+# Usage:
+#   ./scripts/aws-s3-cloudwatch-report.sh --bucket example.com [--region us-east-2] [--days 14]
+#
+# Required Tools:
+#   - aws CLI (configured and authenticated)
+#   - jq (optional, for JSON formatting and summary generation)
+#   - awk
+#
+# Expected Output:
+#   - report.txt: Human-readable usage summary.
+#   - summary.json: Machine-readable summary.
+#   - json/: Raw JSON artifacts from AWS CLI.
+#   - text/: Text artifacts.
+#   - stderr/: Captured errors from AWS CLI calls.
+#   - meta/status.tsv: Internal record of all audit steps.
+#
+# Exit Behavior:
+#   Exits with 0 on successful execution of the flow.
+#   Exits with 1 on invalid arguments or mandatory command failures.
+#
+
 set -uo pipefail
 
+# --- Configuration and Globals ---
 BUCKET=""
 REQUEST_REGION=""
 BUCKET_REGION=""
@@ -43,12 +63,17 @@ META_DIR=""
 STATUS_TSV=""
 OUTPUT_INITIALIZED=0
 
+# --- Initialization ---
 if command -v "$JQ_BIN" >/dev/null 2>&1; then
   HAS_JQ=1
 fi
 
 export AWS_PAGER=""
 
+# --- Functions ---
+
+# usage
+# Purpose: Prints the script usage information.
 usage() {
   cat <<'EOF'
 Usage:
@@ -62,6 +87,8 @@ Options:
 EOF
 }
 
+# init_output
+# Purpose: Initializes output directory and subdirectories, ensuring uniqueness.
 init_output() {
   OUTDIR="$BASE_OUTDIR"
   RUN_SUFFIX=0
@@ -84,6 +111,9 @@ init_output() {
   OUTPUT_INITIALIZED=1
 }
 
+# cleanup_empty_output_on_error
+# Purpose: Removes the output directory if it contains no non-empty files on failure.
+# Exit Behavior: Returns the original exit code.
 cleanup_empty_output_on_error() {
   local exit_code=$?
   local non_empty_file_count
@@ -102,14 +132,20 @@ cleanup_empty_output_on_error() {
 
 trap cleanup_empty_output_on_error EXIT
 
+# log_console
+# Purpose: Prints a message to stdout.
 log_console() {
   printf '%s\n' "$*"
 }
 
+# report_line
+# Purpose: Appends a line to the text report.
 report_line() {
   printf '%s\n' "$*" >>"$TEXT_REPORT"
 }
 
+# write_section_separator
+# Purpose: Writes a section header to the text report.
 write_section_separator() {
   report_line
   report_line "============================================================"
@@ -117,6 +153,10 @@ write_section_separator() {
   report_line "============================================================"
 }
 
+# normalize_bucket_region
+# Purpose: Maps special AWS region codes to standard ones.
+# Inputs: $1 - Region code from AWS.
+# Outputs: Standardized region name.
 normalize_bucket_region() {
   local value="$1"
 
@@ -133,10 +173,15 @@ normalize_bucket_region() {
   esac
 }
 
+# date_now_utc
+# Purpose: Returns current timestamp in ISO 8601 UTC.
 date_now_utc() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
+# date_days_ago_utc
+# Purpose: Returns timestamp from X days ago in ISO 8601 UTC.
+# Inputs: $1 - Number of days.
 date_days_ago_utc() {
   local days="$1"
 
@@ -147,6 +192,9 @@ date_days_ago_utc() {
   fi
 }
 
+# subtract_seconds_from_timestamp
+# Purpose: Subtracts duration from an ISO 8601 timestamp.
+# Inputs: $1 - Timestamp, $2 - Seconds to subtract.
 subtract_seconds_from_timestamp() {
   local timestamp="$1"
   local seconds="$2"
@@ -166,6 +214,8 @@ subtract_seconds_from_timestamp() {
   fi
 }
 
+# timestamp_to_utc
+# Purpose: Normalizes various date formats to ISO 8601 UTC.
 timestamp_to_utc() {
   local timestamp="$1"
   local epoch
@@ -184,6 +234,9 @@ timestamp_to_utc() {
   fi
 }
 
+# duration_human
+# Purpose: Returns human-friendly string for common durations.
+# Inputs: $1 - Seconds.
 duration_human() {
   local seconds="$1"
 
@@ -200,10 +253,15 @@ duration_human() {
   esac
 }
 
+# trim_carriage_return
+# Purpose: Removes \r from string.
 trim_carriage_return() {
   printf '%s' "$1" | tr -d '\r'
 }
 
+# bytes_human
+# Purpose: Converts byte count to human-readable size (KB, MB, GB, etc.).
+# Inputs: $1 - Bytes.
 bytes_human() {
   local bytes="$1"
 
@@ -226,6 +284,9 @@ bytes_human() {
   '
 }
 
+# format_decimal
+# Purpose: Formats a number to 2 decimal places, trimming trailing zeros.
+# Inputs: $1 - Number.
 format_decimal() {
   local value="$1"
 
@@ -244,6 +305,8 @@ format_decimal() {
   '
 }
 
+# record_status
+# Purpose: Records the result of a step into the TSV status file.
 record_status() {
   local step="$1"
   local scope="$2"
@@ -269,6 +332,14 @@ record_status() {
     "$note" >>"$STATUS_TSV"
 }
 
+# run_cmd
+# Purpose: Executes a command, captures artifacts, and records status.
+# Inputs:
+#   $1 - Step name.
+#   $2 - Scope.
+#   $3 - Path to captured stdout.
+#   $@ - Command and arguments.
+# Exit Behavior: Returns 0 on success, non-zero otherwise.
 run_cmd() {
   local step="$1"
   local scope="$2"
@@ -300,6 +371,8 @@ run_cmd() {
   [ "$status" = "success" ]
 }
 
+# record_skipped
+# Purpose: Records a skipped step in the TSV status file.
 record_skipped() {
   local step="$1"
   local scope="$2"
@@ -309,6 +382,8 @@ record_skipped() {
   record_status "$step" "$scope" "skipped" "0" "" "" "$note"
 }
 
+# parse_args
+# Purpose: Main CLI argument parser.
 parse_args() {
   while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -356,6 +431,9 @@ parse_args() {
   fi
 }
 
+# latest_datapoint_value
+# Purpose: Extracts the value of the most recent datapoint in CloudWatch JSON.
+# Outputs: Prints value or "n/a".
 latest_datapoint_value() {
   local path="$1"
 
@@ -372,6 +450,9 @@ latest_datapoint_value() {
   ' "$path" 2>/dev/null || printf 'n/a'
 }
 
+# latest_datapoint_timestamp
+# Purpose: Extracts the timestamp of the most recent datapoint in CloudWatch JSON.
+# Outputs: Prints timestamp or "n/a".
 latest_datapoint_timestamp() {
   local path="$1"
 
@@ -388,6 +469,8 @@ latest_datapoint_timestamp() {
   ' "$path" 2>/dev/null || printf 'n/a'
 }
 
+# metric_label_from_json
+# Purpose: Extracts the metric label from CloudWatch JSON.
 metric_label_from_json() {
   local path="$1"
 
@@ -399,6 +482,8 @@ metric_label_from_json() {
   "$JQ_BIN" -r '.Label // ""' "$path" 2>/dev/null
 }
 
+# load_account_identity
+# Purpose: Loads AWS account identity from captured STS JSON.
 load_account_identity() {
   local caller_identity_json="$JSON_DIR/sts_get_caller_identity.json"
 
@@ -411,6 +496,8 @@ load_account_identity() {
   CALLER_USER_ID="$("$JQ_BIN" -r '.UserId // "n/a"' "$caller_identity_json" 2>/dev/null || printf 'n/a')"
 }
 
+# request_metric_unit
+# Purpose: Returns descriptive unit string for a given request metric.
 request_metric_unit() {
   local metric_name="$1"
 
@@ -454,6 +541,8 @@ request_metric_unit() {
   esac
 }
 
+# request_metric_description
+# Purpose: Returns a description of what a request metric represents.
 request_metric_description() {
   local metric_name="$1"
 
@@ -500,6 +589,8 @@ request_metric_description() {
   esac
 }
 
+# format_request_metric_value
+# Purpose: Formats a request metric value with its unit and optional human-readable size.
 format_request_metric_value() {
   local metric_name="$1"
   local value="$2"
@@ -528,10 +619,14 @@ format_request_metric_value() {
   esac
 }
 
+# humanize_filter_id
+# Purpose: Formats a filter ID string for readability.
 humanize_filter_id() {
   printf '%s' "$1" | tr '_-' '  '
 }
 
+# request_metric_short_note
+# Purpose: Returns a short tag for request metrics (e.g., HTTP 4xx).
 request_metric_short_note() {
   local metric_name="$1"
 
@@ -575,6 +670,8 @@ request_metric_short_note() {
   esac
 }
 
+# request_metric_filter_id_from_path
+# Purpose: Extracts the filter ID from an artifact filename.
 request_metric_filter_id_from_path() {
   local path="$1"
   local base metric_name metric_safe filter_id
@@ -591,6 +688,8 @@ request_metric_filter_id_from_path() {
   printf '%s' "$filter_id"
 }
 
+# describe_request_metric_entry
+# Purpose: Prints a bullet point description of a single request metric artifact.
 describe_request_metric_entry() {
   local path="$1"
   local base metric_name formatted_value short_note
@@ -611,6 +710,8 @@ describe_request_metric_entry() {
   fi
 }
 
+# count_lines
+# Purpose: Counts non-empty lines in input.
 count_lines() {
   local value=0
   local line
@@ -623,6 +724,8 @@ count_lines() {
   printf '%s' "$value"
 }
 
+# json_has_datapoints
+# Purpose: Checks if CloudWatch JSON contains any datapoints.
 json_has_datapoints() {
   local path="$1"
 
@@ -633,6 +736,8 @@ json_has_datapoints() {
   [ "$("$JQ_BIN" -r '(.Datapoints // []) | length' "$path" 2>/dev/null || printf '0')" -gt 0 ]
 }
 
+# discover_storage_type_values
+# Purpose: Extracts unique StorageType dimension values for a given metric.
 discover_storage_type_values() {
   local path="$1"
   local metric_name="$2"
@@ -650,6 +755,8 @@ discover_storage_type_values() {
   ' "$path" 2>/dev/null | sort -u
 }
 
+# storage_catalog_has_metrics
+# Purpose: Checks if storage metric catalog contains any metric definitions.
 storage_catalog_has_metrics() {
   local path="$1"
 
@@ -660,6 +767,8 @@ storage_catalog_has_metrics() {
   [ "$("$JQ_BIN" -r '(.Metrics // []) | length' "$path" 2>/dev/null || printf '0')" -gt 0 ]
 }
 
+# discover_request_metric_names
+# Purpose: Extracts metric names associated with a FilterId from the catalog.
 discover_request_metric_names() {
   local path="$1"
   local filter_id="$2"
@@ -675,6 +784,8 @@ discover_request_metric_names() {
   ' "$path" 2>/dev/null | sort -u
 }
 
+# discover_request_filter_ids
+# Purpose: Extracts Filter IDs from bucket metrics configurations.
 discover_request_filter_ids() {
   local path="$1"
 
@@ -688,6 +799,8 @@ discover_request_filter_ids() {
   ' "$path" 2>/dev/null | sort -u
 }
 
+# request_metric_statistic
+# Purpose: Returns the appropriate CloudWatch statistic for a given request metric.
 request_metric_statistic() {
   local metric_name="$1"
 
@@ -701,6 +814,10 @@ request_metric_statistic() {
   esac
 }
 
+# --- Data Collection Sections ---
+
+# collect_bucket_metadata
+# Purpose: Resolves account ID, bucket region, and website configuration.
 collect_bucket_metadata() {
   local caller_identity_json="$JSON_DIR/sts_get_caller_identity.json"
   local location_json="$JSON_DIR/bucket_location.json"
@@ -744,6 +861,8 @@ collect_bucket_metadata() {
     "$AWS_BIN" s3api get-bucket-website --bucket "$BUCKET" --output json || true
 }
 
+# collect_storage_metrics
+# Purpose: Discovers and retrieves daily storage metrics (size, objects) from CloudWatch.
 collect_storage_metrics() {
   local catalog_json="$JSON_DIR/storage_metrics_catalog.json"
   local catalog_bucket_region_json="$JSON_DIR/storage_metrics_catalog_bucket_region.json"
@@ -767,6 +886,7 @@ collect_storage_metrics() {
     return 0
   fi
 
+  # Metrics usually in us-east-1, but can be in bucket region.
   if ! storage_catalog_has_metrics "$catalog_json" && [ "$BUCKET_REGION" != "$STORAGE_METRICS_REGION" ]; then
     log_console "No storage metrics found in $STORAGE_METRICS_REGION, retrying bucket region: $BUCKET_REGION"
     if run_cmd \
@@ -833,6 +953,8 @@ collect_storage_metrics() {
   fi
 }
 
+# collect_request_metrics
+# Purpose: Discovers and retrieves daily request metrics from CloudWatch (if configured).
 collect_request_metrics() {
   local catalog_json="$JSON_DIR/request_metrics_catalog.json"
   local metrics_config_json="$JSON_DIR/bucket_metrics_configurations.json"
@@ -917,6 +1039,10 @@ collect_request_metrics() {
   fi
 }
 
+# --- Report Writing Sections ---
+
+# write_report_header
+# Purpose: Writes the human-readable header to the text report.
 write_report_header() {
   report_line "S3 CloudWatch bucket report"
   report_line "Generated at: $(date)"
@@ -933,6 +1059,8 @@ write_report_header() {
   report_line
 }
 
+# write_summary_section
+# Purpose: Writes a high-level summary of storage and request metrics to the report.
 write_summary_section() {
   local total_commands=$((SUCCESS_COUNT + FAILURE_COUNT + SKIPPED_COUNT))
   local step scope status exit_code stdout_path stderr_path note
@@ -1054,6 +1182,8 @@ write_summary_section() {
   done <"$STATUS_TSV"
 }
 
+# write_details_section
+# Purpose: Appends full output and metadata for every step to the text report.
 write_details_section() {
   local step scope status exit_code stdout_path stderr_path note
 
@@ -1105,6 +1235,8 @@ write_details_section() {
   done <"$STATUS_TSV"
 }
 
+# write_summary_json
+# Purpose: Generates the machine-readable summary.json file using jq.
 write_summary_json() {
   local total_steps=$((SUCCESS_COUNT + FAILURE_COUNT + SKIPPED_COUNT))
   local failed_json skipped_json request_configs_json
@@ -1218,6 +1350,10 @@ write_summary_json() {
     }' >"$SUMMARY_JSON"
 }
 
+# --- Execution ---
+
+# main
+# Purpose: Entry point for the report script.
 main() {
   parse_args "$@"
   init_output

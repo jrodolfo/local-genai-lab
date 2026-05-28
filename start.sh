@@ -1,7 +1,33 @@
 #!/usr/bin/env bash
+#
+# start.sh
+#
+# Purpose:
+#   Starts the local-genai-lab application (backend and frontend) in the
+#   background. It handles environment loading, dependency checks (frontend),
+#   and health checks to ensure the application starts correctly.
+#
+# Usage:
+#   ./start.sh
+#
+# Required Tools:
+#   - bash
+#   - npm (for frontend dependencies and dev server)
+#   - mvn (via start-backend-helper.sh)
+#   - curl (for health checks)
+#
+# Expected Output:
+#   Startup progress messages, runtime configuration header, and a success or
+#   failure message indicating whether the application is ready.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 1 on failure (e.g., port already in use, health
+#   check timeout).
+#
 
 set -euo pipefail
 
+# --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
 source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
@@ -11,12 +37,14 @@ ensure_run_dir
 clear_stale_pid_file "${BACKEND_PID_FILE}"
 clear_stale_pid_file "${FRONTEND_PID_FILE}"
 
+# --- Configuration ---
 SERVER_PORT="${SERVER_PORT:-8080}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:${SERVER_PORT}}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:${FRONTEND_PORT}}"
 WAIT_TIMEOUT_SECONDS="${WAIT_TIMEOUT_SECONDS:-60}"
 
+# --- Checks ---
 printf '%s\n' 'Starting local-genai-lab'
 print_runtime_header
 printf '%s\n' \
@@ -25,6 +53,7 @@ printf '%s\n' \
   "backend_log=${BACKEND_LOG_FILE}" \
   "frontend_log=${FRONTEND_LOG_FILE}"
 
+# Verify if processes are already running
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
 if [ -n "${backend_pid}" ] && is_process_alive "${backend_pid}"; then
   printf '%s\n' "Backend already running (pid=${backend_pid})." >&2
@@ -37,6 +66,7 @@ if [ -n "${frontend_pid}" ] && is_process_alive "${frontend_pid}"; then
   exit 1
 fi
 
+# Verify port availability
 backend_port_owner="$(find_port_process "${SERVER_PORT}")"
 if [ -n "${backend_port_owner}" ]; then
   printf '%s\n' \
@@ -53,6 +83,7 @@ if [ -n "${frontend_port_owner}" ]; then
   exit 1
 fi
 
+# --- Dependencies ---
 if [ ! -d "${REPO_ROOT}/frontend/node_modules" ]; then
   printf '%s\n' 'Installing frontend dependencies because frontend/node_modules is missing...'
   (
@@ -61,9 +92,11 @@ if [ ! -d "${REPO_ROOT}/frontend/node_modules" ]; then
   )
 fi
 
+# --- Execution ---
 : > "${BACKEND_LOG_FILE}"
 : > "${FRONTEND_LOG_FILE}"
 
+# Start Backend
 (
   cd "${REPO_ROOT}"
   export SERVER_PORT
@@ -72,6 +105,7 @@ fi
 backend_pid=$!
 printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"
 
+# Start Frontend
 (
   cd "${REPO_ROOT}/frontend"
   export BACKEND_URL
@@ -81,6 +115,7 @@ printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"
 frontend_pid=$!
 printf '%s' "${frontend_pid}" > "${FRONTEND_PID_FILE}"
 
+# --- Health Checks ---
 if ! wait_for_url "${BACKEND_URL}/actuator/health" "${WAIT_TIMEOUT_SECONDS}"; then
   terminate_pid "${frontend_pid}" "frontend" || true
   terminate_pid "${backend_pid}" "backend" || true

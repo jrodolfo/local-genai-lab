@@ -1,9 +1,42 @@
 #!/usr/bin/env bash
+#
+# test-start-backend-helper.sh
+#
+# Purpose:
+#   Unit tests for the start-backend-helper.sh script. Verifies environment
+#   variable loading, overrides, and validation logic.
+#
+# Usage:
+#   ./ops/tests/test-start-backend-helper.sh
+#
+# Required Tools:
+#   - bash
+#   - mktemp
+#
+# Expected Output:
+#   Success message: "start-backend-helper tests passed"
+#   Failure message and non-zero exit code if assertions fail.
+#
+# Exit Behavior:
+#   Exits with 0 on success, 1 on any test failure.
+#
+
 set -euo pipefail
 
+# --- Path Definitions ---
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT_PATH="$ROOT_DIR/start-backend-helper.sh"
 
+# --- Test Helpers ---
+
+# assert_contains
+# Purpose: Verifies that a string contains a specific substring.
+# Inputs:
+#   $1 - Haystack string to search in.
+#   $2 - Needle substring to search for.
+# Outputs:
+#   Prints error message to stderr on failure.
+# Exit Behavior: Exits with 1 on failure.
 assert_contains() {
   local haystack="$1"
   local needle="$2"
@@ -13,6 +46,10 @@ assert_contains() {
   fi
 }
 
+# --- Test Cases ---
+
+# test_env_file_populates_unset_values
+# Purpose: Verifies that variables in .env file are loaded when not set in shell.
 test_env_file_populates_unset_values() {
   local tmp_dir env_file output
 
@@ -34,6 +71,8 @@ EOF
   rm -rf "${tmp_dir}"
 }
 
+# test_shell_env_overrides_env_file
+# Purpose: Verifies that shell environment variables take precedence over .env file.
 test_shell_env_overrides_env_file() {
   local tmp_dir env_file output
 
@@ -51,6 +90,8 @@ EOF
   rm -rf "${tmp_dir}"
 }
 
+# test_invalid_default_provider_fails_clearly
+# Purpose: Verifies that an unsupported APP_MODEL_PROVIDER causes a clear error.
 test_invalid_default_provider_fails_clearly() {
   local tmp_dir env_file
 
@@ -68,6 +109,8 @@ test_invalid_default_provider_fails_clearly() {
   rm -rf "${tmp_dir}"
 }
 
+# test_huggingface_default_requires_token
+# Purpose: Verifies that Hugging Face provider requires an API token.
 test_huggingface_default_requires_token() {
   local tmp_dir env_file
 
@@ -85,6 +128,10 @@ test_huggingface_default_requires_token() {
   rm -rf "${tmp_dir}"
 }
 
+# --- Main ---
+
+# main
+# Purpose: Entry point for the test suite.
 main() {
   test_env_file_populates_unset_values
   test_shell_env_overrides_env_file
