@@ -244,9 +244,6 @@ public class ChatPromptBuilder {
 
     /**
      * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
-     */
-    /**
-     * Legacy-friendly wrapper for callers that still think in terms of a single text prompt.
      *
      * @param currentUserMessage the current user message
      * @param history the conversation history
@@ -259,9 +256,6 @@ public class ChatPromptBuilder {
     ) {
     }
 
-    /**
-     * Structured tool facts forwarded into a tool-assisted prompt.
-     */
     /**
      * Structured tool facts forwarded into a tool-assisted prompt.
      *

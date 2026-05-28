@@ -2,13 +2,7 @@ package net.jrodolfo.llm.service;
 
 import net.jrodolfo.llm.client.McpClientException;
 import net.jrodolfo.llm.config.AppStorageProperties;
-import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
-import net.jrodolfo.llm.dto.ChatResponse;
-import net.jrodolfo.llm.dto.ChatToolMetadata;
-import net.jrodolfo.llm.dto.ListReportsRequest;
-import net.jrodolfo.llm.dto.PendingToolCallResponse;
-import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
-import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
+import net.jrodolfo.llm.dto.*;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.PendingToolCall;
 import net.jrodolfo.llm.provider.ChatModelProvider;
@@ -18,9 +12,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import java.nio.file.Path;
 
 /**
  * Coordinates the backend chat lifecycle.
@@ -41,18 +35,19 @@ public class ChatOrchestratorService {
     private final ChatPromptBuilder chatPromptBuilder;
     private final ChatSessionService chatSessionService;
     private final Path reportsDirectory;
-    private static final ToolPhaseListener NOOP_TOOL_PHASE_LISTENER = (phaseType, toolName) -> { };
+    private static final ToolPhaseListener NOOP_TOOL_PHASE_LISTENER = (phaseType, toolName) -> {
+    };
 
     /**
      * Constructs a new ChatOrchestratorService.
      *
      * @param chatModelProviderRegistry the registry of chat model providers
-     * @param mcpService the service for MCP tools
-     * @param toolDecisionService the service for making tool decisions
-     * @param chatMemoryService the service for managing chat memory
-     * @param chatPromptBuilder the builder for chat prompts
-     * @param chatSessionService the service for chat sessions
-     * @param appStorageProperties application storage properties
+     * @param mcpService                the service for MCP tools
+     * @param toolDecisionService       the service for making tool decisions
+     * @param chatMemoryService         the service for managing chat memory
+     * @param chatPromptBuilder         the builder for chat prompts
+     * @param chatSessionService        the service for chat sessions
+     * @param appStorageProperties      application storage properties
      */
     public ChatOrchestratorService(
             ChatModelProviderRegistry chatModelProviderRegistry,
@@ -75,9 +70,9 @@ public class ChatOrchestratorService {
     /**
      * Executes a chat turn.
      *
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
+     * @param message   the user message
+     * @param provider  the model provider name
+     * @param model     the model name
      * @param sessionId the session ID
      * @return the chat response
      */
@@ -88,9 +83,9 @@ public class ChatOrchestratorService {
     /**
      * Executes a chat turn with a request ID.
      *
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
+     * @param message   the user message
+     * @param provider  the model provider name
+     * @param model     the model name
      * @param sessionId the session ID
      * @param requestId the request ID for logging
      * @return the chat response
@@ -124,16 +119,10 @@ public class ChatOrchestratorService {
      *
      * <p>The result is either an immediate response for clarification/failure cases or a
      * prompt-backed continuation that can be executed later.
-     */
-    /**
-     * Prepares a chat turn before the controller chooses normal or streaming provider execution.
      *
-     * <p>The result is either an immediate response for clarification/failure cases or a
-     * prompt-backed continuation that can be executed later.
-     *
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
+     * @param message   the user message
+     * @param provider  the model provider name
+     * @param model     the model name
      * @param sessionId the session ID
      * @return the prepared chat object
      */
@@ -143,13 +132,10 @@ public class ChatOrchestratorService {
 
     /**
      * Prepares a chat turn and includes the current request id in orchestration logs.
-     */
-    /**
-     * Prepares a chat turn and includes the current request id in orchestration logs.
      *
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
+     * @param message   the user message
+     * @param provider  the model provider name
+     * @param model     the model name
      * @param sessionId the session ID
      * @param requestId the request ID for logging
      * @return the prepared chat object
@@ -161,11 +147,11 @@ public class ChatOrchestratorService {
     /**
      * Prepares a chat turn with full context and a tool phase listener.
      *
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
-     * @param sessionId the session ID
-     * @param requestId the request ID for logging
+     * @param message           the user message
+     * @param provider          the model provider name
+     * @param model             the model name
+     * @param sessionId         the session ID
+     * @param requestId         the request ID for logging
      * @param toolPhaseListener the listener for tool execution phases
      * @return the prepared chat object
      */
@@ -273,12 +259,12 @@ public class ChatOrchestratorService {
                     ex.getMessage()
             );
             ChatSession persistedSession = chatMemoryService.finishTurn(
-                session,
-                buildFailureMessage(decision, ex.getMessage()),
-                metadata,
-                null,
-                null,
-                null
+                    session,
+                    buildFailureMessage(decision, ex.getMessage()),
+                    metadata,
+                    null,
+                    null,
+                    null
             );
             ChatResponse fallbackResponse = new ChatResponse(
                     buildFailureMessage(decision, ex.getMessage()),
@@ -296,9 +282,9 @@ public class ChatOrchestratorService {
     /**
      * Completes a prepared chat with the assistant's response.
      *
-     * @param preparedChat the prepared chat object
+     * @param preparedChat      the prepared chat object
      * @param assistantResponse the assistant's response text
-     * @param providerMetadata metadata from the model provider
+     * @param providerMetadata  metadata from the model provider
      * @return the updated and saved chat session
      */
     public ChatSession completePreparedChat(
@@ -312,10 +298,10 @@ public class ChatOrchestratorService {
     /**
      * Completes a prepared chat with the assistant's response and a request ID.
      *
-     * @param preparedChat the prepared chat object
+     * @param preparedChat      the prepared chat object
      * @param assistantResponse the assistant's response text
-     * @param providerMetadata metadata from the model provider
-     * @param requestId the request ID for logging
+     * @param providerMetadata  metadata from the model provider
+     * @param requestId         the request ID for logging
      * @return the updated and saved chat session
      */
     public ChatSession completePreparedChat(
@@ -347,10 +333,10 @@ public class ChatOrchestratorService {
     /**
      * Resolves the tool decision based on the current session state and the new message.
      *
-     * @param session the current chat session
-     * @param message the user message
-     * @param provider the model provider name
-     * @param model the model name
+     * @param session        the current chat session
+     * @param message        the user message
+     * @param provider       the model provider name
+     * @param model          the model name
      * @param routedDecision the initial routing decision
      * @return the resolved tool decision
      */
@@ -465,9 +451,9 @@ public class ChatOrchestratorService {
     /**
      * Builds the conversation prompt for the model provider.
      *
-     * @param session the chat session
+     * @param session            the chat session
      * @param currentUserMessage the current user message
-     * @param toolContext context from a tool execution, if any
+     * @param toolContext        context from a tool execution, if any
      * @return the provider prompt
      */
     private ProviderPrompt buildConversationPrompt(ChatSession session, String currentUserMessage, ChatPromptBuilder.ToolContext toolContext) {
@@ -481,7 +467,7 @@ public class ChatOrchestratorService {
     /**
      * Builds a failure message to be returned to the user when a tool fails.
      *
-     * @param decision the tool decision
+     * @param decision     the tool decision
      * @param errorMessage the error message
      * @return the failure message
      */
@@ -590,7 +576,7 @@ public class ChatOrchestratorService {
      * Safely retrieves a nested map from a source map.
      *
      * @param source the source map
-     * @param key the key for the nested map
+     * @param key    the key for the nested map
      * @return the nested map, or an empty map if not found
      */
     @SuppressWarnings("unchecked")
@@ -618,8 +604,8 @@ public class ChatOrchestratorService {
      * Internal record to store tool execution results.
      *
      * @param toolName the name of the tool
-     * @param result the result map
-     * @param summary a summary of the result
+     * @param result   the result map
+     * @param summary  a summary of the result
      */
     private record ToolExecution(
             String toolName,
@@ -640,8 +626,8 @@ public class ChatOrchestratorService {
     /**
      * Structures a tool result for the frontend based on the tool name.
      *
-     * @param toolName the name of the tool
-     * @param result the raw result map
+     * @param toolName         the name of the tool
+     * @param result           the raw result map
      * @param reportsDirectory the reports directory
      * @return the structured result map
      */
@@ -704,8 +690,8 @@ public class ChatOrchestratorService {
     /**
      * Generates a relative path for an artifact within the reports directory.
      *
-     * @param runDir the run directory
-     * @param fileName the file name
+     * @param runDir           the run directory
+     * @param fileName         the file name
      * @param reportsDirectory the reports directory
      * @return the relative path string
      */
@@ -719,7 +705,7 @@ public class ChatOrchestratorService {
     /**
      * Relativizes run directories in a list of reports.
      *
-     * @param reportsValue the reports value
+     * @param reportsValue     the reports value
      * @param reportsDirectory the reports directory
      * @return the relativized reports
      */
@@ -777,7 +763,7 @@ public class ChatOrchestratorService {
     /**
      * Relativizes a path string against the reports directory.
      *
-     * @param pathValue the path value
+     * @param pathValue        the path value
      * @param reportsDirectory the reports directory
      * @return the relativized path string
      */
@@ -801,20 +787,14 @@ public class ChatOrchestratorService {
      *
      * <p>An instance contains either an {@code immediateResponse} or the prompt/session state
      * needed to execute and persist a model-backed reply.
-     */
-    /**
-     * Lightweight hand-off object between orchestration and provider execution.
      *
-     * <p>An instance contains either an {@code immediateResponse} or the prompt/session state
-     * needed to execute and persist a model-backed reply.
-     *
-     * @param provider the model provider
-     * @param prompt the provider prompt
-     * @param model the model name
-     * @param toolMetadata metadata about the tool used
-     * @param toolResult result of the tool execution
-     * @param pendingTool pending tool call response
-     * @param session the chat session
+     * @param provider          the model provider
+     * @param prompt            the provider prompt
+     * @param model             the model name
+     * @param toolMetadata      metadata about the tool used
+     * @param toolResult        result of the tool execution
+     * @param pendingTool       pending tool call response
+     * @param session           the chat session
      * @param immediateResponse immediate response, if any
      */
     public record PreparedChat(
@@ -830,12 +810,12 @@ public class ChatOrchestratorService {
         /**
          * Creates a PreparedChat for a prompt-based continuation.
          *
-         * @param provider the model provider
-         * @param prompt the provider prompt
-         * @param model the model name
+         * @param provider     the model provider
+         * @param prompt       the provider prompt
+         * @param model        the model name
          * @param toolMetadata metadata about the tool used
-         * @param toolResult result of the tool execution
-         * @param session the chat session
+         * @param toolResult   result of the tool execution
+         * @param session      the chat session
          * @return a PreparedChat instance
          */
         static PreparedChat forPrompt(
@@ -869,7 +849,7 @@ public class ChatOrchestratorService {
          * Called when a tool phase changes.
          *
          * @param phaseType the type of the phase
-         * @param toolName the name of the tool
+         * @param toolName  the name of the tool
          */
         void onPhase(String phaseType, String toolName);
     }
