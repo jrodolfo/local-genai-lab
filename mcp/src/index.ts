@@ -1,19 +1,19 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
+import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
+import {z} from "zod";
 import {
-  AUDIT_SERVICES,
-  REPORT_TYPES,
-  awsRegionAuditSchema,
-  listRecentReportsSchema,
-  readReportSummarySchema,
-  s3CloudwatchReportSchema,
+    AUDIT_SERVICES,
+    awsRegionAuditSchema,
+    listRecentReportsSchema,
+    readReportSummarySchema,
+    REPORT_TYPES,
+    s3CloudwatchReportSchema,
 } from "./schemas/toolSchemas.js";
-import { toolErrorSchema } from "./schemas/toolContracts.js";
-import { handleAwsRegionAudit } from "./tools/awsRegionAudit.js";
-import { handleListRecentReports } from "./tools/listReports.js";
-import { handleReadReportSummary } from "./tools/readReportSummary.js";
-import { handleS3CloudwatchReport } from "./tools/s3CloudwatchReport.js";
+import {toolErrorSchema} from "./schemas/toolContracts.js";
+import {handleAwsRegionAudit} from "./tools/awsRegionAudit.js";
+import {handleListRecentReports} from "./tools/listReports.js";
+import {handleReadReportSummary} from "./tools/readReportSummary.js";
+import {handleS3CloudwatchReport} from "./tools/s3CloudwatchReport.js";
 
 /**
  * MCP server entrypoint.
@@ -22,123 +22,123 @@ import { handleS3CloudwatchReport } from "./tools/s3CloudwatchReport.js";
  * scripts so the backend can treat MCP as a small, explicit local capability surface.
  */
 function formatToolResult<T extends Record<string, unknown>>(payload: T) {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text: JSON.stringify(payload, null, 2),
-      },
-    ],
-    structuredContent: payload,
-  };
+    return {
+        content: [
+            {
+                type: "text" as const,
+                text: JSON.stringify(payload, null, 2),
+            },
+        ],
+        structuredContent: payload,
+    };
 }
 
 function formatToolError(tool: string, error: unknown) {
-  const message = error instanceof Error ? error.message : "Unknown MCP tool error";
-  const payload = toolErrorSchema.parse({
-    ok: false,
-    tool,
-    error: message,
-  });
+    const message = error instanceof Error ? error.message : "Unknown MCP tool error";
+    const payload = toolErrorSchema.parse({
+        ok: false,
+        tool,
+        error: message,
+    });
 
-  return {
-    isError: true,
-    structuredContent: payload,
-    content: [
-      {
-        type: "text" as const,
-        text: message,
-      },
-    ],
-  };
+    return {
+        isError: true,
+        structuredContent: payload,
+        content: [
+            {
+                type: "text" as const,
+                text: message,
+            },
+        ],
+    };
 }
 
 const server = new McpServer({
-  name: "local-genai-lab-mcp",
-  version: "0.1.0",
+    name: "local-genai-lab-mcp",
+    version: "0.1.0",
 });
 
 // Each tool returns both text and structured content so the backend can show readable summaries
 // and still enrich prompts with machine-friendly results.
 server.registerTool(
-  "aws_region_audit",
-  {
-    title: "AWS Region Audit",
-    description: "Run the repository's AWS regional audit shell script with validated regions and service filters.",
-    inputSchema: {
-      regions: z.array(z.string().trim().min(1)).max(20).optional(),
-      services: z.array(z.enum(AUDIT_SERVICES)).max(AUDIT_SERVICES.length).optional(),
+    "aws_region_audit",
+    {
+        title: "AWS Region Audit",
+        description: "Run the repository's AWS regional audit shell script with validated regions and service filters.",
+        inputSchema: {
+            regions: z.array(z.string().trim().min(1)).max(20).optional(),
+            services: z.array(z.enum(AUDIT_SERVICES)).max(AUDIT_SERVICES.length).optional(),
+        },
     },
-  },
-  async (arguments_) => {
-    try {
-      const parsedInput = awsRegionAuditSchema.parse(arguments_);
-      return formatToolResult(await handleAwsRegionAudit(parsedInput));
-    } catch (error) {
-      return formatToolError("aws_region_audit", error);
-    }
-  },
+    async (arguments_) => {
+        try {
+            const parsedInput = awsRegionAuditSchema.parse(arguments_);
+            return formatToolResult(await handleAwsRegionAudit(parsedInput));
+        } catch (error) {
+            return formatToolError("aws_region_audit", error);
+        }
+    },
 );
 
 server.registerTool(
-  "s3_cloudwatch_report",
-  {
-    title: "S3 CloudWatch Report",
-    description: "Run the repository's S3 CloudWatch report shell script for a specific bucket.",
-    inputSchema: {
-      bucket: z.string().trim().min(3),
-      region: z.string().trim().min(1).optional(),
-      days: z.number().int().positive().max(365).optional(),
+    "s3_cloudwatch_report",
+    {
+        title: "S3 CloudWatch Report",
+        description: "Run the repository's S3 CloudWatch report shell script for a specific bucket.",
+        inputSchema: {
+            bucket: z.string().trim().min(3),
+            region: z.string().trim().min(1).optional(),
+            days: z.number().int().positive().max(365).optional(),
+        },
     },
-  },
-  async (arguments_) => {
-    try {
-      const parsedInput = s3CloudwatchReportSchema.parse(arguments_);
-      return formatToolResult(await handleS3CloudwatchReport(parsedInput));
-    } catch (error) {
-      return formatToolError("s3_cloudwatch_report", error);
-    }
-  },
+    async (arguments_) => {
+        try {
+            const parsedInput = s3CloudwatchReportSchema.parse(arguments_);
+            return formatToolResult(await handleS3CloudwatchReport(parsedInput));
+        } catch (error) {
+            return formatToolError("s3_cloudwatch_report", error);
+        }
+    },
 );
 
 server.registerTool(
-  "list_recent_reports",
-  {
-    title: "List Recent Reports",
-    description: "List recent audit and S3 CloudWatch report directories that already exist under scripts/reports.",
-    inputSchema: {
-      report_type: z.enum(REPORT_TYPES).default("all"),
-      limit: z.number().int().positive().max(20).default(10),
+    "list_recent_reports",
+    {
+        title: "List Recent Reports",
+        description: "List recent audit and S3 CloudWatch report directories that already exist under scripts/reports.",
+        inputSchema: {
+            report_type: z.enum(REPORT_TYPES).default("all"),
+            limit: z.number().int().positive().max(20).default(10),
+        },
     },
-  },
-  async (arguments_) => {
-    try {
-      const parsedInput = listRecentReportsSchema.parse(arguments_);
-      return formatToolResult(await handleListRecentReports(parsedInput));
-    } catch (error) {
-      return formatToolError("list_recent_reports", error);
-    }
-  },
+    async (arguments_) => {
+        try {
+            const parsedInput = listRecentReportsSchema.parse(arguments_);
+            return formatToolResult(await handleListRecentReports(parsedInput));
+        } catch (error) {
+            return formatToolError("list_recent_reports", error);
+        }
+    },
 );
 
 server.registerTool(
-  "read_report_summary",
-  {
-    title: "Read Report Summary",
-    description: "Read summary.json and a short report.txt preview for an existing report directory under scripts/reports.",
-    inputSchema: {
-      run_dir: z.string().trim().min(1),
-      preview_lines: z.number().int().positive().max(80).default(20),
+    "read_report_summary",
+    {
+        title: "Read Report Summary",
+        description: "Read summary.json and a short report.txt preview for an existing report directory under scripts/reports.",
+        inputSchema: {
+            run_dir: z.string().trim().min(1),
+            preview_lines: z.number().int().positive().max(80).default(20),
+        },
     },
-  },
-  async (arguments_) => {
-    try {
-      const parsedInput = readReportSummarySchema.parse(arguments_);
-      return formatToolResult(await handleReadReportSummary(parsedInput));
-    } catch (error) {
-      return formatToolError("read_report_summary", error);
-    }
-  },
+    async (arguments_) => {
+        try {
+            const parsedInput = readReportSummarySchema.parse(arguments_);
+            return formatToolResult(await handleReadReportSummary(parsedInput));
+        } catch (error) {
+            return formatToolError("read_report_summary", error);
+        }
+    },
 );
 
 const transport = new StdioServerTransport();
