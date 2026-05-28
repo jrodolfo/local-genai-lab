@@ -37,7 +37,7 @@ public class HuggingFaceClient {
     private final HttpClient httpClient;
     private final Clock clock;
     private final Duration discoveryCacheTtl;
-    // Cache the last validated probe context for a short period so provider status and model
+    // Cache the last validated probe context for a short period, so provider status and model
     // discovery can share the same remote validation result without repeatedly probing the
     // hosted endpoint. The cache must remember the candidate set, not only the usable subset,
     // otherwise an expanded or changed request can accidentally reuse stale probe results.
