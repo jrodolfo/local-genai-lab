@@ -19,6 +19,7 @@ make stop
 make restart
 make status
 make check-app
+make test-ops
 ```
 
 What belongs in `ops/`:
@@ -27,6 +28,12 @@ What belongs in `ops/`:
 - local stack smoke checks
 - shared shell runtime helpers used by the top-level lifecycle scripts
 - tests for those operational helpers
+
+Run operational helper tests from the repository root:
+
+```bash
+make test-ops
+```
 
 What does not belong in `ops/`:
 

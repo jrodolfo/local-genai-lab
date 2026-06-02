@@ -171,6 +171,7 @@ Use this suite when changing:
 Run:
 
 ```bash
+make test-ops
 cd scripts
 make lint
 ./tests/test.sh
@@ -180,6 +181,7 @@ make lint
 Covers:
 - shell behavior for the AWS audit and S3 CloudWatch report scripts
 - unified backend startup script linting and `.env` precedence behavior
+- app lifecycle helper behavior, including `status.sh` RAG/Ollama readiness output
 
 Use this suite when changing:
 - `aws-region-audit-report.sh`
