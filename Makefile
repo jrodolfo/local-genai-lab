@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status check-app test-ops test-backend test-frontend
+.PHONY: help start stop restart status check-app test test-ops test-backend test-frontend
 
 help:
 	@printf '%s\n' \
@@ -10,6 +10,7 @@ help:
 		'  make restart       Restart backend and frontend' \
 		'  make status        Show process, URL, and log status' \
 		'  make check-app     Run the local stack smoke check' \
+		'  make test          Run ops, backend, and frontend tests' \
 		'  make test-ops      Run operational shell helper tests' \
 		'  make test-backend  Run backend tests' \
 		'  make test-frontend Run frontend tests'
@@ -28,6 +29,8 @@ status:
 
 check-app:
 	@./ops/check-app.sh
+
+test: test-ops test-backend test-frontend
 
 test-ops:
 	@bash ./ops/tests/test-start-backend-helper.sh

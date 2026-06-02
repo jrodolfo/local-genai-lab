@@ -4,6 +4,15 @@ This document summarizes the automated and manual testing layers for `Local GenA
 
 ## Automated Suites
 
+For the normal local pre-commit suite, run from the repository root:
+
+```bash
+make test
+```
+
+This runs operational helper tests, backend tests, and frontend tests. MCP
+tests, frontend builds, and MCP tool script tests remain separate suites below.
+
 ### Backend
 
 Run:
