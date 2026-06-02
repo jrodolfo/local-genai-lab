@@ -6,11 +6,11 @@ Current scope:
 
 - separate `RAG` workspace in the frontend
 - fixed local corpus from [`docs/`](./)
-- lexical in-memory retrieval
+- in-memory lexical retrieval through `InMemoryLexicalRagRetrievalStore`
 - provider-generated answer with cited source chunks
 
 This is intentionally a small, isolated RAG slice. It does not yet include
-uploads, external vector storage, or routing through the main chat/tool flow.
+uploads, vector-backed retrieval, or routing through the main chat/tool flow.
 
 Related references:
 
@@ -113,9 +113,10 @@ Tradeoff:
 - lexical search is simple, fast, dependency-free, and easy to explain
 - vector search is usually better for semantic matching, but needs embeddings and often a vector database or vector index
 
-For this lab, lexical search is valuable because it is a clean baseline. Later,
-vector search can be added as a second retrieval mode so both approaches can be
-compared directly.
+For this lab, lexical search is valuable because it is a clean baseline. The
+backend exposes retrieval through `RagRetrievalStore`, so vector search can be
+added later as a second retrieval mode and compared directly with the current
+lexical implementation.
 
 ### Provider differences
 
@@ -157,7 +158,7 @@ If the main issue is retrieval quality:
 
 - improve chunking
 - tune `top-k`
-- refine lexical scoring or replace it later
+- refine lexical scoring or add a second retrieval mode later
 
 If the main issue is answer grounding:
 
@@ -171,4 +172,4 @@ If the main issue is corpus coverage:
 If the main issue is scale or retrieval accuracy:
 
 - evaluate embeddings
-- evaluate a replaceable external vector store in a later phase
+- evaluate vector-backed retrieval in a later phase

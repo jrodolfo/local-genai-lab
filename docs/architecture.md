@@ -182,7 +182,7 @@ from the main chat and MCP orchestration flow.
 Current responsibilities:
 
 - query a fixed local corpus rooted at `docs/`
-- retrieve relevant chunks through an in-memory retrieval layer
+- retrieve relevant chunks through the in-memory lexical retrieval layer
 - send those chunks to the selected provider
 - return the generated answer with cited source chunks
 
@@ -191,7 +191,7 @@ Important boundaries:
 - RAG uses separate `/api/rag/*` endpoints
 - RAG does not currently share the main `/api/chat` flow
 - RAG does not invoke MCP tools
-- RAG does not yet support uploads, embeddings, or an external vector store
+- RAG does not yet support uploads, embeddings, or vector-backed retrieval
 
 Related ADRs:
 

@@ -29,7 +29,7 @@ would have mixed several concerns too early:
 - MCP/tool routing
 - retrieval routing
 - session behavior changes
-- future corpus-management questions such as uploads or external vector stores
+- future corpus-management questions such as uploads or vector-backed retrieval
 
 The first RAG slice needed to be useful, teachable, and low-risk without
 claiming capabilities the project did not yet have, such as uploads, embeddings,
@@ -42,7 +42,8 @@ Add an isolated phase-1 RAG feature with these boundaries:
 - expose RAG through a separate frontend `RAG` workspace
 - expose RAG through separate backend `/api/rag/*` endpoints
 - use a fixed local corpus rooted at `docs/`
-- chunk the local documents and retrieve against an in-memory store
+- chunk the local documents and retrieve through the `RagRetrievalStore` abstraction
+- use `InMemoryLexicalRagRetrievalStore` as the phase-1 retrieval implementation
 - return provider-generated answers with cited source chunks
 - keep RAG separate from `/api/chat`, MCP tooling, and session persistence
 
@@ -60,12 +61,13 @@ This design keeps the first RAG slice:
 
 - small enough to evaluate honestly
 - architecturally separate from the existing chat/tool system
-- easy to replace later with richer retrieval infrastructure
+- easy to extend later with richer retrieval infrastructure
 - useful for repo-documentation grounding and provider comparison
 
 The chosen retrieval path is intentionally modest. The important phase-1 goal is
-not to claim production-grade vector search. It is to establish the product and
-architecture seams for a docs-grounded RAG workflow with visible citations.
+not to claim production-grade vector search. It is to establish a docs-grounded
+RAG workflow with visible citations while keeping lexical retrieval as a
+zero-dependency baseline.
 
 # Primary Implementation
 
@@ -83,7 +85,7 @@ Positive:
 - the repository now has a clear experimental RAG capability
 - local docs and ADRs can be queried through a dedicated UI
 - provider behavior can be compared in a retrieval-grounded setting
-- the retrieval/storage seam is replaceable later
+- the retrieval abstraction can support both lexical and vector-backed implementations later
 
 Negative:
 
@@ -93,7 +95,7 @@ Negative:
 
 Neutral:
 
-- future expansion can add embeddings, external vector storage, or broader corpus
+- future expansion can add embeddings, vector-backed retrieval, or broader corpus
   support without rewriting the current chat/tool orchestration path
 
 # Revisit Triggers
@@ -104,4 +106,4 @@ Revisit this decision if:
 - the corpus needs to expand beyond `docs/`
 - the project adds upload-based document workflows
 - the product needs unified routing between normal chat, tools, and RAG
-- an external vector store becomes justified by scale or evaluation results
+- vector-backed retrieval becomes justified by scale or evaluation results

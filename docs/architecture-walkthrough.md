@@ -164,9 +164,9 @@ Tradeoff:
 Current phase-1 scope:
 
 - fixed local `docs/` corpus
-- in-memory retrieval
+- in-memory lexical retrieval
 - provider-generated answer with cited source chunks
-- no uploads, embeddings, or external vector store yet
+- no uploads, embeddings, or vector-backed retrieval yet
 
 Related ADR:
 
