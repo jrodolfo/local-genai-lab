@@ -75,6 +75,48 @@ Check whether the retrieved chunks:
 - include the relevant ADR when the question is decision-oriented
 - avoid obviously lower-signal chunks when better ones exist
 
+## Lexical Search Vs Vector Search
+
+Lexical search matches text by words.
+
+Vector search matches text by meaning.
+
+In the current phase-1 RAG workspace, `lexical retrieval` means:
+
+- the query is split into tokens or words
+- each document chunk is split into tokens or words
+- the system scores chunks based on word overlap and frequency
+- it works well when the user's question uses similar terms to the docs
+
+For example:
+
+- query: `How are sessions persisted?`
+- doc chunk: `Sessions are stored as local JSON files`
+- lexical search can find it because `sessions` and related terms overlap
+
+`Vector search` means:
+
+- the query is converted into an embedding, which is a numeric representation of meaning
+- each document chunk is also converted into an embedding
+- the system compares vectors using similarity math
+- it can find relevant chunks even when the wording is different
+
+For example:
+
+- query: `Where does conversation history live?`
+- doc chunk: `Sessions are stored as local JSON files`
+- lexical search may miss it because the exact words differ
+- vector search is more likely to match it because the meaning is similar
+
+Tradeoff:
+
+- lexical search is simple, fast, dependency-free, and easy to explain
+- vector search is usually better for semantic matching, but needs embeddings and often a vector database or vector index
+
+For this lab, lexical search is valuable because it is a clean baseline. Later,
+vector search can be added as a second retrieval mode so both approaches can be
+compared directly.
+
 ### Provider differences
 
 Compare whether Ollama, Bedrock, and Hugging Face differ in:
