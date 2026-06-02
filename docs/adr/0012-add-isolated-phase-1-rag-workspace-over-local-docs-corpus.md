@@ -44,6 +44,7 @@ Add an isolated phase-1 RAG feature with these boundaries:
 - use a fixed local corpus rooted at `docs/`
 - chunk the local documents and retrieve through the `RagRetrievalStore` abstraction
 - use `InMemoryLexicalRagRetrievalStore` as the phase-1 retrieval implementation
+- keep lexical retrieval available as the baseline implementation for future comparison
 - return provider-generated answers with cited source chunks
 - keep RAG separate from `/api/chat`, MCP tooling, and session persistence
 
@@ -53,6 +54,7 @@ Do not add in phase 1:
 - report/artifact corpus ingestion
 - embeddings
 - external vector storage such as Qdrant
+- a retrieval-mode selector before a second implementation exists
 - automatic routing between normal chat, tools, and RAG
 
 # Rationale
@@ -86,6 +88,7 @@ Positive:
 - local docs and ADRs can be queried through a dedicated UI
 - provider behavior can be compared in a retrieval-grounded setting
 - the retrieval abstraction can support both lexical and vector-backed implementations later
+- future vector-backed retrieval can be added as a second mode instead of replacing lexical retrieval
 
 Negative:
 
@@ -97,6 +100,7 @@ Neutral:
 
 - future expansion can add embeddings, vector-backed retrieval, or broader corpus
   support without rewriting the current chat/tool orchestration path
+- a future UI selector should be added only after multiple retrieval implementations exist
 
 # Revisit Triggers
 

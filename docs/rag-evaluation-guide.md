@@ -118,6 +118,28 @@ backend exposes retrieval through `RagRetrievalStore`, so vector search can be
 added later as a second retrieval mode and compared directly with the current
 lexical implementation.
 
+## Future Retrieval Modes
+
+Current mode:
+
+- `lexical`
+- implemented by `InMemoryLexicalRagRetrievalStore`
+- dependency-free baseline for local docs and ADRs
+
+Possible future mode:
+
+- `vector`
+- backed by embeddings and a vector index or vector database
+- useful when questions and docs use different wording but similar meaning
+
+The intended future shape is comparison, not replacement. Lexical retrieval
+should remain available as a lab baseline and fallback even if vector-backed
+retrieval is added later.
+
+The UI should expose a retrieval-mode selector only after at least two real
+retrieval implementations exist. Until then, the status card reports the active
+mode and store without offering a switch that cannot do useful work.
+
 ### Provider differences
 
 Compare whether Ollama, Bedrock, and Hugging Face differ in:
