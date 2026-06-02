@@ -72,8 +72,8 @@ architecture seams for a docs-grounded RAG workflow with visible citations.
 - [RagController.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
 - [RagAnswerService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
 - [RagCorpusService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/service/RagCorpusService.java)
-- [RagVectorStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/RagVectorStore.java)
-- [InMemoryRagVectorStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/InMemoryRagVectorStore.java)
+- [RagRetrievalStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/RagRetrievalStore.java)
+- [InMemoryLexicalRagRetrievalStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/InMemoryLexicalRagRetrievalStore.java)
 - [RagWorkspace.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/RagWorkspace.jsx)
 
 # Consequences

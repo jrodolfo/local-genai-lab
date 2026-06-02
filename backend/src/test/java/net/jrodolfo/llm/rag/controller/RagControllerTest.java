@@ -22,7 +22,7 @@ import net.jrodolfo.llm.rag.service.RagSessionService;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
 import net.jrodolfo.llm.service.FileChatSessionStore;
 import net.jrodolfo.llm.service.SessionIdPolicy;
-import net.jrodolfo.llm.rag.store.InMemoryRagVectorStore;
+import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -115,7 +115,7 @@ class RagControllerTest {
     }
 
     private MockMvc buildMockMvc(RagProperties properties) {
-        InMemoryRagVectorStore store = new InMemoryRagVectorStore();
+        InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         SessionIdPolicy sessionIdPolicy = new SessionIdPolicy();

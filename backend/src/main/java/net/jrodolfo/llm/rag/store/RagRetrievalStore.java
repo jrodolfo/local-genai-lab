@@ -6,9 +6,10 @@ import net.jrodolfo.llm.rag.model.RagMatch;
 import java.util.List;
 
 /**
- * Interface for a vector store that manages {@link RagChunk}s and allows for similarity search.
+ * Store abstraction for indexing RAG chunks and retrieving matches for a query.
+ * Implementations may use lexical ranking, embeddings, or an external vector database.
  */
-public interface RagVectorStore {
+public interface RagRetrievalStore {
 
     /**
      * Replaces all existing chunks in the store with the provided list.

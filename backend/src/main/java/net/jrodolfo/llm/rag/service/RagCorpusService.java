@@ -3,7 +3,7 @@ package net.jrodolfo.llm.rag.service;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
-import net.jrodolfo.llm.rag.store.RagVectorStore;
+import net.jrodolfo.llm.rag.store.RagRetrievalStore;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Orchestrator service for the RAG corpus.
- * It manages the lifecycle of the document index, including loading, chunking, and indexing into the vector store.
+ * It manages the lifecycle of the document index, including loading, chunking, and indexing into the retrieval store.
  */
 @Service
 public class RagCorpusService {
@@ -20,7 +20,7 @@ public class RagCorpusService {
     private final RagProperties ragProperties;
     private final RagDocumentLoader documentLoader;
     private final RagChunkingService chunkingService;
-    private final RagVectorStore vectorStore;
+    private final RagRetrievalStore retrievalStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
 
     /**
@@ -29,18 +29,18 @@ public class RagCorpusService {
      * @param ragProperties   configuration properties for RAG
      * @param documentLoader  service for loading documents
      * @param chunkingService service for splitting documents into chunks
-     * @param vectorStore     the vector store for indexing chunks
+     * @param retrievalStore  the retrieval store for indexing chunks
      */
     public RagCorpusService(
             RagProperties ragProperties,
             RagDocumentLoader documentLoader,
             RagChunkingService chunkingService,
-            RagVectorStore vectorStore
+            RagRetrievalStore retrievalStore
     ) {
         this.ragProperties = ragProperties;
         this.documentLoader = documentLoader;
         this.chunkingService = chunkingService;
-        this.vectorStore = vectorStore;
+        this.retrievalStore = retrievalStore;
     }
 
     /**
@@ -58,7 +58,7 @@ public class RagCorpusService {
     }
 
     /**
-     * Rebuilds the corpus index by reloading documents, re-chunking them, and updating the vector store.
+     * Rebuilds the corpus index by reloading documents, re-chunking them, and updating the retrieval store.
      *
      * @return the new {@link CorpusSnapshot}
      */
@@ -70,7 +70,7 @@ public class RagCorpusService {
                 ragProperties.maxChunkSize(),
                 ragProperties.chunkOverlap()
         );
-        vectorStore.replaceAll(chunks);
+        retrievalStore.replaceAll(chunks);
         CorpusSnapshot snapshot = new CorpusSnapshot(corpusRoot, documents, chunks);
         snapshotRef.set(snapshot);
         return snapshot;

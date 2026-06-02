@@ -15,12 +15,12 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * {@code InMemoryRagVectorStore} is a lightweight, in-memory implementation of a vector store used for
+ * {@code InMemoryLexicalRagRetrievalStore} is a lightweight, in-memory retrieval implementation used for
  * Retrieval-Augmented Generation (RAG).
  * <p>
- * Instead of using an external vector database, it implements a basic search mechanism using
+ * Instead of using embeddings or an external vector database, it implements a lexical search mechanism using
  * <b>Term Frequency (TF)</b> and <b>Cosine Similarity</b>. It provides a simple, dependency-free way
- * to perform keyword-based semantic search, which is efficient for smaller datasets and requires
+ * to perform keyword-based retrieval, which is efficient for smaller datasets and requires
  * no external infrastructure.
  * </p>
  *
@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * </ul>
  */
 @Component
-public class InMemoryRagVectorStore implements RagVectorStore {
+public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
 
     private static final Pattern TOKEN_SPLIT = Pattern.compile("[^a-zA-Z0-9]+");
     private static final Set<String> STOP_WORDS = Set.of(

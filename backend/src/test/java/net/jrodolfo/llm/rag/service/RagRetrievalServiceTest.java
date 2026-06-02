@@ -3,7 +3,7 @@ package net.jrodolfo.llm.rag.service;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
-import net.jrodolfo.llm.rag.store.InMemoryRagVectorStore;
+import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -16,7 +16,7 @@ class RagRetrievalServiceTest {
     @Test
     void retrieveReturnsMostRelevantChunksFirst() {
         RagProperties properties = new RagProperties(true, "docs", 220, 30, 3, "lexical");
-        InMemoryRagVectorStore store = new InMemoryRagVectorStore();
+        InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
         RagCorpusService corpusService = new RagCorpusService(
                 properties,
                 new StubLoader(),
