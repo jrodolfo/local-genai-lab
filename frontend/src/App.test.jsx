@@ -23,7 +23,8 @@ describe('App mode navigation', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 0,
                 chunkCount: 0,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -59,7 +60,8 @@ describe('App mode navigation', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 12,
                 chunkCount: 48,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', ({request}) => {
                 const provider = new URL(request.url).searchParams.get('provider');

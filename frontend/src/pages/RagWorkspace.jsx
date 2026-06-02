@@ -136,15 +136,16 @@ function RagWorkspace() {
             setRebuilding(true);
             setError('');
             const payload = await rebuildRagIndex();
-            setRagStatus((current) => ({
-                ...(current || {}),
-                enabled: true,
-                indexed: true,
-                corpusRoot: payload.corpusRoot,
-                documentCount: payload.documentCount,
-                chunkCount: payload.chunkCount,
-                retrievalMode: payload.retrievalMode
-            }));
+                    setRagStatus((current) => ({
+                        ...(current || {}),
+                        enabled: true,
+                        indexed: true,
+                        corpusRoot: payload.corpusRoot,
+                        documentCount: payload.documentCount,
+                        chunkCount: payload.chunkCount,
+                        retrievalMode: payload.retrievalMode,
+                        retrievalStore: current?.retrievalStore || 'in-memory'
+                    }));
         } catch (err) {
             setError(err.message || 'Failed to rebuild the RAG index.');
         } finally {
@@ -274,7 +275,11 @@ function RagWorkspace() {
                             </div>
                             <div>
                                 <dt>Retrieval</dt>
-                                <dd>{ragStatus.retrievalMode}</dd>
+                                <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
+                            </div>
+                            <div>
+                                <dt>Store</dt>
+                                <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
                             </div>
                         </dl>
                     ) : null}
@@ -424,6 +429,14 @@ function RagWorkspace() {
             ) : null}
         </main>
     );
+}
+
+function formatRagStatusValue(value) {
+    const normalized = String(value || '').replaceAll('-', ' ');
+    if (!normalized) {
+        return '';
+    }
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 export default RagWorkspace;

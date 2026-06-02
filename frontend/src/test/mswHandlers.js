@@ -40,7 +40,8 @@ export function defaultRuntimeHandlers(overrides = {}) {
             corpusRoot: '/repo/docs',
             documentCount: 0,
             chunkCount: 0,
-            retrievalMode: 'lexical'
+            retrievalMode: 'lexical',
+            retrievalStore: 'in-memory'
         })),
         http.get('/api/sessions', () => HttpResponse.json(sessions || []))
     ];

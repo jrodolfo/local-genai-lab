@@ -29,6 +29,8 @@ import java.util.Map;
 @Validated
 public class RagController {
 
+    private static final String RETRIEVAL_STORE = "in-memory";
+
     private final RagProperties ragProperties;
     private final RagCorpusService ragCorpusService;
     private final RagAnswerService ragAnswerService;
@@ -65,7 +67,8 @@ public class RagController {
                 ragProperties.resolvedCorpusRoot().toString(),
                 snapshot != null ? snapshot.documents().size() : 0,
                 snapshot != null ? snapshot.chunks().size() : 0,
-                ragProperties.retrievalMode()
+                ragProperties.retrievalMode(),
+                RETRIEVAL_STORE
         );
     }
 

@@ -31,7 +31,7 @@ To use it:
 1. start the app with `./start.sh` or `./restart.sh`
 2. open the frontend
 3. switch from `Chat` to `RAG`
-4. confirm the status card shows the docs corpus and retrieval mode
+4. confirm the status card shows the docs corpus, retrieval mode, and retrieval store
 
 If needed, use `Rebuild index` before testing.
 

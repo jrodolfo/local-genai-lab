@@ -98,7 +98,9 @@ class RagControllerTest {
         disabledMockMvc.perform(get("/api/rag/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(false))
-                .andExpect(jsonPath("$.indexed").value(false));
+                .andExpect(jsonPath("$.indexed").value(false))
+                .andExpect(jsonPath("$.retrievalMode").value("lexical"))
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory"));
     }
 
     @Test

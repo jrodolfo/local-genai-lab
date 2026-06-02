@@ -16,7 +16,8 @@ describe('RagWorkspace', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 12,
                 chunkCount: 48,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -100,6 +101,10 @@ describe('RagWorkspace', () => {
         expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
         expect(screen.getByText('Status')).toBeInTheDocument();
         expect(screen.getByText('ready')).toBeInTheDocument();
+        expect(screen.getByText('Retrieval')).toBeInTheDocument();
+        expect(screen.getByText('Lexical')).toBeInTheDocument();
+        expect(screen.getByText('Store')).toBeInTheDocument();
+        expect(screen.getByText('In memory')).toBeInTheDocument();
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
@@ -117,7 +122,8 @@ describe('RagWorkspace', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 0,
                 chunkCount: 0,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -143,7 +149,8 @@ describe('RagWorkspace', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 12,
                 chunkCount: 48,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -178,7 +185,8 @@ describe('RagWorkspace', () => {
                 corpusRoot: '/repo/docs',
                 documentCount: 12,
                 chunkCount: 48,
-                retrievalMode: 'lexical'
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',

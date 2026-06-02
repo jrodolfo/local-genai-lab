@@ -9,6 +9,7 @@ package net.jrodolfo.llm.rag.dto;
  * @param documentCount The number of documents loaded in the system.
  * @param chunkCount    The total number of text chunks generated from the documents.
  * @param retrievalMode The current retrieval mode being used.
+ * @param retrievalStore The storage/index style used by the retrieval implementation.
  */
 public record RagStatusResponse(
         boolean enabled,
@@ -16,6 +17,7 @@ public record RagStatusResponse(
         String corpusRoot,
         int documentCount,
         int chunkCount,
-        String retrievalMode
+        String retrievalMode,
+        String retrievalStore
 ) {
 }
