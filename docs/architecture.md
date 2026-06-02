@@ -41,6 +41,7 @@ Current ADRs:
 - [ADR 0010: Use A Unified Backend Startup Script](./adr/0010-use-unified-backend-startup-script.md)
 - [ADR 0011: Use Mermaid As The Architecture Source Of Truth](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
 - [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+- [ADR 0013: Use Ollama Embeddings And Qdrant For Phase-2 RAG Vector Retrieval](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
 
 ## Main Components
 
@@ -196,6 +197,7 @@ Important boundaries:
 Related ADRs:
 
 - [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+- [ADR 0013: Use Ollama Embeddings And Qdrant For Phase-2 RAG Vector Retrieval](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
 
 Manual evaluation and retrieval tradeoff notes:
 

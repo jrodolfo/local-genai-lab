@@ -171,6 +171,7 @@ Current phase-1 scope:
 Related ADR:
 
 - [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
+- [ADR 0013](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
 
 ## Key Design Points
 

@@ -344,7 +344,7 @@ make s3-cloudwatch BUCKET=example.com
 - [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the phase-1 RAG workspace
 - [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md): design note for future vector-backed RAG retrieval with Ollama embeddings and Qdrant
 - [docs/architecture-walkthrough.md](./docs/architecture-walkthrough.md): concise walkthrough of the system design, tradeoffs, and common design questions
-- [docs/adr/](./docs/adr/): accepted architecture decision records
+- [docs/adr/](./docs/adr/): accepted architecture decision records, including the phase-2 RAG vector retrieval direction
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas
 - [docs/troubleshooting.md](./docs/troubleshooting.md): common local runtime problems and practical fixes
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
