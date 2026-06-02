@@ -7,6 +7,17 @@ on:
   pull_request:
 
 jobs:
+  ops:
+    name: ops
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: check out repository
+        uses: actions/checkout@v6
+
+      - name: run ops tests
+        run: make test-ops
+
   backend:
     name: backend
     runs-on: ubuntu-latest
@@ -23,8 +34,7 @@ jobs:
           cache: maven
 
       - name: run backend tests
-        working-directory: backend
-        run: mvn test
+        run: make test-backend
 
   frontend:
     name: frontend
@@ -46,12 +56,10 @@ jobs:
         run: npm ci
 
       - name: run frontend tests
-        working-directory: frontend
-        run: npm test
+        run: make test-frontend
 
       - name: build frontend
-        working-directory: frontend
-        run: npm run build
+        run: make build-frontend
 
   mcp:
     name: mcp
@@ -72,9 +80,11 @@ jobs:
         working-directory: mcp
         run: npm ci
 
+      - name: run mcp tests
+        run: make test-mcp
+
       - name: build mcp
-        working-directory: mcp
-        run: npm run build
+        run: make build-mcp
 
   scripts:
     name: scripts
@@ -87,10 +97,5 @@ jobs:
       - name: install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: lint shell scripts
-        working-directory: scripts
-        run: make lint
-
-      - name: run shell tests
-        working-directory: scripts
-        run: make test
+      - name: run mcp tool script lint and tests
+        run: make test-scripts

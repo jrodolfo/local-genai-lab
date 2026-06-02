@@ -23,6 +23,11 @@ This runs `make test`, frontend build, MCP tests/build, and MCP tool script
 lint/tests. Use it before larger pushes or changes that touch multiple project
 areas.
 
+GitHub CI mirrors this broader verification contract with separate jobs for
+ops, backend, frontend, MCP, and MCP tool scripts. The jobs call the same
+top-level Makefile targets so local verification and CI stay aligned while CI
+logs remain easy to diagnose.
+
 ### Backend
 
 Run:
