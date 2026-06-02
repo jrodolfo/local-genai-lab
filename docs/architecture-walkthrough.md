@@ -293,6 +293,7 @@ Short answer:
 - use the dedicated [rag-evaluation-guide.md](./rag-evaluation-guide.md)
 - run the same question set across Ollama, Bedrock, and Hugging Face when possible
 - compare answer quality, citation quality, and retrieval relevance
+- use [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md) when evaluating whether vector retrieval is worth adding next
 
 Related ADR:
 
@@ -311,5 +312,6 @@ If the system grows, likely next improvements would include:
 
 - System overview: [`architecture.md`](./architecture.md)
 - RAG manual evaluation: [`rag-evaluation-guide.md`](./rag-evaluation-guide.md)
+- RAG phase-2 vector design: [`rag-phase-2-vector-retrieval-design.md`](./rag-phase-2-vector-retrieval-design.md)
 - Architecture diagram: [`architecture-overview.md`](./architecture-overview.md)
 - Architectural decisions: [`adr/README.md`](./adr/README.md)

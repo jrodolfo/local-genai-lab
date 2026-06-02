@@ -16,6 +16,7 @@ Related references:
 
 - [architecture.md](./architecture.md)
 - [architecture-walkthrough.md](./architecture-walkthrough.md)
+- [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
 - [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 
 ## Before You Start
@@ -139,6 +140,10 @@ retrieval is added later.
 The UI should expose a retrieval-mode selector only after at least two real
 retrieval implementations exist. Until then, the status card reports the active
 mode and store without offering a switch that cannot do useful work.
+
+For the proposed phase-2 vector retrieval shape, including Ollama embeddings
+and Qdrant as the first vector database candidate, see
+[rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md).
 
 ### Provider differences
 

@@ -200,6 +200,7 @@ Related ADRs:
 Manual evaluation and retrieval tradeoff notes:
 
 - [RAG Evaluation Guide](./rag-evaluation-guide.md)
+- [RAG Phase 2 Vector Retrieval Design](./rag-phase-2-vector-retrieval-design.md)
 
 ## Request Flows
 
@@ -294,6 +295,10 @@ Step-by-step:
 
 For manual evaluation guidance and the recommended prompt set, see
 [rag-evaluation-guide.md](./rag-evaluation-guide.md).
+
+For the proposed vector retrieval direction, including the separation between
+the embedding runtime and the answer provider, see
+[rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md).
 
 ### Session Load / Export / Import
 
