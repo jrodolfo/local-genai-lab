@@ -197,6 +197,10 @@ Related ADRs:
 
 - [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 
+Manual evaluation and retrieval tradeoff notes:
+
+- [RAG Evaluation Guide](./rag-evaluation-guide.md)
+
 ## Request Flows
 
 ### Plain Chat
