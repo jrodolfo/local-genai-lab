@@ -68,7 +68,9 @@ public class RagController {
                 snapshot != null ? snapshot.documents().size() : 0,
                 snapshot != null ? snapshot.chunks().size() : 0,
                 mode.configValue(),
-                mode.retrievalStore()
+                mode.retrievalStore(),
+                ragProperties.embeddingProvider(),
+                ragProperties.embeddingModel()
         );
     }
 

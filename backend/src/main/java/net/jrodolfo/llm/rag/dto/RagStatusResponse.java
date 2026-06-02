@@ -8,8 +8,10 @@ package net.jrodolfo.llm.rag.dto;
  * @param corpusRoot    The root directory of the document corpus.
  * @param documentCount The number of documents loaded in the system.
  * @param chunkCount    The total number of text chunks generated from the documents.
- * @param retrievalMode The current retrieval mode being used.
- * @param retrievalStore The storage/index style used by the retrieval implementation.
+ * @param retrievalMode     The current retrieval mode being used.
+ * @param retrievalStore    The storage/index style used by the retrieval implementation.
+ * @param embeddingProvider The configured embedding provider for vector retrieval.
+ * @param embeddingModel    The configured embedding model for vector retrieval.
  */
 public record RagStatusResponse(
         boolean enabled,
@@ -18,6 +20,8 @@ public record RagStatusResponse(
         int documentCount,
         int chunkCount,
         String retrievalMode,
-        String retrievalStore
+        String retrievalStore,
+        String embeddingProvider,
+        String embeddingModel
 ) {
 }

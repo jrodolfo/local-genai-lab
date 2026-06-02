@@ -283,6 +283,13 @@
     margin: 0.12rem 0 0;
 }
 
+.rag-status-note {
+    color: #475569;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    margin: 0.75rem 0 0;
+}
+
 .rag-action-button:disabled {
     cursor: default;
     opacity: 0.7;

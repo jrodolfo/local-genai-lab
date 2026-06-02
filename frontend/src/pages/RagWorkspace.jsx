@@ -136,16 +136,16 @@ function RagWorkspace() {
             setRebuilding(true);
             setError('');
             const payload = await rebuildRagIndex();
-                    setRagStatus((current) => ({
-                        ...(current || {}),
-                        enabled: true,
-                        indexed: true,
-                        corpusRoot: payload.corpusRoot,
-                        documentCount: payload.documentCount,
-                        chunkCount: payload.chunkCount,
-                        retrievalMode: payload.retrievalMode,
-                        retrievalStore: current?.retrievalStore || 'in-memory'
-                    }));
+            const statusPayload = await getRagStatus();
+            setRagStatus({
+                ...statusPayload,
+                enabled: true,
+                indexed: true,
+                corpusRoot: payload.corpusRoot,
+                documentCount: payload.documentCount,
+                chunkCount: payload.chunkCount,
+                retrievalMode: payload.retrievalMode
+            });
         } catch (err) {
             setError(err.message || 'Failed to rebuild the RAG index.');
         } finally {
@@ -281,7 +281,16 @@ function RagWorkspace() {
                                 <dt>Store</dt>
                                 <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
                             </div>
+                            {isVectorRetrieval(ragStatus) ? (
+                                <div>
+                                    <dt>Embedding</dt>
+                                    <dd>{formatEmbeddingStatus(ragStatus)}</dd>
+                                </div>
+                            ) : null}
                         </dl>
+                    ) : null}
+                    {!loading && ragStatus?.enabled ? (
+                        <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
                     ) : null}
                 </div>
             </section>
@@ -437,6 +446,23 @@ function formatRagStatusValue(value) {
         return '';
     }
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function isVectorRetrieval(status) {
+    return String(status?.retrievalMode || '').toLowerCase() === 'vector';
+}
+
+function formatEmbeddingStatus(status) {
+    const provider = formatRagStatusValue(status?.embeddingProvider || 'ollama');
+    const model = status?.embeddingModel || 'nomic-embed-text';
+    return `${provider} / ${model}`;
+}
+
+function retrievalModeHint(status) {
+    if (isVectorRetrieval(status)) {
+        return 'Experimental local vector retrieval. Change RAG_RETRIEVAL_MODE and restart to switch modes.';
+    }
+    return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
 }
 
 export default RagWorkspace;

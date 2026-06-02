@@ -17,7 +17,9 @@ describe('RagWorkspace', () => {
                 documentCount: 12,
                 chunkCount: 48,
                 retrievalMode: 'lexical',
-                retrievalStore: 'in-memory'
+                retrievalStore: 'in-memory',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -105,6 +107,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Lexical')).toBeInTheDocument();
         expect(screen.getByText('Store')).toBeInTheDocument();
         expect(screen.getByText('In memory')).toBeInTheDocument();
+        expect(screen.getByText(/Default zero-dependency lexical baseline/i)).toBeInTheDocument();
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
@@ -139,6 +142,39 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByText(/RAG is disabled/i)).toBeInTheDocument();
         expect(screen.getByText(/Enable `rag.enabled=true`/i)).toBeInTheDocument();
+    });
+
+    it('shows vector retrieval mode embedding metadata and restart guidance', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'vector',
+                retrievalStore: 'in-memory-vector',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByText('Vector')).toBeInTheDocument();
+        expect(screen.getByText('In memory vector')).toBeInTheDocument();
+        expect(screen.getByText('Embedding')).toBeInTheDocument();
+        expect(screen.getByText('Ollama / nomic-embed-text')).toBeInTheDocument();
+        expect(screen.getByText(/Experimental local vector retrieval/i)).toBeInTheDocument();
+        expect(screen.getByText(/Change RAG_RETRIEVAL_MODE and restart/i)).toBeInTheDocument();
     });
 
     it('shows backend query failures clearly', async () => {

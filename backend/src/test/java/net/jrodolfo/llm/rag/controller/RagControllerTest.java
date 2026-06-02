@@ -115,7 +115,9 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.enabled").value(false))
                 .andExpect(jsonPath("$.indexed").value(false))
                 .andExpect(jsonPath("$.retrievalMode").value("lexical"))
-                .andExpect(jsonPath("$.retrievalStore").value("in-memory"));
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory"))
+                .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
+                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
 
     @Test
@@ -123,7 +125,9 @@ class RagControllerTest {
         vectorMockMvc.perform(get("/api/rag/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.retrievalMode").value("vector"))
-                .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"));
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
+                .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
+                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
 
     @Test

@@ -41,7 +41,9 @@ export function defaultRuntimeHandlers(overrides = {}) {
             documentCount: 0,
             chunkCount: 0,
             retrievalMode: 'lexical',
-            retrievalStore: 'in-memory'
+            retrievalStore: 'in-memory',
+            embeddingProvider: 'ollama',
+            embeddingModel: 'nomic-embed-text'
         })),
         http.get('/api/sessions', () => HttpResponse.json(sessions || []))
     ];
