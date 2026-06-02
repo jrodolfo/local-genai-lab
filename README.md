@@ -206,6 +206,24 @@ Backend URLs:
 ./status.sh
 ```
 
+## Verification Commands
+
+Use these commands depending on what you need to verify:
+
+```bash
+make test
+make verify
+./status.sh
+make check-app
+```
+
+- `make test`: normal local pre-commit suite for operational helpers, backend tests, and frontend tests
+- `make verify`: broader project verification aligned with CI coverage, including frontend build, MCP tests/build, and MCP tool script lint/tests
+- `./status.sh`: read-only runtime readiness check for local processes, health URLs, RAG mode, and Ollama readiness
+- `make check-app`: live-stack smoke check after the app is running
+
+For the full testing matrix, see [docs/testing.md](./docs/testing.md).
+
 The frontend provider and model selectors now load from the backend's `/api/models` endpoint. You can switch between supported providers at runtime without restarting the backend. For Ollama, the UI only offers locally installed models. If no local models are installed, the UI shows a clear pull hint instead of failing only after submit.
 
 The provider selector only shows providers configured in the running backend process. The provider status banner is cached briefly to avoid excessive live checks, shows `Last checked`, and includes a manual `Refresh status` action when you want to re-fetch the current status explicitly.
@@ -346,10 +364,6 @@ make test
 make audit
 make s3-cloudwatch BUCKET=example.com
 ```
-
-`make check-app` verifies backend health, backend model discovery, frontend reachability, and optional Ollama availability with sensible local defaults.
-`make test` runs the normal local pre-commit suite: operational helper tests, backend tests, and frontend tests.
-`make verify` runs broader project verification: `make test`, frontend build, MCP tests/build, and MCP tool script lint/tests.
 
 ## Documentation Map
 
