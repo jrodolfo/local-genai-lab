@@ -2,6 +2,7 @@ package net.jrodolfo.llm.rag.controller;
 
 import jakarta.validation.Valid;
 import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.config.RagRetrievalMode;
 import net.jrodolfo.llm.rag.dto.RagIndexResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryRequest;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
@@ -28,8 +29,6 @@ import java.util.Map;
 @RequestMapping("/api/rag")
 @Validated
 public class RagController {
-
-    private static final String RETRIEVAL_STORE = "in-memory";
 
     private final RagProperties ragProperties;
     private final RagCorpusService ragCorpusService;
@@ -61,14 +60,15 @@ public class RagController {
     @GetMapping("/status")
     public RagStatusResponse status() {
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.snapshot();
+        RagRetrievalMode mode = retrievalMode();
         return new RagStatusResponse(
                 ragProperties.enabled(),
                 snapshot != null,
                 ragProperties.resolvedCorpusRoot().toString(),
                 snapshot != null ? snapshot.documents().size() : 0,
                 snapshot != null ? snapshot.chunks().size() : 0,
-                ragProperties.retrievalMode(),
-                RETRIEVAL_STORE
+                mode.configValue(),
+                mode.retrievalStore()
         );
     }
 
@@ -87,7 +87,7 @@ public class RagController {
                 snapshot.corpusRoot().toString(),
                 snapshot.documents().size(),
                 snapshot.chunks().size(),
-                ragProperties.retrievalMode()
+                retrievalMode().configValue()
         ));
     }
 
@@ -121,6 +121,11 @@ public class RagController {
         return ResponseEntity.status(status).body(Map.of("error", ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    }
+
     /**
      * Ensures that the RAG system is enabled before proceeding with an operation.
      *
@@ -130,5 +135,9 @@ public class RagController {
         if (!ragProperties.enabled()) {
             throw new IllegalStateException("RAG is disabled.");
         }
+    }
+
+    private RagRetrievalMode retrievalMode() {
+        return RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
     }
 }

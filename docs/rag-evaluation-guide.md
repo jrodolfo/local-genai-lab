@@ -116,34 +116,35 @@ Tradeoff:
 - vector search is usually better for semantic matching, but needs embeddings and often a vector database or vector index
 
 For this lab, lexical search is valuable because it is a clean baseline. The
-backend exposes retrieval through `RagRetrievalStore`, so vector search can be
-added later as a second retrieval mode and compared directly with the current
-lexical implementation.
+backend can also run experimental local vector retrieval when started with
+`RAG_RETRIEVAL_MODE=vector`, so lexical and vector retrieval can be compared
+directly against the same corpus.
 
-## Future Retrieval Modes
+## Retrieval Modes
 
-Current mode:
+Default mode:
 
 - `lexical`
 - implemented by `InMemoryLexicalRagRetrievalStore`
 - dependency-free baseline for local docs and ADRs
 
-Possible future mode:
+Experimental mode:
 
 - `vector`
-- backed by embeddings and a vector index or vector database
+- backed by Ollama embeddings and an in-memory vector store
 - useful when questions and docs use different wording but similar meaning
 
-The intended future shape is comparison, not replacement. Lexical retrieval
-should remain available as a lab baseline and fallback even if vector-backed
-retrieval is added later.
+The intended shape is comparison, not replacement. Lexical retrieval should
+remain available as a lab baseline and fallback even when vector-backed
+retrieval is enabled locally.
 
 The UI should expose a retrieval-mode selector only after at least two real
-retrieval implementations exist. Until then, the status card reports the active
-mode and store without offering a switch that cannot do useful work.
+retrieval implementations are mature enough for normal UI switching. Until then,
+start vector mode through backend configuration and use the status card to
+confirm the active mode and store.
 
-For the proposed phase-2 vector retrieval shape, including Ollama embeddings
-and Qdrant as the first vector database candidate, see
+For the phase-2 vector retrieval direction, including Qdrant as the first
+external vector database candidate, see
 [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md).
 
 ### Provider differences

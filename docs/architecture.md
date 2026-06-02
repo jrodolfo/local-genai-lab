@@ -183,7 +183,8 @@ from the main chat and MCP orchestration flow.
 Current responsibilities:
 
 - query a fixed local corpus rooted at `docs/`
-- retrieve relevant chunks through the in-memory lexical retrieval layer
+- retrieve relevant chunks through the default in-memory lexical retrieval layer
+- optionally retrieve through the experimental in-memory vector retrieval layer when `RAG_RETRIEVAL_MODE=vector`
 - send those chunks to the selected provider
 - return the generated answer with cited source chunks
 
@@ -192,7 +193,7 @@ Important boundaries:
 - RAG uses separate `/api/rag/*` endpoints
 - RAG does not currently share the main `/api/chat` flow
 - RAG does not invoke MCP tools
-- RAG does not yet support uploads, embeddings, or vector-backed retrieval
+- RAG does not yet support uploads, report ingestion, automatic routing, or an external vector database
 
 Related ADRs:
 
@@ -290,7 +291,7 @@ Step-by-step:
 
 1. the user opens the separate `RAG` workspace
 2. the frontend sends the question to `/api/rag/query`
-3. the backend retrieves the top matching chunks from the fixed local docs corpus
+3. the backend retrieves the top matching chunks from the fixed local docs corpus using the configured retrieval mode
 4. the backend builds a provider prompt grounded in those chunks
 5. the selected provider generates the answer
 6. the backend returns the answer together with the cited source chunks
@@ -298,8 +299,8 @@ Step-by-step:
 For manual evaluation guidance and the recommended prompt set, see
 [rag-evaluation-guide.md](./rag-evaluation-guide.md).
 
-For the proposed vector retrieval direction, including the separation between
-the embedding runtime and the answer provider, see
+For the vector retrieval direction, including the separation between the
+embedding runtime and the answer provider, see
 [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md).
 
 ### Session Load / Export / Import

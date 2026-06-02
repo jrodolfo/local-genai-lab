@@ -13,16 +13,21 @@ import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.embedding.EmbeddingService;
+import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
 import net.jrodolfo.llm.rag.service.RagAnswerService;
 import net.jrodolfo.llm.rag.service.RagChunkingService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
 import net.jrodolfo.llm.rag.service.RagDocumentLoader;
 import net.jrodolfo.llm.rag.service.RagRetrievalService;
 import net.jrodolfo.llm.rag.service.RagSessionService;
+import net.jrodolfo.llm.rag.service.RagVectorIndexingService;
+import net.jrodolfo.llm.rag.service.RagVectorRetrievalService;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
 import net.jrodolfo.llm.service.FileChatSessionStore;
 import net.jrodolfo.llm.service.SessionIdPolicy;
 import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,6 +37,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -48,6 +55,8 @@ class RagControllerTest {
 
     private MockMvc mockMvc;
     private MockMvc disabledMockMvc;
+    private MockMvc vectorMockMvc;
+    private MockMvc invalidModeMockMvc;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -71,6 +80,12 @@ class RagControllerTest {
 
         RagProperties disabledProperties = new RagProperties(false, docsRoot.toString(), 180, 30, 3, "lexical", "ollama", "nomic-embed-text");
         disabledMockMvc = buildMockMvc(disabledProperties);
+
+        RagProperties vectorProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "vector", "ollama", "nomic-embed-text");
+        vectorMockMvc = buildMockMvc(vectorProperties);
+
+        RagProperties invalidModeProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "semantic", "ollama", "nomic-embed-text");
+        invalidModeMockMvc = buildMockMvc(invalidModeProperties);
     }
 
     @Test
@@ -104,6 +119,37 @@ class RagControllerTest {
     }
 
     @Test
+    void vectorModeStatusReportsVectorStore() throws Exception {
+        vectorMockMvc.perform(get("/api/rag/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retrievalMode").value("vector"))
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"));
+    }
+
+    @Test
+    void vectorModeQueryReturnsAnswerAndSources() throws Exception {
+        vectorMockMvc.perform(post("/api/rag/query")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
+                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"));
+    }
+
+    @Test
+    void invalidRetrievalModeReturnsBadRequest() throws Exception {
+        invalidModeMockMvc.perform(post("/api/rag/index"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Unsupported RAG retrieval mode: semantic. Supported modes: lexical, vector."));
+    }
+
+    @Test
     void queryFailsWhenFeatureIsDisabled() throws Exception {
         disabledMockMvc.perform(post("/api/rag/query")
                         .contentType("application/json")
@@ -118,6 +164,8 @@ class RagControllerTest {
 
     private MockMvc buildMockMvc(RagProperties properties) {
         InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         SessionIdPolicy sessionIdPolicy = new SessionIdPolicy();
@@ -130,14 +178,16 @@ class RagControllerTest {
                 properties,
                 new RagDocumentLoader(),
                 new RagChunkingService(),
-                store
+                store,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
         );
         RagAnswerService answerService = new RagAnswerService(
                 new ChatModelProviderRegistry(
                         new AppModelProperties("ollama"),
                         Map.of("ollama", new FakeProvider())
                 ),
-                new RagRetrievalService(properties, corpusService, store),
+                new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore)),
                 new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
         );
         return MockMvcBuilders.standaloneSetup(new RagController(properties, corpusService, answerService))
@@ -175,6 +225,21 @@ class RagControllerTest {
         @Override
         public String resolveModel(String model) {
             return model == null || model.isBlank() ? "llama3:8b" : model;
+        }
+    }
+
+    private static final class KeywordEmbeddingService implements EmbeddingService {
+
+        @Override
+        public EmbeddingVector embed(String text) {
+            String normalized = text == null ? "" : text.toLowerCase(Locale.ROOT);
+            if (normalized.contains("provider") || normalized.contains("ollama") || normalized.contains("bedrock")) {
+                return new EmbeddingVector("nomic-embed-text", List.of(1.0, 0.0));
+            }
+            if (normalized.contains("session") || normalized.contains("json")) {
+                return new EmbeddingVector("nomic-embed-text", List.of(0.0, 1.0));
+            }
+            return new EmbeddingVector("nomic-embed-text", List.of(0.0, 0.0));
         }
     }
 }

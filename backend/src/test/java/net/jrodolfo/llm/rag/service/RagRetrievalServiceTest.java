@@ -1,15 +1,19 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.embedding.EmbeddingService;
+import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
 import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RagRetrievalServiceTest {
@@ -83,16 +87,76 @@ class RagRetrievalServiceTest {
         assertTrue(sourcePaths.contains("provider-status.md"));
     }
 
+    @Test
+    void vectorModeRetrievesUsingQueryEmbedding() {
+        RagProperties properties = new RagProperties(true, "docs", 220, 30, 2, "vector", "ollama", "nomic-embed-text");
+        InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RagCorpusService corpusService = new RagCorpusService(
+                properties,
+                new StubLoader(List.of(
+                        document("architecture.md", "Architecture", "The provider registry selects Ollama Bedrock or Hugging Face."),
+                        document("sessions.md", "Sessions", "Sessions are persisted as local JSON files.")
+                )),
+                new RagChunkingService(),
+                lexicalStore,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        RagRetrievalService retrievalService = new RagRetrievalService(
+                properties,
+                corpusService,
+                lexicalStore,
+                new RagVectorRetrievalService(embeddingService, vectorStore)
+        );
+
+        var matches = retrievalService.retrieve("How does provider selection work?");
+
+        assertEquals("architecture.md", matches.getFirst().chunk().sourcePath());
+        assertEquals(1, matches.size());
+    }
+
+    @Test
+    void invalidRetrievalModeFailsClearly() {
+        RagProperties properties = new RagProperties(true, "docs", 220, 30, 2, "semantic", "ollama", "nomic-embed-text");
+        InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RagCorpusService corpusService = new RagCorpusService(
+                properties,
+                new StubLoader(List.of(document("architecture.md", "Architecture", "Provider registry docs."))),
+                new RagChunkingService(),
+                lexicalStore,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        RagRetrievalService retrievalService = new RagRetrievalService(
+                properties,
+                corpusService,
+                lexicalStore,
+                new RagVectorRetrievalService(embeddingService, vectorStore)
+        );
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> retrievalService.retrieve("provider"));
+
+        assertEquals("Unsupported RAG retrieval mode: semantic. Supported modes: lexical, vector.", exception.getMessage());
+    }
+
     private static RagRetrievalService retrievalService(int topK, List<RagDocument> documents) {
         RagProperties properties = new RagProperties(true, "docs", 220, 30, topK, "lexical", "ollama", "nomic-embed-text");
         InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
         RagCorpusService corpusService = new RagCorpusService(
                 properties,
                 new StubLoader(documents),
                 new RagChunkingService(),
-                store
+                store,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
         );
-        return new RagRetrievalService(properties, corpusService, store);
+        return new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore));
     }
 
     private static RagDocument document(String path, String title, String content) {
@@ -109,6 +173,21 @@ class RagRetrievalServiceTest {
         @Override
         public List<RagDocument> loadMarkdownDocuments(Path corpusRoot) {
             return documents;
+        }
+    }
+
+    private static final class KeywordEmbeddingService implements EmbeddingService {
+
+        @Override
+        public EmbeddingVector embed(String text) {
+            String normalized = text == null ? "" : text.toLowerCase(java.util.Locale.ROOT);
+            if (normalized.contains("provider") || normalized.contains("ollama") || normalized.contains("bedrock")) {
+                return new EmbeddingVector("nomic-embed-text", List.of(1.0, 0.0));
+            }
+            if (normalized.contains("session") || normalized.contains("json")) {
+                return new EmbeddingVector("nomic-embed-text", List.of(0.0, 1.0));
+            }
+            return new EmbeddingVector("nomic-embed-text", List.of(0.0, 0.0));
         }
     }
 }

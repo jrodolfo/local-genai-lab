@@ -183,9 +183,9 @@ Relevant RAG settings:
 - `RAG_EMBEDDING_PROVIDER` default: `ollama`
 - `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
 
-The embedding settings are phase-2 retrieval infrastructure. They configure the
-future vector embedding runtime but do not change the current lexical retrieval
-behavior.
+Lexical retrieval remains the default. When `RAG_RETRIEVAL_MODE=vector`, the
+backend embeds the same docs corpus with the configured embedding provider/model
+and uses the in-memory vector retrieval store.
 
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 

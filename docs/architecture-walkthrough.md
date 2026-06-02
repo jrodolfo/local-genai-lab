@@ -166,7 +166,7 @@ Current phase-1 scope:
 - fixed local `docs/` corpus
 - in-memory lexical retrieval
 - provider-generated answer with cited source chunks
-- no uploads, embeddings, or vector-backed retrieval yet
+- no uploads, external vector database, or automatic chat/tool/RAG routing yet
 
 Related ADR:
 

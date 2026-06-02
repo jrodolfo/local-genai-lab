@@ -1,9 +1,12 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.config.RagRetrievalMode;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
+import net.jrodolfo.llm.rag.model.RagVectorIndexResult;
 import net.jrodolfo.llm.rag.store.RagRetrievalStore;
+import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -21,6 +24,8 @@ public class RagCorpusService {
     private final RagDocumentLoader documentLoader;
     private final RagChunkingService chunkingService;
     private final RagRetrievalStore retrievalStore;
+    private final RagVectorIndexingService vectorIndexingService;
+    private final InMemoryVectorRagRetrievalStore vectorRetrievalStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
 
     /**
@@ -30,17 +35,23 @@ public class RagCorpusService {
      * @param documentLoader  service for loading documents
      * @param chunkingService service for splitting documents into chunks
      * @param retrievalStore  the retrieval store for indexing chunks
+     * @param vectorIndexingService service for embedding chunks in vector mode
+     * @param vectorRetrievalStore vector retrieval store used in vector mode
      */
     public RagCorpusService(
             RagProperties ragProperties,
             RagDocumentLoader documentLoader,
             RagChunkingService chunkingService,
-            RagRetrievalStore retrievalStore
+            RagRetrievalStore retrievalStore,
+            RagVectorIndexingService vectorIndexingService,
+            InMemoryVectorRagRetrievalStore vectorRetrievalStore
     ) {
         this.ragProperties = ragProperties;
         this.documentLoader = documentLoader;
         this.chunkingService = chunkingService;
         this.retrievalStore = retrievalStore;
+        this.vectorIndexingService = vectorIndexingService;
+        this.vectorRetrievalStore = vectorRetrievalStore;
     }
 
     /**
@@ -70,7 +81,13 @@ public class RagCorpusService {
                 ragProperties.maxChunkSize(),
                 ragProperties.chunkOverlap()
         );
-        retrievalStore.replaceAll(chunks);
+        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
+        if (mode == RagRetrievalMode.VECTOR) {
+            RagVectorIndexResult vectorIndex = vectorIndexingService.index(chunks);
+            vectorRetrievalStore.replaceAllEmbedded(vectorIndex.chunks());
+        } else {
+            retrievalStore.replaceAll(chunks);
+        }
         CorpusSnapshot snapshot = new CorpusSnapshot(corpusRoot, documents, chunks);
         snapshotRef.set(snapshot);
         return snapshot;
