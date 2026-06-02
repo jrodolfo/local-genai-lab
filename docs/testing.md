@@ -13,6 +13,16 @@ make test
 This runs operational helper tests, backend tests, and frontend tests. MCP
 tests, frontend builds, and MCP tool script tests remain separate suites below.
 
+For broader project verification, run:
+
+```bash
+make verify
+```
+
+This runs `make test`, frontend build, MCP tests/build, and MCP tool script
+lint/tests. Use it before larger pushes or changes that touch multiple project
+areas.
+
 ### Backend
 
 Run:

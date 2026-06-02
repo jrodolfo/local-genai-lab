@@ -338,6 +338,7 @@ The shell tooling lives under [`scripts/`](./scripts). Useful entrypoints:
 ```bash
 make help
 make test
+make verify
 make check-app
 cd scripts
 make help
@@ -348,6 +349,7 @@ make s3-cloudwatch BUCKET=example.com
 
 `make check-app` verifies backend health, backend model discovery, frontend reachability, and optional Ollama availability with sensible local defaults.
 `make test` runs the normal local pre-commit suite: operational helper tests, backend tests, and frontend tests.
+`make verify` runs broader project verification: `make test`, frontend build, MCP tests/build, and MCP tool script lint/tests.
 
 ## Documentation Map
 
