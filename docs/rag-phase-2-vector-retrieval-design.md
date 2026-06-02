@@ -44,6 +44,9 @@ For example, the system can use Ollama with `nomic-embed-text` for embeddings
 and still use Ollama `llama3:8b`, Bedrock, or Hugging Face to generate the
 final answer.
 
+For operational checks and common local fixes, see
+[rag-troubleshooting.md](./rag-troubleshooting.md).
+
 ## Recommended Embedding Runtime
 
 First candidate:

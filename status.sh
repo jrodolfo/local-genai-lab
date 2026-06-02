@@ -12,6 +12,7 @@
 # Required Tools:
 #   - bash
 #   - curl (for health checks)
+#   - ollama (optional; for local provider/RAG readiness checks)
 #
 # Expected Output:
 #   Status summary for backend and frontend, health check results, and log
@@ -38,6 +39,33 @@ SERVER_PORT="${SERVER_PORT:-8080}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:${SERVER_PORT}}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:${FRONTEND_PORT}}"
+APP_MODEL_PROVIDER="${APP_MODEL_PROVIDER:-ollama}"
+RAG_ENABLED="${RAG_ENABLED:-true}"
+RAG_RETRIEVAL_MODE="${RAG_RETRIEVAL_MODE:-lexical}"
+RAG_EMBEDDING_PROVIDER="${RAG_EMBEDDING_PROVIDER:-ollama}"
+RAG_EMBEDDING_MODEL="${RAG_EMBEDDING_MODEL:-nomic-embed-text}"
+
+normalize_bool() {
+  local value
+  value="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  case "${value}" in
+    true | 1 | yes | y | on)
+      printf '%s' 'true'
+      ;;
+    *)
+      printf '%s' 'false'
+      ;;
+  esac
+}
+
+normalize_lower() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
+}
+
+ollama_model_installed() {
+  local model_name="$1"
+  ollama list 2>/dev/null | awk 'NR > 1 {print $1}' | grep -Fxq "${model_name}"
+}
 
 # --- Process Status ---
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
@@ -79,6 +107,63 @@ if curl -fsS "${FRONTEND_URL}" >/dev/null 2>&1; then
   printf '%s\n' 'frontend http: ok'
 else
   printf '%s\n' 'frontend http: unavailable'
+fi
+
+# --- RAG and Ollama Readiness ---
+rag_enabled_normalized="$(normalize_bool "${RAG_ENABLED}")"
+rag_retrieval_mode_normalized="$(normalize_lower "${RAG_RETRIEVAL_MODE}")"
+app_model_provider_normalized="$(normalize_lower "${APP_MODEL_PROVIDER}")"
+rag_embedding_provider_normalized="$(normalize_lower "${RAG_EMBEDDING_PROVIDER}")"
+needs_ollama_status='false'
+needs_embedding_model='false'
+
+if [ "${app_model_provider_normalized}" = 'ollama' ]; then
+  needs_ollama_status='true'
+fi
+
+if [ "${rag_enabled_normalized}" = 'true' ] \
+  && [ "${rag_retrieval_mode_normalized}" = 'vector' ] \
+  && [ "${rag_embedding_provider_normalized}" = 'ollama' ]; then
+  needs_ollama_status='true'
+  needs_embedding_model='true'
+fi
+
+printf '%s\n' \
+  "rag enabled: ${rag_enabled_normalized}" \
+  "rag retrieval mode: ${rag_retrieval_mode_normalized}" \
+  "rag embedding provider: ${RAG_EMBEDDING_PROVIDER}" \
+  "rag embedding model: ${RAG_EMBEDDING_MODEL}"
+
+if [ "${needs_ollama_status}" = 'true' ]; then
+  if command -v ollama >/dev/null 2>&1; then
+    printf '%s\n' 'ollama cli: available'
+    if curl -fsS "${OLLAMA_BASE_URL:-http://localhost:11434}/api/tags" >/dev/null 2>&1; then
+      printf '%s\n' 'ollama service: ok'
+      if [ "${needs_embedding_model}" = 'true' ]; then
+        if ollama_model_installed "${RAG_EMBEDDING_MODEL}"; then
+          printf '%s\n' "ollama embedding model: present (${RAG_EMBEDDING_MODEL})"
+        else
+          printf '%s\n' "ollama embedding model: missing (${RAG_EMBEDDING_MODEL})"
+          printf '%s\n' "hint: run ollama pull ${RAG_EMBEDDING_MODEL}"
+        fi
+      else
+        printf '%s\n' 'ollama embedding model: not required for current mode'
+      fi
+    else
+      printf '%s\n' "ollama service: unavailable (${OLLAMA_BASE_URL:-http://localhost:11434})"
+      if [ "${needs_embedding_model}" = 'true' ]; then
+        printf '%s\n' "ollama embedding model: not checked (${RAG_EMBEDDING_MODEL})"
+      fi
+    fi
+  else
+    printf '%s\n' 'ollama cli: missing'
+    printf '%s\n' 'ollama service: not checked'
+    if [ "${needs_embedding_model}" = 'true' ]; then
+      printf '%s\n' "ollama embedding model: not checked (${RAG_EMBEDDING_MODEL})"
+    fi
+  fi
+else
+  printf '%s\n' 'ollama readiness: not required for current configuration'
 fi
 
 # --- Logs ---

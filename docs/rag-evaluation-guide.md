@@ -16,6 +16,7 @@ Related references:
 
 - [architecture.md](./architecture.md)
 - [architecture-walkthrough.md](./architecture-walkthrough.md)
+- [rag-troubleshooting.md](./rag-troubleshooting.md)
 - [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
 - [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 - [ADR 0013](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
@@ -34,6 +35,9 @@ To use it:
 2. open the frontend
 3. switch from `Chat` to `RAG`
 4. confirm the status card shows the docs corpus, retrieval mode, and retrieval store
+
+If the workspace is disabled or vector mode does not index, run `./status.sh`
+and follow [rag-troubleshooting.md](./rag-troubleshooting.md).
 
 If needed, use `Rebuild index` before testing.
 
