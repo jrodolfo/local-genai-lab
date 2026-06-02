@@ -66,10 +66,10 @@ class RagControllerTest {
                 Sessions are stored as local JSON files so they can be reopened, exported, and imported.
                 """);
 
-        RagProperties enabledProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "lexical");
+        RagProperties enabledProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "lexical", "ollama", "nomic-embed-text");
         mockMvc = buildMockMvc(enabledProperties);
 
-        RagProperties disabledProperties = new RagProperties(false, docsRoot.toString(), 180, 30, 3, "lexical");
+        RagProperties disabledProperties = new RagProperties(false, docsRoot.toString(), 180, 30, 3, "lexical", "ollama", "nomic-embed-text");
         disabledMockMvc = buildMockMvc(disabledProperties);
     }
 

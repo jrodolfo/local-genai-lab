@@ -214,6 +214,8 @@ For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phase
 
 The separate `RAG` workspace is enabled by default. In phase 1, it queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
 
+The backend also includes passive phase-2 embedding settings for future vector retrieval. `RAG_EMBEDDING_PROVIDER=ollama` and `RAG_EMBEDDING_MODEL=nomic-embed-text` configure the embedding runtime that will be used when vector retrieval is implemented; current RAG answers still use lexical retrieval.
+
 Good first RAG test prompts:
 
 - `How does provider selection work?`
@@ -257,6 +259,9 @@ The most important backend settings are:
 - `RAG_ENABLED` default: `true`
 - `RAG_CORPUS_ROOT` default: `docs`
 - `RAG_TOP_K` default: `4`
+- `RAG_RETRIEVAL_MODE` default: `lexical`
+- `RAG_EMBEDDING_PROVIDER` default: `ollama`
+- `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
 - `APP_TOOLS_ROUTING_MODE` default: `hybrid`
 - `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`

@@ -180,6 +180,12 @@ Relevant RAG settings:
 - `RAG_CHUNK_OVERLAP` default: `160`
 - `RAG_TOP_K` default: `4`
 - `RAG_RETRIEVAL_MODE` default: `lexical`
+- `RAG_EMBEDDING_PROVIDER` default: `ollama`
+- `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
+
+The embedding settings are phase-2 retrieval infrastructure. They configure the
+future vector embedding runtime but do not change the current lexical retrieval
+behavior.
 
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 

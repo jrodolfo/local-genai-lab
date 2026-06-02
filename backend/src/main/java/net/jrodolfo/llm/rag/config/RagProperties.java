@@ -12,7 +12,9 @@ import java.nio.file.Path;
  * @param maxChunkSize  The maximum size of a text chunk in characters.
  * @param chunkOverlap  The number of overlapping characters between consecutive chunks.
  * @param topK          The number of top relevant chunks to retrieve for each query.
- * @param retrievalMode The mode of retrieval to use (e.g., "vector").
+ * @param retrievalMode     The mode of retrieval to use.
+ * @param embeddingProvider The embedding runtime to use for future vector retrieval.
+ * @param embeddingModel    The embedding model to use for future vector retrieval.
  */
 @ConfigurationProperties(prefix = "rag")
 public record RagProperties(
@@ -21,7 +23,9 @@ public record RagProperties(
         int maxChunkSize,
         int chunkOverlap,
         int topK,
-        String retrievalMode
+        String retrievalMode,
+        String embeddingProvider,
+        String embeddingModel
 ) {
 
     /**

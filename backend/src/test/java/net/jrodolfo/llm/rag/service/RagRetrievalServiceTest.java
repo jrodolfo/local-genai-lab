@@ -84,7 +84,7 @@ class RagRetrievalServiceTest {
     }
 
     private static RagRetrievalService retrievalService(int topK, List<RagDocument> documents) {
-        RagProperties properties = new RagProperties(true, "docs", 220, 30, topK, "lexical");
+        RagProperties properties = new RagProperties(true, "docs", 220, 30, topK, "lexical", "ollama", "nomic-embed-text");
         InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
         RagCorpusService corpusService = new RagCorpusService(
                 properties,
