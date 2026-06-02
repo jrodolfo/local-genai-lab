@@ -157,22 +157,24 @@ describe('Home integration', () => {
             http.post('/api/chat/stream', () => sseStreamResponse(new ReadableStream({
                 start(controller) {
                     const encoder = new TextEncoder();
-                    controller.enqueue(encoder.encode(sseEventChunk({
-                        type: 'tool-decision-started',
-                        toolName: 'aws_region_audit'
-                    })));
+                    setTimeout(() => {
+                        controller.enqueue(encoder.encode(sseEventChunk({
+                            type: 'tool-decision-started',
+                            toolName: 'aws_region_audit'
+                        })));
+                    }, 25);
                     setTimeout(() => {
                         controller.enqueue(encoder.encode(sseEventChunk({
                             type: 'tool-execution-started',
                             toolName: 'aws_region_audit'
                         })));
-                    }, 10);
+                    }, 175);
                     setTimeout(() => {
                         controller.enqueue(encoder.encode(sseEventChunk({
                             type: 'tool-execution-completed',
                             toolName: 'aws_region_audit'
                         })));
-                    }, 20);
+                    }, 325);
                     setTimeout(() => {
                         controller.enqueue(encoder.encode(sseEventChunk({
                             type: 'answer-generation-started',
@@ -188,10 +190,10 @@ describe('Home integration', () => {
                                 summary: 'AWS audit completed.'
                             }
                         })));
-                    }, 30);
+                    }, 475);
                     setTimeout(() => {
                         controller.enqueue(encoder.encode(sseEventChunk({type: 'delta', text: 'Audit complete.'})));
-                    }, 40);
+                    }, 625);
                     setTimeout(() => {
                         controller.enqueue(encoder.encode(sseEventChunk({
                             type: 'complete',
@@ -211,7 +213,7 @@ describe('Home integration', () => {
                             metadata: {provider: 'ollama', modelId: 'llama3:8b'}
                         })));
                         controller.close();
-                    }, 50);
+                    }, 775);
                 }
             })))
         );
