@@ -16,6 +16,7 @@ Related references:
 
 - [architecture.md](./architecture.md)
 - [architecture-walkthrough.md](./architecture-walkthrough.md)
+- [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
 - [rag-troubleshooting.md](./rag-troubleshooting.md)
 - [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
 - [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
@@ -52,6 +53,9 @@ Use the same prompt set across Ollama, Bedrock, and Hugging Face when possible:
 
 These questions are good phase-1 checks because the answers should come from
 the repository docs and ADRs, not from general model knowledge alone.
+
+Use [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
+when you want to record a repeatable lexical vs vector comparison.
 
 ## What To Evaluate
 

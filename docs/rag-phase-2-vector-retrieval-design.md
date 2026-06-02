@@ -47,6 +47,9 @@ final answer.
 For operational checks and common local fixes, see
 [rag-troubleshooting.md](./rag-troubleshooting.md).
 
+For repeatable lexical vs vector observations, use
+[rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
+
 ## Recommended Embedding Runtime
 
 First candidate:
