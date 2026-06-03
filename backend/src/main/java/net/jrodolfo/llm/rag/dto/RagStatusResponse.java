@@ -10,6 +10,9 @@ package net.jrodolfo.llm.rag.dto;
  * @param chunkCount    The total number of text chunks generated from the documents.
  * @param retrievalMode     The current retrieval mode being used.
  * @param retrievalStore    The storage/index style used by the retrieval implementation.
+ * @param vectorStore       The configured vector store for vector retrieval.
+ * @param qdrantUrl         The configured Qdrant endpoint.
+ * @param qdrantCollection  The configured Qdrant collection name.
  * @param embeddingProvider The configured embedding provider for vector retrieval.
  * @param embeddingModel    The configured embedding model for vector retrieval.
  */
@@ -21,6 +24,9 @@ public record RagStatusResponse(
         int chunkCount,
         String retrievalMode,
         String retrievalStore,
+        String vectorStore,
+        String qdrantUrl,
+        String qdrantCollection,
         String embeddingProvider,
         String embeddingModel
 ) {

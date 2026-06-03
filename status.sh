@@ -42,6 +42,9 @@ FRONTEND_URL="${FRONTEND_URL:-http://localhost:${FRONTEND_PORT}}"
 APP_MODEL_PROVIDER="${APP_MODEL_PROVIDER:-ollama}"
 RAG_ENABLED="${RAG_ENABLED:-true}"
 RAG_RETRIEVAL_MODE="${RAG_RETRIEVAL_MODE:-lexical}"
+RAG_VECTOR_STORE="${RAG_VECTOR_STORE:-in-memory}"
+RAG_QDRANT_URL="${RAG_QDRANT_URL:-http://localhost:6333}"
+RAG_QDRANT_COLLECTION="${RAG_QDRANT_COLLECTION:-local_genai_lab_docs}"
 RAG_EMBEDDING_PROVIDER="${RAG_EMBEDDING_PROVIDER:-ollama}"
 RAG_EMBEDDING_MODEL="${RAG_EMBEDDING_MODEL:-nomic-embed-text}"
 
@@ -112,6 +115,7 @@ fi
 # --- RAG and Ollama Readiness ---
 rag_enabled_normalized="$(normalize_bool "${RAG_ENABLED}")"
 rag_retrieval_mode_normalized="$(normalize_lower "${RAG_RETRIEVAL_MODE}")"
+rag_vector_store_normalized="$(normalize_lower "${RAG_VECTOR_STORE}")"
 app_model_provider_normalized="$(normalize_lower "${APP_MODEL_PROVIDER}")"
 rag_embedding_provider_normalized="$(normalize_lower "${RAG_EMBEDDING_PROVIDER}")"
 needs_ollama_status='false'
@@ -131,8 +135,18 @@ fi
 printf '%s\n' \
   "rag enabled: ${rag_enabled_normalized}" \
   "rag retrieval mode: ${rag_retrieval_mode_normalized}" \
+  "rag vector store: ${rag_vector_store_normalized}" \
   "rag embedding provider: ${RAG_EMBEDDING_PROVIDER}" \
   "rag embedding model: ${RAG_EMBEDDING_MODEL}"
+
+if [ "${rag_enabled_normalized}" = 'true' ] \
+  && [ "${rag_retrieval_mode_normalized}" = 'vector' ] \
+  && [ "${rag_vector_store_normalized}" = 'qdrant' ]; then
+  printf '%s\n' \
+    "rag qdrant url: ${RAG_QDRANT_URL}" \
+    "rag qdrant collection: ${RAG_QDRANT_COLLECTION}" \
+    'qdrant service: not checked'
+fi
 
 if [ "${needs_ollama_status}" = 'true' ]; then
   if command -v ollama >/dev/null 2>&1; then

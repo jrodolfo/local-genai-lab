@@ -15,6 +15,9 @@ import java.util.List;
  * @param chunkOverlap  The number of overlapping characters between consecutive chunks.
  * @param topK          The number of top relevant chunks to retrieve for each query.
  * @param retrievalMode     The mode of retrieval to use.
+ * @param vectorStore       The configured vector store for future vector retrieval persistence.
+ * @param qdrantUrl         The configured Qdrant endpoint for future vector retrieval persistence.
+ * @param qdrantCollection  The configured Qdrant collection name for future vector retrieval persistence.
  * @param embeddingProvider The embedding runtime to use for future vector retrieval.
  * @param embeddingModel    The embedding model to use for future vector retrieval.
  * @param excludedSourcePaths Relative corpus paths that should not be indexed.
@@ -27,12 +30,18 @@ public record RagProperties(
         int chunkOverlap,
         int topK,
         String retrievalMode,
+        String vectorStore,
+        String qdrantUrl,
+        String qdrantCollection,
         String embeddingProvider,
         String embeddingModel,
         List<String> excludedSourcePaths
 ) {
     @ConstructorBinding
     public RagProperties {
+        vectorStore = isBlank(vectorStore) ? "in-memory" : vectorStore;
+        qdrantUrl = isBlank(qdrantUrl) ? "http://localhost:6333" : qdrantUrl;
+        qdrantCollection = isBlank(qdrantCollection) ? "local_genai_lab_docs" : qdrantCollection;
         excludedSourcePaths = excludedSourcePaths == null ? List.of() : List.copyOf(excludedSourcePaths);
     }
 
@@ -46,7 +55,76 @@ public record RagProperties(
             String embeddingProvider,
             String embeddingModel
     ) {
-        this(enabled, corpusRoot, maxChunkSize, chunkOverlap, topK, retrievalMode, embeddingProvider, embeddingModel, List.of());
+        this(
+                enabled,
+                corpusRoot,
+                maxChunkSize,
+                chunkOverlap,
+                topK,
+                retrievalMode,
+                "in-memory",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                embeddingProvider,
+                embeddingModel,
+                List.of()
+        );
+    }
+
+    public RagProperties(
+            boolean enabled,
+            String corpusRoot,
+            int maxChunkSize,
+            int chunkOverlap,
+            int topK,
+            String retrievalMode,
+            String embeddingProvider,
+            String embeddingModel,
+            List<String> excludedSourcePaths
+    ) {
+        this(
+                enabled,
+                corpusRoot,
+                maxChunkSize,
+                chunkOverlap,
+                topK,
+                retrievalMode,
+                "in-memory",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                embeddingProvider,
+                embeddingModel,
+                excludedSourcePaths
+        );
+    }
+
+    public RagProperties(
+            boolean enabled,
+            String corpusRoot,
+            int maxChunkSize,
+            int chunkOverlap,
+            int topK,
+            String retrievalMode,
+            String vectorStore,
+            String qdrantUrl,
+            String qdrantCollection,
+            String embeddingProvider,
+            String embeddingModel
+    ) {
+        this(
+                enabled,
+                corpusRoot,
+                maxChunkSize,
+                chunkOverlap,
+                topK,
+                retrievalMode,
+                vectorStore,
+                qdrantUrl,
+                qdrantCollection,
+                embeddingProvider,
+                embeddingModel,
+                List.of()
+        );
     }
 
     /**
@@ -90,5 +168,9 @@ public record RagProperties(
         return candidate.resolve("backend/pom.xml").toFile().isFile()
                 && candidate.resolve("frontend/package.json").toFile().isFile()
                 && candidate.resolve("README.md").toFile().isFile();
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

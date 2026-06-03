@@ -63,6 +63,9 @@ rag:
   chunk-overlap: ${RAG_CHUNK_OVERLAP:160}
   top-k: ${RAG_TOP_K:4}
   retrieval-mode: ${RAG_RETRIEVAL_MODE:lexical}
+  vector-store: ${RAG_VECTOR_STORE:in-memory}
+  qdrant-url: ${RAG_QDRANT_URL:http://localhost:6333}
+  qdrant-collection: ${RAG_QDRANT_COLLECTION:local_genai_lab_docs}
   embedding-provider: ${RAG_EMBEDDING_PROVIDER:ollama}
   embedding-model: ${RAG_EMBEDDING_MODEL:nomic-embed-text}
   excluded-source-paths: ${RAG_EXCLUDED_SOURCE_PATHS:rag-evaluation-guide.md,rag-retrieval-evaluation-template.md}

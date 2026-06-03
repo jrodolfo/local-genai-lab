@@ -118,6 +118,7 @@ test_lexical_mode_does_not_require_embedding_model() {
 
   assert_contains "${output}" 'rag enabled: true'
   assert_contains "${output}" 'rag retrieval mode: lexical'
+  assert_contains "${output}" 'rag vector store: in-memory'
   assert_contains "${output}" 'ollama cli: available'
   assert_contains "${output}" 'ollama service: ok'
   assert_contains "${output}" 'ollama embedding model: not required for current mode'
@@ -135,6 +136,7 @@ test_vector_mode_reports_present_embedding_model() {
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
   assert_contains "${output}" 'rag retrieval mode: vector'
+  assert_contains "${output}" 'rag vector store: in-memory'
   assert_contains "${output}" 'ollama service: ok'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
@@ -153,6 +155,25 @@ test_vector_mode_reports_missing_embedding_model() {
   assert_contains "${output}" 'rag retrieval mode: vector'
   assert_contains "${output}" 'ollama embedding model: missing (nomic-embed-text)'
   assert_contains "${output}" 'hint: run ollama pull nomic-embed-text'
+  rm -rf "${tmp_dir}"
+}
+
+# test_qdrant_vector_mode_prints_config_without_live_check
+# Purpose: Verifies Qdrant config is visible before live Qdrant checks exist.
+test_qdrant_vector_mode_prints_config_without_live_check() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+
+  assert_contains "${output}" 'rag retrieval mode: vector'
+  assert_contains "${output}" 'rag vector store: qdrant'
+  assert_contains "${output}" 'rag qdrant url: http://localhost:6333'
+  assert_contains "${output}" 'rag qdrant collection: local_genai_lab_docs'
+  assert_contains "${output}" 'qdrant service: not checked'
+  assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
 }
 
@@ -179,6 +200,7 @@ main() {
   test_lexical_mode_does_not_require_embedding_model
   test_vector_mode_reports_present_embedding_model
   test_vector_mode_reports_missing_embedding_model
+  test_qdrant_vector_mode_prints_config_without_live_check
   test_non_ollama_non_vector_config_skips_ollama_readiness
   printf 'status tests passed\n'
 }

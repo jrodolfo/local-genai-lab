@@ -287,6 +287,9 @@ The most important backend settings are:
 - `RAG_CORPUS_ROOT` default: `docs`
 - `RAG_TOP_K` default: `4`
 - `RAG_RETRIEVAL_MODE` default: `lexical`
+- `RAG_VECTOR_STORE` default: `in-memory`
+- `RAG_QDRANT_URL` default: `http://localhost:6333`
+- `RAG_QDRANT_COLLECTION` default: `local_genai_lab_docs`
 - `RAG_EMBEDDING_PROVIDER` default: `ollama`
 - `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
 - `RAG_EXCLUDED_SOURCE_PATHS` default: `rag-evaluation-guide.md,rag-retrieval-evaluation-template.md`

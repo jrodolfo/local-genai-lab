@@ -56,6 +56,7 @@ class RagControllerTest {
     private MockMvc mockMvc;
     private MockMvc disabledMockMvc;
     private MockMvc vectorMockMvc;
+    private MockMvc qdrantConfigMockMvc;
     private MockMvc invalidModeMockMvc;
 
     @BeforeEach
@@ -83,6 +84,21 @@ class RagControllerTest {
 
         RagProperties vectorProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "vector", "ollama", "nomic-embed-text");
         vectorMockMvc = buildMockMvc(vectorProperties);
+
+        RagProperties qdrantConfigProperties = new RagProperties(
+                true,
+                docsRoot.toString(),
+                180,
+                30,
+                3,
+                "vector",
+                "qdrant",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                "ollama",
+                "nomic-embed-text"
+        );
+        qdrantConfigMockMvc = buildMockMvc(qdrantConfigProperties);
 
         RagProperties invalidModeProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "semantic", "ollama", "nomic-embed-text");
         invalidModeMockMvc = buildMockMvc(invalidModeProperties);
@@ -116,6 +132,9 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.indexed").value(false))
                 .andExpect(jsonPath("$.retrievalMode").value("lexical"))
                 .andExpect(jsonPath("$.retrievalStore").value("in-memory"))
+                .andExpect(jsonPath("$.vectorStore").value("in-memory"))
+                .andExpect(jsonPath("$.qdrantUrl").value("http://localhost:6333"))
+                .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"))
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
@@ -126,8 +145,20 @@ class RagControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.retrievalMode").value("vector"))
                 .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
+                .andExpect(jsonPath("$.vectorStore").value("in-memory"))
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
+    }
+
+    @Test
+    void qdrantConfigStatusReportsConfiguredVectorStoreWithoutChangingCurrentRetrievalStore() throws Exception {
+        qdrantConfigMockMvc.perform(get("/api/rag/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retrievalMode").value("vector"))
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
+                .andExpect(jsonPath("$.vectorStore").value("qdrant"))
+                .andExpect(jsonPath("$.qdrantUrl").value("http://localhost:6333"))
+                .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"));
     }
 
     @Test

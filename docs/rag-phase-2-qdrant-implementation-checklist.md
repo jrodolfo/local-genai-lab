@@ -29,32 +29,34 @@ Already implemented:
 - `RagVectorIndexingService`
 - `RagVectorRetrievalService`
 - `RagStatusResponse.retrievalStore`
+- `RAG_VECTOR_STORE`
+- `RAG_QDRANT_URL`
+- `RAG_QDRANT_COLLECTION`
+- Qdrant configuration fields in `/api/rag/status`
 - `status.sh` RAG/Ollama readiness checks
+- `status.sh` Qdrant configuration output when Qdrant mode is selected
 - RAG UI status for retrieval mode and store
 
 Not implemented yet:
 
 - Qdrant service in Docker Compose
-- `RAG_VECTOR_STORE`
-- `RAG_QDRANT_URL`
-- `RAG_QDRANT_COLLECTION`
 - Qdrant client boundary
 - Qdrant-backed retrieval store
-- Qdrant readiness in `/api/rag/status`
-- Qdrant readiness in `./status.sh`
+- live Qdrant readiness in `/api/rag/status`
+- live Qdrant readiness in `./status.sh`
 - optional Qdrant integration tests
 
 ## Phase 2 Slice 1: Configuration
 
 Backend tasks:
 
-- Add a vector store setting to `RagProperties`.
-- Suggested default: `RAG_VECTOR_STORE=in-memory`.
-- Supported values for the first Qdrant slice: `in-memory`, `qdrant`.
-- Add `RAG_QDRANT_URL`.
-- Suggested default: `http://localhost:6333`.
-- Add `RAG_QDRANT_COLLECTION`.
-- Suggested default: `local_genai_lab_docs`.
+- Keep the vector store setting in `RagProperties`.
+- Current default: `RAG_VECTOR_STORE=in-memory`.
+- Current supported values for the first Qdrant slice: `in-memory`, `qdrant`.
+- Keep `RAG_QDRANT_URL`.
+- Current default: `http://localhost:6333`.
+- Keep `RAG_QDRANT_COLLECTION`.
+- Current default: `local_genai_lab_docs`.
 - Keep `RAG_RETRIEVAL_MODE=lexical` as the default retrieval mode.
 
 Acceptance criteria:

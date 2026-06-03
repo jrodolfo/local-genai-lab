@@ -69,6 +69,9 @@ public class RagController {
                 snapshot != null ? snapshot.chunks().size() : 0,
                 mode.configValue(),
                 mode.retrievalStore(),
+                ragProperties.vectorStore(),
+                ragProperties.qdrantUrl(),
+                ragProperties.qdrantCollection(),
                 ragProperties.embeddingProvider(),
                 ragProperties.embeddingModel()
         );

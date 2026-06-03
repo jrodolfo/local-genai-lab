@@ -215,8 +215,9 @@ workspace.
 
 ## Proposed Configuration Shape
 
-These settings are proposed for a future implementation. They are not current
-runtime settings unless explicitly added later.
+These settings define the current and planned vector retrieval surface.
+`RAG_VECTOR_STORE`, `RAG_QDRANT_URL`, and `RAG_QDRANT_COLLECTION` are visible in
+configuration/status before Qdrant retrieval is implemented.
 
 ```properties
 RAG_RETRIEVAL_MODE=lexical
@@ -238,8 +239,10 @@ Recommended first Qdrant run:
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
-`RAG_VECTOR_STORE=in-memory` should remain the low-friction default until the
-Qdrant path is implemented and documented end to end.
+`RAG_VECTOR_STORE=in-memory` remains the low-friction default until the Qdrant
+path is implemented and documented end to end. `RAG_VECTOR_STORE=qdrant` is the
+planned opt-in Qdrant path, but Qdrant retrieval is not active until the
+Qdrant-backed store is implemented.
 
 ## Local Qdrant Runtime Shape
 
