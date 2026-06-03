@@ -88,7 +88,19 @@ ensure_run_dir() {
 # Exit Behavior: Returns 0 if alive, non-zero otherwise.
 is_process_alive() {
   local pid="$1"
-  [ -n "${pid}" ] && kill -0 "${pid}" >/dev/null 2>&1
+  local kill_output
+
+  [ -n "${pid}" ] || return 1
+
+  if kill_output="$(kill -0 "${pid}" 2>&1)"; then
+    return 0
+  fi
+
+  # In restricted shells, kill -0 may report EPERM even though the process
+  # exists. Treat visible PIDs as alive so status checks do not delete valid
+  # PID files owned by a less-restricted launcher.
+  [ -d "/proc/${pid}" ] && return 0
+  printf '%s' "${kill_output}" | grep -qi 'not permitted'
 }
 
 # read_pid_file

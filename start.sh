@@ -92,24 +92,56 @@ if [ ! -d "${REPO_ROOT}/frontend/node_modules" ]; then
   )
 fi
 
+# --- Helpers ---
+start_detached_process() {
+  local log_file="$1"
+  shift
+
+  if command -v python3 >/dev/null 2>&1; then
+    python3 - "${log_file}" "$@" <<'PY'
+import os
+import subprocess
+import sys
+
+log_file = sys.argv[1]
+command = sys.argv[2:]
+
+with open(log_file, "ab", buffering=0) as log:
+    process = subprocess.Popen(
+        command,
+        stdin=subprocess.DEVNULL,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        close_fds=True,
+        start_new_session=True,
+    )
+
+print(process.pid)
+PY
+    return 0
+  fi
+
+  nohup "$@" >> "${log_file}" 2>&1 &
+  printf '%s\n' "$!"
+}
+
 # --- Execution ---
 : > "${BACKEND_LOG_FILE}"
 : > "${FRONTEND_LOG_FILE}"
 
 # Start Backend
-nohup bash -c '
+backend_pid="$(start_detached_process "${BACKEND_LOG_FILE}" bash -c '
   set -euo pipefail
   repo_root="$1"
   server_port="$2"
   cd "${repo_root}"
   export SERVER_PORT="${server_port}"
   exec bash "${repo_root}/ops/start-backend-helper.sh"
-' _ "${REPO_ROOT}" "${SERVER_PORT}" >> "${BACKEND_LOG_FILE}" 2>&1 &
-backend_pid=$!
+' _ "${REPO_ROOT}" "${SERVER_PORT}")"
 printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"
 
 # Start Frontend
-nohup bash -c '
+frontend_pid="$(start_detached_process "${FRONTEND_LOG_FILE}" bash -c '
   set -euo pipefail
   repo_root="$1"
   backend_url="$2"
@@ -118,8 +150,7 @@ nohup bash -c '
   export BACKEND_URL="${backend_url}"
   export FRONTEND_PORT="${frontend_port}"
   exec npm run dev -- --host 0.0.0.0 --port "${FRONTEND_PORT}"
-' _ "${REPO_ROOT}" "${BACKEND_URL}" "${FRONTEND_PORT}" >> "${FRONTEND_LOG_FILE}" 2>&1 &
-frontend_pid=$!
+' _ "${REPO_ROOT}" "${BACKEND_URL}" "${FRONTEND_PORT}")"
 printf '%s' "${frontend_pid}" > "${FRONTEND_PID_FILE}"
 
 # --- Health Checks ---
