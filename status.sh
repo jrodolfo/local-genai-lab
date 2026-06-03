@@ -144,8 +144,12 @@ if [ "${rag_enabled_normalized}" = 'true' ] \
   && [ "${rag_vector_store_normalized}" = 'qdrant' ]; then
   printf '%s\n' \
     "rag qdrant url: ${RAG_QDRANT_URL}" \
-    "rag qdrant collection: ${RAG_QDRANT_COLLECTION}" \
-    'qdrant service: not checked'
+    "rag qdrant collection: ${RAG_QDRANT_COLLECTION}"
+  if curl -fsS "${RAG_QDRANT_URL}" >/dev/null 2>&1; then
+    printf '%s\n' 'qdrant service: ok'
+  else
+    printf '%s\n' "qdrant service: unavailable (${RAG_QDRANT_URL})"
+  fi
 fi
 
 if [ "${needs_ollama_status}" = 'true' ]; then

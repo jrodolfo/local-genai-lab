@@ -241,7 +241,7 @@ Lexical retrieval remains the default. For experimental local vector retrieval, 
 Evaluation-only RAG docs are excluded from the indexed corpus by default so
 manual test prompts do not become misleading retrieval sources.
 
-If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, and whether the configured embedding model is installed. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
+If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability when `RAG_VECTOR_STORE=qdrant`. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
 

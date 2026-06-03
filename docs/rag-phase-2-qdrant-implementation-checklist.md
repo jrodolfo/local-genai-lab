@@ -33,17 +33,18 @@ Already implemented:
 - `RAG_QDRANT_URL`
 - `RAG_QDRANT_COLLECTION`
 - Qdrant configuration fields in `/api/rag/status`
+- live Qdrant reachability in `/api/rag/status`
 - `status.sh` RAG/Ollama readiness checks
 - `status.sh` Qdrant configuration output when Qdrant mode is selected
+- `status.sh` live Qdrant reachability when Qdrant mode is selected
 - RAG UI status for retrieval mode and store
+- RAG UI Qdrant reachability messages when Qdrant mode is selected
 
 Not implemented yet:
 
 - Qdrant service in Docker Compose
 - Qdrant client boundary
 - Qdrant-backed retrieval store
-- live Qdrant readiness in `/api/rag/status`
-- live Qdrant readiness in `./status.sh`
 - optional Qdrant integration tests
 
 ## Phase 2 Slice 1: Configuration
@@ -176,18 +177,18 @@ Acceptance criteria:
 
 Backend tasks:
 
-- Extend `/api/rag/status` with Qdrant-specific fields when selected.
+- Keep Qdrant-specific fields in `/api/rag/status` when selected.
 - Include configured vector store.
 - Include Qdrant URL.
 - Include collection name.
-- Include Qdrant reachability.
-- Include collection presence.
+- Keep Qdrant reachability.
+- Add collection presence later when the Qdrant client boundary exists.
 - Include configured embedding model and indexed embedding model when available.
 
 Script tasks:
 
-- Update `./status.sh` to print `rag vector store`.
-- Check Qdrant only when `RAG_RETRIEVAL_MODE=vector` and
+- Keep `./status.sh` printing `rag vector store`.
+- Keep checking Qdrant only when `RAG_RETRIEVAL_MODE=vector` and
   `RAG_VECTOR_STORE=qdrant`.
 - Keep lexical status fast and independent from Qdrant.
 - Keep in-memory vector status focused on Ollama and the embedding model.

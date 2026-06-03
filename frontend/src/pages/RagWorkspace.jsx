@@ -299,10 +299,21 @@ function RagWorkspace() {
                                     <dd>{formatEmbeddingStatus(ragStatus)}</dd>
                                 </div>
                             ) : null}
+                            {isQdrantRequired(ragStatus) ? (
+                                <div>
+                                    <dt>Qdrant</dt>
+                                    <dd>{ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</dd>
+                                </div>
+                            ) : null}
                         </dl>
                     ) : null}
                     {!loading && ragStatus?.enabled ? (
                         <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
+                    ) : null}
+                    {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
+                        <p className={`rag-status-note ${ragStatus.qdrantReachable ? 'rag-status-note-ok' : 'rag-status-note-warning'}`}>
+                            {qdrantStatusMessage(ragStatus)}
+                        </p>
                     ) : null}
                 </div>
             </section>
@@ -483,6 +494,10 @@ function isVectorRetrieval(status) {
     return String(status?.retrievalMode || '').toLowerCase() === 'vector';
 }
 
+function isQdrantRequired(status) {
+    return Boolean(status?.qdrantRequired);
+}
+
 function formatEmbeddingStatus(status) {
     const provider = formatRagStatusValue(status?.embeddingProvider || 'ollama');
     const model = status?.embeddingModel || 'nomic-embed-text';
@@ -494,6 +509,15 @@ function retrievalModeHint(status) {
         return 'Experimental local vector retrieval. Change RAG_RETRIEVAL_MODE and restart to switch modes.';
     }
     return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
+}
+
+function qdrantStatusMessage(status) {
+    if (status?.qdrantReachable) {
+        return status.qdrantStatusMessage || 'Qdrant is reachable.';
+    }
+    return status?.qdrantStatusMessage
+        ? `${status.qdrantStatusMessage} Start it and rebuild the index.`
+        : `Qdrant is not reachable at ${status?.qdrantUrl || 'the configured URL'}. Start it and rebuild the index.`;
 }
 
 function buildRagTurns(messages) {

@@ -255,8 +255,9 @@ docker compose up -d qdrant
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
-The application status should make Qdrant readiness visible. Example future
-`./status.sh` lines:
+The application status makes Qdrant reachability visible when Qdrant mode is
+selected. Collection presence is still future work until the Qdrant client
+boundary exists. Example `./status.sh` lines:
 
 ```text
 rag retrieval mode: vector

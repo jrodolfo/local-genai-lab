@@ -45,6 +45,8 @@ When vector RAG is not working, check these items first:
 - run `./status.sh`
 - confirm `rag enabled: true`
 - confirm `rag retrieval mode: vector`
+- confirm `rag vector store: in-memory` or `rag vector store: qdrant`
+- if `rag vector store: qdrant`, confirm `qdrant service: ok`
 - confirm `ollama service: ok`
 - confirm `ollama embedding model: present (nomic-embed-text)`
 - run `ollama pull nomic-embed-text` if the embedding model is missing
@@ -87,12 +89,26 @@ Expected vector readiness:
 ```text
 rag enabled: true
 rag retrieval mode: vector
+rag vector store: in-memory
 rag embedding provider: ollama
 rag embedding model: nomic-embed-text
 ollama cli: available
 ollama service: ok
 ollama embedding model: present (nomic-embed-text)
 ```
+
+If `RAG_VECTOR_STORE=qdrant` is selected, expected Qdrant readiness is:
+
+```text
+rag vector store: qdrant
+rag qdrant url: http://localhost:6333
+rag qdrant collection: local_genai_lab_docs
+qdrant service: ok
+```
+
+If Qdrant is unavailable, start it before rebuilding the index. Qdrant retrieval
+is still a phase-2 implementation path; current vector retrieval remains
+in-memory until the Qdrant-backed store is added.
 
 If the service is unavailable, start Ollama and rerun `./status.sh`.
 

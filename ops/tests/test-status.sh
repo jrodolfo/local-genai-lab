@@ -57,6 +57,9 @@ url="${*: -1}"
 if [[ "${url}" == *"localhost:11434/api/tags"* && "${MOCK_OLLAMA_SERVICE:-down}" == "up" ]]; then
   exit 0
 fi
+if [[ "${url}" == "http://localhost:6333" && "${MOCK_QDRANT_SERVICE:-down}" == "up" ]]; then
+  exit 0
+fi
 exit 1
 EOF
 
@@ -158,21 +161,38 @@ test_vector_mode_reports_missing_embedding_model() {
   rm -rf "${tmp_dir}"
 }
 
-# test_qdrant_vector_mode_prints_config_without_live_check
-# Purpose: Verifies Qdrant config is visible before live Qdrant checks exist.
-test_qdrant_vector_mode_prints_config_without_live_check() {
+# test_qdrant_vector_mode_reports_reachable_service
+# Purpose: Verifies Qdrant mode reports a reachable Qdrant service.
+test_qdrant_vector_mode_reports_reachable_service() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
   mkdir -p "${tmp_dir}/bin"
   write_mock_commands "${tmp_dir}/bin"
 
-  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=up MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
   assert_contains "${output}" 'rag retrieval mode: vector'
   assert_contains "${output}" 'rag vector store: qdrant'
   assert_contains "${output}" 'rag qdrant url: http://localhost:6333'
   assert_contains "${output}" 'rag qdrant collection: local_genai_lab_docs'
-  assert_contains "${output}" 'qdrant service: not checked'
+  assert_contains "${output}" 'qdrant service: ok'
+  assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
+  rm -rf "${tmp_dir}"
+}
+
+# test_qdrant_vector_mode_reports_unavailable_service
+# Purpose: Verifies Qdrant mode reports when Qdrant is unavailable.
+test_qdrant_vector_mode_reports_unavailable_service() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=down MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+
+  assert_contains "${output}" 'rag retrieval mode: vector'
+  assert_contains "${output}" 'rag vector store: qdrant'
+  assert_contains "${output}" 'qdrant service: unavailable (http://localhost:6333)'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
 }
@@ -200,7 +220,8 @@ main() {
   test_lexical_mode_does_not_require_embedding_model
   test_vector_mode_reports_present_embedding_model
   test_vector_mode_reports_missing_embedding_model
-  test_qdrant_vector_mode_prints_config_without_live_check
+  test_qdrant_vector_mode_reports_reachable_service
+  test_qdrant_vector_mode_reports_unavailable_service
   test_non_ollama_non_vector_config_skips_ollama_readiness
   printf 'status tests passed\n'
 }

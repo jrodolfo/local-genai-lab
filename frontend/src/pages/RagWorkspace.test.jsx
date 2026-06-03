@@ -186,6 +186,78 @@ describe('RagWorkspace', () => {
         expect(screen.getByText(/Change RAG_RETRIEVAL_MODE and restart/i)).toBeInTheDocument();
     });
 
+    it('shows qdrant readiness when qdrant vector store is reachable', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'vector',
+                retrievalStore: 'in-memory-vector',
+                vectorStore: 'qdrant',
+                qdrantUrl: 'http://localhost:6333',
+                qdrantCollection: 'local_genai_lab_docs',
+                qdrantRequired: true,
+                qdrantReachable: true,
+                qdrantStatusMessage: 'Qdrant is reachable.',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByText('Qdrant')).toBeInTheDocument();
+        expect(screen.getByText('Reachable')).toBeInTheDocument();
+        expect(screen.getByText('Qdrant is reachable.')).toBeInTheDocument();
+    });
+
+    it('shows qdrant unavailable guidance only when qdrant is required', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'vector',
+                retrievalStore: 'in-memory-vector',
+                vectorStore: 'qdrant',
+                qdrantUrl: 'http://localhost:6333',
+                qdrantCollection: 'local_genai_lab_docs',
+                qdrantRequired: true,
+                qdrantReachable: false,
+                qdrantStatusMessage: 'Qdrant is not reachable at http://localhost:6333.',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByText('Qdrant')).toBeInTheDocument();
+        expect(screen.getByText('Unavailable')).toBeInTheDocument();
+        expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
+    });
+
     it('shows backend query failures clearly', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

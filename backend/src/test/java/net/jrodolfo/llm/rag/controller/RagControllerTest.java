@@ -15,6 +15,8 @@ import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.embedding.EmbeddingService;
 import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
+import net.jrodolfo.llm.rag.qdrant.QdrantStatus;
+import net.jrodolfo.llm.rag.qdrant.QdrantStatusService;
 import net.jrodolfo.llm.rag.service.RagAnswerService;
 import net.jrodolfo.llm.rag.service.RagChunkingService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
@@ -56,7 +58,8 @@ class RagControllerTest {
     private MockMvc mockMvc;
     private MockMvc disabledMockMvc;
     private MockMvc vectorMockMvc;
-    private MockMvc qdrantConfigMockMvc;
+    private MockMvc qdrantReachableMockMvc;
+    private MockMvc qdrantUnavailableMockMvc;
     private MockMvc invalidModeMockMvc;
 
     @BeforeEach
@@ -98,7 +101,8 @@ class RagControllerTest {
                 "ollama",
                 "nomic-embed-text"
         );
-        qdrantConfigMockMvc = buildMockMvc(qdrantConfigProperties);
+        qdrantReachableMockMvc = buildMockMvc(qdrantConfigProperties, QdrantStatus.reachableStatus());
+        qdrantUnavailableMockMvc = buildMockMvc(qdrantConfigProperties, QdrantStatus.unavailable("http://localhost:6333"));
 
         RagProperties invalidModeProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "semantic", "ollama", "nomic-embed-text");
         invalidModeMockMvc = buildMockMvc(invalidModeProperties);
@@ -135,6 +139,9 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.vectorStore").value("in-memory"))
                 .andExpect(jsonPath("$.qdrantUrl").value("http://localhost:6333"))
                 .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"))
+                .andExpect(jsonPath("$.qdrantRequired").value(false))
+                .andExpect(jsonPath("$.qdrantReachable").doesNotExist())
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not required for the current RAG configuration."))
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
@@ -146,19 +153,36 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.retrievalMode").value("vector"))
                 .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
                 .andExpect(jsonPath("$.vectorStore").value("in-memory"))
+                .andExpect(jsonPath("$.qdrantRequired").value(false))
+                .andExpect(jsonPath("$.qdrantReachable").doesNotExist())
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
 
     @Test
-    void qdrantConfigStatusReportsConfiguredVectorStoreWithoutChangingCurrentRetrievalStore() throws Exception {
-        qdrantConfigMockMvc.perform(get("/api/rag/status"))
+    void qdrantConfigStatusReportsReachableQdrantWithoutChangingCurrentRetrievalStore() throws Exception {
+        qdrantReachableMockMvc.perform(get("/api/rag/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.retrievalMode").value("vector"))
                 .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
                 .andExpect(jsonPath("$.vectorStore").value("qdrant"))
                 .andExpect(jsonPath("$.qdrantUrl").value("http://localhost:6333"))
-                .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"));
+                .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"))
+                .andExpect(jsonPath("$.qdrantRequired").value(true))
+                .andExpect(jsonPath("$.qdrantReachable").value(true))
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is reachable."));
+    }
+
+    @Test
+    void qdrantConfigStatusReportsUnavailableQdrantWithoutChangingCurrentRetrievalStore() throws Exception {
+        qdrantUnavailableMockMvc.perform(get("/api/rag/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retrievalMode").value("vector"))
+                .andExpect(jsonPath("$.retrievalStore").value("in-memory-vector"))
+                .andExpect(jsonPath("$.vectorStore").value("qdrant"))
+                .andExpect(jsonPath("$.qdrantRequired").value(true))
+                .andExpect(jsonPath("$.qdrantReachable").value(false))
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not reachable at http://localhost:6333."));
     }
 
     @Test
@@ -198,6 +222,10 @@ class RagControllerTest {
     }
 
     private MockMvc buildMockMvc(RagProperties properties) {
+        return buildMockMvc(properties, QdrantStatus.notRequired());
+    }
+
+    private MockMvc buildMockMvc(RagProperties properties, QdrantStatus qdrantStatus) {
         InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
         InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
         KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
@@ -225,7 +253,13 @@ class RagControllerTest {
                 new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore)),
                 new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
         );
-        return MockMvcBuilders.standaloneSetup(new RagController(properties, corpusService, answerService))
+        QdrantStatusService qdrantStatusService = new QdrantStatusService() {
+            @Override
+            public QdrantStatus status(RagProperties ragProperties) {
+                return qdrantStatus;
+            }
+        };
+        return MockMvcBuilders.standaloneSetup(new RagController(properties, corpusService, answerService, qdrantStatusService))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
     }

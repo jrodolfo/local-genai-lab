@@ -7,6 +7,8 @@ import net.jrodolfo.llm.rag.dto.RagIndexResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryRequest;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.dto.RagStatusResponse;
+import net.jrodolfo.llm.rag.qdrant.QdrantStatus;
+import net.jrodolfo.llm.rag.qdrant.QdrantStatusService;
 import net.jrodolfo.llm.rag.service.RagAnswerService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,7 @@ public class RagController {
     private final RagProperties ragProperties;
     private final RagCorpusService ragCorpusService;
     private final RagAnswerService ragAnswerService;
+    private final QdrantStatusService qdrantStatusService;
 
     /**
      * Constructs a new RagController with the necessary services.
@@ -40,15 +43,18 @@ public class RagController {
      * @param ragProperties    The configuration properties for RAG.
      * @param ragCorpusService The service responsible for managing the document corpus.
      * @param ragAnswerService The service responsible for generating RAG-based answers.
+     * @param qdrantStatusService The service responsible for checking optional Qdrant readiness.
      */
     public RagController(
             RagProperties ragProperties,
             RagCorpusService ragCorpusService,
-            RagAnswerService ragAnswerService
+            RagAnswerService ragAnswerService,
+            QdrantStatusService qdrantStatusService
     ) {
         this.ragProperties = ragProperties;
         this.ragCorpusService = ragCorpusService;
         this.ragAnswerService = ragAnswerService;
+        this.qdrantStatusService = qdrantStatusService;
     }
 
     /**
@@ -61,6 +67,7 @@ public class RagController {
     public RagStatusResponse status() {
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.snapshot();
         RagRetrievalMode mode = retrievalMode();
+        QdrantStatus qdrantStatus = qdrantStatusService.status(ragProperties);
         return new RagStatusResponse(
                 ragProperties.enabled(),
                 snapshot != null,
@@ -72,6 +79,9 @@ public class RagController {
                 ragProperties.vectorStore(),
                 ragProperties.qdrantUrl(),
                 ragProperties.qdrantCollection(),
+                qdrantStatus.required(),
+                qdrantStatus.reachable(),
+                qdrantStatus.message(),
                 ragProperties.embeddingProvider(),
                 ragProperties.embeddingModel()
         );
