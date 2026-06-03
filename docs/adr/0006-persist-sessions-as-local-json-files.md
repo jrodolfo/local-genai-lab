@@ -20,9 +20,10 @@ Possible persistence options included:
 
 Persist sessions as local JSON files.
 
-Conversation history lives in these local JSON session files. The browser can
-hold the currently open conversation in memory, but saved history is restored
-from the backend-managed session files.
+By default, saved conversations live on disk under `data/sessions` as one JSON
+file per session. The backend reads and writes those files. The frontend asks
+the backend for sessions through the session API and renders the returned
+messages.
 
 ## Rationale
 

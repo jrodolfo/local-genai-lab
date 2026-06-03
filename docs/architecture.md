@@ -157,9 +157,10 @@ Sessions are stored as local JSON files. Stored data includes:
 - pending clarification state
 - generated title/summary metadata
 
-Conversation history lives in these persisted local JSON session files, not only
-in frontend memory. The frontend restores prior conversations by loading session
-data through the backend session API.
+By default, saved conversations live on disk under `data/sessions` as one JSON
+file per session. The backend reads and writes those files. The frontend asks
+the backend for sessions through the session API and renders the returned
+messages.
 
 Related ADRs:
 
