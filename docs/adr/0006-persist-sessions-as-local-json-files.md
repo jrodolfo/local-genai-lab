@@ -20,6 +20,10 @@ Possible persistence options included:
 
 Persist sessions as local JSON files.
 
+Conversation history lives in these local JSON session files. The browser can
+hold the currently open conversation in memory, but saved history is restored
+from the backend-managed session files.
+
 ## Rationale
 
 - the project is local-first and single-user in scope

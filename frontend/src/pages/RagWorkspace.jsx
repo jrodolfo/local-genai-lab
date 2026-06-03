@@ -229,10 +229,11 @@ function RagWorkspace() {
         }
     }
 
-    const latestTurn = findLatestTurn(messages);
-    const conversationMessages = latestTurn.answerIndex >= 0
-        ? messages.filter((message, index) => !latestTurn.indexes.includes(index))
-        : messages;
+    const ragTurns = buildRagTurns(messages);
+    const latestTurn = findLatestAnsweredTurn(ragTurns);
+    const olderTurns = latestTurn
+        ? ragTurns.filter((turn) => turn !== latestTurn).reverse()
+        : ragTurns.slice().reverse();
 
     return (
         <main className="rag-page">
@@ -415,45 +416,20 @@ function RagWorkspace() {
                             </div>
                         </form>
 
-                        {latestTurn.answer ? (
+                        {latestTurn ? (
                             <section className="rag-latest-turn" aria-label="Latest RAG turn">
-                                {latestTurn.question ? (
-                                    <section className="rag-question-card">
-                                        <h2>Question</h2>
-                                        <p>{latestTurn.question.content}</p>
-                                    </section>
-                                ) : null}
-                                <RagAnswerWithSources
-                                    result={{
-                                        answer: latestTurn.answer.content,
-                                        provider: latestTurn.answer.metadata?.provider,
-                                        model: latestTurn.answer.metadata?.modelId || selectedModel,
-                                        sources: latestTurn.answer.ragSources || []
-                                    }}
-                                />
+                                <RagTurn turn={latestTurn} selectedModel={selectedModel}/>
                             </section>
                         ) : null}
 
-                        {conversationMessages.length > 0 ? (
+                        {olderTurns.length > 0 ? (
                             <section className="rag-conversation" aria-label="RAG conversation history">
-                                {conversationMessages.map((message, index) => (
-                                    message.role === 'assistant' ? (
-                                        <RagAnswerWithSources
-                                            key={`${message.timestamp || index}-${index}`}
-                                            result={{
-                                                answer: message.content,
-                                                provider: message.metadata?.provider,
-                                                model: message.metadata?.modelId || selectedModel,
-                                                sources: message.ragSources || []
-                                            }}
-                                        />
-                                    ) : (
-                                        <section key={`${message.timestamp || index}-${index}`}
-                                                 className="rag-question-card">
-                                            <h2>Question</h2>
-                                            <p>{message.content}</p>
-                                        </section>
-                                    )
+                                {olderTurns.map((turn, index) => (
+                                    <RagTurn
+                                        key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
+                                        turn={turn}
+                                        selectedModel={selectedModel}
+                                    />
                                 ))}
                             </section>
                         ) : null}
@@ -469,6 +445,29 @@ function RagWorkspace() {
                 </section>
             ) : null}
         </main>
+    );
+}
+
+function RagTurn({turn, selectedModel}) {
+    return (
+        <>
+            {turn.question ? (
+                <section className="rag-question-card">
+                    <h2>Question</h2>
+                    <p>{turn.question.content}</p>
+                </section>
+            ) : null}
+            {turn.answer ? (
+                <RagAnswerWithSources
+                    result={{
+                        answer: turn.answer.content,
+                        provider: turn.answer.metadata?.provider,
+                        model: turn.answer.metadata?.modelId || selectedModel,
+                        sources: turn.answer.ragSources || []
+                    }}
+                />
+            ) : null}
+        </>
     );
 }
 
@@ -497,47 +496,39 @@ function retrievalModeHint(status) {
     return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
 }
 
-function findLatestTurn(messages) {
-    const answerIndex = findLatestAnswerIndex(messages);
-    if (answerIndex < 0) {
-        return {
-            answerIndex: -1,
-            questionIndex: -1,
-            answer: null,
-            question: null,
-            indexes: []
-        };
+function buildRagTurns(messages) {
+    const turns = [];
+    let pendingQuestion = null;
+
+    for (const message of messages) {
+        if (message.role === 'user') {
+            if (pendingQuestion) {
+                turns.push({question: pendingQuestion, answer: null});
+            }
+            pendingQuestion = message;
+            continue;
+        }
+
+        if (message.role === 'assistant') {
+            turns.push({question: pendingQuestion, answer: message});
+            pendingQuestion = null;
+        }
     }
 
-    const questionIndex = findPreviousQuestionIndex(messages, answerIndex);
-    return {
-        answerIndex,
-        questionIndex,
-        answer: messages[answerIndex],
-        question: questionIndex >= 0 ? messages[questionIndex] : null,
-        indexes: questionIndex >= 0 ? [questionIndex, answerIndex] : [answerIndex]
-    };
+    if (pendingQuestion) {
+        turns.push({question: pendingQuestion, answer: null});
+    }
+
+    return turns;
 }
 
-function findLatestAnswerIndex(messages) {
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-        if (messages[index]?.role === 'assistant') {
-            return index;
+function findLatestAnsweredTurn(turns) {
+    for (let index = turns.length - 1; index >= 0; index -= 1) {
+        if (turns[index].answer) {
+            return turns[index];
         }
     }
-    return -1;
-}
-
-function findPreviousQuestionIndex(messages, answerIndex) {
-    for (let index = answerIndex - 1; index >= 0; index -= 1) {
-        if (messages[index]?.role === 'user') {
-            return index;
-        }
-        if (messages[index]?.role === 'assistant') {
-            return -1;
-        }
-    }
-    return -1;
+    return null;
 }
 
 function createRagQuestionMessage(content) {

@@ -238,6 +238,9 @@ The separate `RAG` workspace is enabled by default. In phase 1, it queries a fix
 
 Lexical retrieval remains the default. For experimental local vector retrieval, start the backend with `RAG_RETRIEVAL_MODE=vector`; the backend embeds the same docs corpus with `RAG_EMBEDDING_PROVIDER=ollama` and `RAG_EMBEDDING_MODEL=nomic-embed-text` and uses an in-memory vector store.
 
+Evaluation-only RAG docs are excluded from the indexed corpus by default so
+manual test prompts do not become misleading retrieval sources.
+
 If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, and whether the configured embedding model is installed. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
@@ -286,6 +289,7 @@ The most important backend settings are:
 - `RAG_RETRIEVAL_MODE` default: `lexical`
 - `RAG_EMBEDDING_PROVIDER` default: `ollama`
 - `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
+- `RAG_EXCLUDED_SOURCE_PATHS` default: `rag-evaluation-guide.md,rag-retrieval-evaluation-template.md`
 - `APP_TOOLS_ROUTING_MODE` default: `hybrid`
 - `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
 - `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
@@ -329,6 +333,7 @@ Observed model behavior:
 - enabled by default with `RAG_ENABLED=true`
 - isolated from the normal chat, MCP, and tool-routing flow
 - fixed phase-1 corpus rooted at `docs/`
+- evaluation-only RAG docs are excluded from indexing by default
 - in-memory lexical retrieval by default behind a replaceable backend abstraction
 - lexical retrieval is intentional as a zero-dependency baseline; see [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md) for the lexical vs vector comparison
 - experimental in-memory vector retrieval is available with `RAG_RETRIEVAL_MODE=vector`

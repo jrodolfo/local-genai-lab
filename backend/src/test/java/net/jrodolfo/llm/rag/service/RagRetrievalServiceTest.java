@@ -118,6 +118,54 @@ class RagRetrievalServiceTest {
     }
 
     @Test
+    void vectorModeDoesNotRetrieveExcludedEvaluationDocs() {
+        RagProperties properties = new RagProperties(
+                true,
+                "docs",
+                220,
+                30,
+                3,
+                "vector",
+                "ollama",
+                "nomic-embed-text",
+                List.of("rag-evaluation-guide.md", "rag-retrieval-evaluation-template.md")
+        );
+        InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RagCorpusService corpusService = new RagCorpusService(
+                properties,
+                new StubLoader(List.of(
+                        document(
+                                "rag-evaluation-guide.md",
+                                "RAG Evaluation Guide",
+                                "Run this prompt in the RAG workspace: Where does conversation history live?"
+                        ),
+                        document(
+                                "adr/0006-persist-sessions-as-local-json-files.md",
+                                "ADR 0006",
+                                "Conversation history lives in local JSON session files managed by the backend."
+                        )
+                )),
+                new RagChunkingService(),
+                lexicalStore,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        RagRetrievalService retrievalService = new RagRetrievalService(
+                properties,
+                corpusService,
+                lexicalStore,
+                new RagVectorRetrievalService(embeddingService, vectorStore)
+        );
+
+        var matches = retrievalService.retrieve("Where does conversation history live?");
+
+        assertEquals(1, matches.size());
+        assertEquals("adr/0006-persist-sessions-as-local-json-files.md", matches.getFirst().chunk().sourcePath());
+    }
+
+    @Test
     void invalidRetrievalModeFailsClearly() {
         RagProperties properties = new RagProperties(true, "docs", 220, 30, 2, "semantic", "ollama", "nomic-embed-text");
         InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
@@ -184,7 +232,10 @@ class RagRetrievalServiceTest {
             if (normalized.contains("provider") || normalized.contains("ollama") || normalized.contains("bedrock")) {
                 return new EmbeddingVector("nomic-embed-text", List.of(1.0, 0.0));
             }
-            if (normalized.contains("session") || normalized.contains("json")) {
+            if (normalized.contains("session")
+                    || normalized.contains("json")
+                    || normalized.contains("conversation")
+                    || normalized.contains("history")) {
                 return new EmbeddingVector("nomic-embed-text", List.of(0.0, 1.0));
             }
             return new EmbeddingVector("nomic-embed-text", List.of(0.0, 0.0));

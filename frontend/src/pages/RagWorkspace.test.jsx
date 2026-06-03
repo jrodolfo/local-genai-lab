@@ -304,4 +304,86 @@ describe('RagWorkspace', () => {
         expect(screen.getAllByText('Sessions are stored as local JSON files.').length).toBeGreaterThan(0);
         expect(screen.getByText('sessions.md')).toBeInTheDocument();
     });
+
+    it('renders rag conversation turns newest first without separating questions from answers', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'vector',
+                retrievalStore: 'in-memory-vector'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([
+                {
+                    sessionId: 'rag-session-3',
+                    title: 'RAG comparison',
+                    summary: 'Three RAG turns.',
+                    mode: 'rag',
+                    model: 'llama3:8b',
+                    createdAt: '2026-06-03T10:00:00Z',
+                    updatedAt: '2026-06-03T10:03:00Z',
+                    messageCount: 6
+                }
+            ])),
+            http.get('/api/sessions/rag-session-3', () => HttpResponse.json({
+                sessionId: 'rag-session-3',
+                title: 'RAG comparison',
+                summary: 'Three RAG turns.',
+                mode: 'rag',
+                model: 'llama3:8b',
+                createdAt: '2026-06-03T10:00:00Z',
+                updatedAt: '2026-06-03T10:03:00Z',
+                messages: [
+                    ragMessage('user', 'How are sessions persisted?', '2026-06-03T10:00:00Z'),
+                    ragMessage('assistant', 'Sessions are persisted as local JSON files.', '2026-06-03T10:00:10Z'),
+                    ragMessage('user', 'Where does conversation history live?', '2026-06-03T10:01:00Z'),
+                    ragMessage('assistant', 'Conversation history lives in the local JSON session files.', '2026-06-03T10:01:10Z'),
+                    ragMessage('user', 'What should I check when vector RAG is not working?', '2026-06-03T10:02:00Z'),
+                    ragMessage('assistant', 'Check Ollama, the embedding model, and the rebuilt vector index.', '2026-06-03T10:02:10Z')
+                ],
+                pendingTool: null
+            }))
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        const sessionTitle = await screen.findByText('RAG comparison');
+        await user.click(sessionTitle.closest('button'));
+
+        const question3 = await screen.findByText('What should I check when vector RAG is not working?');
+        const answer3 = screen.getByText('Check Ollama, the embedding model, and the rebuilt vector index.');
+        const question2 = screen.getByText('Where does conversation history live?');
+        const answer2 = screen.getByText('Conversation history lives in the local JSON session files.');
+        const question1 = screen.getByText('How are sessions persisted?');
+        const answer1 = screen.getByText('Sessions are persisted as local JSON files.');
+
+        expect(question3.compareDocumentPosition(answer3) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(answer3.compareDocumentPosition(question2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(question2.compareDocumentPosition(answer2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(answer2.compareDocumentPosition(question1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(question1.compareDocumentPosition(answer1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
 });
+
+function ragMessage(role, content, timestamp) {
+    return {
+        role,
+        content,
+        tool: null,
+        toolResult: null,
+        metadata: role === 'assistant' ? {provider: 'ollama', modelId: 'llama3:8b'} : null,
+        ragSources: role === 'assistant' ? [] : null,
+        timestamp
+    };
+}

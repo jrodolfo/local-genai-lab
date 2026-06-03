@@ -12,6 +12,10 @@ Current scope:
 This is intentionally a small, isolated RAG slice. It does not yet include
 uploads, vector-backed retrieval, or routing through the main chat/tool flow.
 
+Evaluation-only files such as this guide and the retrieval evaluation template
+are excluded from the indexed corpus by default. This keeps manual test prompts
+from becoming misleading source chunks.
+
 Related references:
 
 - [architecture.md](./architecture.md)
@@ -41,6 +45,9 @@ If the workspace is disabled or vector mode does not index, run `./status.sh`
 and follow [rag-troubleshooting.md](./rag-troubleshooting.md).
 
 If needed, use `Rebuild index` before testing.
+
+If you change `RAG_EXCLUDED_SOURCE_PATHS`, rebuild the index before comparing
+retrieval results.
 
 ## Recommended Prompt Set
 

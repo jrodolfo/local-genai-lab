@@ -1,8 +1,10 @@
 package net.jrodolfo.llm.rag.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Configuration properties for the RAG (Retrieval-Augmented Generation) system.
@@ -15,6 +17,7 @@ import java.nio.file.Path;
  * @param retrievalMode     The mode of retrieval to use.
  * @param embeddingProvider The embedding runtime to use for future vector retrieval.
  * @param embeddingModel    The embedding model to use for future vector retrieval.
+ * @param excludedSourcePaths Relative corpus paths that should not be indexed.
  */
 @ConfigurationProperties(prefix = "rag")
 public record RagProperties(
@@ -25,8 +28,26 @@ public record RagProperties(
         int topK,
         String retrievalMode,
         String embeddingProvider,
-        String embeddingModel
+        String embeddingModel,
+        List<String> excludedSourcePaths
 ) {
+    @ConstructorBinding
+    public RagProperties {
+        excludedSourcePaths = excludedSourcePaths == null ? List.of() : List.copyOf(excludedSourcePaths);
+    }
+
+    public RagProperties(
+            boolean enabled,
+            String corpusRoot,
+            int maxChunkSize,
+            int chunkOverlap,
+            int topK,
+            String retrievalMode,
+            String embeddingProvider,
+            String embeddingModel
+    ) {
+        this(enabled, corpusRoot, maxChunkSize, chunkOverlap, topK, retrievalMode, embeddingProvider, embeddingModel, List.of());
+    }
 
     /**
      * Resolves the corpus root path. If the configured path is relative, it is resolved

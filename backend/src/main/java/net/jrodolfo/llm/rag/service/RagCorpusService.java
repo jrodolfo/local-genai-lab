@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * Orchestrator service for the RAG corpus.
@@ -75,7 +77,7 @@ public class RagCorpusService {
      */
     public synchronized CorpusSnapshot rebuildIndex() {
         Path corpusRoot = ragProperties.resolvedCorpusRoot();
-        List<RagDocument> documents = documentLoader.loadMarkdownDocuments(corpusRoot);
+        List<RagDocument> documents = filterExcludedDocuments(documentLoader.loadMarkdownDocuments(corpusRoot));
         List<RagChunk> chunks = chunkingService.chunkDocuments(
                 documents,
                 ragProperties.maxChunkSize(),
@@ -91,6 +93,23 @@ public class RagCorpusService {
         CorpusSnapshot snapshot = new CorpusSnapshot(corpusRoot, documents, chunks);
         snapshotRef.set(snapshot);
         return snapshot;
+    }
+
+    private List<RagDocument> filterExcludedDocuments(List<RagDocument> documents) {
+        Set<String> excludedPaths = ragProperties.excludedSourcePaths().stream()
+                .map(RagCorpusService::normalizeSourcePath)
+                .filter(path -> !path.isBlank())
+                .collect(Collectors.toUnmodifiableSet());
+        if (excludedPaths.isEmpty()) {
+            return documents;
+        }
+        return documents.stream()
+                .filter(document -> !excludedPaths.contains(normalizeSourcePath(document.path().toString())))
+                .toList();
+    }
+
+    private static String normalizeSourcePath(String sourcePath) {
+        return sourcePath == null ? "" : sourcePath.replace('\\', '/').trim();
     }
 
     /**

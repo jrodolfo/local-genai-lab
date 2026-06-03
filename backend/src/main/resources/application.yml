@@ -65,3 +65,4 @@ rag:
   retrieval-mode: ${RAG_RETRIEVAL_MODE:lexical}
   embedding-provider: ${RAG_EMBEDDING_PROVIDER:ollama}
   embedding-model: ${RAG_EMBEDDING_MODEL:nomic-embed-text}
+  excluded-source-paths: ${RAG_EXCLUDED_SOURCE_PATHS:rag-evaluation-guide.md,rag-retrieval-evaluation-template.md}
