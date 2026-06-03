@@ -57,6 +57,41 @@ the repository docs and ADRs, not from general model knowledge alone.
 Use [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
 when you want to record a repeatable lexical vs vector comparison.
 
+## Manual Lexical Vs Vector Comparison
+
+Use this short pass when you want to compare the dependency-free lexical
+baseline against local vector retrieval with the same corpus and prompts.
+
+Start with lexical retrieval:
+
+```bash
+RAG_RETRIEVAL_MODE=lexical ./restart.sh
+```
+
+Run these prompts in the `RAG` workspace:
+
+1. `How are sessions persisted?`
+2. `Where does conversation history live?`
+3. `What should I check when vector RAG is not working?`
+
+Then switch to vector retrieval:
+
+```bash
+RAG_RETRIEVAL_MODE=vector ./restart.sh
+```
+
+Run the same prompts again and compare:
+
+- whether the answer is more directly useful
+- whether the cited chunks are closer to the question
+- whether vector mode finds relevant chunks when the wording differs from the docs
+- whether lexical mode remains good enough for exact terminology questions
+
+Record the results in a local copy of
+[rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
+Those observations should drive the next engineering task, such as chunking,
+scoring, answer grounding, or UI comparison support.
+
 ## What To Evaluate
 
 ### Answer quality

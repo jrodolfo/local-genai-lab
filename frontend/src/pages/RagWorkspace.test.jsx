@@ -2,7 +2,7 @@
  * @fileoverview Integration tests for the RagWorkspace page.
  * Uses MSW to mock backend API responses for RAG status, model listing, and RAG queries.
  */
-import {render, screen, waitFor} from '@testing-library/react';
+import {render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {http, HttpResponse, server} from '../test/mswServer';
 import RagWorkspace from './RagWorkspace';
@@ -111,8 +111,15 @@ describe('RagWorkspace', () => {
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
-        expect(await screen.findByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
-        expect(screen.getByText('Sources')).toBeInTheDocument();
+        const latestAnswer = await screen.findByRole('region', {name: /latest rag answer/i});
+        const queryForm = screen.getByRole('button', {name: /Ask docs corpus/i}).closest('form');
+        const conversationHistory = screen.getByRole('region', {name: /rag conversation history/i});
+
+        expect(queryForm.compareDocumentPosition(latestAnswer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(latestAnswer.compareDocumentPosition(conversationHistory) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(latestAnswer).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
+        expect(within(latestAnswer).getByText('Sources')).toBeInTheDocument();
+        expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
         expect(screen.getByText('How does provider selection work?')).toBeInTheDocument();
     });

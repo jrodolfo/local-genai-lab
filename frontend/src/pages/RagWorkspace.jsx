@@ -101,20 +101,26 @@ function RagWorkspace() {
 
     async function handleSubmit(event) {
         event.preventDefault();
-        if (!question.trim() || !ragStatus?.enabled) {
+        const submittedQuestion = question.trim();
+        if (!submittedQuestion || !ragStatus?.enabled) {
             return;
         }
         try {
             setQuerying(true);
             setError('');
             const payload = await queryRag({
-                question: question.trim(),
+                question: submittedQuestion,
                 provider: selectedProvider,
                 model: selectedModel,
                 sessionId
             });
             setSessionId(payload.sessionId);
             setQuestion('');
+            setMessages((currentMessages) => [
+                ...currentMessages,
+                createRagQuestionMessage(submittedQuestion),
+                createRagAnswerMessage(payload, selectedProvider, selectedModel)
+            ]);
             await Promise.all([
                 openSession(payload.sessionId),
                 loadRagSessions()
@@ -222,6 +228,12 @@ function RagWorkspace() {
             event.target.value = '';
         }
     }
+
+    const latestAnswerIndex = findLatestAnswerIndex(messages);
+    const latestAnswerMessage = latestAnswerIndex >= 0 ? messages[latestAnswerIndex] : null;
+    const conversationMessages = latestAnswerIndex >= 0
+        ? messages.filter((message, index) => index !== latestAnswerIndex)
+        : messages;
 
     return (
         <main className="rag-page">
@@ -404,9 +416,22 @@ function RagWorkspace() {
                             </div>
                         </form>
 
-                        {messages.length > 0 ? (
+                        {latestAnswerMessage ? (
+                            <section className="rag-latest-answer" aria-label="Latest RAG answer">
+                                <RagAnswerWithSources
+                                    result={{
+                                        answer: latestAnswerMessage.content,
+                                        provider: latestAnswerMessage.metadata?.provider,
+                                        model: latestAnswerMessage.metadata?.modelId || selectedModel,
+                                        sources: latestAnswerMessage.ragSources || []
+                                    }}
+                                />
+                            </section>
+                        ) : null}
+
+                        {conversationMessages.length > 0 ? (
                             <section className="rag-conversation" aria-label="RAG conversation history">
-                                {messages.map((message, index) => (
+                                {conversationMessages.map((message, index) => (
                                     message.role === 'assistant' ? (
                                         <RagAnswerWithSources
                                             key={`${message.timestamp || index}-${index}`}
@@ -426,13 +451,15 @@ function RagWorkspace() {
                                     )
                                 ))}
                             </section>
-                        ) : (
+                        ) : null}
+
+                        {messages.length === 0 ? (
                             <section className="rag-empty-state">
                                 <h2>No answer yet</h2>
                                 <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
                                     answer.</p>
                             </section>
-                        )}
+                        ) : null}
                     </section>
                 </section>
             ) : null}
@@ -463,6 +490,38 @@ function retrievalModeHint(status) {
         return 'Experimental local vector retrieval. Change RAG_RETRIEVAL_MODE and restart to switch modes.';
     }
     return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
+}
+
+function findLatestAnswerIndex(messages) {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+        if (messages[index]?.role === 'assistant') {
+            return index;
+        }
+    }
+    return -1;
+}
+
+function createRagQuestionMessage(content) {
+    return {
+        role: 'user',
+        content,
+        metadata: null,
+        ragSources: null,
+        timestamp: new Date().toISOString()
+    };
+}
+
+function createRagAnswerMessage(payload, selectedProvider, selectedModel) {
+    return {
+        role: 'assistant',
+        content: payload.answer,
+        metadata: {
+            provider: payload.metadata?.provider || payload.provider || selectedProvider,
+            modelId: payload.metadata?.modelId || payload.model || selectedModel
+        },
+        ragSources: payload.sources || [],
+        timestamp: new Date().toISOString()
+    };
 }
 
 export default RagWorkspace;
