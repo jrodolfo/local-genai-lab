@@ -111,6 +111,9 @@ public class RagAnswerService {
                 You are answering questions about this project using only the provided documentation excerpts.
                 If the excerpts do not contain enough information, say so plainly.
                 Cite the provided source paths naturally in the answer when relevant.
+                Do not add generic caveats that contradict the excerpts.
+                Do not say there is no specific mention of something if the excerpts contain concrete commands, checks, or configuration values for it.
+                For troubleshooting questions, answer as a concise checklist using only the checks present in the excerpts.
                 
                 Question:
                 """);

@@ -40,6 +40,15 @@ ollama list
 ollama pull nomic-embed-text
 ```
 
+When vector RAG is not working, check these items first:
+
+- run `./status.sh`
+- confirm `rag retrieval mode: vector`
+- confirm `ollama service: ok`
+- confirm `ollama embedding model: present (nomic-embed-text)`
+- run `ollama pull nomic-embed-text` if the embedding model is missing
+- click `Rebuild Index` after changing retrieval mode, embedding model, or corpus files
+
 ## RAG Button Is Missing Or Disabled
 
 Check whether the backend is running with RAG enabled:
