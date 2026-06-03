@@ -88,6 +88,7 @@ run_stop() {
   env \
     PATH="${tmp_dir}/bin:${PATH}" \
     ENV_FILE="${env_file}" \
+    RUN_DIR="${tmp_dir}/run" \
     bash "${SCRIPT_PATH}" "$@"
 }
 

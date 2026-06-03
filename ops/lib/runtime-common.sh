@@ -25,7 +25,7 @@ set -u
 # --- Path and File Definitions ---
 RUNTIME_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${RUNTIME_SCRIPT_DIR}/../.." && pwd)"
-RUN_DIR="${REPO_ROOT}/.run"
+RUN_DIR="${RUN_DIR:-${REPO_ROOT}/.run}"
 ENV_FILE="${ENV_FILE:-${REPO_ROOT}/.env}"
 
 BACKEND_PID_FILE="${RUN_DIR}/backend.pid"

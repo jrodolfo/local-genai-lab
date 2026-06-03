@@ -97,21 +97,28 @@ fi
 : > "${FRONTEND_LOG_FILE}"
 
 # Start Backend
-(
-  cd "${REPO_ROOT}"
-  export SERVER_PORT
-  exec bash "${REPO_ROOT}/ops/start-backend-helper.sh"
-) >> "${BACKEND_LOG_FILE}" 2>&1 &
+nohup bash -c '
+  set -euo pipefail
+  repo_root="$1"
+  server_port="$2"
+  cd "${repo_root}"
+  export SERVER_PORT="${server_port}"
+  exec bash "${repo_root}/ops/start-backend-helper.sh"
+' _ "${REPO_ROOT}" "${SERVER_PORT}" >> "${BACKEND_LOG_FILE}" 2>&1 &
 backend_pid=$!
 printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"
 
 # Start Frontend
-(
-  cd "${REPO_ROOT}/frontend"
-  export BACKEND_URL
-  export FRONTEND_PORT
+nohup bash -c '
+  set -euo pipefail
+  repo_root="$1"
+  backend_url="$2"
+  frontend_port="$3"
+  cd "${repo_root}/frontend"
+  export BACKEND_URL="${backend_url}"
+  export FRONTEND_PORT="${frontend_port}"
   exec npm run dev -- --host 0.0.0.0 --port "${FRONTEND_PORT}"
-) >> "${FRONTEND_LOG_FILE}" 2>&1 &
+' _ "${REPO_ROOT}" "${BACKEND_URL}" "${FRONTEND_PORT}" >> "${FRONTEND_LOG_FILE}" 2>&1 &
 frontend_pid=$!
 printf '%s' "${frontend_pid}" > "${FRONTEND_PID_FILE}"
 
