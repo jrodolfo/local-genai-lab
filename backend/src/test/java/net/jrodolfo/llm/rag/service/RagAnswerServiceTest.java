@@ -42,7 +42,7 @@ class RagAnswerServiceTest {
                                 "rag-troubleshooting.md#0",
                                 "rag-troubleshooting.md",
                                 "RAG Troubleshooting",
-                                "When vector RAG is not working, run ./status.sh, confirm rag retrieval mode: vector, confirm ollama service: ok, confirm ollama embedding model: present (nomic-embed-text), and click Rebuild Index after changing retrieval mode."
+                                "When vector RAG is not working, run ./status.sh, confirm rag enabled: true, confirm rag retrieval mode: vector, confirm ollama service: ok, confirm ollama embedding model: present (nomic-embed-text), and click Rebuild Index after changing retrieval mode."
                         ),
                         0.95
                 ))),
@@ -62,6 +62,7 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("Do not add generic caveats that contradict the excerpts."));
         assertTrue(provider.prompt.prompt().contains("Do not say there is no specific mention of something"));
         assertTrue(provider.prompt.prompt().contains("For troubleshooting questions, answer as a concise checklist"));
+        assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));
         assertTrue(provider.prompt.prompt().contains("confirm ollama embedding model: present"));
     }
 
