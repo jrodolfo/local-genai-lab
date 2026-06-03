@@ -59,6 +59,9 @@ For operational checks and common local fixes, see
 For repeatable lexical vs vector observations, use
 [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
 
+For the concrete Qdrant execution checklist, see
+[rag-phase-2-qdrant-implementation-checklist.md](./rag-phase-2-qdrant-implementation-checklist.md).
+
 ## Recommended Embedding Runtime
 
 First candidate:

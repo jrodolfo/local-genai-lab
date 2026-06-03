@@ -382,6 +382,7 @@ make s3-cloudwatch BUCKET=example.com
 - [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md): template for recording lexical vs vector retrieval comparisons
 - [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md): RAG operational checks, Ollama readiness, vector-mode fixes, and lexical fallback guidance
 - [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md): design note for moving from in-memory vector retrieval to a Qdrant-backed vector database while keeping lexical retrieval available
+- [docs/rag-phase-2-qdrant-implementation-checklist.md](./docs/rag-phase-2-qdrant-implementation-checklist.md): implementation checklist for the smallest opt-in Qdrant RAG slice
 - [docs/architecture-walkthrough.md](./docs/architecture-walkthrough.md): concise walkthrough of the system design, tradeoffs, and common design questions
 - [docs/adr/](./docs/adr/): accepted architecture decision records, including the phase-2 RAG vector retrieval direction
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas
