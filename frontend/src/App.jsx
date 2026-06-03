@@ -19,6 +19,7 @@ function App() {
     const [mode, setMode] = useState('chat');
     const [ragEnabled, setRagEnabled] = useState(false);
     const [ragStatusLoaded, setRagStatusLoaded] = useState(false);
+    const [ragStatusError, setRagStatusError] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -26,12 +27,14 @@ function App() {
             .then((payload) => {
                 if (active) {
                     setRagEnabled(Boolean(payload.enabled));
+                    setRagStatusError(false);
                     setRagStatusLoaded(true);
                 }
             })
             .catch(() => {
                 if (active) {
                     setRagEnabled(false);
+                    setRagStatusError(true);
                     setRagStatusLoaded(true);
                 }
             });
@@ -75,7 +78,10 @@ function App() {
                     </button>
                 </div>
             </header>
-            {ragStatusLoaded && !ragEnabled ? (
+            {ragStatusLoaded && !ragEnabled && ragStatusError ? (
+                <p className="app-nav__hint">RAG status is temporarily unavailable. Refresh after the backend is ready.</p>
+            ) : null}
+            {ragStatusLoaded && !ragEnabled && !ragStatusError ? (
                 <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use RAG mode.</p>
             ) : null}
             {mode === 'rag' && ragEnabled ? <RagWorkspace/> : <Home/>}

@@ -23,6 +23,9 @@ function shouldRetry(error) {
     if (!error) {
         return false;
     }
+    if ([500, 502, 503, 504].includes(error.status)) {
+        return true;
+    }
     if (error instanceof TypeError) {
         return true;
     }

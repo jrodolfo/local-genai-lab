@@ -26,7 +26,9 @@ export async function getRagStatus() {
     const response = await fetch('/api/rag/status');
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to load RAG status.');
+        const error = new Error(payload.error || `Failed to load RAG status. HTTP ${response.status}.`);
+        error.status = response.status;
+        throw error;
     }
     return response.json();
 }
