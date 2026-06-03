@@ -229,10 +229,9 @@ function RagWorkspace() {
         }
     }
 
-    const latestAnswerIndex = findLatestAnswerIndex(messages);
-    const latestAnswerMessage = latestAnswerIndex >= 0 ? messages[latestAnswerIndex] : null;
-    const conversationMessages = latestAnswerIndex >= 0
-        ? messages.filter((message, index) => index !== latestAnswerIndex)
+    const latestTurn = findLatestTurn(messages);
+    const conversationMessages = latestTurn.answerIndex >= 0
+        ? messages.filter((message, index) => !latestTurn.indexes.includes(index))
         : messages;
 
     return (
@@ -416,14 +415,20 @@ function RagWorkspace() {
                             </div>
                         </form>
 
-                        {latestAnswerMessage ? (
-                            <section className="rag-latest-answer" aria-label="Latest RAG answer">
+                        {latestTurn.answer ? (
+                            <section className="rag-latest-turn" aria-label="Latest RAG turn">
+                                {latestTurn.question ? (
+                                    <section className="rag-question-card">
+                                        <h2>Question</h2>
+                                        <p>{latestTurn.question.content}</p>
+                                    </section>
+                                ) : null}
                                 <RagAnswerWithSources
                                     result={{
-                                        answer: latestAnswerMessage.content,
-                                        provider: latestAnswerMessage.metadata?.provider,
-                                        model: latestAnswerMessage.metadata?.modelId || selectedModel,
-                                        sources: latestAnswerMessage.ragSources || []
+                                        answer: latestTurn.answer.content,
+                                        provider: latestTurn.answer.metadata?.provider,
+                                        model: latestTurn.answer.metadata?.modelId || selectedModel,
+                                        sources: latestTurn.answer.ragSources || []
                                     }}
                                 />
                             </section>
@@ -492,10 +497,44 @@ function retrievalModeHint(status) {
     return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
 }
 
+function findLatestTurn(messages) {
+    const answerIndex = findLatestAnswerIndex(messages);
+    if (answerIndex < 0) {
+        return {
+            answerIndex: -1,
+            questionIndex: -1,
+            answer: null,
+            question: null,
+            indexes: []
+        };
+    }
+
+    const questionIndex = findPreviousQuestionIndex(messages, answerIndex);
+    return {
+        answerIndex,
+        questionIndex,
+        answer: messages[answerIndex],
+        question: questionIndex >= 0 ? messages[questionIndex] : null,
+        indexes: questionIndex >= 0 ? [questionIndex, answerIndex] : [answerIndex]
+    };
+}
+
 function findLatestAnswerIndex(messages) {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
         if (messages[index]?.role === 'assistant') {
             return index;
+        }
+    }
+    return -1;
+}
+
+function findPreviousQuestionIndex(messages, answerIndex) {
+    for (let index = answerIndex - 1; index >= 0; index -= 1) {
+        if (messages[index]?.role === 'user') {
+            return index;
+        }
+        if (messages[index]?.role === 'assistant') {
+            return -1;
         }
     }
     return -1;

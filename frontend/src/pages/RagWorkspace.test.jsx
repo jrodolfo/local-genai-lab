@@ -111,17 +111,19 @@ describe('RagWorkspace', () => {
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
-        const latestAnswer = await screen.findByRole('region', {name: /latest rag answer/i});
+        const latestTurn = await screen.findByRole('region', {name: /latest rag turn/i});
         const queryForm = screen.getByRole('button', {name: /Ask docs corpus/i}).closest('form');
-        const conversationHistory = screen.getByRole('region', {name: /rag conversation history/i});
+        const latestQuestionHeading = within(latestTurn).getByRole('heading', {name: 'Question'});
+        const latestAnswerHeading = within(latestTurn).getByRole('heading', {name: 'Answer'});
 
-        expect(queryForm.compareDocumentPosition(latestAnswer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(latestAnswer.compareDocumentPosition(conversationHistory) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(within(latestAnswer).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
-        expect(within(latestAnswer).getByText('Sources')).toBeInTheDocument();
+        expect(queryForm.compareDocumentPosition(latestTurn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(latestQuestionHeading.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
-        expect(screen.getByText('How does provider selection work?')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
+        expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
     });
 
     it('shows a disabled state when the backend reports RAG is off', async () => {
