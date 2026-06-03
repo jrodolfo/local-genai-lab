@@ -3,8 +3,8 @@
 # restart.sh
 #
 # Purpose:
-#   Restarts the local-genai-lab application by stopping any running instances
-#   and then starting it again.
+#   Restarts the local-genai-lab application by stopping managed processes and
+#   configured port owners, then starting it again.
 #
 # Usage:
 #   ./restart.sh
@@ -24,5 +24,5 @@ set -euo pipefail
 # --- Execution ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-bash "${SCRIPT_DIR}/stop.sh"
+bash "${SCRIPT_DIR}/stop.sh" --all
 bash "${SCRIPT_DIR}/start.sh"

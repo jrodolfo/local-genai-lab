@@ -206,6 +206,10 @@ Backend URLs:
 ./status.sh
 ```
 
+`./stop.sh` stops processes managed by this repo's PID files. `./restart.sh`
+uses `./stop.sh --all`, so it also clears processes occupying the configured
+backend and frontend ports before starting the app again.
+
 ## Verification Commands
 
 Use these commands depending on what you need to verify:

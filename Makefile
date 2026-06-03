@@ -42,6 +42,7 @@ verify: test build-frontend test-mcp build-mcp test-scripts
 test-ops:
 	@bash ./ops/tests/test-start-backend-helper.sh
 	@bash ./ops/tests/test-status.sh
+	@bash ./ops/tests/test-stop.sh
 
 test-backend:
 	@cd backend && mvn test
