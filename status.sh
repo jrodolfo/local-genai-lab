@@ -70,6 +70,17 @@ ollama_model_installed() {
   ollama list 2>/dev/null | awk 'NR > 1 {print $1}' | grep -Fxq "${model_name}"
 }
 
+qdrant_collection_points() {
+  local collection_url="$1"
+  local body
+
+  if ! body="$(curl -fsS "${collection_url}" 2>/dev/null)"; then
+    return 1
+  fi
+
+  printf '%s' "${body}" | sed -n 's/.*"points_count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n 1
+}
+
 # --- Process Status ---
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
 frontend_pid="$(read_pid_file "${FRONTEND_PID_FILE}")"
@@ -147,8 +158,19 @@ if [ "${rag_enabled_normalized}" = 'true' ] \
     "rag qdrant collection: ${RAG_QDRANT_COLLECTION}"
   if curl -fsS "${RAG_QDRANT_URL}" >/dev/null 2>&1; then
     printf '%s\n' 'qdrant service: ok'
+    qdrant_collection_url="${RAG_QDRANT_URL%/}/collections/${RAG_QDRANT_COLLECTION}"
+    if qdrant_point_count="$(qdrant_collection_points "${qdrant_collection_url}")"; then
+      if [ -n "${qdrant_point_count}" ]; then
+        printf '%s\n' "qdrant collection: present (points=${qdrant_point_count})"
+      else
+        printf '%s\n' "qdrant collection: present (points=unknown)"
+      fi
+    else
+      printf '%s\n' "qdrant collection: missing (${RAG_QDRANT_COLLECTION})"
+    fi
   else
     printf '%s\n' "qdrant service: unavailable (${RAG_QDRANT_URL})"
+    printf '%s\n' 'qdrant collection: not checked'
   fi
 fi
 

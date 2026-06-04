@@ -305,13 +305,19 @@ function RagWorkspace() {
                                     <dd>{ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</dd>
                                 </div>
                             ) : null}
+                            {isQdrantRequired(ragStatus) ? (
+                                <div>
+                                    <dt>Collection</dt>
+                                    <dd>{qdrantCollectionSummary(ragStatus)}</dd>
+                                </div>
+                            ) : null}
                         </dl>
                     ) : null}
                     {!loading && ragStatus?.enabled ? (
                         <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
                     ) : null}
                     {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
-                        <p className={`rag-status-note ${ragStatus.qdrantReachable ? 'rag-status-note-ok' : 'rag-status-note-warning'}`}>
+                        <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
                             {qdrantStatusMessage(ragStatus)}
                         </p>
                     ) : null}
@@ -512,12 +518,36 @@ function retrievalModeHint(status) {
 }
 
 function qdrantStatusMessage(status) {
+    if (status?.qdrantReachable && status.qdrantCollectionExists === false) {
+        return status.qdrantStatusMessage || `Qdrant collection ${status.qdrantCollection || 'the configured collection'} is missing. Rebuild the index.`;
+    }
     if (status?.qdrantReachable) {
-        return status.qdrantStatusMessage || 'Qdrant is reachable.';
+        return status.qdrantStatusMessage || qdrantCollectionSummary(status);
     }
     return status?.qdrantStatusMessage
         ? `${status.qdrantStatusMessage} Start it and rebuild the index.`
         : `Qdrant is not reachable at ${status?.qdrantUrl || 'the configured URL'}. Start it and rebuild the index.`;
+}
+
+function qdrantStatusTone(status) {
+    return status?.qdrantReachable && status?.qdrantCollectionExists !== false
+        ? 'rag-status-note-ok'
+        : 'rag-status-note-warning';
+}
+
+function qdrantCollectionSummary(status) {
+    if (!status?.qdrantReachable) {
+        return 'Not checked';
+    }
+    if (status.qdrantCollectionExists === false) {
+        return 'Missing';
+    }
+    if (status.qdrantCollectionExists) {
+        return typeof status.qdrantPointCount === 'number'
+            ? `Present, ${status.qdrantPointCount} points`
+            : 'Present, points unknown';
+    }
+    return 'Unknown';
 }
 
 function buildRagTurns(messages) {

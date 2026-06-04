@@ -60,6 +60,13 @@ fi
 if [[ "${url}" == "http://localhost:6333" && "${MOCK_QDRANT_SERVICE:-down}" == "up" ]]; then
   exit 0
 fi
+if [[ "${url}" == "http://localhost:6333/collections/local_genai_lab_docs" && "${MOCK_QDRANT_COLLECTION:-missing}" == "present" ]]; then
+  printf '%s\n' '{"result":{"points_count":123}}'
+  exit 0
+fi
+if [[ "${url}" == "http://localhost:6333/collections/local_genai_lab_docs" ]]; then
+  exit 1
+fi
 exit 1
 EOF
 
@@ -169,14 +176,30 @@ test_qdrant_vector_mode_reports_reachable_service() {
   mkdir -p "${tmp_dir}/bin"
   write_mock_commands "${tmp_dir}/bin"
 
-  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=up MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=up MOCK_QDRANT_COLLECTION=present MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
   assert_contains "${output}" 'rag retrieval mode: vector'
   assert_contains "${output}" 'rag vector store: qdrant'
   assert_contains "${output}" 'rag qdrant url: http://localhost:6333'
   assert_contains "${output}" 'rag qdrant collection: local_genai_lab_docs'
   assert_contains "${output}" 'qdrant service: ok'
+  assert_contains "${output}" 'qdrant collection: present (points=123)'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
+  rm -rf "${tmp_dir}"
+}
+
+# test_qdrant_vector_mode_reports_missing_collection
+# Purpose: Verifies Qdrant mode reports a missing collection when Qdrant is reachable.
+test_qdrant_vector_mode_reports_missing_collection() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=up MOCK_QDRANT_COLLECTION=missing MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+
+  assert_contains "${output}" 'qdrant service: ok'
+  assert_contains "${output}" 'qdrant collection: missing (local_genai_lab_docs)'
   rm -rf "${tmp_dir}"
 }
 
@@ -193,6 +216,7 @@ test_qdrant_vector_mode_reports_unavailable_service() {
   assert_contains "${output}" 'rag retrieval mode: vector'
   assert_contains "${output}" 'rag vector store: qdrant'
   assert_contains "${output}" 'qdrant service: unavailable (http://localhost:6333)'
+  assert_contains "${output}" 'qdrant collection: not checked'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
 }
@@ -221,6 +245,7 @@ main() {
   test_vector_mode_reports_present_embedding_model
   test_vector_mode_reports_missing_embedding_model
   test_qdrant_vector_mode_reports_reachable_service
+  test_qdrant_vector_mode_reports_missing_collection
   test_qdrant_vector_mode_reports_unavailable_service
   test_non_ollama_non_vector_config_skips_ollama_readiness
   printf 'status tests passed\n'

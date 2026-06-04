@@ -201,7 +201,9 @@ describe('RagWorkspace', () => {
                 qdrantCollection: 'local_genai_lab_docs',
                 qdrantRequired: true,
                 qdrantReachable: true,
-                qdrantStatusMessage: 'Qdrant is reachable.',
+                qdrantCollectionExists: true,
+                qdrantPointCount: 123,
+                qdrantStatusMessage: 'Qdrant collection local_genai_lab_docs is present with 123 points.',
                 embeddingProvider: 'ollama',
                 embeddingModel: 'nomic-embed-text'
             })),
@@ -219,7 +221,46 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByText('Qdrant')).toBeInTheDocument();
         expect(screen.getByText('Reachable')).toBeInTheDocument();
-        expect(screen.getByText('Qdrant is reachable.')).toBeInTheDocument();
+        expect(screen.getByText('Collection')).toBeInTheDocument();
+        expect(screen.getByText('Present, 123 points')).toBeInTheDocument();
+        expect(screen.getByText('Qdrant collection local_genai_lab_docs is present with 123 points.')).toBeInTheDocument();
+    });
+
+    it('shows qdrant missing collection guidance when rebuild is needed', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'vector',
+                retrievalStore: 'in-memory-vector',
+                vectorStore: 'qdrant',
+                qdrantUrl: 'http://localhost:6333',
+                qdrantCollection: 'local_genai_lab_docs',
+                qdrantRequired: true,
+                qdrantReachable: true,
+                qdrantCollectionExists: false,
+                qdrantStatusMessage: 'Qdrant collection local_genai_lab_docs is missing. Rebuild the index.',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByText('Collection')).toBeInTheDocument();
+        expect(screen.getByText('Missing')).toBeInTheDocument();
+        expect(screen.getByText('Qdrant collection local_genai_lab_docs is missing. Rebuild the index.')).toBeInTheDocument();
     });
 
     it('shows qdrant unavailable guidance only when qdrant is required', async () => {
@@ -237,6 +278,7 @@ describe('RagWorkspace', () => {
                 qdrantCollection: 'local_genai_lab_docs',
                 qdrantRequired: true,
                 qdrantReachable: false,
+                qdrantCollectionExists: null,
                 qdrantStatusMessage: 'Qdrant is not reachable at http://localhost:6333.',
                 embeddingProvider: 'ollama',
                 embeddingModel: 'nomic-embed-text'
@@ -255,6 +297,7 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByText('Qdrant')).toBeInTheDocument();
         expect(screen.getByText('Unavailable')).toBeInTheDocument();
+        expect(screen.getByText('Not checked')).toBeInTheDocument();
         expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
     });
 

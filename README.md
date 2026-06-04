@@ -241,7 +241,7 @@ Lexical retrieval remains the default. For experimental local vector retrieval, 
 Evaluation-only RAG docs are excluded from the indexed corpus by default so
 manual test prompts do not become misleading retrieval sources.
 
-If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability when `RAG_VECTOR_STORE=qdrant`. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
+If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when `RAG_VECTOR_STORE=qdrant`. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
 
@@ -281,9 +281,9 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
-Qdrant readiness is visible in status output and the RAG UI. After startup,
-open the RAG workspace and click `Rebuild Index` to populate the configured
-Qdrant collection.
+Qdrant readiness and collection point count are visible in status output and
+the RAG UI. After startup, open the RAG workspace and click `Rebuild Index` to
+populate the configured Qdrant collection.
 
 ## Configuration Overview
 

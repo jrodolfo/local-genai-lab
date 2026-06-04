@@ -203,7 +203,7 @@ Script tasks:
 - Keep lexical status fast and independent from Qdrant.
 - Keep in-memory vector status focused on Ollama and the embedding model.
 
-Future `./status.sh` example:
+`./status.sh` example:
 
 ```text
 rag enabled: true
@@ -213,7 +213,7 @@ rag embedding provider: ollama
 rag embedding model: nomic-embed-text
 qdrant url: http://localhost:6333
 qdrant service: ok
-qdrant collection: present (local_genai_lab_docs)
+qdrant collection: present (points=123)
 ```
 
 Acceptance criteria:

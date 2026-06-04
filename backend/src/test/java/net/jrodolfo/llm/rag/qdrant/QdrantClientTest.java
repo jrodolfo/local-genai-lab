@@ -66,6 +66,36 @@ class QdrantClientTest {
     }
 
     @Test
+    void collectionInfoMapsPointCount() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("""
+                {
+                  "result": {
+                    "points_count": 123
+                  }
+                }
+                """, 200));
+        QdrantClient client = new QdrantClient(objectMapper, httpClient);
+
+        QdrantCollectionInfo info = client.collectionInfo("http://localhost:6333", "local_genai_lab_docs");
+
+        assertEquals("GET", httpClient.lastRequest.method());
+        assertEquals(URI.create("http://localhost:6333/collections/local_genai_lab_docs"), httpClient.lastRequest.uri());
+        assertTrue(info.exists());
+        assertEquals(123L, info.pointCount());
+    }
+
+    @Test
+    void collectionInfoReturnsMissingForNotFound() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("{}", 404));
+        QdrantClient client = new QdrantClient(objectMapper, httpClient);
+
+        QdrantCollectionInfo info = client.collectionInfo("http://localhost:6333", "missing");
+
+        assertFalse(info.exists());
+        assertEquals(null, info.pointCount());
+    }
+
+    @Test
     void recreateCollectionUsesCosineVectorConfig() {
         RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("{}", 200));
         QdrantClient client = new QdrantClient(objectMapper, httpClient);

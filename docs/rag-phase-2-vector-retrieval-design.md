@@ -269,7 +269,7 @@ rag retrieval mode: vector
 rag vector store: qdrant
 rag qdrant url: http://localhost:6333
 qdrant service: ok
-qdrant collection: present (local_genai_lab_docs)
+qdrant collection: present (points=123)
 ```
 
 If Qdrant is unavailable, the UI should show a clear operational message instead

@@ -104,6 +104,7 @@ rag vector store: qdrant
 rag qdrant url: http://localhost:6333
 rag qdrant collection: local_genai_lab_docs
 qdrant service: ok
+qdrant collection: present (points=123)
 ```
 
 If Qdrant is unavailable, restart in Qdrant mode. The startup script will start
@@ -117,6 +118,15 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 After Qdrant is reachable, open the RAG workspace and click `Rebuild Index`.
 In Qdrant mode, rebuild embeds the docs corpus, recreates the configured Qdrant
 collection, and upserts the chunk vectors with citation payloads.
+
+If status reports:
+
+```text
+qdrant collection: missing (local_genai_lab_docs)
+```
+
+then Qdrant is running but the collection has not been rebuilt yet. Click
+`Rebuild Index` in the RAG workspace.
 
 If the backend reports:
 

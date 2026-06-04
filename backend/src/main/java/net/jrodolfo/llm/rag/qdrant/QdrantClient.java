@@ -59,6 +59,29 @@ public class QdrantClient {
         }
     }
 
+    public QdrantCollectionInfo collectionInfo(String qdrantUrl, String collectionName) {
+        HttpRequest request = requestBuilder(qdrantUrl, "/collections/" + collectionName)
+                .GET()
+                .build();
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 404) {
+                return QdrantCollectionInfo.missing();
+            }
+            ensureSuccess(response, "check Qdrant collection");
+            JsonNode result = objectMapper.readTree(response.body()).path("result");
+            Long pointCount = result.path("points_count").canConvertToLong()
+                    ? result.path("points_count").longValue()
+                    : null;
+            return new QdrantCollectionInfo(true, pointCount);
+        } catch (IOException | InterruptedException ex) {
+            if (ex instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new QdrantClientException("Failed to check Qdrant collection " + collectionName + ".", ex);
+        }
+    }
+
     public void recreateCollection(String qdrantUrl, String collectionName, int vectorSize) {
         QdrantCollectionRequest requestBody = new QdrantCollectionRequest(
                 new QdrantVectorConfig(vectorSize, "Cosine")

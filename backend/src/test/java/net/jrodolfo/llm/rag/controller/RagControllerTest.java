@@ -61,10 +61,11 @@ class RagControllerTest {
     private MockMvc qdrantReachableMockMvc;
     private MockMvc qdrantUnavailableMockMvc;
     private MockMvc invalidModeMockMvc;
+    private Path docsRoot;
 
     @BeforeEach
     void setUp() throws Exception {
-        Path docsRoot = tempDir.resolve("docs");
+        docsRoot = tempDir.resolve("docs");
         Files.createDirectories(docsRoot);
         Files.writeString(docsRoot.resolve("architecture.md"), """
                 # Architecture
@@ -101,7 +102,7 @@ class RagControllerTest {
                 "ollama",
                 "nomic-embed-text"
         );
-        qdrantReachableMockMvc = buildMockMvc(qdrantConfigProperties, QdrantStatus.reachableStatus());
+        qdrantReachableMockMvc = buildMockMvc(qdrantConfigProperties, QdrantStatus.collectionPresent("local_genai_lab_docs", 123L));
         qdrantUnavailableMockMvc = buildMockMvc(qdrantConfigProperties, QdrantStatus.unavailable("http://localhost:6333"));
 
         RagProperties invalidModeProperties = new RagProperties(true, docsRoot.toString(), 180, 30, 3, "semantic", "ollama", "nomic-embed-text");
@@ -141,6 +142,8 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"))
                 .andExpect(jsonPath("$.qdrantRequired").value(false))
                 .andExpect(jsonPath("$.qdrantReachable").doesNotExist())
+                .andExpect(jsonPath("$.qdrantCollectionExists").doesNotExist())
+                .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
                 .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not required for the current RAG configuration."))
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
@@ -155,6 +158,8 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.vectorStore").value("in-memory"))
                 .andExpect(jsonPath("$.qdrantRequired").value(false))
                 .andExpect(jsonPath("$.qdrantReachable").doesNotExist())
+                .andExpect(jsonPath("$.qdrantCollectionExists").doesNotExist())
+                .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
                 .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
@@ -170,7 +175,9 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantCollection").value("local_genai_lab_docs"))
                 .andExpect(jsonPath("$.qdrantRequired").value(true))
                 .andExpect(jsonPath("$.qdrantReachable").value(true))
-                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is reachable."));
+                .andExpect(jsonPath("$.qdrantCollectionExists").value(true))
+                .andExpect(jsonPath("$.qdrantPointCount").value(123))
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is present with 123 points."));
     }
 
     @Test
@@ -182,7 +189,22 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.vectorStore").value("qdrant"))
                 .andExpect(jsonPath("$.qdrantRequired").value(true))
                 .andExpect(jsonPath("$.qdrantReachable").value(false))
+                .andExpect(jsonPath("$.qdrantCollectionExists").doesNotExist())
+                .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
                 .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not reachable at http://localhost:6333."));
+    }
+
+    @Test
+    void qdrantConfigStatusReportsMissingCollection() throws Exception {
+        qdrantMockMvc(QdrantStatus.collectionMissing("local_genai_lab_docs"))
+                .perform(get("/api/rag/status"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.vectorStore").value("qdrant"))
+                .andExpect(jsonPath("$.qdrantRequired").value(true))
+                .andExpect(jsonPath("$.qdrantReachable").value(true))
+                .andExpect(jsonPath("$.qdrantCollectionExists").value(false))
+                .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is missing. Rebuild the index."));
     }
 
     @Test
@@ -262,6 +284,25 @@ class RagControllerTest {
         return MockMvcBuilders.standaloneSetup(new RagController(properties, corpusService, answerService, qdrantStatusService))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
+    }
+
+    private MockMvc qdrantMockMvc(QdrantStatus qdrantStatus) {
+        return buildMockMvc(
+                new RagProperties(
+                        true,
+                        docsRoot.toString(),
+                        180,
+                        30,
+                        3,
+                        "vector",
+                        "qdrant",
+                        "http://localhost:6333",
+                        "local_genai_lab_docs",
+                        "ollama",
+                        "nomic-embed-text"
+                ),
+                qdrantStatus
+        );
     }
 
     private static final class FakeProvider implements ChatModelProvider {

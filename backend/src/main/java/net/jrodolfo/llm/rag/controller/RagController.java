@@ -82,6 +82,8 @@ public class RagController {
                 ragProperties.qdrantCollection(),
                 qdrantStatus.required(),
                 qdrantStatus.reachable(),
+                qdrantStatus.collectionExists(),
+                qdrantStatus.pointCount(),
                 qdrantStatus.message(),
                 ragProperties.embeddingProvider(),
                 ragProperties.embeddingModel()

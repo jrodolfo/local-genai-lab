@@ -15,6 +15,8 @@ package net.jrodolfo.llm.rag.dto;
  * @param qdrantCollection  The configured Qdrant collection name.
  * @param qdrantRequired    Whether Qdrant is required by the current RAG configuration.
  * @param qdrantReachable   Whether Qdrant is reachable, or null when it is not required.
+ * @param qdrantCollectionExists Whether the configured Qdrant collection exists, or null when not checked.
+ * @param qdrantPointCount  Number of points in the configured Qdrant collection, or null when unavailable.
  * @param qdrantStatusMessage A user-facing Qdrant readiness message.
  * @param embeddingProvider The configured embedding provider for vector retrieval.
  * @param embeddingModel    The configured embedding model for vector retrieval.
@@ -32,6 +34,8 @@ public record RagStatusResponse(
         String qdrantCollection,
         boolean qdrantRequired,
         Boolean qdrantReachable,
+        Boolean qdrantCollectionExists,
+        Long qdrantPointCount,
         String qdrantStatusMessage,
         String embeddingProvider,
         String embeddingModel

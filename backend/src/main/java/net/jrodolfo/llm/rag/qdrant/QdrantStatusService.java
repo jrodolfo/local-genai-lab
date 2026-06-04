@@ -2,14 +2,10 @@ package net.jrodolfo.llm.rag.qdrant;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.Locale;
 
 /**
@@ -18,18 +14,18 @@ import java.util.Locale;
 @Service
 public class QdrantStatusService {
 
-    private static final Duration STATUS_TIMEOUT = Duration.ofSeconds(2);
+    private final QdrantClient qdrantClient;
 
-    private final HttpClient httpClient;
-
-    public QdrantStatusService() {
-        this(HttpClient.newBuilder()
-                .connectTimeout(STATUS_TIMEOUT)
-                .build());
+    @Autowired
+    public QdrantStatusService(QdrantClient qdrantClient) {
+        this.qdrantClient = qdrantClient;
     }
 
-    QdrantStatusService(HttpClient httpClient) {
-        this.httpClient = httpClient;
+    /**
+     * Test convenience constructor for standalone controller tests.
+     */
+    public QdrantStatusService() {
+        this(new QdrantClient(new ObjectMapper()));
     }
 
     public QdrantStatus status(RagProperties ragProperties) {
@@ -38,19 +34,15 @@ public class QdrantStatusService {
         }
 
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(ragProperties.qdrantUrl()))
-                    .timeout(STATUS_TIMEOUT)
-                    .GET()
-                    .build();
-            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-            if (response.statusCode() >= 200 && response.statusCode() < 400) {
-                return QdrantStatus.reachableStatus();
+            QdrantCollectionInfo collectionInfo = qdrantClient.collectionInfo(
+                    ragProperties.qdrantUrl(),
+                    ragProperties.qdrantCollection()
+            );
+            if (collectionInfo.exists()) {
+                return QdrantStatus.collectionPresent(ragProperties.qdrantCollection(), collectionInfo.pointCount());
             }
-            return QdrantStatus.unavailable(ragProperties.qdrantUrl());
-        } catch (IOException | InterruptedException | IllegalArgumentException ex) {
-            if (ex instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
+            return QdrantStatus.collectionMissing(ragProperties.qdrantCollection());
+        } catch (QdrantClientException | IllegalArgumentException ex) {
             return QdrantStatus.unavailable(ragProperties.qdrantUrl());
         }
     }
