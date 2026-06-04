@@ -257,7 +257,6 @@ The first local Qdrant setup is Docker-based.
 Expected developer flow:
 
 ```bash
-docker compose up -d qdrant
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 

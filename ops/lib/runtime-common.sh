@@ -12,6 +12,7 @@
 # Required Tools:
 #   - curl (for wait_for_url)
 #   - lsof (for find_port_process)
+#   - docker (only for Qdrant vector-store startup)
 #
 # Expected Output:
 #   None when sourced. Provides various output via functions.
@@ -214,4 +215,80 @@ print_runtime_header() {
     "repo_root=${REPO_ROOT}" \
     "env_file=$([ -f "${ENV_FILE}" ] && printf '%s' "${ENV_FILE}" || printf '%s' 'none')" \
     "run_dir=${RUN_DIR}"
+}
+
+# normalize_lower
+# Purpose: Normalizes a value to lowercase.
+# Inputs:
+#   $1 - Value to normalize.
+# Outputs:
+#   Prints the normalized value to stdout.
+# Exit Behavior: Returns 0.
+normalize_lower() {
+  printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]'
+}
+
+# normalize_bool
+# Purpose: Normalizes common truthy values to true; everything else is false.
+# Inputs:
+#   $1 - Value to normalize.
+# Outputs:
+#   Prints true or false to stdout.
+# Exit Behavior: Returns 0.
+normalize_bool() {
+  local value
+  value="$(normalize_lower "${1:-}")"
+  case "${value}" in
+    true | 1 | yes | y | on)
+      printf '%s' 'true'
+      ;;
+    *)
+      printf '%s' 'false'
+      ;;
+  esac
+}
+
+# qdrant_required_for_current_config
+# Purpose: Determines whether the current RAG configuration requires Qdrant.
+# Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE.
+# Outputs: None.
+# Exit Behavior: Returns 0 if Qdrant is required, 1 otherwise.
+qdrant_required_for_current_config() {
+  local rag_enabled rag_retrieval_mode rag_vector_store
+
+  rag_enabled="$(normalize_bool "${RAG_ENABLED:-true}")"
+  rag_retrieval_mode="$(normalize_lower "${RAG_RETRIEVAL_MODE:-lexical}")"
+  rag_vector_store="$(normalize_lower "${RAG_VECTOR_STORE:-in-memory}")"
+
+  [ "${rag_enabled}" = 'true' ] \
+    && [ "${rag_retrieval_mode}" = 'vector' ] \
+    && [ "${rag_vector_store}" = 'qdrant' ]
+}
+
+# ensure_qdrant_service_if_required
+# Purpose: Starts Qdrant through Docker Compose only when the current RAG
+#          configuration explicitly selects the Qdrant vector store.
+# Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE.
+# Outputs: Prints startup status when Qdrant is required.
+# Exit Behavior: Returns 0 if Qdrant is not required or starts successfully,
+#                non-zero if Docker/Qdrant startup fails.
+ensure_qdrant_service_if_required() {
+  if ! qdrant_required_for_current_config; then
+    return 0
+  fi
+
+  if ! command -v docker >/dev/null 2>&1; then
+    printf '%s\n' \
+      'Error: RAG_VECTOR_STORE=qdrant requires Docker, but docker was not found.' \
+      'Install/start Docker or use RAG_VECTOR_STORE=in-memory.' >&2
+    return 1
+  fi
+
+  printf '%s\n' 'qdrant: starting via docker compose'
+  if ! (cd "${REPO_ROOT}" && docker compose up -d qdrant); then
+    printf '%s\n' \
+      'Error: failed to start Qdrant with docker compose.' \
+      'Check Docker is running, or use RAG_VECTOR_STORE=in-memory.' >&2
+    return 1
+  fi
 }

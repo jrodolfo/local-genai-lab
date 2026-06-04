@@ -82,13 +82,14 @@ Docker tasks:
 Expected local command:
 
 ```bash
-docker compose up -d qdrant
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 Acceptance criteria:
 
 - `docker compose up -d qdrant` starts Qdrant without starting the whole app.
+- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` starts the
+  Qdrant Compose service automatically before backend/frontend startup.
 - Existing `docker compose up --build` still works.
 - Documentation states that Qdrant is optional and only needed for
   `RAG_VECTOR_STORE=qdrant`.
@@ -312,10 +313,9 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh
 ./status.sh
 ```
 
-Future Qdrant vector:
+Qdrant vector:
 
 ```bash
-docker compose up -d qdrant
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```

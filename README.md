@@ -273,16 +273,17 @@ docker compose up --build
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
-in-memory vector retrieval.
+in-memory vector retrieval. When Qdrant vector mode is selected, `start.sh` and
+`restart.sh` start the `qdrant` Docker Compose service automatically.
 
 ```bash
-docker compose up -d qdrant
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
-At this stage, Qdrant readiness is visible in status output and the RAG UI, but
-Qdrant-backed retrieval is still future work.
+Qdrant readiness is visible in status output and the RAG UI. After startup,
+open the RAG workspace and click `Rebuild Index` to populate the configured
+Qdrant collection.
 
 ## Configuration Overview
 

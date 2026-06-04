@@ -15,6 +15,7 @@
 #   - npm (for frontend dependencies and dev server)
 #   - mvn (via start-backend-helper.sh)
 #   - curl (for health checks)
+#   - docker (only when RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant)
 #
 # Expected Output:
 #   Startup progress messages, runtime configuration header, and a success or
@@ -43,6 +44,7 @@ FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 BACKEND_URL="${BACKEND_URL:-http://localhost:${SERVER_PORT}}"
 FRONTEND_URL="${FRONTEND_URL:-http://localhost:${FRONTEND_PORT}}"
 WAIT_TIMEOUT_SECONDS="${WAIT_TIMEOUT_SECONDS:-60}"
+START_DRY_RUN="${START_DRY_RUN:-false}"
 
 # --- Checks ---
 printf '%s\n' 'Starting local-genai-lab'
@@ -52,6 +54,13 @@ printf '%s\n' \
   "frontend_url=${FRONTEND_URL}" \
   "backend_log=${BACKEND_LOG_FILE}" \
   "frontend_log=${FRONTEND_LOG_FILE}"
+
+ensure_qdrant_service_if_required
+
+if [ "${START_DRY_RUN}" = "true" ]; then
+  printf '%s\n' 'Start dry run complete.'
+  exit 0
+fi
 
 # Verify if processes are already running
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
