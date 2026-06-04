@@ -10,6 +10,7 @@
  * @param {string} props.result.answer - The generated answer text.
  * @param {string} props.result.provider - The LLM provider used.
  * @param {string} props.result.model - The model ID used.
+ * @param {Object} props.result.ragRetrieval - Retrieval metadata used by the answer.
  * @param {Array<Object>} props.result.sources - Array of source objects.
  * @returns {React.JSX.Element|null} The rendered component or null if no result.
  */
@@ -24,6 +25,7 @@ function RagAnswerWithSources({result}) {
                 <h2>Answer</h2>
                 <p>
                     {labelForProvider(result.provider)} · {result.model}
+                    {result.ragRetrieval ? ` · Retrieval: ${labelForRetrieval(result.ragRetrieval)}` : ''}
                 </p>
             </div>
             <div className="rag-answer-card__body">
@@ -62,6 +64,27 @@ function labelForProvider(provider) {
         return 'Hugging Face';
     }
     return provider.charAt(0).toUpperCase() + provider.slice(1);
+}
+
+function labelForRetrieval(ragRetrieval) {
+    const target = ragRetrieval?.retrievalTarget;
+    if (target === 'vector:qdrant') {
+        return 'Vector - Qdrant';
+    }
+    if (target === 'vector:in-memory') {
+        return 'Vector - In Memory';
+    }
+    if (target === 'lexical:in-memory' || ragRetrieval?.retrievalMode === 'lexical') {
+        return 'Lexical';
+    }
+    const mode = ragRetrieval?.retrievalMode || 'unknown';
+    const store = ragRetrieval?.vectorStore;
+    return store ? `${capitalize(mode)} - ${capitalize(store)}` : capitalize(mode);
+}
+
+function capitalize(value) {
+    const normalized = String(value || '').replaceAll('-', ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 export default RagAnswerWithSources;

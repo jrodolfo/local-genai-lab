@@ -4,6 +4,7 @@ import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -54,6 +55,7 @@ public class ChatSessionExportService {
             }
 
             appendProviderMetadata(markdown, message.metadata());
+            appendRagRetrieval(markdown, message.ragRetrieval());
             appendRagSources(markdown, message.ragSources());
             markdown.append("\n");
             markdown.append(message.content() == null ? "" : message.content()).append("\n\n");
@@ -124,6 +126,21 @@ public class ChatSessionExportService {
         }
         if (metadata.uiWaitMs() != null) {
             markdown.append("- ui wait: ").append(metadata.uiWaitMs()).append(" ms\n");
+        }
+    }
+
+    private void appendRagRetrieval(StringBuilder markdown, RagRetrievalMetadata metadata) {
+        if (metadata == null) {
+            return;
+        }
+        if (hasText(metadata.retrievalTarget())) {
+            markdown.append("- retrieval target: ").append(metadata.retrievalTarget()).append("\n");
+        }
+        if (hasText(metadata.retrievalMode())) {
+            markdown.append("- retrieval mode: ").append(metadata.retrievalMode()).append("\n");
+        }
+        if (hasText(metadata.vectorStore())) {
+            markdown.append("- vector store: ").append(metadata.vectorStore()).append("\n");
         }
     }
 

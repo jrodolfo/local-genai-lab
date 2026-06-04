@@ -505,6 +505,7 @@ function RagTurn({turn, selectedModel}) {
                         answer: turn.answer.content,
                         provider: turn.answer.metadata?.provider,
                         model: turn.answer.metadata?.modelId || selectedModel,
+                        ragRetrieval: turn.answer.ragRetrieval,
                         sources: turn.answer.ragSources || []
                     }}
                 />
@@ -629,6 +630,7 @@ function createRagAnswerMessage(payload, selectedProvider, selectedModel) {
             modelId: payload.metadata?.modelId || payload.model || selectedModel
         },
         ragSources: payload.sources || [],
+        ragRetrieval: payload.ragRetrieval || null,
         timestamp: new Date().toISOString()
     };
 }

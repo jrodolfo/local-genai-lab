@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.dto.ChatResponse;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.provider.ChatModelProvider;
@@ -93,11 +94,13 @@ public class RagAnswerService {
         List<ChatRagSourceChunk> persistedSources = sources.stream()
                 .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
                 .toList();
+        RagRetrievalMetadata ragRetrieval = retrievalMetadata(retrievalOptions);
         ChatSession persistedSession = ragSessionService.finishTurn(
                 session,
                 response.response(),
                 response.metadata(),
-                persistedSources
+                persistedSources,
+                ragRetrieval
         );
 
         return new RagQueryResponse(
@@ -106,7 +109,8 @@ public class RagAnswerService {
                 response.model(),
                 persistedSession.sessionId(),
                 sources,
-                response.metadata()
+                response.metadata(),
+                ragRetrieval
         );
     }
 
@@ -153,5 +157,16 @@ public class RagAnswerService {
      */
     private double roundScore(double value) {
         return Math.round(value * 1000.0d) / 1000.0d;
+    }
+
+    private RagRetrievalMetadata retrievalMetadata(RagRetrievalOptions retrievalOptions) {
+        if (retrievalOptions == null) {
+            return null;
+        }
+        return new RagRetrievalMetadata(
+                retrievalOptions.retrievalMode().configValue(),
+                retrievalOptions.vectorStore().configValue(),
+                retrievalOptions.retrievalMode().configValue() + ":" + retrievalOptions.vectorStore().configValue()
+        );
     }
 }

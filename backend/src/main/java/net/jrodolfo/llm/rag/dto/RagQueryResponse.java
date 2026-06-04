@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.dto;
 
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
  * @param sessionId The unique identifier for the current session.
  * @param sources   The list of source chunks used to augment the prompt.
  * @param metadata  Additional metadata from the model provider.
+ * @param ragRetrieval Retrieval target metadata used for this answer.
  */
 public record RagQueryResponse(
         String answer,
@@ -20,6 +22,7 @@ public record RagQueryResponse(
         String model,
         String sessionId,
         List<RagSourceChunkResponse> sources,
-        ModelProviderMetadata metadata
+        ModelProviderMetadata metadata,
+        RagRetrievalMetadata ragRetrieval
 ) {
 }
