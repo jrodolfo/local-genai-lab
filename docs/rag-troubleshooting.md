@@ -115,7 +115,20 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 Qdrant retrieval is still a phase-2 implementation path; current vector
-retrieval remains in-memory until the Qdrant-backed store is added.
+retrieval remains in-memory until Qdrant indexing is added.
+
+If the backend reports:
+
+```text
+Qdrant vector retrieval is selected, but no Qdrant index is available yet.
+```
+
+then Qdrant routing is active, but the Qdrant index has not been implemented or
+populated yet. Use the current in-memory vector path for manual RAG comparison:
+
+```bash
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh
+```
 
 If the service is unavailable, start Ollama and rerun `./status.sh`.
 

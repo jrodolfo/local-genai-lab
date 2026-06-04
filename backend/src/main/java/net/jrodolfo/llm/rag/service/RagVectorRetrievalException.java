@@ -5,6 +5,10 @@ package net.jrodolfo.llm.rag.service;
  */
 public class RagVectorRetrievalException extends RuntimeException {
 
+    public RagVectorRetrievalException(String message) {
+        super(message);
+    }
+
     public RagVectorRetrievalException(String message, Throwable cause) {
         super(message, cause);
     }

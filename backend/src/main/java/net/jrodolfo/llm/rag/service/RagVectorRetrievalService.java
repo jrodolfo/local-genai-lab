@@ -1,9 +1,13 @@
 package net.jrodolfo.llm.rag.service;
 
+import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.config.RagVectorStoreMode;
 import net.jrodolfo.llm.rag.embedding.EmbeddingService;
 import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.QdrantVectorRagRetrievalStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,15 +22,34 @@ import java.util.List;
 @Service
 public class RagVectorRetrievalService {
 
+    private final RagProperties ragProperties;
     private final EmbeddingService embeddingService;
-    private final InMemoryVectorRagRetrievalStore vectorStore;
+    private final InMemoryVectorRagRetrievalStore inMemoryVectorStore;
+    private final QdrantVectorRagRetrievalStore qdrantVectorStore;
+
+    @Autowired
+    public RagVectorRetrievalService(
+            RagProperties ragProperties,
+            EmbeddingService embeddingService,
+            InMemoryVectorRagRetrievalStore inMemoryVectorStore,
+            QdrantVectorRagRetrievalStore qdrantVectorStore
+    ) {
+        this.ragProperties = ragProperties;
+        this.embeddingService = embeddingService;
+        this.inMemoryVectorStore = inMemoryVectorStore;
+        this.qdrantVectorStore = qdrantVectorStore;
+    }
 
     public RagVectorRetrievalService(
             EmbeddingService embeddingService,
             InMemoryVectorRagRetrievalStore vectorStore
     ) {
-        this.embeddingService = embeddingService;
-        this.vectorStore = vectorStore;
+        this(
+                new RagProperties(true, "docs", 900, 160, 4, "vector", "ollama", "nomic-embed-text"),
+                embeddingService,
+                vectorStore,
+                null
+        );
     }
 
     /**
@@ -42,8 +65,23 @@ public class RagVectorRetrievalService {
         }
         try {
             EmbeddingVector queryEmbedding = embeddingService.embed(question);
-            return vectorStore.searchByVector(queryEmbedding.values(), topK);
+            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
+            return switch (vectorStoreMode) {
+                case IN_MEMORY -> inMemoryVectorStore.searchByVector(queryEmbedding.values(), topK);
+                case QDRANT -> {
+                    if (qdrantVectorStore == null) {
+                        throw new RagVectorRetrievalException("Qdrant vector retrieval store is not configured.");
+                    }
+                    yield qdrantVectorStore.searchByVector(queryEmbedding.values(), topK);
+                }
+            };
         } catch (RuntimeException ex) {
+            if (ex instanceof RagVectorRetrievalException ragVectorRetrievalException) {
+                throw ragVectorRetrievalException;
+            }
+            if (ex instanceof IllegalArgumentException illegalArgumentException) {
+                throw illegalArgumentException;
+            }
             throw new RagVectorRetrievalException("Failed to retrieve RAG chunks with vector search.", ex);
         }
     }

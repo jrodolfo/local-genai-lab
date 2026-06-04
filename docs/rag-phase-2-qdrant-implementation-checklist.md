@@ -41,10 +41,11 @@ Already implemented:
 - RAG UI status for retrieval mode and store
 - RAG UI Qdrant reachability messages when Qdrant mode is selected
 - Qdrant client boundary with collection, upsert, and search operations
+- Qdrant-backed vector retrieval store and routing behind `RAG_VECTOR_STORE=qdrant`
 
 Not implemented yet:
 
-- Qdrant-backed retrieval store
+- Qdrant indexing/rebuild integration
 - optional Qdrant integration tests
 
 ## Phase 2 Slice 1: Configuration
@@ -125,10 +126,10 @@ Acceptance criteria:
 
 Backend tasks:
 
-- Add a Qdrant-backed vector store implementation.
+- Keep the Qdrant-backed vector store implementation.
 - Keep `InMemoryVectorRagRetrievalStore` unchanged.
-- Route vector retrieval by `RAG_VECTOR_STORE`.
-- Use Qdrant only when `RAG_RETRIEVAL_MODE=vector` and
+- Keep routing vector retrieval by `RAG_VECTOR_STORE`.
+- Keep using Qdrant only when `RAG_RETRIEVAL_MODE=vector` and
   `RAG_VECTOR_STORE=qdrant`.
 - Do not silently fall back from Qdrant to lexical retrieval.
 
@@ -144,6 +145,8 @@ Acceptance criteria:
 - `vector` plus `in-memory` still uses `InMemoryVectorRagRetrievalStore`.
 - `vector` plus `qdrant` uses Qdrant.
 - Qdrant unavailable is reported clearly instead of hidden by fallback.
+- Until Qdrant indexing is implemented, Qdrant mode reports a clear
+  index-not-available error instead of silently using another store.
 
 ## Phase 2 Slice 5: Index Rebuild
 

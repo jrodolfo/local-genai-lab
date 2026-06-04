@@ -213,6 +213,12 @@ The selected answer provider remains independent. Retrieval can use Ollama
 embeddings while answer generation uses the provider/model selected in the RAG
 workspace.
 
+The Qdrant-backed retrieval store is available behind
+`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`, but Qdrant indexing is not
+implemented yet. Until indexing is wired into `Rebuild Index`, Qdrant mode
+returns a clear index-not-available error instead of silently falling back to
+lexical or in-memory vector retrieval.
+
 ## Proposed Configuration Shape
 
 These settings define the current and planned vector retrieval surface.

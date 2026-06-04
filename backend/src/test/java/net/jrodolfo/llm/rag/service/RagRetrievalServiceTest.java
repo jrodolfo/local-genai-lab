@@ -5,8 +5,10 @@ import net.jrodolfo.llm.rag.embedding.EmbeddingService;
 import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
+import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
 import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.QdrantVectorRagRetrievalStore;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -166,6 +168,86 @@ class RagRetrievalServiceTest {
     }
 
     @Test
+    void vectorModeRoutesToQdrantWhenConfigured() {
+        RagProperties properties = new RagProperties(
+                true,
+                "docs",
+                220,
+                30,
+                2,
+                "vector",
+                "qdrant",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                "ollama",
+                "nomic-embed-text"
+        );
+        InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RagCorpusService corpusService = new RagCorpusService(
+                properties,
+                new StubLoader(List.of(document("architecture.md", "Architecture", "Provider registry docs."))),
+                new RagChunkingService(),
+                lexicalStore,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        StubQdrantVectorStore qdrantVectorStore = new StubQdrantVectorStore();
+        RagRetrievalService retrievalService = new RagRetrievalService(
+                properties,
+                corpusService,
+                lexicalStore,
+                new RagVectorRetrievalService(properties, embeddingService, vectorStore, qdrantVectorStore)
+        );
+
+        var matches = retrievalService.retrieve("How does provider selection work?");
+
+        assertEquals(1, matches.size());
+        assertEquals("qdrant.md", matches.getFirst().chunk().sourcePath());
+        assertEquals(List.of(1.0, 0.0), qdrantVectorStore.queryVector);
+        assertEquals(2, qdrantVectorStore.topK);
+    }
+
+    @Test
+    void invalidVectorStoreFailsClearly() {
+        RagProperties properties = new RagProperties(
+                true,
+                "docs",
+                220,
+                30,
+                2,
+                "vector",
+                "pinecone",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                "ollama",
+                "nomic-embed-text"
+        );
+        InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RagCorpusService corpusService = new RagCorpusService(
+                properties,
+                new StubLoader(List.of(document("architecture.md", "Architecture", "Provider registry docs."))),
+                new RagChunkingService(),
+                lexicalStore,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        RagRetrievalService retrievalService = new RagRetrievalService(
+                properties,
+                corpusService,
+                lexicalStore,
+                new RagVectorRetrievalService(properties, embeddingService, vectorStore, null)
+        );
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> retrievalService.retrieve("provider"));
+
+        assertEquals("Unsupported RAG vector store: pinecone. Supported stores: in-memory, qdrant.", exception.getMessage());
+    }
+
+    @Test
     void invalidRetrievalModeFailsClearly() {
         RagProperties properties = new RagProperties(true, "docs", 220, 30, 2, "semantic", "ollama", "nomic-embed-text");
         InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
@@ -239,6 +321,22 @@ class RagRetrievalServiceTest {
                 return new EmbeddingVector("nomic-embed-text", List.of(0.0, 1.0));
             }
             return new EmbeddingVector("nomic-embed-text", List.of(0.0, 0.0));
+        }
+    }
+
+    private static final class StubQdrantVectorStore extends QdrantVectorRagRetrievalStore {
+        private List<Double> queryVector;
+        private int topK;
+
+        private StubQdrantVectorStore() {
+            super(null, null);
+        }
+
+        @Override
+        public List<RagMatch> searchByVector(List<Double> queryVector, int topK) {
+            this.queryVector = queryVector;
+            this.topK = topK;
+            return List.of(new RagMatch(new RagChunk("qdrant.md#0", "qdrant.md", "Qdrant", "Qdrant result."), 0.93));
         }
     }
 }
