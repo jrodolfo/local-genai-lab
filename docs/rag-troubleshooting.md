@@ -114,17 +114,19 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
-Qdrant retrieval is still a phase-2 implementation path; current vector
-retrieval remains in-memory until Qdrant indexing is added.
+After Qdrant is reachable, open the RAG workspace and click `Rebuild Index`.
+In Qdrant mode, rebuild embeds the docs corpus, recreates the configured Qdrant
+collection, and upserts the chunk vectors with citation payloads.
 
 If the backend reports:
 
 ```text
-Qdrant vector retrieval is selected, but no Qdrant index is available yet.
+Qdrant vector retrieval is selected, but no indexed chunks were found.
 ```
 
-then Qdrant routing is active, but the Qdrant index has not been implemented or
-populated yet. Use the current in-memory vector path for manual RAG comparison:
+then Qdrant routing is active, but the collection is empty, missing, or not
+queryable. Confirm Qdrant is running and click `Rebuild Index` again. If you
+want to keep testing without Qdrant, use the in-memory vector path:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh

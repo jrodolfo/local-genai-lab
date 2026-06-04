@@ -214,16 +214,17 @@ embeddings while answer generation uses the provider/model selected in the RAG
 workspace.
 
 The Qdrant-backed retrieval store is available behind
-`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`, but Qdrant indexing is not
-implemented yet. Until indexing is wired into `Rebuild Index`, Qdrant mode
-returns a clear index-not-available error instead of silently falling back to
-lexical or in-memory vector retrieval.
+`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`. When `Rebuild Index` runs
+in that mode, the backend embeds the fixed docs corpus, recreates the configured
+Qdrant collection, and upserts the embedded chunks with citation payloads.
+Qdrant mode does not silently fall back to lexical or in-memory vector
+retrieval.
 
 ## Proposed Configuration Shape
 
-These settings define the current and planned vector retrieval surface.
+These settings define the current vector retrieval surface.
 `RAG_VECTOR_STORE`, `RAG_QDRANT_URL`, and `RAG_QDRANT_COLLECTION` are visible in
-configuration/status before Qdrant retrieval is implemented.
+configuration/status when Qdrant mode is selected.
 
 ```properties
 RAG_RETRIEVAL_MODE=lexical
@@ -245,10 +246,9 @@ Recommended first Qdrant run:
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
-`RAG_VECTOR_STORE=in-memory` remains the low-friction default until the Qdrant
-path is implemented and documented end to end. `RAG_VECTOR_STORE=qdrant` is the
-planned opt-in Qdrant path, but Qdrant retrieval is not active until the
-Qdrant-backed store is implemented.
+`RAG_VECTOR_STORE=in-memory` remains the low-friction default for local
+comparison. `RAG_VECTOR_STORE=qdrant` is the opt-in durable vector-store path
+and requires Qdrant to be running before rebuilding the index.
 
 ## Local Qdrant Runtime Shape
 
@@ -262,8 +262,8 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 The application status makes Qdrant reachability visible when Qdrant mode is
-selected. Collection presence is still future work until the Qdrant client
-boundary exists. Example `./status.sh` lines:
+selected. If Qdrant mode is selected, rebuild creates the configured collection.
+Example `./status.sh` lines:
 
 ```text
 rag retrieval mode: vector

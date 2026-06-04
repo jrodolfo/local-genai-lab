@@ -1,13 +1,17 @@
 package net.jrodolfo.llm.rag.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.embedding.EmbeddingService;
 import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
 import net.jrodolfo.llm.rag.model.RagMatch;
+import net.jrodolfo.llm.rag.qdrant.QdrantClient;
+import net.jrodolfo.llm.rag.qdrant.QdrantPoint;
 import net.jrodolfo.llm.rag.store.InMemoryLexicalRagRetrievalStore;
 import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.QdrantVectorRagIndexingStore;
 import net.jrodolfo.llm.rag.store.QdrantVectorRagRetrievalStore;
 import org.junit.jupiter.api.Test;
 
@@ -185,13 +189,15 @@ class RagRetrievalServiceTest {
         InMemoryLexicalRagRetrievalStore lexicalStore = new InMemoryLexicalRagRetrievalStore();
         InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
         KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        RecordingQdrantClient indexingQdrantClient = new RecordingQdrantClient();
         RagCorpusService corpusService = new RagCorpusService(
                 properties,
                 new StubLoader(List.of(document("architecture.md", "Architecture", "Provider registry docs."))),
                 new RagChunkingService(),
                 lexicalStore,
                 new RagVectorIndexingService(embeddingService, properties),
-                vectorStore
+                vectorStore,
+                new QdrantVectorRagIndexingStore(properties, indexingQdrantClient)
         );
         StubQdrantVectorStore qdrantVectorStore = new StubQdrantVectorStore();
         RagRetrievalService retrievalService = new RagRetrievalService(
@@ -207,6 +213,10 @@ class RagRetrievalServiceTest {
         assertEquals("qdrant.md", matches.getFirst().chunk().sourcePath());
         assertEquals(List.of(1.0, 0.0), qdrantVectorStore.queryVector);
         assertEquals(2, qdrantVectorStore.topK);
+        assertEquals("local_genai_lab_docs", indexingQdrantClient.recreatedCollection);
+        assertEquals(2, indexingQdrantClient.recreatedVectorSize);
+        assertEquals(1, indexingQdrantClient.upsertedPoints.size());
+        assertEquals("architecture.md", indexingQdrantClient.upsertedPoints.getFirst().payload().sourcePath());
     }
 
     @Test
@@ -337,6 +347,27 @@ class RagRetrievalServiceTest {
             this.queryVector = queryVector;
             this.topK = topK;
             return List.of(new RagMatch(new RagChunk("qdrant.md#0", "qdrant.md", "Qdrant", "Qdrant result."), 0.93));
+        }
+    }
+
+    private static final class RecordingQdrantClient extends QdrantClient {
+        private String recreatedCollection;
+        private int recreatedVectorSize;
+        private List<QdrantPoint> upsertedPoints = List.of();
+
+        private RecordingQdrantClient() {
+            super(new ObjectMapper());
+        }
+
+        @Override
+        public void recreateCollection(String qdrantUrl, String collectionName, int vectorSize) {
+            this.recreatedCollection = collectionName;
+            this.recreatedVectorSize = vectorSize;
+        }
+
+        @Override
+        public void upsertPoints(String qdrantUrl, String collectionName, List<QdrantPoint> points) {
+            this.upsertedPoints = points;
         }
     }
 }

@@ -62,7 +62,7 @@ class QdrantVectorRagRetrievalStoreTest {
         );
 
         assertEquals(
-                "Qdrant vector retrieval is selected, but no Qdrant index is available yet. Use RAG_VECTOR_STORE=in-memory or add Qdrant indexing before querying.",
+                "Qdrant vector retrieval is selected, but no indexed chunks were found. Confirm Qdrant is running, click Rebuild Index, or use RAG_VECTOR_STORE=in-memory.",
                 ex.getMessage()
         );
     }
@@ -80,7 +80,7 @@ class QdrantVectorRagRetrievalStoreTest {
         );
 
         assertEquals(
-                "Qdrant vector retrieval is selected, but no Qdrant index is available yet. Use RAG_VECTOR_STORE=in-memory or add Qdrant indexing before querying.",
+                "Qdrant vector retrieval is selected, but no indexed chunks were found. Confirm Qdrant is running, click Rebuild Index, or use RAG_VECTOR_STORE=in-memory.",
                 ex.getMessage()
         );
     }

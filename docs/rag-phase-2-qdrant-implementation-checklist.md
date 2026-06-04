@@ -42,10 +42,10 @@ Already implemented:
 - RAG UI Qdrant reachability messages when Qdrant mode is selected
 - Qdrant client boundary with collection, upsert, and search operations
 - Qdrant-backed vector retrieval store and routing behind `RAG_VECTOR_STORE=qdrant`
+- Qdrant indexing/rebuild integration
 
 Not implemented yet:
 
-- Qdrant indexing/rebuild integration
 - optional Qdrant integration tests
 
 ## Phase 2 Slice 1: Configuration
@@ -145,8 +145,8 @@ Acceptance criteria:
 - `vector` plus `in-memory` still uses `InMemoryVectorRagRetrievalStore`.
 - `vector` plus `qdrant` uses Qdrant.
 - Qdrant unavailable is reported clearly instead of hidden by fallback.
-- Until Qdrant indexing is implemented, Qdrant mode reports a clear
-  index-not-available error instead of silently using another store.
+- If Qdrant has no indexed chunks or cannot be queried, Qdrant mode reports a
+  clear operational error instead of silently using another store.
 
 ## Phase 2 Slice 5: Index Rebuild
 
@@ -173,6 +173,11 @@ Payload fields:
 Acceptance criteria:
 
 - Rebuild creates the collection if it does not exist.
+- Rebuild recreates the configured collection for a clean local lab index.
+- Rebuild upserts every embedded chunk into Qdrant with citation payload fields.
+- Qdrant point IDs are deterministic and Qdrant-safe while the original chunk
+  id remains in the payload.
+- Qdrant indexing failures fail the rebuild clearly.
 - Rebuild makes the collection queryable immediately after completion.
 - Rebuild returns document count, chunk count, retrieval mode, and vector store.
 - Rebuild failure leaves a clear error in the API/UI.

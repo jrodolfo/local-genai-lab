@@ -2,11 +2,14 @@ package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
+import net.jrodolfo.llm.rag.config.RagVectorStoreMode;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
 import net.jrodolfo.llm.rag.model.RagVectorIndexResult;
 import net.jrodolfo.llm.rag.store.RagRetrievalStore;
 import net.jrodolfo.llm.rag.store.InMemoryVectorRagRetrievalStore;
+import net.jrodolfo.llm.rag.store.QdrantVectorRagIndexingStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
@@ -28,6 +31,7 @@ public class RagCorpusService {
     private final RagRetrievalStore retrievalStore;
     private final RagVectorIndexingService vectorIndexingService;
     private final InMemoryVectorRagRetrievalStore vectorRetrievalStore;
+    private final QdrantVectorRagIndexingStore qdrantVectorIndexingStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
 
     /**
@@ -40,6 +44,25 @@ public class RagCorpusService {
      * @param vectorIndexingService service for embedding chunks in vector mode
      * @param vectorRetrievalStore vector retrieval store used in vector mode
      */
+    @Autowired
+    public RagCorpusService(
+            RagProperties ragProperties,
+            RagDocumentLoader documentLoader,
+            RagChunkingService chunkingService,
+            RagRetrievalStore retrievalStore,
+            RagVectorIndexingService vectorIndexingService,
+            InMemoryVectorRagRetrievalStore vectorRetrievalStore,
+            QdrantVectorRagIndexingStore qdrantVectorIndexingStore
+    ) {
+        this.ragProperties = ragProperties;
+        this.documentLoader = documentLoader;
+        this.chunkingService = chunkingService;
+        this.retrievalStore = retrievalStore;
+        this.vectorIndexingService = vectorIndexingService;
+        this.vectorRetrievalStore = vectorRetrievalStore;
+        this.qdrantVectorIndexingStore = qdrantVectorIndexingStore;
+    }
+
     public RagCorpusService(
             RagProperties ragProperties,
             RagDocumentLoader documentLoader,
@@ -48,12 +71,15 @@ public class RagCorpusService {
             RagVectorIndexingService vectorIndexingService,
             InMemoryVectorRagRetrievalStore vectorRetrievalStore
     ) {
-        this.ragProperties = ragProperties;
-        this.documentLoader = documentLoader;
-        this.chunkingService = chunkingService;
-        this.retrievalStore = retrievalStore;
-        this.vectorIndexingService = vectorIndexingService;
-        this.vectorRetrievalStore = vectorRetrievalStore;
+        this(
+                ragProperties,
+                documentLoader,
+                chunkingService,
+                retrievalStore,
+                vectorIndexingService,
+                vectorRetrievalStore,
+                null
+        );
     }
 
     /**
@@ -86,7 +112,16 @@ public class RagCorpusService {
         RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
         if (mode == RagRetrievalMode.VECTOR) {
             RagVectorIndexResult vectorIndex = vectorIndexingService.index(chunks);
-            vectorRetrievalStore.replaceAllEmbedded(vectorIndex.chunks());
+            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
+            switch (vectorStoreMode) {
+                case IN_MEMORY -> vectorRetrievalStore.replaceAllEmbedded(vectorIndex.chunks());
+                case QDRANT -> {
+                    if (qdrantVectorIndexingStore == null) {
+                        throw new RagVectorIndexingException("Qdrant vector indexing store is not configured.");
+                    }
+                    qdrantVectorIndexingStore.replaceAllEmbedded(vectorIndex, corpusRoot);
+                }
+            }
         } else {
             retrievalStore.replaceAll(chunks);
         }
