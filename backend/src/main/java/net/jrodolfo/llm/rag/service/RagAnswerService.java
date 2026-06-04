@@ -63,6 +63,17 @@ public class RagAnswerService {
             String sessionId,
             RagRetrievalOptions retrievalOptions
     ) {
+        return answer(question, provider, model, sessionId, retrievalOptions, true);
+    }
+
+    public RagQueryResponse answer(
+            String question,
+            String provider,
+            String model,
+            String sessionId,
+            RagRetrievalOptions retrievalOptions,
+            boolean persist
+    ) {
         List<RagMatch> matches = retrievalOptions == null
                 ? ragRetrievalService.retrieve(question)
                 : ragRetrievalService.retrieve(question, retrievalOptions);
@@ -73,13 +84,13 @@ public class RagAnswerService {
         ChatModelProvider chatModelProvider = providerRegistry.get(provider);
         String resolvedProvider = providerRegistry.resolveProviderName(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
-        ChatSession session = ragSessionService.startTurn(sessionId, resolvedModel, question);
+        ChatSession session = persist ? ragSessionService.startTurn(sessionId, resolvedModel, question) : null;
         ChatResponse response = chatModelProvider.chat(
                 ProviderPrompt.forPrompt(buildPrompt(question, matches)),
                 resolvedModel,
                 null,
                 null,
-                session.sessionId(),
+                session != null ? session.sessionId() : sessionId,
                 null
         );
 
@@ -95,19 +106,23 @@ public class RagAnswerService {
                 .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
                 .toList();
         RagRetrievalMetadata ragRetrieval = retrievalMetadata(retrievalOptions);
-        ChatSession persistedSession = ragSessionService.finishTurn(
-                session,
-                response.response(),
-                response.metadata(),
-                persistedSources,
-                ragRetrieval
-        );
+        String responseSessionId = sessionId;
+        if (persist) {
+            ChatSession persistedSession = ragSessionService.finishTurn(
+                    session,
+                    response.response(),
+                    response.metadata(),
+                    persistedSources,
+                    ragRetrieval
+            );
+            responseSessionId = persistedSession.sessionId();
+        }
 
         return new RagQueryResponse(
                 response.response(),
                 resolvedProvider,
                 response.model(),
-                persistedSession.sessionId(),
+                responseSessionId,
                 sources,
                 response.metadata(),
                 ragRetrieval

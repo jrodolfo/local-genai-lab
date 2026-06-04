@@ -110,6 +110,35 @@ class RagAnswerServiceTest {
         assertEquals("vector:qdrant", assistantMessage.ragRetrieval().retrievalTarget());
     }
 
+    @Test
+    void nonPersistentAnswerDoesNotCreateSavedSession() {
+        FileChatSessionStore sessionStore = new FileChatSessionStore(
+                new ObjectMapper().registerModule(new JavaTimeModule()),
+                new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()),
+                new SessionIdPolicy()
+        );
+        RagAnswerService answerService = new RagAnswerService(
+                new ChatModelProviderRegistry(new AppModelProperties("ollama"), Map.of("ollama", new CapturingProvider())),
+                new StubRetrievalService(List.of(new RagMatch(
+                        new RagChunk("sessions.md#0", "sessions.md", "Sessions", "Sessions are stored as local JSON files."),
+                        0.92
+                ))),
+                new RagSessionService(sessionStore, new ChatSessionMetadataService(), new SessionIdPolicy())
+        );
+
+        RagQueryResponse response = answerService.answer(
+                "How are sessions persisted?",
+                "ollama",
+                "llama3:8b",
+                null,
+                new RagRetrievalOptions(RagRetrievalMode.LEXICAL, RagVectorStoreMode.IN_MEMORY),
+                false
+        );
+
+        assertEquals(null, response.sessionId());
+        assertTrue(sessionStore.findAll().isEmpty());
+    }
+
     private static final class StubRetrievalService extends RagRetrievalService {
         private final List<RagMatch> matches;
 

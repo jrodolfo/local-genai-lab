@@ -133,7 +133,8 @@ public class RagController {
                 request.provider(),
                 request.model(),
                 request.sessionId(),
-                options
+                options,
+                request.shouldPersist()
         ));
     }
 
