@@ -213,12 +213,13 @@ The selected answer provider remains independent. Retrieval can use Ollama
 embeddings while answer generation uses the provider/model selected in the RAG
 workspace.
 
-The Qdrant-backed retrieval store is available behind
-`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`. When `Rebuild Index` runs
-in that mode, the backend embeds the fixed docs corpus, recreates the configured
-Qdrant collection, and upserts the embedded chunks with citation payloads.
-Qdrant mode does not silently fall back to lexical or in-memory vector
-retrieval.
+The Qdrant-backed retrieval store is available behind request-scoped retrieval
+target selection in the RAG UI, and can also be made the backend startup default
+with `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`. When `Rebuild Index`
+runs with `Vector - Qdrant` selected, the backend embeds the fixed docs corpus,
+recreates the configured Qdrant collection, and upserts the embedded chunks with
+citation payloads. Qdrant mode does not silently fall back to lexical or
+in-memory vector retrieval.
 
 ## Proposed Configuration Shape
 
@@ -240,28 +241,31 @@ RAG_VECTOR_TOP_K=4
 The existing `RAG_TOP_K` can remain the shared retrieval limit if there is no
 reason to split lexical and vector limits.
 
-Recommended first Qdrant run:
+Advanced backend-default Qdrant run:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
-`RAG_VECTOR_STORE=in-memory` remains the low-friction default for local
-comparison. `RAG_VECTOR_STORE=qdrant` is the opt-in durable vector-store path
-and requires Qdrant to be running before rebuilding the index.
+`RAG_VECTOR_STORE=in-memory` remains the low-friction backend default for local
+comparison. `RAG_VECTOR_STORE=qdrant` is the opt-in durable vector-store path.
+For normal manual evaluation, start with `./restart.sh`, choose the retrieval
+target in the RAG UI, and use `Compare Retrieval Targets`.
 
 ## Local Qdrant Runtime Shape
 
 The first local Qdrant setup is Docker-based.
 
-Expected developer flow:
+Advanced backend-default flow:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 The application status makes Qdrant reachability visible when Qdrant mode is
-selected. If Qdrant mode is selected, rebuild creates the configured collection.
+configured. The RAG UI also exposes Qdrant target readiness and disables the
+Qdrant target when the service or collection is unavailable. If `Vector -
+Qdrant` is selected, rebuild creates the configured collection.
 Example `./status.sh` lines:
 
 ```text
@@ -290,9 +294,15 @@ evaluation misleading.
 - chunk count
 - Qdrant URL when Qdrant is selected
 - Qdrant collection status when Qdrant is selected
+- request-scoped retrieval targets with availability/readiness messages
+- Qdrant point count when the configured collection exists
 
 The RAG page should continue to keep the main interaction simple. Detailed
 status can stay compact, but vector database failures should be actionable.
+The current UI uses backend-provided retrieval target readiness, persists the
+retrieval target on saved RAG answers, and includes `Compare Retrieval Targets`
+for side-by-side evaluation without saving comparison results as normal session
+turns.
 
 Good UI messages:
 
@@ -329,6 +339,9 @@ Frontend tests:
 - show actionable Qdrant unavailable message
 - keep lexical mode UI unchanged
 - keep vector in-memory mode UI unchanged
+- render backend-provided retrieval targets
+- disable unavailable Qdrant targets
+- compare available retrieval targets side by side
 
 Script tests:
 
@@ -352,6 +365,9 @@ Recommended sequence:
 9. add backend tests for Qdrant payload mapping, indexing, and retrieval
 10. add frontend tests for Qdrant status and failure messages
 11. document the manual lexical/vector/Qdrant comparison flow
+12. add request-scoped retrieval selection in the UI
+13. persist retrieval metadata on RAG answers
+14. add side-by-side retrieval target comparison
 
 Already completed before this Qdrant phase:
 
@@ -359,6 +375,17 @@ Already completed before this Qdrant phase:
 - Ollama embedding client for `nomic-embed-text`
 - in-memory vector retrieval
 - retrieval mode status in the UI
+
+Completed during this Qdrant/UI phase:
+
+- Qdrant Docker Compose service and startup integration
+- Qdrant client boundary, indexing, and retrieval store
+- Qdrant readiness and collection point count in status
+- backend-provided retrieval target readiness
+- request-scoped retrieval target selection in the RAG UI
+- selected-target `Rebuild Index`
+- persisted RAG retrieval metadata on saved answers and exports
+- side-by-side `Compare Retrieval Targets` workflow
 
 This keeps phase 2 incremental. The first Qdrant slice should still use the
 existing fixed docs corpus and should not add uploads, agent routing, or MCP
@@ -428,7 +455,7 @@ harder to evaluate.
   every rebuild, or preserve the collection and upsert changed chunks?
 - Should `/api/rag/status` expose the embedding model used for the current index
   separately from the configured embedding model?
-- Should the UI show lexical, in-memory vector, and Qdrant vector results side
-  by side for evaluation, or only switch between modes?
+- Should comparison results eventually be exportable as dedicated evaluation
+  notes instead of remaining transient UI output?
 - What repeated evaluation failures would justify moving from lexical-only to
   vector-backed retrieval?

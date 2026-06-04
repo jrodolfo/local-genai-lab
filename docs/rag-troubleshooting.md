@@ -9,9 +9,11 @@ Start with the local status script:
 ./status.sh
 ```
 
-The status output reports whether RAG is enabled, which retrieval mode is active,
-which embedding provider/model are configured, whether Ollama is reachable when
-needed, and whether the configured embedding model is installed for vector mode.
+The status output reports whether RAG is enabled, the backend default retrieval
+mode, which embedding provider/model are configured, whether Ollama is reachable
+when needed, and whether the configured embedding model is installed for vector
+mode. The RAG UI also shows per-target readiness for the selectable retrieval
+targets.
 
 ## Quick Checks
 
@@ -44,13 +46,17 @@ When vector RAG is not working, check these items first:
 
 - run `./status.sh`
 - confirm `rag enabled: true`
-- confirm `rag retrieval mode: vector`
-- confirm `rag vector store: in-memory` or `rag vector store: qdrant`
-- if `rag vector store: qdrant`, confirm `qdrant service: ok`
+- in the RAG UI, confirm the selected retrieval target is available
+- if using `Vector - In Memory`, confirm Ollama and the embedding model are ready
+- if using `Vector - Qdrant`, confirm `qdrant service: ok` and the collection is present
 - confirm `ollama service: ok`
 - confirm `ollama embedding model: present (nomic-embed-text)`
 - run `ollama pull nomic-embed-text` if the embedding model is missing
-- click `Rebuild Index` after changing retrieval mode, embedding model, or corpus files
+- click `Rebuild Index` after changing retrieval target, embedding model, or corpus files
+
+Backend env vars such as `RAG_RETRIEVAL_MODE` and `RAG_VECTOR_STORE` still set
+startup defaults. They are not required for normal UI switching between
+retrieval targets.
 
 ## RAG Button Is Missing Or Disabled
 
@@ -78,7 +84,9 @@ disabled instead of showing a partially working workspace.
 
 ## Vector Mode Cannot Build Or Query The Index
 
-Vector retrieval needs Ollama and the configured embedding model. Check:
+Vector retrieval needs Ollama and the configured embedding model. For normal
+manual testing, select the target in the RAG UI and read the selected-target
+readiness message. For command-line verification, check:
 
 ```bash
 ./status.sh
@@ -107,17 +115,19 @@ qdrant service: ok
 qdrant collection: present (points=123)
 ```
 
-If Qdrant is unavailable, restart in Qdrant mode. The startup script will start
-the `qdrant` Docker Compose service automatically:
+If Qdrant is unavailable, either start in Qdrant mode or start Qdrant with
+Docker Compose. The startup script will start the `qdrant` Docker Compose
+service automatically when Qdrant mode is configured:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
-After Qdrant is reachable, open the RAG workspace and click `Rebuild Index`.
-In Qdrant mode, rebuild embeds the docs corpus, recreates the configured Qdrant
-collection, and upserts the chunk vectors with citation payloads.
+After Qdrant is reachable, open the RAG workspace, select `Vector - Qdrant`,
+and click `Rebuild Index`. Rebuild embeds the docs corpus, recreates the
+configured Qdrant collection, and upserts the chunk vectors with citation
+payloads for the selected Qdrant target.
 
 If status reports:
 
@@ -125,8 +135,8 @@ If status reports:
 qdrant collection: missing (local_genai_lab_docs)
 ```
 
-then Qdrant is running but the collection has not been rebuilt yet. Click
-`Rebuild Index` in the RAG workspace.
+then Qdrant is running but the collection has not been rebuilt yet. Select
+`Vector - Qdrant` and click `Rebuild Index` in the RAG workspace.
 
 If the backend reports:
 
@@ -135,8 +145,10 @@ Qdrant vector retrieval is selected, but no indexed chunks were found.
 ```
 
 then Qdrant routing is active, but the collection is empty, missing, or not
-queryable. Confirm Qdrant is running and click `Rebuild Index` again. If you
-want to keep testing without Qdrant, use the in-memory vector path:
+queryable. Confirm Qdrant is running, select `Vector - Qdrant`, and click
+`Rebuild Index` again. If you want to keep testing without Qdrant, choose
+`Vector - In Memory` or `Lexical` in the UI. To make in-memory vector the
+backend startup default, use:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh
@@ -158,13 +170,23 @@ RAG_RETRIEVAL_MODE=vector ./restart.sh
 
 ## Empty Or Stale Index
 
-The RAG page shows index status, document count, chunk count, retrieval mode, and
-retrieval store. If the corpus was changed, the retrieval mode was switched, or
-the index looks empty, use `Rebuild Index` from the RAG page.
+The RAG page shows index status, document count, chunk count, backend defaults,
+and selected retrieval target readiness. If the corpus was changed, the
+retrieval target was switched, or the index looks empty, use `Rebuild Index`
+from the RAG page.
+
+`Rebuild Index` applies to the selected retrieval target:
+
+- `Lexical` rebuilds the in-memory lexical index
+- `Vector - In Memory` embeds the corpus and rebuilds the in-memory vector index
+- `Vector - Qdrant` embeds the corpus and recreates/upserts the configured
+  Qdrant collection
 
 Rebuild is especially important after:
 
+- switching retrieval targets in the UI
 - changing `RAG_RETRIEVAL_MODE`
+- changing `RAG_VECTOR_STORE`
 - changing `RAG_EMBEDDING_MODEL`
 - editing files under the configured docs corpus
 - switching between lexical and vector evaluation runs
@@ -189,6 +211,10 @@ For vector mode, weak retrieval can happen when the embedding model retrieves
 semantically plausible but source-weak chunks. Rebuild the index, compare the
 same prompt in lexical mode, and record repeated failures in the evaluation
 notes.
+
+Use `Compare Retrieval Targets` in the RAG UI when you want to compare available
+targets with one prompt. Comparison results are not saved as normal RAG session
+turns. Use `Ask Docs Corpus` when you want the selected-target answer persisted.
 
 ## When To Use Lexical Fallback
 

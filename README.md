@@ -236,12 +236,12 @@ For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phase
 
 The separate `RAG` workspace is enabled by default. In phase 1, it queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
 
-Lexical retrieval remains the default. For experimental local vector retrieval, start the backend with `RAG_RETRIEVAL_MODE=vector`; the backend embeds the same docs corpus with `RAG_EMBEDDING_PROVIDER=ollama` and `RAG_EMBEDDING_MODEL=nomic-embed-text` and uses an in-memory vector store.
+Lexical retrieval remains the backend default, but normal retrieval selection now happens in the `RAG` workspace. Start once with `./restart.sh`, then use the `Retrieval` selector to choose `Lexical`, `Vector - In Memory`, or `Vector - Qdrant` when available. The UI shows target readiness, disables unavailable Qdrant targets, and includes a `Compare Retrieval Targets` action for side-by-side evaluation without saving comparison runs as normal conversation turns.
 
 Evaluation-only RAG docs are excluded from the indexed corpus by default so
 manual test prompts do not become misleading retrieval sources.
 
-If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when `RAG_VECTOR_STORE=qdrant`. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
+If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports backend RAG defaults, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when Qdrant is configured. Common fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
 
@@ -273,8 +273,9 @@ docker compose up --build
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
-in-memory vector retrieval. When Qdrant vector mode is selected, `start.sh` and
-`restart.sh` start the `qdrant` Docker Compose service automatically.
+in-memory vector retrieval. If you want Qdrant as the backend startup default,
+`start.sh` and `restart.sh` start the `qdrant` Docker Compose service
+automatically when Qdrant mode is configured:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
@@ -282,8 +283,11 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 Qdrant readiness and collection point count are visible in status output and
-the RAG UI. After startup, open the RAG workspace and click `Rebuild Index` to
-populate the configured Qdrant collection.
+the RAG UI. For normal use, start with `./restart.sh`, open the RAG workspace,
+select `Vector - Qdrant`, and click `Rebuild Index` to populate the configured
+Qdrant collection. If Qdrant is unavailable or the collection is missing, the UI
+shows the target as unavailable instead of letting the failure look like a
+generic backend error.
 
 ## Configuration Overview
 
@@ -352,15 +356,17 @@ Observed model behavior:
 - fixed phase-1 corpus rooted at `docs/`
 - evaluation-only RAG docs are excluded from indexing by default
 - in-memory lexical retrieval by default behind a replaceable backend abstraction
-- lexical retrieval is intentional as a zero-dependency baseline; see [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md) for the lexical vs vector comparison
-- experimental in-memory vector retrieval is available with `RAG_RETRIEVAL_MODE=vector`
+- lexical retrieval is intentional as a zero-dependency baseline; see [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md) for lexical/vector/Qdrant comparison
+- retrieval targets are selected per request in the UI: `Lexical`, `Vector - In Memory`, or `Vector - Qdrant` when ready
+- `Compare Retrieval Targets` runs the same prompt across available targets without saving those comparison results as normal conversation turns
+- each saved RAG answer records its retrieval target so reopened sessions and exports show whether lexical, in-memory vector, or Qdrant was used
 - repeatable lexical vs vector observations can be recorded with [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md)
 - RAG readiness and common vector-mode fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md)
-- phase-2 vector database design notes, including the future Qdrant path, are documented in [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md)
-- the RAG status card reports both retrieval mode (`Lexical`) and store (`In-memory`)
+- phase-2 vector database design notes, including the Qdrant path, are documented in [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md)
+- the RAG status card reports backend defaults and selected retrieval target readiness
 - answers generated by the selected provider and returned with cited source chunks
 - RAG conversations persist as local JSON sessions with saved answers and citations
-- no uploads, external vector database, or agent routing in phase 1
+- no uploads, report-corpus ingestion, automatic agent routing, or MCP retrieval integration yet
 
 ### Tools and Artifacts
 
