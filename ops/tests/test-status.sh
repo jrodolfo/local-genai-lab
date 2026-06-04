@@ -54,6 +54,23 @@ write_mock_commands() {
 #!/usr/bin/env bash
 set -euo pipefail
 url="${*: -1}"
+if [[ "${url}" == "http://localhost:8080/api/rag/status" ]]; then
+  if [ "${MOCK_BACKEND_RAG_STATUS:-up}" != "up" ]; then
+    exit 1
+  fi
+  printf '{"enabled":%s,"retrievalMode":"%s","vectorStore":"%s","qdrantUrl":"%s","qdrantCollection":"%s","embeddingProvider":"%s","embeddingModel":"%s"}\n' \
+    "${MOCK_BACKEND_RAG_ENABLED:-${RAG_ENABLED:-true}}" \
+    "${MOCK_BACKEND_RAG_RETRIEVAL_MODE:-${RAG_RETRIEVAL_MODE:-lexical}}" \
+    "${MOCK_BACKEND_RAG_VECTOR_STORE:-${RAG_VECTOR_STORE:-in-memory}}" \
+    "${MOCK_BACKEND_RAG_QDRANT_URL:-${RAG_QDRANT_URL:-http://localhost:6333}}" \
+    "${MOCK_BACKEND_RAG_QDRANT_COLLECTION:-${RAG_QDRANT_COLLECTION:-local_genai_lab_docs}}" \
+    "${MOCK_BACKEND_RAG_EMBEDDING_PROVIDER:-${RAG_EMBEDDING_PROVIDER:-ollama}}" \
+    "${MOCK_BACKEND_RAG_EMBEDDING_MODEL:-${RAG_EMBEDDING_MODEL:-nomic-embed-text}}"
+  exit 0
+fi
+if [[ "${url}" == "http://localhost:8080/actuator/health" ]]; then
+  exit 0
+fi
 if [[ "${url}" == *"localhost:11434/api/tags"* && "${MOCK_OLLAMA_SERVICE:-down}" == "up" ]]; then
   exit 0
 fi
@@ -126,9 +143,12 @@ test_lexical_mode_does_not_require_embedding_model() {
 
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=missing)"
 
-  assert_contains "${output}" 'rag enabled: true'
-  assert_contains "${output}" 'rag retrieval mode: lexical'
-  assert_contains "${output}" 'rag vector store: in-memory'
+  assert_contains "${output}" 'requested rag enabled: true'
+  assert_contains "${output}" 'requested rag retrieval mode: lexical'
+  assert_contains "${output}" 'requested rag vector store: in-memory'
+  assert_contains "${output}" 'backend rag enabled: true'
+  assert_contains "${output}" 'backend rag retrieval mode: lexical'
+  assert_contains "${output}" 'backend rag vector store: in-memory'
   assert_contains "${output}" 'ollama cli: available'
   assert_contains "${output}" 'ollama service: ok'
   assert_contains "${output}" 'ollama embedding model: not required for current mode'
@@ -145,8 +165,9 @@ test_vector_mode_reports_present_embedding_model() {
 
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
-  assert_contains "${output}" 'rag retrieval mode: vector'
-  assert_contains "${output}" 'rag vector store: in-memory'
+  assert_contains "${output}" 'requested rag retrieval mode: vector'
+  assert_contains "${output}" 'backend rag retrieval mode: vector'
+  assert_contains "${output}" 'backend rag vector store: in-memory'
   assert_contains "${output}" 'ollama service: ok'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
@@ -162,7 +183,7 @@ test_vector_mode_reports_missing_embedding_model() {
 
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=missing)"
 
-  assert_contains "${output}" 'rag retrieval mode: vector'
+  assert_contains "${output}" 'backend rag retrieval mode: vector'
   assert_contains "${output}" 'ollama embedding model: missing (nomic-embed-text)'
   assert_contains "${output}" 'hint: run ollama pull nomic-embed-text'
   rm -rf "${tmp_dir}"
@@ -178,10 +199,12 @@ test_qdrant_vector_mode_reports_reachable_service() {
 
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=up MOCK_QDRANT_COLLECTION=present MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
-  assert_contains "${output}" 'rag retrieval mode: vector'
-  assert_contains "${output}" 'rag vector store: qdrant'
-  assert_contains "${output}" 'rag qdrant url: http://localhost:6333'
-  assert_contains "${output}" 'rag qdrant collection: local_genai_lab_docs'
+  assert_contains "${output}" 'requested rag retrieval mode: vector'
+  assert_contains "${output}" 'requested rag vector store: qdrant'
+  assert_contains "${output}" 'backend rag retrieval mode: vector'
+  assert_contains "${output}" 'backend rag vector store: qdrant'
+  assert_contains "${output}" 'backend rag qdrant url: http://localhost:6333'
+  assert_contains "${output}" 'backend rag qdrant collection: local_genai_lab_docs'
   assert_contains "${output}" 'qdrant service: ok'
   assert_contains "${output}" 'qdrant collection: present (points=123)'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
@@ -213,8 +236,8 @@ test_qdrant_vector_mode_reports_unavailable_service() {
 
   output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_QDRANT_SERVICE=down MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
 
-  assert_contains "${output}" 'rag retrieval mode: vector'
-  assert_contains "${output}" 'rag vector store: qdrant'
+  assert_contains "${output}" 'backend rag retrieval mode: vector'
+  assert_contains "${output}" 'backend rag vector store: qdrant'
   assert_contains "${output}" 'qdrant service: unavailable (http://localhost:6333)'
   assert_contains "${output}" 'qdrant collection: not checked'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
@@ -231,8 +254,27 @@ test_non_ollama_non_vector_config_skips_ollama_readiness() {
 
   output="$(run_status "${tmp_dir}" APP_MODEL_PROVIDER=bedrock RAG_RETRIEVAL_MODE=lexical MOCK_OLLAMA_SERVICE=down)"
 
-  assert_contains "${output}" 'rag retrieval mode: lexical'
+  assert_contains "${output}" 'backend rag retrieval mode: lexical'
   assert_contains "${output}" 'ollama readiness: not required for current configuration'
+  rm -rf "${tmp_dir}"
+}
+
+# test_requested_config_mismatch_reports_warning
+# Purpose: Verifies status output warns when shell-requested RAG config differs from the running backend.
+test_requested_config_mismatch_reports_warning() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant MOCK_BACKEND_RAG_RETRIEVAL_MODE=lexical MOCK_BACKEND_RAG_VECTOR_STORE=in-memory MOCK_OLLAMA_SERVICE=up)"
+
+  assert_contains "${output}" 'requested rag retrieval mode: vector'
+  assert_contains "${output}" 'requested rag vector store: qdrant'
+  assert_contains "${output}" 'backend rag retrieval mode: lexical'
+  assert_contains "${output}" 'backend rag vector store: in-memory'
+  assert_contains "${output}" 'warning: requested RAG config differs from the running backend.'
+  assert_contains "${output}" 'hint: restart with the same env values to apply it'
   rm -rf "${tmp_dir}"
 }
 
@@ -248,6 +290,7 @@ main() {
   test_qdrant_vector_mode_reports_missing_collection
   test_qdrant_vector_mode_reports_unavailable_service
   test_non_ollama_non_vector_config_skips_ollama_readiness
+  test_requested_config_mismatch_reports_warning
   printf 'status tests passed\n'
 }
 

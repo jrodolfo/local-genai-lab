@@ -81,6 +81,24 @@ qdrant_collection_points() {
   printf '%s' "${body}" | sed -n 's/.*"points_count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n 1
 }
 
+json_string_field() {
+  local body="$1"
+  local field="$2"
+
+  printf '%s' "${body}" \
+    | sed -n 's/.*"'"${field}"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -n 1
+}
+
+json_bool_field() {
+  local body="$1"
+  local field="$2"
+
+  printf '%s' "${body}" \
+    | sed -n 's/.*"'"${field}"'"[[:space:]]*:[[:space:]]*\(true\|false\).*/\1/p' \
+    | head -n 1
+}
+
 # --- Process Status ---
 backend_pid="$(read_pid_file "${BACKEND_PID_FILE}")"
 frontend_pid="$(read_pid_file "${FRONTEND_PID_FILE}")"
@@ -131,34 +149,91 @@ app_model_provider_normalized="$(normalize_lower "${APP_MODEL_PROVIDER}")"
 rag_embedding_provider_normalized="$(normalize_lower "${RAG_EMBEDDING_PROVIDER}")"
 needs_ollama_status='false'
 needs_embedding_model='false'
+backend_rag_status_available='false'
+backend_rag_enabled=''
+backend_rag_retrieval_mode=''
+backend_rag_vector_store=''
+backend_rag_embedding_provider=''
+backend_rag_embedding_model=''
+backend_rag_qdrant_url=''
+backend_rag_qdrant_collection=''
+
+if backend_rag_status_body="$(curl -fsS "${BACKEND_URL}/api/rag/status" 2>/dev/null)"; then
+  backend_rag_status_available='true'
+  backend_rag_enabled="$(json_bool_field "${backend_rag_status_body}" 'enabled')"
+  backend_rag_retrieval_mode="$(json_string_field "${backend_rag_status_body}" 'retrievalMode')"
+  backend_rag_vector_store="$(json_string_field "${backend_rag_status_body}" 'vectorStore')"
+  backend_rag_embedding_provider="$(json_string_field "${backend_rag_status_body}" 'embeddingProvider')"
+  backend_rag_embedding_model="$(json_string_field "${backend_rag_status_body}" 'embeddingModel')"
+  backend_rag_qdrant_url="$(json_string_field "${backend_rag_status_body}" 'qdrantUrl')"
+  backend_rag_qdrant_collection="$(json_string_field "${backend_rag_status_body}" 'qdrantCollection')"
+fi
+
+effective_rag_enabled="${rag_enabled_normalized}"
+effective_rag_retrieval_mode="${rag_retrieval_mode_normalized}"
+effective_rag_vector_store="${rag_vector_store_normalized}"
+effective_rag_embedding_provider="${RAG_EMBEDDING_PROVIDER}"
+effective_rag_embedding_model="${RAG_EMBEDDING_MODEL}"
+effective_rag_qdrant_url="${RAG_QDRANT_URL}"
+effective_rag_qdrant_collection="${RAG_QDRANT_COLLECTION}"
+
+if [ "${backend_rag_status_available}" = 'true' ]; then
+  effective_rag_enabled="${backend_rag_enabled:-${effective_rag_enabled}}"
+  effective_rag_retrieval_mode="$(normalize_lower "${backend_rag_retrieval_mode:-${effective_rag_retrieval_mode}}")"
+  effective_rag_vector_store="$(normalize_lower "${backend_rag_vector_store:-${effective_rag_vector_store}}")"
+  effective_rag_embedding_provider="${backend_rag_embedding_provider:-${effective_rag_embedding_provider}}"
+  effective_rag_embedding_model="${backend_rag_embedding_model:-${effective_rag_embedding_model}}"
+  effective_rag_qdrant_url="${backend_rag_qdrant_url:-${effective_rag_qdrant_url}}"
+  effective_rag_qdrant_collection="${backend_rag_qdrant_collection:-${effective_rag_qdrant_collection}}"
+fi
 
 if [ "${app_model_provider_normalized}" = 'ollama' ]; then
   needs_ollama_status='true'
 fi
 
-if [ "${rag_enabled_normalized}" = 'true' ] \
-  && [ "${rag_retrieval_mode_normalized}" = 'vector' ] \
-  && [ "${rag_embedding_provider_normalized}" = 'ollama' ]; then
+if [ "${effective_rag_enabled}" = 'true' ] \
+  && [ "${effective_rag_retrieval_mode}" = 'vector' ] \
+  && [ "$(normalize_lower "${effective_rag_embedding_provider}")" = 'ollama' ]; then
   needs_ollama_status='true'
   needs_embedding_model='true'
 fi
 
 printf '%s\n' \
-  "rag enabled: ${rag_enabled_normalized}" \
-  "rag retrieval mode: ${rag_retrieval_mode_normalized}" \
-  "rag vector store: ${rag_vector_store_normalized}" \
-  "rag embedding provider: ${RAG_EMBEDDING_PROVIDER}" \
-  "rag embedding model: ${RAG_EMBEDDING_MODEL}"
+  "requested rag enabled: ${rag_enabled_normalized}" \
+  "requested rag retrieval mode: ${rag_retrieval_mode_normalized}" \
+  "requested rag vector store: ${rag_vector_store_normalized}"
 
-if [ "${rag_enabled_normalized}" = 'true' ] \
-  && [ "${rag_retrieval_mode_normalized}" = 'vector' ] \
-  && [ "${rag_vector_store_normalized}" = 'qdrant' ]; then
+if [ "${backend_rag_status_available}" = 'true' ]; then
   printf '%s\n' \
-    "rag qdrant url: ${RAG_QDRANT_URL}" \
-    "rag qdrant collection: ${RAG_QDRANT_COLLECTION}"
-  if curl -fsS "${RAG_QDRANT_URL}" >/dev/null 2>&1; then
+    "backend rag enabled: ${effective_rag_enabled}" \
+    "backend rag retrieval mode: ${effective_rag_retrieval_mode}" \
+    "backend rag vector store: ${effective_rag_vector_store}" \
+    "backend rag embedding provider: ${effective_rag_embedding_provider}" \
+    "backend rag embedding model: ${effective_rag_embedding_model}"
+
+  if [ "${rag_enabled_normalized}" != "${effective_rag_enabled}" ] \
+    || [ "${rag_retrieval_mode_normalized}" != "${effective_rag_retrieval_mode}" ] \
+    || [ "${rag_vector_store_normalized}" != "${effective_rag_vector_store}" ]; then
+    printf '%s\n' \
+      'warning: requested RAG config differs from the running backend.' \
+      'hint: restart with the same env values to apply it, for example RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh'
+  fi
+else
+  printf '%s\n' \
+    'backend rag status: unavailable' \
+    "requested rag embedding provider: ${RAG_EMBEDDING_PROVIDER}" \
+    "requested rag embedding model: ${RAG_EMBEDDING_MODEL}"
+fi
+
+if [ "${effective_rag_enabled}" = 'true' ] \
+  && [ "${effective_rag_retrieval_mode}" = 'vector' ] \
+  && [ "${effective_rag_vector_store}" = 'qdrant' ]; then
+  printf '%s\n' \
+    "backend rag qdrant url: ${effective_rag_qdrant_url}" \
+    "backend rag qdrant collection: ${effective_rag_qdrant_collection}"
+  if curl -fsS "${effective_rag_qdrant_url}" >/dev/null 2>&1; then
     printf '%s\n' 'qdrant service: ok'
-    qdrant_collection_url="${RAG_QDRANT_URL%/}/collections/${RAG_QDRANT_COLLECTION}"
+    qdrant_collection_url="${effective_rag_qdrant_url%/}/collections/${effective_rag_qdrant_collection}"
     if qdrant_point_count="$(qdrant_collection_points "${qdrant_collection_url}")"; then
       if [ -n "${qdrant_point_count}" ]; then
         printf '%s\n' "qdrant collection: present (points=${qdrant_point_count})"
@@ -166,10 +241,10 @@ if [ "${rag_enabled_normalized}" = 'true' ] \
         printf '%s\n' "qdrant collection: present (points=unknown)"
       fi
     else
-      printf '%s\n' "qdrant collection: missing (${RAG_QDRANT_COLLECTION})"
+      printf '%s\n' "qdrant collection: missing (${effective_rag_qdrant_collection})"
     fi
   else
-    printf '%s\n' "qdrant service: unavailable (${RAG_QDRANT_URL})"
+    printf '%s\n' "qdrant service: unavailable (${effective_rag_qdrant_url})"
     printf '%s\n' 'qdrant collection: not checked'
   fi
 fi
@@ -180,11 +255,11 @@ if [ "${needs_ollama_status}" = 'true' ]; then
     if curl -fsS "${OLLAMA_BASE_URL:-http://localhost:11434}/api/tags" >/dev/null 2>&1; then
       printf '%s\n' 'ollama service: ok'
       if [ "${needs_embedding_model}" = 'true' ]; then
-        if ollama_model_installed "${RAG_EMBEDDING_MODEL}"; then
-          printf '%s\n' "ollama embedding model: present (${RAG_EMBEDDING_MODEL})"
+        if ollama_model_installed "${effective_rag_embedding_model}"; then
+          printf '%s\n' "ollama embedding model: present (${effective_rag_embedding_model})"
         else
-          printf '%s\n' "ollama embedding model: missing (${RAG_EMBEDDING_MODEL})"
-          printf '%s\n' "hint: run ollama pull ${RAG_EMBEDDING_MODEL}"
+          printf '%s\n' "ollama embedding model: missing (${effective_rag_embedding_model})"
+          printf '%s\n' "hint: run ollama pull ${effective_rag_embedding_model}"
         fi
       else
         printf '%s\n' 'ollama embedding model: not required for current mode'
@@ -192,14 +267,14 @@ if [ "${needs_ollama_status}" = 'true' ]; then
     else
       printf '%s\n' "ollama service: unavailable (${OLLAMA_BASE_URL:-http://localhost:11434})"
       if [ "${needs_embedding_model}" = 'true' ]; then
-        printf '%s\n' "ollama embedding model: not checked (${RAG_EMBEDDING_MODEL})"
+        printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
       fi
     fi
   else
     printf '%s\n' 'ollama cli: missing'
     printf '%s\n' 'ollama service: not checked'
     if [ "${needs_embedding_model}" = 'true' ]; then
-      printf '%s\n' "ollama embedding model: not checked (${RAG_EMBEDDING_MODEL})"
+      printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
     fi
   fi
 else
