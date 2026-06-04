@@ -120,7 +120,6 @@ function RagWorkspace() {
                 ...retrievalOptionsFromTarget(selectedRetrievalTarget)
             });
             setSessionId(payload.sessionId);
-            setQuestion('');
             setMessages((currentMessages) => [
                 ...currentMessages,
                 createRagQuestionMessage(submittedQuestion),
@@ -466,6 +465,7 @@ function RagWorkspace() {
 
                             <p className="rag-selection-note">
                                 {retrievalTargetHint(selectedRetrievalTarget, ragStatus)}
+                                {' '}Rebuild Index applies to the selected retrieval target. If a vector target has not been indexed yet, rebuild before asking.
                             </p>
 
                             <div className="rag-field-grid rag-field-grid--single">
@@ -502,6 +502,13 @@ function RagWorkspace() {
                                         onClick={handleCompareRetrievalTargets}>
                                     {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
                                 </button>
+                            </div>
+                            <div className="rag-action-help" aria-live="polite">
+                                {!question.trim() ? (
+                                    <p>Enter a question to ask or compare retrieval targets.</p>
+                                ) : null}
+                                <p><strong>Ask Docs Corpus</strong> saves one answer using the selected retrieval target.</p>
+                                <p><strong>Compare Retrieval Targets</strong> runs the same question across available targets without saving results.</p>
                             </div>
                         </form>
 
