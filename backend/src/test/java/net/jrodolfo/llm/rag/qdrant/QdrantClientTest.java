@@ -62,7 +62,7 @@ class QdrantClientTest {
                 () -> client.collectionExists("http://localhost:6333", "broken")
         );
 
-        assertEquals("Failed to check Qdrant collection: HTTP 500.", ex.getMessage());
+        assertEquals("Failed to check Qdrant collection: HTTP 500. {}", ex.getMessage());
     }
 
     @Test
@@ -150,7 +150,7 @@ class QdrantClientTest {
                 () -> client.deleteCollection("http://localhost:6333", "broken")
         );
 
-        assertEquals("Failed to delete Qdrant collection: HTTP 503.", ex.getMessage());
+        assertEquals("Failed to delete Qdrant collection: HTTP 503. {}", ex.getMessage());
     }
 
     @Test
@@ -197,7 +197,7 @@ class QdrantClientTest {
 
         assertEquals("POST", httpClient.lastRequest.method());
         assertEquals(URI.create("http://localhost:6333/collections/local_genai_lab_docs/points/search"), httpClient.lastRequest.uri());
-        assertEquals("{\"vector\":[0.1,0.2],\"limit\":4,\"withPayload\":true}", httpClient.lastBody);
+        assertEquals("{\"vector\":[0.1,0.2],\"limit\":4,\"with_payload\":true}", httpClient.lastBody);
         assertEquals(1, results.size());
         assertEquals("architecture.md#0", results.getFirst().id());
         assertEquals(0.91, results.getFirst().score());
@@ -215,7 +215,7 @@ class QdrantClientTest {
                 () -> client.search("http://localhost:6333", "local_genai_lab_docs", List.of(0.1), 4)
         );
 
-        assertEquals("Failed to search Qdrant points: HTTP 503.", ex.getMessage());
+        assertEquals("Failed to search Qdrant points: HTTP 503. {}", ex.getMessage());
     }
 
     @Test

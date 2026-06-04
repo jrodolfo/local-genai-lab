@@ -60,6 +60,12 @@ public class QdrantVectorRagRetrievalStore {
 
     private RagMatch toRagMatch(QdrantSearchResult result) {
         QdrantPointPayload payload = result.payload();
+        if (payload == null) {
+            throw new RagVectorRetrievalException(
+                    "Qdrant vector retrieval returned results without payload metadata. "
+                            + "Rebuild the index and confirm the search request includes with_payload=true."
+            );
+        }
         return new RagMatch(
                 new RagChunk(
                         payload.chunkId(),

@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.qdrant;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -188,7 +189,7 @@ public class QdrantClient {
     private void ensureSuccess(HttpResponse<String> response, String action) {
         if (response.statusCode() < 200 || response.statusCode() >= 300) {
             throw new QdrantClientException(
-                    "Failed to " + action + ": HTTP " + response.statusCode() + "."
+                    "Failed to " + action + ": HTTP " + response.statusCode() + ". " + response.body()
             );
         }
     }
@@ -202,6 +203,11 @@ public class QdrantClient {
     private record QdrantUpsertRequest(List<QdrantPoint> points) {
     }
 
-    private record QdrantSearchRequest(List<Double> vector, int limit, boolean withPayload) {
+    private record QdrantSearchRequest(
+            List<Double> vector,
+            int limit,
+            @JsonProperty("with_payload")
+            boolean withPayload
+    ) {
     }
 }

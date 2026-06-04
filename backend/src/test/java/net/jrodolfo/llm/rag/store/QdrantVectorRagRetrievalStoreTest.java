@@ -85,6 +85,24 @@ class QdrantVectorRagRetrievalStoreTest {
         );
     }
 
+    @Test
+    void missingQdrantPayloadFailsClearly() {
+        QdrantVectorRagRetrievalStore store = new QdrantVectorRagRetrievalStore(
+                properties(),
+                new RecordingQdrantClient(List.of(new QdrantSearchResult("architecture.md#0", 0.87, null)))
+        );
+
+        RagVectorRetrievalException ex = assertThrows(
+                RagVectorRetrievalException.class,
+                () -> store.searchByVector(List.of(0.1, 0.2), 4)
+        );
+
+        assertEquals(
+                "Qdrant vector retrieval returned results without payload metadata. Rebuild the index and confirm the search request includes with_payload=true.",
+                ex.getMessage()
+        );
+    }
+
     private static RagProperties properties() {
         return new RagProperties(
                 true,
