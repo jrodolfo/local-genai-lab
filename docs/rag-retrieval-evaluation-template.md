@@ -6,6 +6,9 @@ The goal is not to prove that vector retrieval is always better. The goal is to
 record which retrieval target returns the most useful cited chunks and answer for
 this project, with enough detail to reproduce weak results.
 
+For a filled-in illustrative example, see
+[rag-retrieval-evaluation-example.md](./rag-retrieval-evaluation-example.md).
+
 ## How To Run
 
 1. Start the app:
@@ -178,6 +181,7 @@ Record only repeated behavior across multiple prompts, providers, or days.
 ## Related References
 
 - [rag-evaluation-guide.md](./rag-evaluation-guide.md)
+- [rag-retrieval-evaluation-example.md](./rag-retrieval-evaluation-example.md)
 - [rag-troubleshooting.md](./rag-troubleshooting.md)
 - [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
 - [ADR 0014](./adr/0014-add-request-scoped-rag-retrieval-selection-and-comparison.md)
