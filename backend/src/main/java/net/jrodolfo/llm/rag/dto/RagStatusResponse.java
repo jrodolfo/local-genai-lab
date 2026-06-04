@@ -1,5 +1,7 @@
 package net.jrodolfo.llm.rag.dto;
 
+import java.util.List;
+
 /**
  * Response DTO containing the current status of the RAG (Retrieval-Augmented Generation) system.
  *
@@ -20,6 +22,7 @@ package net.jrodolfo.llm.rag.dto;
  * @param qdrantStatusMessage A user-facing Qdrant readiness message.
  * @param embeddingProvider The configured embedding provider for vector retrieval.
  * @param embeddingModel    The configured embedding model for vector retrieval.
+ * @param retrievalTargets Selectable request-scoped retrieval targets with readiness details.
  */
 public record RagStatusResponse(
         boolean enabled,
@@ -38,6 +41,7 @@ public record RagStatusResponse(
         Long qdrantPointCount,
         String qdrantStatusMessage,
         String embeddingProvider,
-        String embeddingModel
+        String embeddingModel,
+        List<RagRetrievalTargetResponse> retrievalTargets
 ) {
 }
