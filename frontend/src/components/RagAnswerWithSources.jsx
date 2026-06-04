@@ -12,9 +12,10 @@
  * @param {string} props.result.model - The model ID used.
  * @param {Object} props.result.ragRetrieval - Retrieval metadata used by the answer.
  * @param {Array<Object>} props.result.sources - Array of source objects.
+ * @param {boolean} [props.showTechnicalDetails=false] - Whether to show diagnostic metadata.
  * @returns {React.JSX.Element|null} The rendered component or null if no result.
  */
-function RagAnswerWithSources({result}) {
+function RagAnswerWithSources({result, showTechnicalDetails = false}) {
     if (!result) {
         return null;
     }
@@ -25,9 +26,17 @@ function RagAnswerWithSources({result}) {
                 <h2>Answer</h2>
                 <p>
                     {labelForProvider(result.provider)} · {result.model}
-                    {result.ragRetrieval ? ` · Retrieval: ${labelForRetrieval(result.ragRetrieval)}` : ''}
+                    {!showTechnicalDetails && result.ragRetrieval ? ` · Retrieval: ${labelForRetrieval(result.ragRetrieval)}` : ''}
                 </p>
             </div>
+            {showTechnicalDetails ? (
+                <div className="rag-technical-details" aria-label="RAG technical details">
+                    <span>provider: {labelForProvider(result.provider)}</span>
+                    <span>model: {result.model || 'unknown'}</span>
+                    {result.ragRetrieval ? <span>retrieval: {labelForRetrieval(result.ragRetrieval)}</span> : null}
+                    {result.elapsedMs != null ? <span>request elapsed: {formatDuration(result.elapsedMs)}</span> : null}
+                </div>
+            ) : null}
             <div className="rag-answer-card__body">
                 <p>{result.answer}</p>
             </div>
@@ -39,7 +48,7 @@ function RagAnswerWithSources({result}) {
                             <div className="rag-source__meta">
                                 <strong>{source.title}</strong>
                                 <span>{source.sourcePath}</span>
-                                <span>score {source.score}</span>
+                                {showTechnicalDetails ? <span>score {source.score}</span> : null}
                             </div>
                             <p>{source.excerpt}</p>
                         </li>
@@ -85,6 +94,14 @@ function labelForRetrieval(ragRetrieval) {
 function capitalize(value) {
     const normalized = String(value || '').replaceAll('-', ' ');
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function formatDuration(totalMs) {
+    const durationMs = Math.max(0, Math.round(totalMs ?? 0));
+    if (durationMs >= 1000) {
+        return `${(durationMs / 1000).toFixed(1)} s`;
+    }
+    return `${durationMs} ms`;
 }
 
 export default RagAnswerWithSources;

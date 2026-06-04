@@ -4,10 +4,15 @@
  */
 import {render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import {beforeEach} from 'vitest';
 import {http, HttpResponse, server} from '../test/mswServer';
 import RagWorkspace from './RagWorkspace';
 
 describe('RagWorkspace', () => {
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
     it('loads status, submits a docs query, and renders cited sources from the saved rag session', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({
@@ -113,14 +118,18 @@ describe('RagWorkspace', () => {
         const user = userEvent.setup();
 
         expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
+        expect(screen.queryByText(/Experimental/i)).not.toBeInTheDocument();
+        expect(screen.getByRole('checkbox', {name: /show technical details/i})).not.toBeChecked();
         expect(screen.getByText('Status')).toBeInTheDocument();
         expect(screen.getByText('ready')).toBeInTheDocument();
-        expect(screen.getAllByText('Retrieval').length).toBeGreaterThan(0);
+        expect(screen.getByText('Corpus')).toBeInTheDocument();
+        expect(screen.getByText('docs/')).toBeInTheDocument();
+        expect(screen.getByText('Chunks')).toBeInTheDocument();
+        expect(screen.getByText('48')).toBeInTheDocument();
+        expect(screen.getByText('Selected')).toBeInTheDocument();
         expect(screen.getAllByText('Lexical').length).toBeGreaterThan(0);
-        expect(screen.getByText('Store')).toBeInTheDocument();
-        expect(screen.getByText('In memory')).toBeInTheDocument();
-        expect(screen.getByText(/Backend default is lexical retrieval/i)).toBeInTheDocument();
-        expect(screen.getByText(/Use the Retrieval selector to try vector retrieval per question/i)).toBeInTheDocument();
+        expect(screen.queryByText('Store')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Backend default is lexical retrieval/i)).not.toBeInTheDocument();
         expect(screen.getByRole('combobox', {name: /retrieval/i})).toHaveValue('lexical:in-memory');
         expect(screen.getByRole('button', {name: /Ask docs corpus/i})).toBeDisabled();
         expect(screen.getByRole('button', {name: /Compare retrieval targets/i})).toBeDisabled();
@@ -144,6 +153,15 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
         expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Ask a question about the project docs/i)).toHaveValue('How does provider selection work?');
+        expect(within(latestTurn).queryByText(/request elapsed:/i)).not.toBeInTheDocument();
+        expect(within(latestTurn).queryByText(/score 0.88/i)).not.toBeInTheDocument();
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
+        expect(within(latestTurn).getByLabelText(/rag technical details/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/provider: Ollama/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/model: llama3:8b/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/retrieval: Lexical/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/request elapsed:/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/score 0.88/i)).toBeInTheDocument();
         expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
     });
 
@@ -539,8 +557,11 @@ describe('RagWorkspace', () => {
         );
 
         render(<RagWorkspace/>);
+        const user = userEvent.setup();
 
-        expect(await screen.findByText('Vector')).toBeInTheDocument();
+        await user.click(await screen.findByRole('checkbox', {name: /show technical details/i}));
+        expect(await screen.findByText('Index Details')).toBeInTheDocument();
+        expect(screen.getByText('Vector')).toBeInTheDocument();
         expect(screen.getByText('In memory vector')).toBeInTheDocument();
         expect(screen.getByText('Embedding')).toBeInTheDocument();
         expect(screen.getByText('Ollama / nomic-embed-text')).toBeInTheDocument();
@@ -585,7 +606,9 @@ describe('RagWorkspace', () => {
         );
 
         render(<RagWorkspace/>);
+        const user = userEvent.setup();
 
+        await user.click(await screen.findByRole('checkbox', {name: /show technical details/i}));
         expect(await screen.findByText('Qdrant')).toBeInTheDocument();
         expect(screen.getByText('Reachable')).toBeInTheDocument();
         expect(screen.getByText('Collection')).toBeInTheDocument();
@@ -626,7 +649,9 @@ describe('RagWorkspace', () => {
         );
 
         render(<RagWorkspace/>);
+        const user = userEvent.setup();
 
+        await user.click(await screen.findByRole('checkbox', {name: /show technical details/i}));
         expect(await screen.findByText('Collection')).toBeInTheDocument();
         expect(screen.getByText('Missing')).toBeInTheDocument();
         expect(screen.getByText('Qdrant collection local_genai_lab_docs is missing. Rebuild the index.')).toBeInTheDocument();
@@ -668,7 +693,9 @@ describe('RagWorkspace', () => {
         );
 
         render(<RagWorkspace/>);
+        const user = userEvent.setup();
 
+        await user.click(await screen.findByRole('checkbox', {name: /show technical details/i}));
         expect(await screen.findByText('Qdrant')).toBeInTheDocument();
         expect(screen.getByText('Unavailable')).toBeInTheDocument();
         expect(screen.getByText('Not checked')).toBeInTheDocument();
