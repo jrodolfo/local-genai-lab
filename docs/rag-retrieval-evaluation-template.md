@@ -1,126 +1,183 @@
 # RAG Retrieval Evaluation Template
 
-Use this template to compare RAG retrieval modes against the same local docs
-corpus and prompt set.
+Use this template to record one manual RAG comparison pass from the current UI.
 
 The goal is not to prove that vector retrieval is always better. The goal is to
-record whether a retrieval mode returns better source chunks for this project,
-with enough detail to reproduce weak results.
+record which retrieval target returns the most useful cited chunks and answer for
+this project, with enough detail to reproduce weak results.
 
-## Metadata
+## How To Run
 
-- Date:
+1. Start the app:
+
+   ```bash
+   ./restart.sh
+   ```
+
+2. Open the `RAG` workspace.
+3. Confirm the retrieval targets and readiness messages look correct.
+4. Type one prompt.
+5. Click `Compare Retrieval Targets`.
+6. Copy the relevant observations into this template.
+
+Comparison results are not saved as normal RAG session turns. Use `Ask Docs
+Corpus` only when you want the selected-target answer persisted in session
+history.
+
+Backend env vars such as `RAG_RETRIEVAL_MODE` and `RAG_VECTOR_STORE` are useful
+for startup defaults and status checks, but they are not required for normal UI
+comparison.
+
+## Run Metadata
+
+- Date/time:
 - Tester:
 - Commit:
-- Corpus root:
-- RAG enabled:
-- Retrieval mode:
-- Retrieval store:
+- Browser:
 - Provider:
 - Model:
+- Corpus root:
+- Documents:
+- Chunks:
 - Top K:
-- Embedding provider, if vector:
-- Embedding model, if vector:
 - Index rebuilt before test: yes | no
+- Notes about startup defaults:
 
-## Prompt Set
+## Target Readiness
 
-Use the same prompts across retrieval modes when comparing lexical and vector
-behavior.
+Record what the UI showed before running the comparison.
 
-1. `How does provider selection work?`
-2. `Why is MCP separate from the backend?`
-3. `How are sessions persisted?`
-4. `What ADR explains the Mermaid architecture diagram?`
-5. `Where does conversation history live?`
-6. `What should I check when vector RAG is not working?`
-
-## Single Run Notes
-
-### Prompt
-
--
-
-### Retrieved Or Cited Chunks
-
-Record the visible cited chunks or the most relevant retrieved sources.
-
-| Rank | Source | Chunk summary | Relevant? | Notes |
+| Retrieval target | Available? | Ready message | Rebuilt before test? | Notes |
 | --- | --- | --- | --- | --- |
-| 1 |  |  | yes |  |
-| 2 |  |  | yes |  |
-| 3 |  |  | partial |  |
-| 4 |  |  | no |  |
+| Lexical | yes |  | yes |  |
+| Vector - In Memory | yes |  | yes |  |
+| Vector - Qdrant | yes |  | yes |  |
 
-### Answer Quality
+## Prompt
+
+```text
+
+```
+
+Suggested prompts:
+
+- `How does provider selection work?`
+- `Why is MCP separate from the backend?`
+- `How are sessions persisted?`
+- `What ADR explains the Mermaid architecture diagram?`
+- `Where does conversation history live?`
+- `What should I check when vector RAG is not working?`
+
+## Per-Target Results
+
+### Lexical
+
+- Status: success | failed | unavailable
+- Answer summary:
+- Main cited sources:
+
+| Rank | Source | Score | Chunk summary | Relevant? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 |  |  |  | yes |  |
+| 2 |  |  |  | partial |  |
+| 3 |  |  |  | no |  |
 
 - Factual alignment: good | acceptable | weak
-- Focus: good | acceptable | weak
 - Grounding in cited chunks: good | acceptable | weak
-- Hallucinated or unsupported claims:
 - Missing important detail:
-- Useful synthesis:
+- Unsupported or hallucinated claim:
+- Runtime/setup issue:
 
-### Citation Quality
+### Vector - In Memory
 
-- Cited the right files: yes | partial | no
-- Citations help verify the answer: yes | partial | no
-- Low-signal citations:
-- Missing expected source:
+- Status: success | failed | unavailable
+- Answer summary:
+- Main cited sources:
 
-### Timing And UX
+| Rank | Source | Score | Chunk summary | Relevant? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 |  |  |  | yes |  |
+| 2 |  |  |  | partial |  |
+| 3 |  |  |  | no |  |
 
-- Total response time:
-- Perceived responsiveness: good | acceptable | weak
-- UI status was clear: yes | partial | no
-- Notes:
+- Factual alignment: good | acceptable | weak
+- Grounding in cited chunks: good | acceptable | weak
+- Missing important detail:
+- Unsupported or hallucinated claim:
+- Runtime/setup issue:
 
-### Failure Mode
+### Vector - Qdrant
 
-Use this section only if the result was weak or failed.
+- Status: success | failed | unavailable
+- Answer summary:
+- Main cited sources:
+
+| Rank | Source | Score | Chunk summary | Relevant? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 |  |  |  | yes |  |
+| 2 |  |  |  | partial |  |
+| 3 |  |  |  | no |  |
+
+- Factual alignment: good | acceptable | weak
+- Grounding in cited chunks: good | acceptable | weak
+- Missing important detail:
+- Unsupported or hallucinated claim:
+- Runtime/setup issue:
+
+## Comparison Summary
+
+- Best retrieval target for this prompt:
+- Best answer for this prompt:
+- Best cited sources for this prompt:
+- Did vector retrieval improve over lexical? yes | partial | no
+- Did Qdrant match in-memory vector behavior? yes | partial | no | not tested
+- Was the winning answer clearly grounded in cited chunks? yes | partial | no
+- Was the UI status/readiness clear? yes | partial | no
+
+## Observed Tradeoffs
+
+Use concrete observations, not general assumptions.
+
+- Lexical strengths:
+- Lexical weaknesses:
+- Vector in-memory strengths:
+- Vector in-memory weaknesses:
+- Qdrant strengths:
+- Qdrant weaknesses:
+
+## Failure Or Weak Result Notes
+
+Use this section only if a target failed or gave a weak result.
 
 - Retrieval issue:
 - Answer-generation issue:
 - Citation issue:
 - Runtime/setup issue:
 - Reproducible: yes | no
-- Follow-up action:
+- Exact steps to reproduce:
 
-## Lexical Vs Vector Comparison
+## Follow-Up Decision
 
-Use this table for side-by-side comparison of the same prompt.
+- No action needed:
+- Documentation update needed:
+- Prompting change needed:
+- Chunking/scoring change needed:
+- Indexing/readiness change needed:
+- UI change needed:
+- Should this become an engineering task? yes | no
+- Proposed issue/task title:
 
-| Prompt | Lexical sources | Vector sources | Better retrieval | Better answer | Notes |
-| --- | --- | --- | --- | --- | --- |
-| How does provider selection work? |  |  | lexical | lexical |  |
-| Why is MCP separate from the backend? |  |  | tie | vector |  |
-| How are sessions persisted? |  |  | lexical | tie |  |
-| What ADR explains the Mermaid architecture diagram? |  |  | lexical | lexical |  |
-| Where does conversation history live? |  |  | vector | vector |  |
-| What should I check when vector RAG is not working? |  |  | vector | tie |  |
+## Repeated Findings Across Runs
 
-## Scorecard
-
-- Retrieval relevance: good | acceptable | weak
-- Citation usefulness: good | acceptable | weak
-- Answer grounding: good | acceptable | weak
-- Setup clarity: good | acceptable | weak
-- Overall result: good | acceptable | weak
-
-## Repeated Findings
-
-Record repeated behavior across multiple prompts or providers.
+Record only repeated behavior across multiple prompts, providers, or days.
 
 1.
 2.
 3.
-
-## Recommended Engineering Follow-Up
-
-- 
 
 ## Related References
 
 - [rag-evaluation-guide.md](./rag-evaluation-guide.md)
 - [rag-troubleshooting.md](./rag-troubleshooting.md)
 - [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
+- [ADR 0014](./adr/0014-add-request-scoped-rag-retrieval-selection-and-comparison.md)
