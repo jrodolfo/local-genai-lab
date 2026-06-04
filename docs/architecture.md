@@ -42,6 +42,7 @@ Current ADRs:
 - [ADR 0011: Use Mermaid As The Architecture Source Of Truth](./adr/0011-use-mermaid-as-architecture-source-of-truth.md)
 - [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 - [ADR 0013: Use Ollama Embeddings And Qdrant For Phase-2 RAG Vector Retrieval](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
+- [ADR 0014: Add Request-Scoped RAG Retrieval Selection And Comparison](./adr/0014-add-request-scoped-rag-retrieval-selection-and-comparison.md)
 
 ## Main Components
 
@@ -188,22 +189,27 @@ from the main chat and MCP orchestration flow.
 Current responsibilities:
 
 - query a fixed local corpus rooted at `docs/`
-- retrieve relevant chunks through the default in-memory lexical retrieval layer
-- optionally retrieve through the experimental in-memory vector retrieval layer when `RAG_RETRIEVAL_MODE=vector`
+- retrieve relevant chunks through a request-scoped retrieval target
+- support `Lexical`, `Vector - In Memory`, and `Vector - Qdrant` targets when available
+- expose retrieval target readiness through `/api/rag/status`
+- rebuild the index for the currently selected retrieval target
+- compare available retrieval targets side by side without saving comparison runs as normal session turns
 - send those chunks to the selected provider
 - return the generated answer with cited source chunks
+- persist retrieval metadata on saved RAG answers
 
 Important boundaries:
 
 - RAG uses separate `/api/rag/*` endpoints
 - RAG does not currently share the main `/api/chat` flow
 - RAG does not invoke MCP tools
-- RAG does not yet support uploads, report ingestion, automatic routing, or an external vector database
+- RAG does not yet support uploads, report ingestion, automatic routing, or MCP retrieval integration
 
 Related ADRs:
 
 - [ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 - [ADR 0013: Use Ollama Embeddings And Qdrant For Phase-2 RAG Vector Retrieval](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
+- [ADR 0014: Add Request-Scoped RAG Retrieval Selection And Comparison](./adr/0014-add-request-scoped-rag-retrieval-selection-and-comparison.md)
 
 Manual evaluation and retrieval tradeoff notes:
 
@@ -287,19 +293,19 @@ For tool-assisted streaming turns, the backend also emits explicit tool-phase ev
 
 ```text
 React -> /api/rag/query
-      -> local docs corpus retrieval
+      -> selected local docs corpus retrieval target
       -> selected provider
-      -> answer + cited source chunks
+      -> answer + cited source chunks + retrieval metadata
 ```
 
 Step-by-step:
 
 1. the user opens the separate `RAG` workspace
-2. the frontend sends the question to `/api/rag/query`
-3. the backend retrieves the top matching chunks from the fixed local docs corpus using the configured retrieval mode
+2. the frontend sends the question and selected retrieval target to `/api/rag/query`
+3. the backend retrieves the top matching chunks from the fixed local docs corpus using that retrieval target
 4. the backend builds a provider prompt grounded in those chunks
 5. the selected provider generates the answer
-6. the backend returns the answer together with the cited source chunks
+6. the backend returns the answer together with cited source chunks and retrieval metadata
 
 For manual evaluation guidance and the recommended prompt set, see
 [rag-evaluation-guide.md](./rag-evaluation-guide.md).

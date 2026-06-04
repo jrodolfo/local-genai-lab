@@ -75,3 +75,4 @@ Start new records from [template.md](template.md).
 - [0011-use-mermaid-as-architecture-source-of-truth.md](0011-use-mermaid-as-architecture-source-of-truth.md): keep Mermaid diagrams as the maintained architecture diagram source.
 - [0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md](0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md): add an isolated RAG workspace over the local docs corpus using in-memory lexical retrieval.
 - [0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md](0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md): use Ollama embeddings and Qdrant as the phase-2 vector retrieval direction while keeping lexical retrieval available.
+- [0014-add-request-scoped-rag-retrieval-selection-and-comparison.md](0014-add-request-scoped-rag-retrieval-selection-and-comparison.md): select and compare RAG retrieval targets per request while preserving retrieval metadata on saved answers.
