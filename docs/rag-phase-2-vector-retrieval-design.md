@@ -246,7 +246,7 @@ Qdrant-backed store is implemented.
 
 ## Local Qdrant Runtime Shape
 
-The first local Qdrant setup should be Docker-based.
+The first local Qdrant setup is Docker-based.
 
 Expected developer flow:
 

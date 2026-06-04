@@ -271,6 +271,19 @@ docker compose up --build
 - frontend: `http://localhost:3000`
 - backend: `http://localhost:8080`
 
+Qdrant is available as an optional local service for the phase-2 RAG vector
+database path. It is not required for default startup, lexical RAG, or current
+in-memory vector retrieval.
+
+```bash
+docker compose up -d qdrant
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+./status.sh
+```
+
+At this stage, Qdrant readiness is visible in status output and the RAG UI, but
+Qdrant-backed retrieval is still future work.
+
 ## Configuration Overview
 
 The most important backend settings are:

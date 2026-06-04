@@ -106,9 +106,16 @@ rag qdrant collection: local_genai_lab_docs
 qdrant service: ok
 ```
 
-If Qdrant is unavailable, start it before rebuilding the index. Qdrant retrieval
-is still a phase-2 implementation path; current vector retrieval remains
-in-memory until the Qdrant-backed store is added.
+If Qdrant is unavailable, start it before rebuilding the index:
+
+```bash
+docker compose up -d qdrant
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+./status.sh
+```
+
+Qdrant retrieval is still a phase-2 implementation path; current vector
+retrieval remains in-memory until the Qdrant-backed store is added.
 
 If the service is unavailable, start Ollama and rerun `./status.sh`.
 

@@ -32,6 +32,7 @@ Already implemented:
 - `RAG_VECTOR_STORE`
 - `RAG_QDRANT_URL`
 - `RAG_QDRANT_COLLECTION`
+- Qdrant service in Docker Compose
 - Qdrant configuration fields in `/api/rag/status`
 - live Qdrant reachability in `/api/rag/status`
 - `status.sh` RAG/Ollama readiness checks
@@ -42,7 +43,6 @@ Already implemented:
 
 Not implemented yet:
 
-- Qdrant service in Docker Compose
 - Qdrant client boundary
 - Qdrant-backed retrieval store
 - optional Qdrant integration tests
@@ -73,9 +73,9 @@ Acceptance criteria:
 
 Docker tasks:
 
-- Add a `qdrant` service to `docker-compose.yml`.
-- Expose Qdrant on `6333`.
-- Use a named volume for local Qdrant data.
+- Keep the `qdrant` service in `docker-compose.yml`.
+- Keep Qdrant exposed on `6333`.
+- Keep a named volume for local Qdrant data.
 - Do not make the default backend test suite depend on the Qdrant container.
 
 Expected local command:
