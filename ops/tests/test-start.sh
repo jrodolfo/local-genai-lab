@@ -69,15 +69,25 @@ EOF
   chmod +x "${bin_dir}/docker"
 }
 
+link_required_tool() {
+  local bin_dir="$1"
+  local tool="$2"
+  local tool_path
+
+  tool_path="$(command -v "${tool}")"
+  ln -s "${tool_path}" "${bin_dir}/${tool}"
+}
+
 run_start() {
   local tmp_dir="$1"
   shift
   local env_file="${tmp_dir}/test.env"
+  local start_path="${START_TEST_PATH:-${tmp_dir}/bin:/usr/bin:/bin}"
   : >"${env_file}"
 
   env -i \
     HOME="${HOME:-}" \
-    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    PATH="${start_path}" \
     ENV_FILE="${env_file}" \
     RUN_DIR="${tmp_dir}/run" \
     START_DRY_RUN=true \
@@ -133,8 +143,13 @@ test_qdrant_vector_mode_requires_docker() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
   mkdir -p "${tmp_dir}/bin"
+  link_required_tool "${tmp_dir}/bin" bash
+  link_required_tool "${tmp_dir}/bin" dirname
+  link_required_tool "${tmp_dir}/bin" pwd
+  link_required_tool "${tmp_dir}/bin" mkdir
+  link_required_tool "${tmp_dir}/bin" tr
 
-  if run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant >/tmp/start-qdrant-missing.out 2>/tmp/start-qdrant-missing.err; then
+  if START_TEST_PATH="${tmp_dir}/bin" run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant >/tmp/start-qdrant-missing.out 2>/tmp/start-qdrant-missing.err; then
     printf 'expected qdrant mode without docker to fail\n' >&2
     exit 1
   fi
