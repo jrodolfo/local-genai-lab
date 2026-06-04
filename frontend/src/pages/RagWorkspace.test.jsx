@@ -34,7 +34,9 @@ describe('RagWorkspace', () => {
                 expect(body).toMatchObject({
                     question: 'How does provider selection work?',
                     provider: 'ollama',
-                    model: 'llama3:8b'
+                    model: 'llama3:8b',
+                    retrievalMode: 'lexical',
+                    vectorStore: 'in-memory'
                 });
                 return HttpResponse.json({
                     answer: 'Provider selection is handled by the provider registry.',
@@ -103,11 +105,13 @@ describe('RagWorkspace', () => {
         expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
         expect(screen.getByText('Status')).toBeInTheDocument();
         expect(screen.getByText('ready')).toBeInTheDocument();
-        expect(screen.getByText('Retrieval')).toBeInTheDocument();
-        expect(screen.getByText('Lexical')).toBeInTheDocument();
+        expect(screen.getAllByText('Retrieval').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Lexical').length).toBeGreaterThan(0);
         expect(screen.getByText('Store')).toBeInTheDocument();
         expect(screen.getByText('In memory')).toBeInTheDocument();
-        expect(screen.getByText(/Default zero-dependency lexical baseline/i)).toBeInTheDocument();
+        expect(screen.getByText(/Backend default is lexical retrieval/i)).toBeInTheDocument();
+        expect(screen.getByText(/Use the Retrieval selector to try vector retrieval per question/i)).toBeInTheDocument();
+        expect(screen.getByRole('combobox', {name: /retrieval/i})).toHaveValue('lexical:in-memory');
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
@@ -124,6 +128,99 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
         expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
         expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
+    });
+
+    it('sends selected vector retrieval options with rebuild and query requests', async () => {
+        const receivedQueries = [];
+        const receivedIndexes = [];
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory',
+                vectorStore: 'in-memory',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([])),
+            http.post('/api/rag/index', async ({request}) => {
+                receivedIndexes.push(await request.json());
+                return HttpResponse.json({
+                    corpusRoot: '/repo/docs',
+                    documentCount: 12,
+                    chunkCount: 48,
+                    retrievalMode: 'vector'
+                });
+            }),
+            http.post('/api/rag/query', async ({request}) => {
+                receivedQueries.push(await request.json());
+                return HttpResponse.json({
+                    answer: 'Sessions are stored as local JSON files.',
+                    provider: 'ollama',
+                    model: 'llama3:8b',
+                    sessionId: 'rag-session-2',
+                    sources: [
+                        {
+                            sourcePath: 'sessions.md',
+                            title: 'Sessions',
+                            excerpt: 'Sessions are stored as local JSON files.',
+                            score: 0.9
+                        }
+                    ],
+                    metadata: {
+                        provider: 'ollama',
+                        modelId: 'llama3:8b'
+                    }
+                });
+            }),
+            http.get('/api/sessions/rag-session-2', () => HttpResponse.json({
+                sessionId: 'rag-session-2',
+                title: 'How are sessions persisted?',
+                summary: 'Sessions are stored as local JSON files.',
+                mode: 'rag',
+                model: 'llama3:8b',
+                createdAt: '2026-05-27T12:00:00Z',
+                updatedAt: '2026-05-27T12:00:05Z',
+                messages: [
+                    ragMessage('user', 'How are sessions persisted?', '2026-05-27T12:00:00Z'),
+                    ragMessage('assistant', 'Sessions are stored as local JSON files.', '2026-05-27T12:00:05Z')
+                ],
+                pendingTool: null
+            }))
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        const retrievalSelect = await screen.findByRole('combobox', {name: /retrieval/i});
+        await user.selectOptions(retrievalSelect, 'vector:in-memory');
+        expect(screen.getByText(/Uses Ollama embeddings and an in-memory vector index/i)).toBeInTheDocument();
+
+        await user.click(screen.getByRole('button', {name: /Rebuild index/i}));
+        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How are sessions persisted?');
+        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
+
+        await waitFor(() => {
+            expect(receivedIndexes).toHaveLength(1);
+            expect(receivedQueries).toHaveLength(1);
+        });
+        expect(receivedIndexes[0]).toMatchObject({retrievalMode: 'vector', vectorStore: 'in-memory'});
+        expect(receivedQueries[0]).toMatchObject({
+            question: 'How are sessions persisted?',
+            retrievalMode: 'vector',
+            vectorStore: 'in-memory'
+        });
     });
 
     it('shows a disabled state when the backend reports RAG is off', async () => {
@@ -182,8 +279,8 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('In memory vector')).toBeInTheDocument();
         expect(screen.getByText('Embedding')).toBeInTheDocument();
         expect(screen.getByText('Ollama / nomic-embed-text')).toBeInTheDocument();
-        expect(screen.getByText(/Experimental local vector retrieval/i)).toBeInTheDocument();
-        expect(screen.getByText(/Change RAG_RETRIEVAL_MODE and restart/i)).toBeInTheDocument();
+        expect(screen.getByText(/Backend default is vector retrieval/i)).toBeInTheDocument();
+        expect(screen.getByText(/Use the Retrieval selector to override per question/i)).toBeInTheDocument();
     });
 
     it('shows qdrant readiness when qdrant vector store is reachable', async () => {

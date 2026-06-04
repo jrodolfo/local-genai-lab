@@ -216,6 +216,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.rag-field-grid--single {
+    grid-template-columns: 1fr;
+    margin-top: 1rem;
+}
+
+.rag-selection-note {
+    color: #475569;
+    font-size: 0.9rem;
+    margin: 0.75rem 0 0;
+}
+
 .rag-query-form label {
     color: #1e293b;
     display: flex;

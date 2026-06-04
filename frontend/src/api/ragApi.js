@@ -39,8 +39,14 @@ export async function getRagStatus() {
  * @returns {Promise<Object>} A promise that resolves to the response payload.
  * @throws {Error} If the request fails.
  */
-export async function rebuildRagIndex() {
-    const response = await fetch('/api/rag/index', {method: 'POST'});
+export async function rebuildRagIndex({retrievalMode, vectorStore} = {}) {
+    const response = await fetch('/api/rag/index', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({retrievalMode, vectorStore})
+    });
     if (!response.ok) {
         const payload = await parseJson(response);
         throw new Error(payload.error || 'Failed to rebuild the RAG index.');
@@ -56,16 +62,18 @@ export async function rebuildRagIndex() {
  * @param {string} params.provider - The LLM provider.
  * @param {string} params.model - The model ID.
  * @param {string} params.sessionId - The active session ID.
+ * @param {string} params.retrievalMode - The request-scoped retrieval mode.
+ * @param {string} params.vectorStore - The request-scoped vector store.
  * @returns {Promise<Object>} A promise that resolves to the RAG query response.
  * @throws {Error} If the request fails.
  */
-export async function queryRag({question, provider, model, sessionId}) {
+export async function queryRag({question, provider, model, sessionId, retrievalMode, vectorStore}) {
     const response = await fetch('/api/rag/query', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({question, provider, model, sessionId})
+        body: JSON.stringify({question, provider, model, sessionId, retrievalMode, vectorStore})
     });
     if (!response.ok) {
         const payload = await parseJson(response);

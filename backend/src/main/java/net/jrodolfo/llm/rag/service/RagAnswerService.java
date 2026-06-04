@@ -52,7 +52,19 @@ public class RagAnswerService {
      * @throws IllegalStateException if no relevant source chunks are found
      */
     public RagQueryResponse answer(String question, String provider, String model, String sessionId) {
-        List<RagMatch> matches = ragRetrievalService.retrieve(question);
+        return answer(question, provider, model, sessionId, null);
+    }
+
+    public RagQueryResponse answer(
+            String question,
+            String provider,
+            String model,
+            String sessionId,
+            RagRetrievalOptions retrievalOptions
+    ) {
+        List<RagMatch> matches = retrievalOptions == null
+                ? ragRetrievalService.retrieve(question)
+                : ragRetrievalService.retrieve(question, retrievalOptions);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
         }

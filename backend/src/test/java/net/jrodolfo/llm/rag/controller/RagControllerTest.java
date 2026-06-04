@@ -22,6 +22,7 @@ import net.jrodolfo.llm.rag.service.RagChunkingService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
 import net.jrodolfo.llm.rag.service.RagDocumentLoader;
 import net.jrodolfo.llm.rag.service.RagRetrievalService;
+import net.jrodolfo.llm.rag.service.RagRetrievalOptions;
 import net.jrodolfo.llm.rag.service.RagSessionService;
 import net.jrodolfo.llm.rag.service.RagVectorIndexingException;
 import net.jrodolfo.llm.rag.service.RagVectorIndexingService;
@@ -225,10 +226,57 @@ class RagControllerTest {
     }
 
     @Test
+    void queryCanOverrideConfiguredRetrievalModePerRequest() throws Exception {
+        vectorMockMvc.perform(post("/api/rag/query")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b",
+                                  "retrievalMode": "lexical",
+                                  "vectorStore": "in-memory"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
+                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"));
+    }
+
+    @Test
+    void indexCanOverrideConfiguredRetrievalModePerRequest() throws Exception {
+        mockMvc.perform(post("/api/rag/index")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "retrievalMode": "vector",
+                                  "vectorStore": "in-memory"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.retrievalMode").value("vector"));
+    }
+
+    @Test
     void invalidRetrievalModeReturnsBadRequest() throws Exception {
         invalidModeMockMvc.perform(post("/api/rag/index"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Unsupported RAG retrieval mode: semantic. Supported modes: lexical, vector."));
+    }
+
+    @Test
+    void invalidRequestVectorStoreReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/rag/query")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "retrievalMode": "vector",
+                                  "vectorStore": "pinecone"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Unsupported RAG vector store: pinecone. Supported stores: in-memory, qdrant."));
     }
 
     @Test
@@ -384,6 +432,11 @@ class RagControllerTest {
 
         @Override
         public synchronized CorpusSnapshot rebuildIndex() {
+            throw new RagVectorIndexingException("Failed to index RAG chunks in Qdrant.");
+        }
+
+        @Override
+        public synchronized CorpusSnapshot rebuildIndex(RagRetrievalOptions options) {
             throw new RagVectorIndexingException("Failed to index RAG chunks in Qdrant.");
         }
     }

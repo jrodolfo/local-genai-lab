@@ -3,6 +3,7 @@ package net.jrodolfo.llm.rag.controller;
 import jakarta.validation.Valid;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
+import net.jrodolfo.llm.rag.dto.RagIndexRequest;
 import net.jrodolfo.llm.rag.dto.RagIndexResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryRequest;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
@@ -11,6 +12,7 @@ import net.jrodolfo.llm.rag.qdrant.QdrantStatus;
 import net.jrodolfo.llm.rag.qdrant.QdrantStatusService;
 import net.jrodolfo.llm.rag.service.RagAnswerService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
+import net.jrodolfo.llm.rag.service.RagRetrievalOptions;
 import net.jrodolfo.llm.rag.service.RagVectorIndexingException;
 import net.jrodolfo.llm.rag.service.RagVectorRetrievalException;
 import org.springframework.http.HttpStatus;
@@ -99,14 +101,15 @@ public class RagController {
      * @throws IllegalStateException if RAG is disabled.
      */
     @PostMapping("/index")
-    public ResponseEntity<RagIndexResponse> index() {
+    public ResponseEntity<RagIndexResponse> index(@RequestBody(required = false) RagIndexRequest request) {
         ensureEnabled();
-        RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.rebuildIndex();
+        RagRetrievalOptions options = retrievalOptions(request);
+        RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.rebuildIndex(options);
         return ResponseEntity.ok(new RagIndexResponse(
                 snapshot.corpusRoot().toString(),
                 snapshot.documents().size(),
                 snapshot.chunks().size(),
-                retrievalMode().configValue()
+                options.retrievalMode().configValue()
         ));
     }
 
@@ -120,11 +123,13 @@ public class RagController {
     @PostMapping("/query")
     public ResponseEntity<RagQueryResponse> query(@Valid @RequestBody RagQueryRequest request) {
         ensureEnabled();
+        RagRetrievalOptions options = retrievalOptions(request);
         return ResponseEntity.ok(ragAnswerService.answer(
                 request.question(),
                 request.provider(),
                 request.model(),
-                request.sessionId()
+                request.sessionId(),
+                options
         ));
     }
 
@@ -168,5 +173,16 @@ public class RagController {
 
     private RagRetrievalMode retrievalMode() {
         return RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
+    }
+
+    private RagRetrievalOptions retrievalOptions(RagQueryRequest request) {
+        return RagRetrievalOptions.fromRequest(ragProperties, request.retrievalMode(), request.vectorStore());
+    }
+
+    private RagRetrievalOptions retrievalOptions(RagIndexRequest request) {
+        if (request == null) {
+            return RagRetrievalOptions.fromConfig(ragProperties);
+        }
+        return RagRetrievalOptions.fromRequest(ragProperties, request.retrievalMode(), request.vectorStore());
     }
 }

@@ -60,12 +60,16 @@ public class RagVectorRetrievalService {
      * @return vector-ranked matches
      */
     public List<RagMatch> retrieve(String question, int topK) {
+        return retrieve(question, topK, RagRetrievalOptions.fromConfig(ragProperties));
+    }
+
+    public List<RagMatch> retrieve(String question, int topK, RagRetrievalOptions options) {
         if (question == null || question.isBlank() || topK <= 0) {
             return List.of();
         }
         try {
             EmbeddingVector queryEmbedding = embeddingService.embed(question);
-            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
+            RagVectorStoreMode vectorStoreMode = options.vectorStore();
             return switch (vectorStoreMode) {
                 case IN_MEMORY -> inMemoryVectorStore.searchByVector(queryEmbedding.values(), topK);
                 case QDRANT -> {

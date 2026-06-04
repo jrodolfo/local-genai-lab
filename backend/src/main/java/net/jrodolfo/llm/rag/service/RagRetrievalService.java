@@ -47,11 +47,15 @@ public class RagRetrievalService {
      * @return a list of {@link RagMatch} objects representing the most relevant chunks
      */
     public List<RagMatch> retrieve(String question) {
-        ragCorpusService.ensureIndexed();
-        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
+        return retrieve(question, RagRetrievalOptions.fromConfig(ragProperties));
+    }
+
+    public List<RagMatch> retrieve(String question, RagRetrievalOptions options) {
+        ragCorpusService.ensureIndexed(options);
+        RagRetrievalMode mode = options.retrievalMode();
         return switch (mode) {
             case LEXICAL -> ragRetrievalStore.search(question, ragProperties.topK());
-            case VECTOR -> ragVectorRetrievalService.retrieve(question, ragProperties.topK());
+            case VECTOR -> ragVectorRetrievalService.retrieve(question, ragProperties.topK(), options);
         };
     }
 }

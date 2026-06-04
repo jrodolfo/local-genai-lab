@@ -22,6 +22,7 @@ function RagWorkspace() {
     const [availableModels, setAvailableModels] = useState([]);
     const [selectedProvider, setSelectedProvider] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
+    const [selectedRetrievalTarget, setSelectedRetrievalTarget] = useState('lexical:in-memory');
     const [sessionId, setSessionId] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
@@ -58,6 +59,7 @@ function RagWorkspace() {
                 retryAsync(() => listSessions({mode: 'rag'}), {retries: 8, delayMs: 500})
             ]);
             setRagStatus(statusPayload);
+            setSelectedRetrievalTarget(retrievalTargetFromStatus(statusPayload));
             hydrateProviders(modelsPayload);
             setSessions(sessionsPayload);
         } catch (err) {
@@ -112,7 +114,8 @@ function RagWorkspace() {
                 question: submittedQuestion,
                 provider: selectedProvider,
                 model: selectedModel,
-                sessionId
+                sessionId,
+                ...retrievalOptionsFromTarget(selectedRetrievalTarget)
             });
             setSessionId(payload.sessionId);
             setQuestion('');
@@ -141,7 +144,7 @@ function RagWorkspace() {
         try {
             setRebuilding(true);
             setError('');
-            const payload = await rebuildRagIndex();
+            const payload = await rebuildRagIndex(retrievalOptionsFromTarget(selectedRetrievalTarget));
             const statusPayload = await getRagStatus();
             setRagStatus({
                 ...statusPayload,
@@ -403,6 +406,24 @@ function RagWorkspace() {
                                     </select>
                                 </label>
                                 <label>
+                                    Retrieval
+                                    <select value={selectedRetrievalTarget}
+                                            onChange={(event) => setSelectedRetrievalTarget(event.target.value)}>
+                                        {retrievalTargets(ragStatus).map((target) => (
+                                            <option key={target.value} value={target.value} disabled={target.disabled}>
+                                                {target.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+
+                            <p className="rag-selection-note">
+                                {retrievalTargetHint(selectedRetrievalTarget, ragStatus)}
+                            </p>
+
+                            <div className="rag-field-grid rag-field-grid--single">
+                                <label>
                                     Model
                                     <select value={selectedModel}
                                             onChange={(event) => setSelectedModel(event.target.value)}>
@@ -512,9 +533,9 @@ function formatEmbeddingStatus(status) {
 
 function retrievalModeHint(status) {
     if (isVectorRetrieval(status)) {
-        return 'Experimental local vector retrieval. Change RAG_RETRIEVAL_MODE and restart to switch modes.';
+        return 'Backend default is vector retrieval. Use the Retrieval selector to override per question.';
     }
-    return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
+    return 'Backend default is lexical retrieval. Use the Retrieval selector to try vector retrieval per question.';
 }
 
 function qdrantStatusMessage(status) {
@@ -606,6 +627,58 @@ function createRagAnswerMessage(payload, selectedProvider, selectedModel) {
         ragSources: payload.sources || [],
         timestamp: new Date().toISOString()
     };
+}
+
+function retrievalTargetFromStatus(status) {
+    const mode = String(status?.retrievalMode || 'lexical').toLowerCase();
+    const store = String(status?.vectorStore || 'in-memory').toLowerCase();
+    if (mode === 'vector' && store === 'qdrant') {
+        return 'vector:qdrant';
+    }
+    if (mode === 'vector') {
+        return 'vector:in-memory';
+    }
+    return 'lexical:in-memory';
+}
+
+function retrievalOptionsFromTarget(target) {
+    const [retrievalMode, vectorStore] = String(target || 'lexical:in-memory').split(':');
+    return {
+        retrievalMode: retrievalMode || 'lexical',
+        vectorStore: vectorStore || 'in-memory'
+    };
+}
+
+function retrievalTargets(status) {
+    const qdrantDisabled = status?.qdrantReachable === false;
+    return [
+        {
+            value: 'lexical:in-memory',
+            label: 'Lexical'
+        },
+        {
+            value: 'vector:in-memory',
+            label: 'Vector - In Memory'
+        },
+        {
+            value: 'vector:qdrant',
+            label: qdrantDisabled ? 'Vector - Qdrant Unavailable' : 'Vector - Qdrant',
+            disabled: qdrantDisabled
+        }
+    ];
+}
+
+function retrievalTargetHint(target, status) {
+    if (target === 'vector:qdrant') {
+        if (status?.qdrantReachable === false) {
+            return 'Qdrant is unavailable. Start Qdrant, rebuild the index, or choose another retrieval mode.';
+        }
+        return 'Uses Ollama embeddings and Qdrant for vector search. Rebuild the index after switching to this target.';
+    }
+    if (target === 'vector:in-memory') {
+        return 'Uses Ollama embeddings and an in-memory vector index for this request.';
+    }
+    return 'Uses the zero-dependency lexical index for this request.';
 }
 
 export default RagWorkspace;
