@@ -97,17 +97,60 @@ class QdrantClientTest {
 
     @Test
     void recreateCollectionUsesCosineVectorConfig() {
-        RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("{}", 200));
+        RecordingHttpClient httpClient = new RecordingHttpClient(
+                new FakeHttpResponse<>("{}", 200),
+                new FakeHttpResponse<>("{}", 200)
+        );
         QdrantClient client = new QdrantClient(objectMapper, httpClient);
 
         client.recreateCollection("http://localhost:6333", "local_genai_lab_docs", 768);
 
-        assertEquals("PUT", httpClient.lastRequest.method());
-        assertEquals(URI.create("http://localhost:6333/collections/local_genai_lab_docs"), httpClient.lastRequest.uri());
+        assertEquals("DELETE", httpClient.requests.get(0).method());
+        assertEquals(URI.create("http://localhost:6333/collections/local_genai_lab_docs"), httpClient.requests.get(0).uri());
+        assertEquals("PUT", httpClient.requests.get(1).method());
+        assertEquals(URI.create("http://localhost:6333/collections/local_genai_lab_docs"), httpClient.requests.get(1).uri());
         assertEquals(
                 "{\"vectors\":{\"size\":768,\"distance\":\"Cosine\"}}",
-                httpClient.lastBody
+                httpClient.bodies.get(1)
         );
+    }
+
+    @Test
+    void recreateCollectionIgnoresMissingCollectionBeforeCreate() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(
+                new FakeHttpResponse<>("{}", 404),
+                new FakeHttpResponse<>("{}", 200)
+        );
+        QdrantClient client = new QdrantClient(objectMapper, httpClient);
+
+        client.recreateCollection("http://localhost:6333", "local_genai_lab_docs", 768);
+
+        assertEquals("DELETE", httpClient.requests.get(0).method());
+        assertEquals("PUT", httpClient.requests.get(1).method());
+    }
+
+    @Test
+    void deleteCollectionIgnoresMissingCollection() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("{}", 404));
+        QdrantClient client = new QdrantClient(objectMapper, httpClient);
+
+        client.deleteCollection("http://localhost:6333", "missing");
+
+        assertEquals("DELETE", httpClient.lastRequest.method());
+        assertEquals(URI.create("http://localhost:6333/collections/missing"), httpClient.lastRequest.uri());
+    }
+
+    @Test
+    void deleteCollectionThrowsForUnexpectedFailure() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(new FakeHttpResponse<>("{}", 503));
+        QdrantClient client = new QdrantClient(objectMapper, httpClient);
+
+        QdrantClientException ex = assertThrows(
+                QdrantClientException.class,
+                () -> client.deleteCollection("http://localhost:6333", "broken")
+        );
+
+        assertEquals("Failed to delete Qdrant collection: HTTP 503.", ex.getMessage());
     }
 
     @Test
@@ -267,18 +310,26 @@ class QdrantClientTest {
     }
 
     private static final class RecordingHttpClient extends BaseHttpClient {
-        private final HttpResponse<String> response;
+        private final List<HttpResponse<String>> responses;
+        private final List<HttpRequest> requests = new ArrayList<>();
+        private final List<String> bodies = new ArrayList<>();
         private HttpRequest lastRequest;
         private String lastBody;
+        private int responseIndex;
 
-        private RecordingHttpClient(HttpResponse<String> response) {
-            this.response = response;
+        @SafeVarargs
+        private RecordingHttpClient(HttpResponse<String>... responses) {
+            this.responses = List.of(responses);
         }
 
         @Override
         public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException, InterruptedException {
             this.lastRequest = request;
             this.lastBody = readBody(request);
+            this.requests.add(request);
+            this.bodies.add(lastBody);
+            HttpResponse<String> response = responses.get(Math.min(responseIndex, responses.size() - 1));
+            responseIndex++;
             @SuppressWarnings("unchecked")
             HttpResponse<T> typedResponse = (HttpResponse<T>) response;
             return typedResponse;

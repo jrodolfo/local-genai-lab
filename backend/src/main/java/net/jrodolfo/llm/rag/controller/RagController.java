@@ -11,6 +11,7 @@ import net.jrodolfo.llm.rag.qdrant.QdrantStatus;
 import net.jrodolfo.llm.rag.qdrant.QdrantStatusService;
 import net.jrodolfo.llm.rag.service.RagAnswerService;
 import net.jrodolfo.llm.rag.service.RagCorpusService;
+import net.jrodolfo.llm.rag.service.RagVectorIndexingException;
 import net.jrodolfo.llm.rag.service.RagVectorRetrievalException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -146,6 +147,11 @@ public class RagController {
 
     @ExceptionHandler(RagVectorRetrievalException.class)
     public ResponseEntity<Map<String, String>> handleVectorRetrieval(RagVectorRetrievalException ex) {
+        return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+    }
+
+    @ExceptionHandler(RagVectorIndexingException.class)
+    public ResponseEntity<Map<String, String>> handleVectorIndexing(RagVectorIndexingException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     }
 

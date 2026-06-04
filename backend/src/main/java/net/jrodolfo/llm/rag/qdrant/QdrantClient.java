@@ -83,13 +83,32 @@ public class QdrantClient {
     }
 
     public void recreateCollection(String qdrantUrl, String collectionName, int vectorSize) {
+        deleteCollection(qdrantUrl, collectionName);
         QdrantCollectionRequest requestBody = new QdrantCollectionRequest(
                 new QdrantVectorConfig(vectorSize, "Cosine")
         );
         sendWithoutResponse(
-                putRequest(qdrantUrl, "/collections/" + collectionName, requestBody),
+                putRequest(qdrantUrl, collectionPath(collectionName), requestBody),
                 "recreate Qdrant collection"
         );
+    }
+
+    public void deleteCollection(String qdrantUrl, String collectionName) {
+        HttpRequest request = requestBuilder(qdrantUrl, collectionPath(collectionName))
+                .DELETE()
+                .build();
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 404) {
+                return;
+            }
+            ensureSuccess(response, "delete Qdrant collection");
+        } catch (IOException | InterruptedException ex) {
+            if (ex instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new QdrantClientException("Failed to delete Qdrant collection " + collectionName + ".", ex);
+        }
     }
 
     public void upsertPoints(String qdrantUrl, String collectionName, List<QdrantPoint> points) {
@@ -152,6 +171,10 @@ public class QdrantClient {
     private URI resolveUri(String qdrantUrl, String path) {
         String normalizedBase = qdrantUrl.endsWith("/") ? qdrantUrl.substring(0, qdrantUrl.length() - 1) : qdrantUrl;
         return URI.create(normalizedBase + path);
+    }
+
+    private String collectionPath(String collectionName) {
+        return "/collections/" + collectionName;
     }
 
     private HttpRequest.BodyPublisher jsonBody(Object body) {

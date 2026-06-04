@@ -23,6 +23,7 @@ import net.jrodolfo.llm.rag.service.RagCorpusService;
 import net.jrodolfo.llm.rag.service.RagDocumentLoader;
 import net.jrodolfo.llm.rag.service.RagRetrievalService;
 import net.jrodolfo.llm.rag.service.RagSessionService;
+import net.jrodolfo.llm.rag.service.RagVectorIndexingException;
 import net.jrodolfo.llm.rag.service.RagVectorIndexingService;
 import net.jrodolfo.llm.rag.service.RagVectorRetrievalService;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
@@ -231,6 +232,13 @@ class RagControllerTest {
     }
 
     @Test
+    void vectorIndexingFailureReturnsClearBadRequest() throws Exception {
+        qdrantMockMvcWithFailingIndex().perform(post("/api/rag/index"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Failed to index RAG chunks in Qdrant."));
+    }
+
+    @Test
     void queryFailsWhenFeatureIsDisabled() throws Exception {
         disabledMockMvc.perform(post("/api/rag/query")
                         .contentType("application/json")
@@ -303,6 +311,81 @@ class RagControllerTest {
                 ),
                 qdrantStatus
         );
+    }
+
+    private MockMvc qdrantMockMvcWithFailingIndex() {
+        RagProperties properties = new RagProperties(
+                true,
+                docsRoot.toString(),
+                180,
+                30,
+                3,
+                "vector",
+                "qdrant",
+                "http://localhost:6333",
+                "local_genai_lab_docs",
+                "ollama",
+                "nomic-embed-text"
+        );
+        InMemoryLexicalRagRetrievalStore store = new InMemoryLexicalRagRetrievalStore();
+        InMemoryVectorRagRetrievalStore vectorStore = new InMemoryVectorRagRetrievalStore();
+        KeywordEmbeddingService embeddingService = new KeywordEmbeddingService();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        SessionIdPolicy sessionIdPolicy = new SessionIdPolicy();
+        FileChatSessionStore sessionStore = new FileChatSessionStore(
+                objectMapper,
+                new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()),
+                sessionIdPolicy
+        );
+        RagCorpusService corpusService = new FailingIndexRagCorpusService(
+                properties,
+                new RagDocumentLoader(),
+                new RagChunkingService(),
+                store,
+                new RagVectorIndexingService(embeddingService, properties),
+                vectorStore
+        );
+        RagAnswerService answerService = new RagAnswerService(
+                new ChatModelProviderRegistry(
+                        new AppModelProperties("ollama"),
+                        Map.of("ollama", new FakeProvider())
+                ),
+                new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore)),
+                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
+        );
+        return MockMvcBuilders.standaloneSetup(new RagController(
+                        properties,
+                        corpusService,
+                        answerService,
+                        new QdrantStatusService() {
+                            @Override
+                            public QdrantStatus status(RagProperties ragProperties) {
+                                return QdrantStatus.collectionPresent("local_genai_lab_docs", 123L);
+                            }
+                        }
+                ))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .build();
+    }
+
+    private static final class FailingIndexRagCorpusService extends RagCorpusService {
+
+        private FailingIndexRagCorpusService(
+                RagProperties ragProperties,
+                RagDocumentLoader documentLoader,
+                RagChunkingService chunkingService,
+                InMemoryLexicalRagRetrievalStore retrievalStore,
+                RagVectorIndexingService vectorIndexingService,
+                InMemoryVectorRagRetrievalStore vectorRetrievalStore
+        ) {
+            super(ragProperties, documentLoader, chunkingService, retrievalStore, vectorIndexingService, vectorRetrievalStore);
+        }
+
+        @Override
+        public synchronized CorpusSnapshot rebuildIndex() {
+            throw new RagVectorIndexingException("Failed to index RAG chunks in Qdrant.");
+        }
     }
 
     private static final class FakeProvider implements ChatModelProvider {
