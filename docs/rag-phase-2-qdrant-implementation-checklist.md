@@ -40,10 +40,10 @@ Already implemented:
 - `status.sh` live Qdrant reachability when Qdrant mode is selected
 - RAG UI status for retrieval mode and store
 - RAG UI Qdrant reachability messages when Qdrant mode is selected
+- Qdrant client boundary with collection, upsert, and search operations
 
 Not implemented yet:
 
-- Qdrant client boundary
 - Qdrant-backed retrieval store
 - optional Qdrant integration tests
 
@@ -96,20 +96,21 @@ Acceptance criteria:
 
 Backend tasks:
 
-- Add a small Qdrant client boundary under the RAG package.
+- Keep the Qdrant client boundary under the RAG package.
 - Keep HTTP request/response details isolated from retrieval services.
-- Support collection existence checks.
-- Support collection recreation for rebuild.
-- Support point upsert with payload metadata.
-- Support vector search with top-k.
-- Convert Qdrant failures into project-specific exceptions or status objects.
+- Keep collection existence checks.
+- Keep collection recreation for rebuild.
+- Keep point upsert with payload metadata.
+- Keep vector search with top-k.
+- Keep converting Qdrant failures into project-specific exceptions or status objects.
 
 Suggested package shape:
 
 ```text
 backend/src/main/java/net/jrodolfo/llm/rag/qdrant/
   QdrantClient.java
-  QdrantCollectionStatus.java
+  QdrantClientException.java
+  QdrantPoint.java
   QdrantPointPayload.java
   QdrantSearchResult.java
 ```
