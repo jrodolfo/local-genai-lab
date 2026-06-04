@@ -165,6 +165,7 @@ public class ChatSessionImportService {
                     message.metadata(),
                     message.ragSources(),
                     message.ragRetrieval(),
+                    message.ragTiming(),
                     timestamp
             ));
         }

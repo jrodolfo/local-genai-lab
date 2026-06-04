@@ -56,6 +56,7 @@ public class ChatSessionExportService {
 
             appendProviderMetadata(markdown, message.metadata());
             appendRagRetrieval(markdown, message.ragRetrieval());
+            appendRagTiming(markdown, message.ragTiming());
             appendRagSources(markdown, message.ragSources());
             markdown.append("\n");
             markdown.append(message.content() == null ? "" : message.content()).append("\n\n");
@@ -141,6 +142,21 @@ public class ChatSessionExportService {
         }
         if (hasText(metadata.vectorStore())) {
             markdown.append("- vector store: ").append(metadata.vectorStore()).append("\n");
+        }
+    }
+
+    private void appendRagTiming(StringBuilder markdown, net.jrodolfo.llm.dto.RagTimingMetadata metadata) {
+        if (metadata == null) {
+            return;
+        }
+        if (metadata.retrievalDurationMs() != null) {
+            markdown.append("- rag retrieval duration: ").append(metadata.retrievalDurationMs()).append(" ms\n");
+        }
+        if (metadata.providerDurationMs() != null) {
+            markdown.append("- rag provider duration: ").append(metadata.providerDurationMs()).append(" ms\n");
+        }
+        if (metadata.totalDurationMs() != null) {
+            markdown.append("- rag backend total: ").append(metadata.totalDurationMs()).append(" ms\n");
         }
     }
 

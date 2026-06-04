@@ -3,6 +3,7 @@ package net.jrodolfo.llm.model;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.RagRetrievalMetadata;
+import net.jrodolfo.llm.dto.RagTimingMetadata;
 
 import java.time.Instant;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
  * @param metadata   metadata from the model provider (e.g., token usage)
  * @param ragSources a list of RAG source chunks that informed this message
  * @param ragRetrieval retrieval target metadata for RAG assistant messages
+ * @param ragTiming backend timing metadata for RAG assistant messages
  * @param timestamp  the timestamp when the message was created
  */
 public record ChatSessionMessage(
@@ -28,6 +30,7 @@ public record ChatSessionMessage(
         ModelProviderMetadata metadata,
         List<ChatRagSourceChunk> ragSources,
         RagRetrievalMetadata ragRetrieval,
+        RagTimingMetadata ragTiming,
         Instant timestamp
 ) {
     public ChatSessionMessage(
@@ -39,6 +42,19 @@ public record ChatSessionMessage(
             List<ChatRagSourceChunk> ragSources,
             Instant timestamp
     ) {
-        this(role, content, tool, toolResult, metadata, ragSources, null, timestamp);
+        this(role, content, tool, toolResult, metadata, ragSources, null, null, timestamp);
+    }
+
+    public ChatSessionMessage(
+            String role,
+            String content,
+            ChatToolMetadata tool,
+            Map<String, Object> toolResult,
+            ModelProviderMetadata metadata,
+            List<ChatRagSourceChunk> ragSources,
+            RagRetrievalMetadata ragRetrieval,
+            Instant timestamp
+    ) {
+        this(role, content, tool, toolResult, metadata, ragSources, ragRetrieval, null, timestamp);
     }
 }

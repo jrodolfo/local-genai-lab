@@ -2,6 +2,7 @@ package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.RagRetrievalMetadata;
+import net.jrodolfo.llm.dto.RagTimingMetadata;
 import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.provider.ChatModelProvider;
@@ -74,9 +75,12 @@ public class RagAnswerService {
             RagRetrievalOptions retrievalOptions,
             boolean persist
     ) {
+        long requestStartedAt = System.nanoTime();
+        long retrievalStartedAt = System.nanoTime();
         List<RagMatch> matches = retrievalOptions == null
                 ? ragRetrievalService.retrieve(question)
                 : ragRetrievalService.retrieve(question, retrievalOptions);
+        long retrievalDurationMs = elapsedMillis(retrievalStartedAt);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
         }
@@ -85,6 +89,7 @@ public class RagAnswerService {
         String resolvedProvider = providerRegistry.resolveProviderName(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
         ChatSession session = persist ? ragSessionService.startTurn(sessionId, resolvedModel, question) : null;
+        long providerStartedAt = System.nanoTime();
         ChatResponse response = chatModelProvider.chat(
                 ProviderPrompt.forPrompt(buildPrompt(question, matches)),
                 resolvedModel,
@@ -93,6 +98,7 @@ public class RagAnswerService {
                 session != null ? session.sessionId() : sessionId,
                 null
         );
+        long providerDurationMs = elapsedMillis(providerStartedAt);
 
         List<RagSourceChunkResponse> sources = matches.stream()
                 .map(match -> new RagSourceChunkResponse(
@@ -106,6 +112,11 @@ public class RagAnswerService {
                 .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
                 .toList();
         RagRetrievalMetadata ragRetrieval = retrievalMetadata(retrievalOptions);
+        RagTimingMetadata ragTiming = new RagTimingMetadata(
+                retrievalDurationMs,
+                providerDurationMs,
+                elapsedMillis(requestStartedAt)
+        );
         String responseSessionId = sessionId;
         if (persist) {
             ChatSession persistedSession = ragSessionService.finishTurn(
@@ -113,7 +124,8 @@ public class RagAnswerService {
                     response.response(),
                     response.metadata(),
                     persistedSources,
-                    ragRetrieval
+                    ragRetrieval,
+                    ragTiming
             );
             responseSessionId = persistedSession.sessionId();
         }
@@ -125,7 +137,8 @@ public class RagAnswerService {
                 responseSessionId,
                 sources,
                 response.metadata(),
-                ragRetrieval
+                ragRetrieval,
+                ragTiming
         );
     }
 
@@ -172,6 +185,10 @@ public class RagAnswerService {
      */
     private double roundScore(double value) {
         return Math.round(value * 1000.0d) / 1000.0d;
+    }
+
+    private long elapsedMillis(long startedAtNanos) {
+        return Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
     }
 
     private RagRetrievalMetadata retrievalMetadata(RagRetrievalOptions retrievalOptions) {

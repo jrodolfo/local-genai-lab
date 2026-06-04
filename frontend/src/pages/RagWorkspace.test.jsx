@@ -64,6 +64,11 @@ describe('RagWorkspace', () => {
                         retrievalMode: 'lexical',
                         vectorStore: 'in-memory',
                         retrievalTarget: 'lexical:in-memory'
+                    },
+                    ragTiming: {
+                        retrievalDurationMs: 12,
+                        providerDurationMs: 34,
+                        totalDurationMs: 56
                     }
                 });
             }),
@@ -106,6 +111,11 @@ describe('RagWorkspace', () => {
                             retrievalMode: 'lexical',
                             vectorStore: 'in-memory',
                             retrievalTarget: 'lexical:in-memory'
+                        },
+                        ragTiming: {
+                            retrievalDurationMs: 12,
+                            providerDurationMs: 34,
+                            totalDurationMs: 56
                         },
                         timestamp: '2026-05-27T12:00:05Z'
                     }
@@ -154,13 +164,17 @@ describe('RagWorkspace', () => {
         expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/Ask a question about the project docs/i)).toHaveValue('How does provider selection work?');
         expect(within(latestTurn).queryByText(/request elapsed:/i)).not.toBeInTheDocument();
+        expect(within(latestTurn).queryByText(/retrieval duration:/i)).not.toBeInTheDocument();
         expect(within(latestTurn).queryByText(/score 0.88/i)).not.toBeInTheDocument();
         await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         expect(within(latestTurn).getByLabelText(/rag technical details/i)).toBeInTheDocument();
         expect(within(latestTurn).getByText(/provider: Ollama/i)).toBeInTheDocument();
         expect(within(latestTurn).getByText(/model: llama3:8b/i)).toBeInTheDocument();
         expect(within(latestTurn).getByText(/retrieval: Lexical/i)).toBeInTheDocument();
-        expect(within(latestTurn).getByText(/request elapsed:/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/retrieval duration: 12 ms/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/provider duration: 34 ms/i)).toBeInTheDocument();
+        expect(within(latestTurn).getByText(/backend total: 56 ms/i)).toBeInTheDocument();
+        expect(within(latestTurn).queryByText(/request elapsed:/i)).not.toBeInTheDocument();
         expect(within(latestTurn).getByText(/score 0.88/i)).toBeInTheDocument();
         expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
     });
@@ -810,6 +824,11 @@ describe('RagWorkspace', () => {
                             vectorStore: 'qdrant',
                             retrievalTarget: 'vector:qdrant'
                         },
+                        ragTiming: {
+                            retrievalDurationMs: 15,
+                            providerDurationMs: 45,
+                            totalDurationMs: 70
+                        },
                         timestamp: '2026-05-27T12:00:05Z'
                     }
                 ],
@@ -827,6 +846,10 @@ describe('RagWorkspace', () => {
         expect(screen.getAllByText('Sessions are stored as local JSON files.').length).toBeGreaterThan(0);
         expect(screen.getByText(/Retrieval: Vector - Qdrant/i)).toBeInTheDocument();
         expect(screen.getByText('sessions.md')).toBeInTheDocument();
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
+        expect(screen.getByText(/retrieval duration: 15 ms/i)).toBeInTheDocument();
+        expect(screen.getByText(/provider duration: 45 ms/i)).toBeInTheDocument();
+        expect(screen.getByText(/backend total: 70 ms/i)).toBeInTheDocument();
     });
 
     it('renders rag conversation turns newest first without separating questions from answers', async () => {
