@@ -96,9 +96,12 @@ function ToolResultCard({toolResult, onPreviewArtifact, onListArtifacts, onCopyP
 
     if (toolResult.type === 'audit_summary') {
         const failedSteps = Array.isArray(toolResult.failedSteps) ? toolResult.failedSteps : [];
+        const bucketNames = Array.isArray(toolResult.bucketNames) ? toolResult.bucketNames : [];
+        const selectedServices = Array.isArray(toolResult.selectedServices) ? toolResult.selectedServices : [];
+        const isS3BucketDiscovery = selectedServices.includes('s3') && bucketNames.length > 0;
         return (
             <div className="tool-result-card">
-                <span className="tool-result-title">AWS audit result</span>
+                <span className="tool-result-title">{isS3BucketDiscovery ? 'S3 bucket discovery' : 'AWS audit result'}</span>
                 {toolResult.accountId ? <span>Account: {toolResult.accountId}</span> : null}
                 {toolResult.runDir ? <span>Run directory: {toolResult.runDir}</span> : null}
                 <span>Success: {toolResult.successCount ?? 0}</span>
@@ -109,6 +112,15 @@ function ToolResultCard({toolResult, onPreviewArtifact, onListArtifacts, onCopyP
                 ) : null}
                 {Array.isArray(toolResult.selectedServices) && toolResult.selectedServices.length > 0 ? (
                     <span>Services: {toolResult.selectedServices.join(', ')}</span>
+                ) : null}
+                {bucketNames.length > 0 ? (
+                    <div className="tool-result-item">
+                        <span className="tool-result-item-title">Accessible buckets</span>
+                        {bucketNames.map((bucketName) => (
+                            <span key={bucketName}>{bucketName}</span>
+                        ))}
+                        <span>{`Next: ask "run an S3 report for ${bucketNames[0]} for the last month".`}</span>
+                    </div>
                 ) : null}
                 {renderActions([
                     toolResult.summaryPath ? (
