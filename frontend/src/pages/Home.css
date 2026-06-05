@@ -2,7 +2,7 @@
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 32px 16px;
+    padding: 1.25rem 1.5rem 2rem;
 }
 
 .chat-layout {
@@ -17,10 +17,11 @@
 }
 
 .session-sidebar {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -168,9 +169,10 @@
 
 .chat-card {
     width: min(920px, 100%);
-    background: #ffffff;
-    border-radius: 16px;
-    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 18px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -179,7 +181,8 @@
 
 .chat-card header h1 {
     margin: 0;
-    font-size: 1.5rem;
+    font-family: "IBM Plex Serif", Georgia, serif;
+    font-size: 1.75rem;
 }
 
 .chat-card header {
@@ -226,21 +229,36 @@
     padding: 10px;
 }
 
-.provider-status-banner {
+.provider-status-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 0.65rem 1rem;
     align-items: center;
-    border-radius: 8px;
-    padding: 10px;
+    border-radius: 16px;
+    padding: 0.75rem 0.9rem;
     font-size: 0.92rem;
     border: 1px solid #cbd5e1;
     background: #f8fafc;
     color: #334155;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
-.provider-status-banner strong {
-    text-transform: capitalize;
+.provider-status-summary {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 0.55rem 1rem;
+}
+
+.provider-status-summary strong {
+    color: #0f172a;
+    margin-right: 0.2rem;
+}
+
+.provider-status-message {
+    color: #475569;
+    width: 100%;
 }
 
 .provider-status-details {
@@ -250,12 +268,6 @@
     width: 100%;
     font-size: 0.84rem;
     color: #475569;
-}
-
-.provider-status-refreshed {
-    width: 100%;
-    font-size: 0.82rem;
-    color: #64748b;
 }
 
 .provider-status-refresh {
@@ -588,9 +600,9 @@
 }
 
 .artifact-panel {
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.85);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -613,9 +625,9 @@
 }
 
 .artifact-panel-empty {
-    padding: 10px 12px;
+    padding: 0.8rem 0.9rem;
     border: 1px dashed #cbd5e1;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #ffffff;
     color: #64748b;
     font-size: 0.88rem;
