@@ -75,6 +75,8 @@ class ChatToolRouterServiceTest {
         assertTrue(decision.needsClarification());
         assertEquals(30, decision.days());
         assertTrue(decision.clarification().contains("local AWS CLI credentials"));
+        assertTrue(decision.clarification().contains("one bucket at a time"));
+        assertTrue(decision.clarification().contains("Please provide the bucket name"));
     }
 
     @Test
