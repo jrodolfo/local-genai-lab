@@ -77,6 +77,25 @@ class ChatToolRouterServiceTest {
         assertTrue(decision.clarification().contains("local AWS CLI credentials"));
         assertTrue(decision.clarification().contains("one bucket at a time"));
         assertTrue(decision.clarification().contains("Please provide the bucket name"));
+        assertTrue(decision.clarification().contains("ask me: \"list my S3 buckets\""));
+        assertFalse(decision.clarification().contains("run an AWS audit"));
+    }
+
+    @Test
+    void routesS3BucketListRequestsToS3ScopedAudit() {
+        var decision = router.route("list my S3 buckets");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertTrue(decision.shouldUseTool());
+        assertEquals(List.of("s3"), decision.services());
+    }
+
+    @Test
+    void routesNaturalS3BucketDiscoveryQuestionsToS3ScopedAudit() {
+        var decision = router.route("what S3 buckets do I have?");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertEquals(List.of("s3"), decision.services());
     }
 
     @Test

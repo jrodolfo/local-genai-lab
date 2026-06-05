@@ -28,7 +28,7 @@ public class ChatToolRouterService {
     );
     private static final String S3_BUCKET_CLARIFICATION = "I can run an S3 CloudWatch report using your local AWS CLI credentials. "
             + "The current report tool runs one bucket at a time. Please provide the bucket name. "
-            + "If you are not sure which buckets are available, run an AWS audit first to list accessible S3 buckets.";
+            + "If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
     private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
             + "Please provide one bucket name, or run an AWS audit to list accessible S3 buckets first.";
     private static final List<String> AUDIT_SERVICES = List.of(
@@ -214,6 +214,18 @@ public class ChatToolRouterService {
      * @return the tool decision or null
      */
     private ToolDecision matchAwsAudit(String normalized) {
+        if (mentionsS3BucketListing(normalized)) {
+            return new ToolDecision(
+                    DecisionType.AWS_REGION_AUDIT,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "s3 bucket listing request",
+                    List.of("s3")
+            );
+        }
+
         boolean mentionsAudit = normalized.contains("aws audit")
                 || normalized.contains("run audit")
                 || normalized.contains("audit aws")
@@ -234,6 +246,25 @@ public class ChatToolRouterService {
                 "aws audit request",
                 extractServices(normalized)
         );
+    }
+
+    /**
+     * Matches natural user prompts that ask to list accessible S3 buckets.
+     *
+     * @param normalized the normalized message
+     * @return true if the user asked to list S3 buckets
+     */
+    private boolean mentionsS3BucketListing(String normalized) {
+        boolean mentionsS3Buckets = normalized.contains("s3 bucket")
+                || normalized.contains("s3 buckets")
+                || normalized.contains("buckets in s3")
+                || normalized.contains("bucket names");
+        boolean mentionsListIntent = normalized.contains("list")
+                || normalized.contains("show")
+                || normalized.contains("which")
+                || normalized.contains("what");
+
+        return mentionsS3Buckets && mentionsListIntent;
     }
 
     /**
