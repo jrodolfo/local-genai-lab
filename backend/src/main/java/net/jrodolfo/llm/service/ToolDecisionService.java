@@ -122,10 +122,10 @@ public class ToolDecisionService {
                 ChatToolRouterService.ToolDecision finalDecision;
                 boolean fallbackUsed = planningResult.parsedDecision().isEmpty();
 
-                if (rulesDecision.shouldUseTool()) {
-                    // When the rules engine can satisfy the request deterministically, prefer that
-                    // over a planner clarification that leaks tool-internal wording or asks for
-                    // inputs that are not actually required.
+                if (rulesDecision.shouldUseTool() || rulesDecision.needsClarification()) {
+                    // When the rules engine can satisfy or clarify a bounded tool request
+                    // deterministically, prefer that over planner none/clarification decisions
+                    // that can leak generic model wording or ask for inputs that are not required.
                     finalDecision = planningResult.parsedDecision()
                             .filter(ChatToolRouterService.ToolDecision::shouldUseTool)
                             .orElse(rulesDecision);

@@ -19,7 +19,7 @@
     "expectedType": "S3_CLOUDWATCH_REPORT",
     "expectedUseTool": false,
     "expectedClarification": true,
-    "expectedFallbackUsed": false
+    "expectedFallbackUsed": true
   },
   {
     "name": "malformed planner output falls back to rules",
@@ -88,7 +88,7 @@
     "expectedType": "S3_CLOUDWATCH_REPORT",
     "expectedUseTool": false,
     "expectedClarification": true,
-    "expectedFallbackUsed": false
+    "expectedFallbackUsed": true
   },
   {
     "name": "planner ambiguous latest report becomes clarification",
@@ -98,7 +98,7 @@
     "expectedType": "READ_LATEST_REPORT",
     "expectedUseTool": false,
     "expectedClarification": true,
-    "expectedFallbackUsed": false
+    "expectedFallbackUsed": true
   },
   {
     "name": "unsupported tool falls back to safe none",
