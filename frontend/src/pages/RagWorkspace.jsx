@@ -344,65 +344,32 @@ function RagWorkspace() {
                     </div>
                 </div>
                 {!loading && ragStatus && showTechnicalDetails ? (
-                    <div className="rag-status-card" aria-label="RAG technical status">
-                    <div className="rag-status-card__header">
-                        <h2>Index Details</h2>
-                    </div>
-                    <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
-                        <dl className="rag-status-grid">
-                            <div>
-                                <dt>Status</dt>
-                                <dd>{ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</dd>
-                            </div>
-                            <div>
-                                <dt>Corpus</dt>
-                                <dd>docs/</dd>
-                            </div>
-                            <div>
-                                <dt>Documents</dt>
-                                <dd>{ragStatus.documentCount}</dd>
-                            </div>
-                            <div>
-                                <dt>Chunks</dt>
-                                <dd>{ragStatus.chunkCount}</dd>
-                            </div>
-                            <div>
-                                <dt>Retrieval</dt>
-                                <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
-                            </div>
-                            <div>
-                                <dt>Selected</dt>
-                                <dd>{selectedRetrievalTargetLabel(selectedRetrievalTarget, ragStatus)}</dd>
-                            </div>
-                            <div>
-                                <dt>Store</dt>
-                                <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
-                            </div>
+                    <div className="rag-index-details-strip" aria-label="RAG technical status">
+                        <div className="rag-index-details-strip__items" aria-label="Index details">
+                            <span><strong>Index Details</strong> {ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</span>
+                            <span><strong>Corpus</strong> docs/</span>
+                            <span><strong>Documents</strong> {ragStatus.documentCount}</span>
+                            <span><strong>Chunks</strong> {ragStatus.chunkCount}</span>
+                            <span><strong>Retrieval</strong> {formatRagStatusValue(ragStatus.retrievalMode)}</span>
+                            <span><strong>Selected</strong> {selectedRetrievalTargetLabel(selectedRetrievalTarget, ragStatus)}</span>
+                            <span><strong>Store</strong> {formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</span>
                             {isVectorRetrieval(ragStatus) ? (
-                                <div>
-                                    <dt>Embedding</dt>
-                                    <dd>{formatEmbeddingStatus(ragStatus)}</dd>
-                                </div>
+                                <span><strong>Embedding</strong> {formatEmbeddingStatus(ragStatus)}</span>
                             ) : null}
                             {isQdrantRequired(ragStatus) ? (
-                                <div>
-                                    <dt>Qdrant</dt>
-                                    <dd>{ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</dd>
-                                </div>
+                                <span><strong>Qdrant</strong> {ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</span>
                             ) : null}
                             {isQdrantRequired(ragStatus) ? (
-                                <div>
-                                    <dt>Collection</dt>
-                                    <dd>{qdrantCollectionSummary(ragStatus)}</dd>
-                                </div>
+                                <span><strong>Collection</strong> {qdrantCollectionSummary(ragStatus)}</span>
                             ) : null}
-                        </dl>
-                    {ragStatus.enabled && isQdrantRequired(ragStatus) ? (
-                        <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
-                            {qdrantStatusMessage(ragStatus)}
-                        </p>
-                    ) : null}
-                </div>
+                        </div>
+                        <p className="rag-index-details-strip__note">{retrievalModeHint(ragStatus)}</p>
+                        {ragStatus.enabled && isQdrantRequired(ragStatus) ? (
+                            <p className={`rag-index-details-strip__note ${qdrantStatusTone(ragStatus)}`}>
+                                {qdrantStatusMessage(ragStatus)}
+                            </p>
+                        ) : null}
+                    </div>
                 ) : null}
             </section>
 
