@@ -509,7 +509,10 @@ function RagWorkspace() {
                                     <p>Enter a question to ask or compare retrieval targets.</p>
                                 ) : null}
                                 <p><strong>Ask Docs Corpus</strong> saves one answer using the selected retrieval target.</p>
-                                <p><strong>Compare Retrieval Targets</strong> runs the same question across available targets without saving results.</p>
+                                <p>
+                                    <strong>Compare Retrieval Targets</strong>
+                                    {` runs the same question across ${comparisonTargetSummary(ragStatus)} without saving results.`}
+                                </p>
                             </div>
                         </form>
 
@@ -517,7 +520,7 @@ function RagWorkspace() {
                             <section className="rag-comparison" aria-label="RAG retrieval comparison">
                                 <div className="rag-comparison__header">
                                     <h2>Retrieval Comparison</h2>
-                                    <p>One question, compared across available retrieval targets. These results are not saved as conversation turns.</p>
+                                    <p>{`One question, compared across ${comparisonTargetSummary(ragStatus)}. These results are not saved as conversation turns.`}</p>
                                 </div>
                                 <div className="rag-comparison__grid">
                                     {comparisonResults.map((result) => (
@@ -823,6 +826,23 @@ function retrievalTargetHint(target, status) {
 
 function selectedRetrievalTargetLabel(target, status) {
     return retrievalTargets(status).find((candidate) => candidate.value === target)?.label || formatRagStatusValue(target);
+}
+
+function comparisonTargetSummary(status) {
+    const labels = retrievalTargets(status)
+        .filter((target) => target.available)
+        .map((target) => target.label)
+        .filter(Boolean);
+    if (labels.length === 0) {
+        return 'the currently enabled retrieval choices';
+    }
+    if (labels.length === 1) {
+        return labels[0];
+    }
+    if (labels.length === 2) {
+        return `${labels[0]} and ${labels[1]}`;
+    }
+    return `${labels.slice(0, -1).join(', ')}, and ${labels.at(-1)}`;
 }
 
 export default RagWorkspace;

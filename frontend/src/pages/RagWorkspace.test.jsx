@@ -145,7 +145,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByRole('button', {name: /Compare retrieval targets/i})).toBeDisabled();
         expect(screen.getByText(/Enter a question to ask or compare retrieval targets/i)).toBeInTheDocument();
         expect(screen.getByText(/saves one answer using the selected retrieval target/i)).toBeInTheDocument();
-        expect(screen.getByText(/runs the same question across available targets without saving results/i)).toBeInTheDocument();
+        expect(screen.getByText(/runs the same question across Lexical, Vector - In Memory, and Vector - Qdrant without saving results/i)).toBeInTheDocument();
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
