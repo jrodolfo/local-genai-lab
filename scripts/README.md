@@ -333,6 +333,10 @@ The script currently checks:
 
 Use [`aws-s3-cloudwatch-report.sh`](./aws-s3-cloudwatch-report.sh) when you want a CloudWatch-focused report for one bucket.
 
+The script uses the local AWS CLI configuration and credentials available on the developer machine.
+Do not provide an AWS account ID or username in the Agent prompt; the AWS CLI identity is already
+resolved by the configured profile or environment.
+
 Example:
 
 ```bash
@@ -357,6 +361,8 @@ Notes for S3 metrics:
 - storage metrics such as `BucketSizeBytes` and `NumberOfObjects` are daily metrics
 - request metrics may not exist unless S3 request metrics are enabled for the bucket
 - a static website bucket is a good fit for checking request counts, errors, bytes downloaded, and object counts
+- the focused S3 CloudWatch report currently runs for one bucket at a time
+- use the AWS audit flow first if you need to list accessible S3 buckets before choosing one
 
 ## Notes
 

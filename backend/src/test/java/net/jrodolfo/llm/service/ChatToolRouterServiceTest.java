@@ -1,6 +1,9 @@
 package net.jrodolfo.llm.service;
 
+import net.jrodolfo.llm.model.PendingToolCall;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -62,6 +65,39 @@ class ChatToolRouterServiceTest {
         assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
         assertTrue(decision.needsClarification());
         assertEquals(null, decision.bucket());
+    }
+
+    @Test
+    void routesGenericS3ReportRequestsAndPreservesLastMonthWindow() {
+        var decision = router.route("Give me a report from AWS S3 for the last month.");
+
+        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
+        assertTrue(decision.needsClarification());
+        assertEquals(30, decision.days());
+        assertTrue(decision.clarification().contains("local AWS CLI credentials"));
+    }
+
+    @Test
+    void allBucketsFollowUpKeepsS3PendingStateButExplainsCurrentBoundary() {
+        var clarification = router.route("Give me a report from AWS S3 for the last month.");
+        var decision = router.resolvePending(
+                new PendingToolCall(
+                        clarification.type(),
+                        clarification.reportType(),
+                        clarification.bucket(),
+                        clarification.region(),
+                        clarification.days(),
+                        clarification.reason(),
+                        clarification.services(),
+                        List.of("bucket")
+                ),
+                "all buckets"
+        );
+
+        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
+        assertTrue(decision.needsClarification());
+        assertEquals(30, decision.days());
+        assertTrue(decision.clarification().contains("not implemented yet"));
     }
 
     @Test
