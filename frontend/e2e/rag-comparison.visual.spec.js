@@ -29,24 +29,11 @@ test('rag comparison cards stay visually compact', async ({page}) => {
     await expect(comparison.getByRole('heading', {name: 'Lexical'})).toBeVisible();
     await expect(comparison.getByRole('heading', {name: 'Vector - In Memory'})).toBeVisible();
     await expect(comparison.getByRole('heading', {name: 'Vector - Qdrant'})).toBeVisible();
-
-    const lexicalCard = comparison.locator('.rag-comparison-card').first();
-    const lexicalTitle = await lexicalCard.getByRole('heading', {name: 'Lexical'}).boundingBox();
-    const lexicalAnswerTitle = await lexicalCard.getByRole('heading', {name: 'Answer'}).boundingBox();
-    expect(verticalGapBetween(lexicalTitle, lexicalAnswerTitle)).toBeLessThanOrEqual(32);
-
     await expect(comparison).toHaveScreenshot('rag-comparison.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0.06
+        maxDiffPixelRatio: 0.02
     });
 });
-
-function verticalGapBetween(firstBox, secondBox) {
-    if (!firstBox || !secondBox) {
-        throw new Error('Could not measure RAG comparison card spacing.');
-    }
-    return secondBox.y - (firstBox.y + firstBox.height);
-}
 
 async function mockFrontendApis(page) {
     await page.route('**/api/rag/status', async (route) => {
