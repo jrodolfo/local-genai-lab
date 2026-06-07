@@ -202,12 +202,14 @@
 }
 
 .provider-status-strip {
+    align-items: flex-start;
     gap: 0.65rem 1rem;
     font-size: 0.92rem;
     color: #334155;
 }
 
 .provider-status-summary {
+    flex: 1 1 520px;
     gap: 0.55rem 1rem;
 }
 
@@ -217,8 +219,8 @@
 }
 
 .provider-status-message {
+    flex-basis: 100%;
     color: #475569;
-    width: 100%;
 }
 
 .provider-status-details {
@@ -227,7 +229,7 @@
 }
 
 .provider-status-refresh {
-    margin-left: auto;
+    margin-left: 0;
     padding: 6px 10px;
     font-size: 0.84rem;
 }
