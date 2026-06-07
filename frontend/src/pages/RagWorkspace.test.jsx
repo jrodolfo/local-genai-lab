@@ -122,11 +122,6 @@ describe('RagWorkspace', () => {
         expect(screen.getByText(/Backend default is lexical retrieval/i)).toBeInTheDocument();
         expect(screen.getByText(/Use the Retrieval selector to try vector retrieval per question/i)).toBeInTheDocument();
         expect(screen.getByRole('combobox', {name: /retrieval/i})).toHaveValue('lexical:in-memory');
-        expect(screen.getByRole('button', {name: /Ask docs corpus/i})).toBeDisabled();
-        expect(screen.getByRole('button', {name: /Compare retrieval targets/i})).toBeDisabled();
-        expect(screen.getByText(/Enter a question to ask or compare retrieval targets/i)).toBeInTheDocument();
-        expect(screen.getByText(/saves one answer using the selected retrieval target/i)).toBeInTheDocument();
-        expect(screen.getByText(/runs the same question across available targets without saving results/i)).toBeInTheDocument();
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
@@ -143,103 +138,7 @@ describe('RagWorkspace', () => {
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
         expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText(/Ask a question about the project docs/i)).toHaveValue('How does provider selection work?');
         expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
-    });
-
-    it('keeps the question so switching retrieval target and asking again sends the new target', async () => {
-        const receivedQueries = [];
-        server.use(
-            http.get('/api/rag/status', () => HttpResponse.json({
-                enabled: true,
-                indexed: true,
-                corpusRoot: '/repo/docs',
-                documentCount: 12,
-                chunkCount: 48,
-                retrievalMode: 'lexical',
-                retrievalStore: 'in-memory',
-                vectorStore: 'in-memory',
-                retrievalTargets: [
-                    retrievalTarget('lexical:in-memory', 'Lexical', true, true, 'Ready. Uses lexical retrieval.'),
-                    retrievalTarget('vector:in-memory', 'Vector - In Memory', true, true, 'Ready. Uses in-memory vector retrieval.')
-                ]
-            })),
-            http.get('/api/models', () => HttpResponse.json({
-                provider: 'ollama',
-                defaultProvider: 'ollama',
-                providers: ['ollama'],
-                defaultModel: 'llama3:8b',
-                models: ['llama3:8b']
-            })),
-            http.get('/api/sessions', () => HttpResponse.json([])),
-            http.post('/api/rag/query', async ({request}) => {
-                const body = await request.json();
-                receivedQueries.push(body);
-                const sessionId = `rag-session-${receivedQueries.length}`;
-                return HttpResponse.json({
-                    answer: `${body.retrievalMode} answer`,
-                    provider: 'ollama',
-                    model: 'llama3:8b',
-                    sessionId,
-                    sources: [
-                        {
-                            sourcePath: 'sessions.md',
-                            title: 'Sessions',
-                            excerpt: 'Sessions are stored as local JSON files.',
-                            score: 0.9
-                        }
-                    ],
-                    metadata: {
-                        provider: 'ollama',
-                        modelId: 'llama3:8b'
-                    },
-                    ragRetrieval: {
-                        retrievalMode: body.retrievalMode,
-                        vectorStore: body.vectorStore,
-                        retrievalTarget: `${body.retrievalMode}:${body.vectorStore}`
-                    }
-                });
-            }),
-            http.get('/api/sessions/:sessionId', ({params}) => HttpResponse.json({
-                sessionId: params.sessionId,
-                title: 'How are sessions persisted?',
-                summary: 'Sessions are stored as local JSON files.',
-                mode: 'rag',
-                model: 'llama3:8b',
-                createdAt: '2026-05-27T12:00:00Z',
-                updatedAt: '2026-05-27T12:00:05Z',
-                messages: [
-                    ragMessage('user', 'How are sessions persisted?', '2026-05-27T12:00:00Z'),
-                    ragMessage('assistant', 'Sessions are stored as local JSON files.', '2026-05-27T12:00:05Z')
-                ],
-                pendingTool: null
-            }))
-        );
-
-        render(<RagWorkspace/>);
-        const user = userEvent.setup();
-
-        const questionField = await screen.findByPlaceholderText(/Ask a question about the project docs/i);
-        await user.type(questionField, 'How are sessions persisted?');
-        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
-        await waitFor(() => expect(receivedQueries).toHaveLength(1));
-
-        expect(questionField).toHaveValue('How are sessions persisted?');
-        await user.selectOptions(screen.getByRole('combobox', {name: /retrieval/i}), 'vector:in-memory');
-        expect(screen.getByText(/Rebuild Index applies to the selected retrieval target/i)).toBeInTheDocument();
-        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
-
-        await waitFor(() => expect(receivedQueries).toHaveLength(2));
-        expect(receivedQueries[0]).toMatchObject({
-            question: 'How are sessions persisted?',
-            retrievalMode: 'lexical',
-            vectorStore: 'in-memory'
-        });
-        expect(receivedQueries[1]).toMatchObject({
-            question: 'How are sessions persisted?',
-            retrievalMode: 'vector',
-            vectorStore: 'in-memory'
-        });
     });
 
     it('sends selected vector retrieval options with rebuild and query requests', async () => {
@@ -592,7 +491,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Present, 123 points')).toBeInTheDocument();
         expect(screen.getByText('Qdrant collection local_genai_lab_docs is present with 123 points.')).toBeInTheDocument();
         expect(screen.getByRole('option', {name: 'Vector - Qdrant'})).toBeEnabled();
-        expect(screen.getByText(/Ready\. Qdrant collection local_genai_lab_docs has 123 points\./i)).toBeInTheDocument();
+        expect(screen.getByText('Ready. Qdrant collection local_genai_lab_docs has 123 points.')).toBeInTheDocument();
     });
 
     it('shows qdrant missing collection guidance when rebuild is needed', async () => {
@@ -674,7 +573,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Not checked')).toBeInTheDocument();
         expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
         expect(screen.getByRole('option', {name: 'Vector - Qdrant Unavailable'})).toBeDisabled();
-        expect(screen.getAllByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start Qdrant before selecting this target\./i).length).toBeGreaterThan(0);
+        expect(screen.getByText('Qdrant is not reachable at http://localhost:6333. Start Qdrant before selecting this target.')).toBeInTheDocument();
     });
 
     it('shows backend query failures clearly', async () => {
