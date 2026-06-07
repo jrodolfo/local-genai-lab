@@ -295,16 +295,16 @@ function RagWorkspace() {
         : ragTurns.slice().reverse();
 
     return (
-        <main className="rag-page">
-            <section className="rag-hero">
+        <main className="rag-page workspace-page">
+            <section className="rag-hero workspace-hero">
                 <div className="rag-hero__copy">
-                    <div className="rag-hero__header">
+                    <div className="rag-hero__header workspace-header">
                         <div>
                             <h1>RAG</h1>
                             <p>Ask questions against the local docs corpus.</p>
                         </div>
-                        <div className="rag-header-controls">
-                            <label className="rag-debug-toggle">
+                        <div className="rag-header-controls workspace-header-controls">
+                            <label className="rag-debug-toggle workspace-debug-toggle">
                                 <input
                                     type="checkbox"
                                     checked={showTechnicalDetails}
@@ -314,7 +314,7 @@ function RagWorkspace() {
                             </label>
                             <button
                                 type="button"
-                                className="rag-action-button rag-sidebar-toggle"
+                                className="rag-action-button workspace-action-button rag-sidebar-toggle"
                                 aria-expanded={showSessionsSidebar}
                                 aria-controls="rag-sessions-sidebar"
                                 onClick={() => setShowSessionsSidebar((current) => !current)}
@@ -336,7 +336,7 @@ function RagWorkspace() {
                     ) : null}
                     <div className="rag-status-strip__actions">
                         {ragStatus?.enabled ? (
-                            <button type="button" className="rag-action-button rag-primary-button"
+                            <button type="button" className="rag-action-button workspace-action-button rag-primary-button"
                                     onClick={handleRebuildIndex} disabled={rebuilding}>
                                 {rebuilding ? 'Rebuilding...' : 'Rebuild Index'}
                             </button>
@@ -383,16 +383,17 @@ function RagWorkspace() {
             ) : null}
 
             {!loading && ragStatus?.enabled ? (
-                <section className={`rag-layout ${showSessionsSidebar ? '' : 'sidebar-hidden'}`.trim()}>
+                <section
+                    className={`rag-layout workspace-layout ${showSessionsSidebar ? '' : 'sidebar-hidden workspace-layout--sidebar-hidden'}`.trim()}>
                     {showSessionsSidebar ? (
-                        <aside id="rag-sessions-sidebar" className="rag-session-sidebar">
+                        <aside id="rag-sessions-sidebar" className="rag-session-sidebar workspace-sidebar">
                             <div className="rag-session-sidebar__header">
                                 <h2>RAG sessions</h2>
                                 <div className="rag-session-sidebar__actions">
-                                    <button type="button" className="rag-action-button" onClick={startNewSession}>New
+                                    <button type="button" className="rag-action-button workspace-action-button" onClick={startNewSession}>New
                                         Session
                                     </button>
-                                    <button type="button" className="rag-action-button"
+                                    <button type="button" className="rag-action-button workspace-action-button"
                                             onClick={() => importInputRef.current?.click()}>Import Session
                                     </button>
                                     <input
@@ -419,15 +420,15 @@ function RagWorkspace() {
                                                 className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
                                         </button>
                                         <div className="rag-session-item__actions">
-                                            <button type="button" className="rag-action-button"
+                                            <button type="button" className="rag-action-button workspace-action-button"
                                                     onClick={() => downloadSession(session.sessionId, 'json')}>Export
                                                 JSON
                                             </button>
-                                            <button type="button" className="rag-action-button"
+                                            <button type="button" className="rag-action-button workspace-action-button"
                                                     onClick={() => downloadSession(session.sessionId, 'markdown')}>Export
                                                 Markdown
                                             </button>
-                                            <button type="button" className="rag-action-button rag-action-button-danger"
+                                            <button type="button" className="rag-action-button workspace-action-button rag-action-button-danger"
                                                     onClick={() => removeSession(session.sessionId)}>Delete
                                             </button>
                                         </div>
@@ -438,7 +439,7 @@ function RagWorkspace() {
                     ) : null}
 
                     <section className="rag-workspace">
-                        <form className="rag-query-form" onSubmit={handleSubmit}>
+                        <form className="rag-query-form workspace-main-card" onSubmit={handleSubmit}>
                             <div className="rag-field-grid">
                                 <label>
                                     Provider
@@ -494,11 +495,11 @@ function RagWorkspace() {
                             </label>
 
                             <div className="rag-actions">
-                                <button type="submit" className="rag-action-button rag-primary-button"
+                                <button type="submit" className="rag-action-button workspace-action-button rag-primary-button"
                                         disabled={querying || comparing || !question.trim()}>
                                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
                                 </button>
-                                <button type="button" className="rag-action-button"
+                                <button type="button" className="rag-action-button workspace-action-button"
                                         disabled={querying || comparing || !question.trim()}
                                         onClick={handleCompareRetrievalTargets}>
                                     {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}

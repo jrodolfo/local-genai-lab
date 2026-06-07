@@ -1,6 +1,5 @@
 .rag-page {
-    min-height: 100vh;
-    padding: 1.25rem 1.5rem 2rem;
+    display: block;
 }
 
 .rag-hero {
@@ -8,15 +7,10 @@
     gap: 0.75rem;
     grid-template-columns: 1fr;
     align-items: start;
-    margin: 0 auto 1rem;
-    max-width: 1200px;
 }
 
 .rag-hero__header {
-    align-items: center;
-    display: flex;
     gap: 1rem;
-    justify-content: space-between;
 }
 
 .rag-hero__copy h1 {
@@ -29,20 +23,12 @@
 }
 
 .rag-header-controls {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
     gap: 0.75rem;
-    justify-content: flex-end;
 }
 
 .rag-debug-toggle {
-    align-items: center;
     color: #475569;
-    display: inline-flex;
-    font-size: 0.9rem;
     gap: 0.45rem;
-    white-space: nowrap;
 }
 
 .rag-hero h1,
@@ -132,11 +118,7 @@
 }
 
 .rag-layout {
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.25fr);
-    margin: 0 auto;
-    max-width: 1200px;
+    grid-template-columns: var(--workspace-sidebar-width) minmax(0, 1fr);
 }
 
 .rag-layout.sidebar-hidden {
@@ -178,15 +160,10 @@
 }
 
 .rag-action-button {
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    background: var(--workspace-button-background);
+    border-color: var(--workspace-button-border);
     color: #0f172a;
-    cursor: pointer;
-    font: inherit;
     font-size: 0.85rem;
-    font-weight: 600;
-    padding: 0.5rem 0.85rem;
 }
 
 .rag-action-button:hover {

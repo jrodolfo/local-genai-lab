@@ -635,10 +635,11 @@ function Home() {
         : '';
 
     return (
-        <main className="home-page">
-            <section className={`chat-layout ${showSessionsSidebar ? '' : 'sidebar-hidden'}`.trim()}>
+        <main className="home-page workspace-page">
+            <section
+                className={`chat-layout workspace-layout ${showSessionsSidebar ? '' : 'sidebar-hidden workspace-layout--sidebar-hidden'}`.trim()}>
                 {showSessionsSidebar ? (
-                    <aside id="sessions-sidebar" className="session-sidebar">
+                    <aside id="sessions-sidebar" className="session-sidebar workspace-sidebar">
                         <div className="session-sidebar-header">
                             <h2>Sessions</h2>
                             <div className="session-sidebar-actions">
@@ -650,11 +651,11 @@ function Home() {
                                     aria-label="Import session file"
                                     onChange={handleImportChange}
                                 />
-                                <button type="button" className="page-action-button" onClick={handleImportClick}
+                                <button type="button" className="page-action-button workspace-action-button" onClick={handleImportClick}
                                         disabled={loading}>
                                     Import JSON
                                 </button>
-                                <button type="button" className="page-action-button" onClick={startNewChat}
+                                <button type="button" className="page-action-button workspace-action-button" onClick={startNewChat}
                                         disabled={loading}>
                                     New chat
                                 </button>
@@ -721,7 +722,7 @@ function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className="page-action-button"
+                                        className="page-action-button workspace-action-button"
                                         onClick={() => downloadSession(session.sessionId, 'json')}
                                         disabled={loading}
                                         aria-label={`Export session ${session.title}`}
@@ -730,7 +731,7 @@ function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className="page-action-button"
+                                        className="page-action-button workspace-action-button"
                                         onClick={() => downloadSession(session.sessionId, 'markdown')}
                                         disabled={loading}
                                         aria-label={`Export markdown session ${session.title}`}
@@ -739,7 +740,7 @@ function Home() {
                                     </button>
                                     <button
                                         type="button"
-                                        className="page-action-button page-action-button-danger"
+                                        className="page-action-button workspace-action-button page-action-button-danger"
                                         onClick={() => removeSession(session.sessionId)}
                                         disabled={loading}
                                         aria-label={`Delete session ${session.title}`}
@@ -752,14 +753,14 @@ function Home() {
                     </aside>
                 ) : null}
 
-                <section className="chat-card">
-                    <header>
+                <section className="chat-card workspace-main-card">
+                    <header className="workspace-header">
                         <div>
                             <h1>Agent</h1>
                             <p>Ask models directly or run tool-assisted AWS workflows.</p>
                         </div>
-                        <div className="header-controls">
-                            <label className="debug-toggle">
+                        <div className="header-controls workspace-header-controls">
+                            <label className="debug-toggle workspace-debug-toggle">
                                 <input
                                     type="checkbox"
                                     checked={showTechnicalDetails}
@@ -769,7 +770,7 @@ function Home() {
                             </label>
                             <button
                                 type="button"
-                                className="page-action-button sidebar-toggle"
+                                className="page-action-button workspace-action-button sidebar-toggle"
                                 aria-expanded={showSessionsSidebar}
                                 aria-controls="sessions-sidebar"
                                 onClick={() => setShowSessionsSidebar((current) => !current)}
@@ -793,7 +794,7 @@ function Home() {
                             </div>
                             <button
                                 type="button"
-                                className="page-action-button provider-status-refresh"
+                                className="page-action-button workspace-action-button provider-status-refresh"
                                 onClick={() => loadProviderStatus(selectedProvider, {manual: true})}
                                 disabled={providerStatusRefreshing || !selectedProvider}
                             >
