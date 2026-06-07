@@ -148,13 +148,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
                 .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not required for the current RAG configuration."))
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
-                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"))
-                .andExpect(jsonPath("$.retrievalTargets[0].value").value("lexical:in-memory"))
-                .andExpect(jsonPath("$.retrievalTargets[0].available").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[1].value").value("vector:in-memory"))
-                .andExpect(jsonPath("$.retrievalTargets[1].available").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].value").value("vector:qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].available").value(false));
+                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
 
     @Test
@@ -169,16 +163,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantCollectionExists").doesNotExist())
                 .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
                 .andExpect(jsonPath("$.embeddingProvider").value("ollama"))
-                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"))
-                .andExpect(jsonPath("$.retrievalTargets[0].value").value("lexical:in-memory"))
-                .andExpect(jsonPath("$.retrievalTargets[0].available").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[0].ready").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[1].value").value("vector:in-memory"))
-                .andExpect(jsonPath("$.retrievalTargets[1].available").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[1].ready").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[2].value").value("vector:qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].available").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].ready").value(false));
+                .andExpect(jsonPath("$.embeddingModel").value("nomic-embed-text"));
     }
 
     @Test
@@ -194,13 +179,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantReachable").value(true))
                 .andExpect(jsonPath("$.qdrantCollectionExists").value(true))
                 .andExpect(jsonPath("$.qdrantPointCount").value(123))
-                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is present with 123 points."))
-                .andExpect(jsonPath("$.retrievalTargets[2].value").value("vector:qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].label").value("Vector - Qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].available").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[2].ready").value(true))
-                .andExpect(jsonPath("$.retrievalTargets[2].pointCount").value(123))
-                .andExpect(jsonPath("$.retrievalTargets[2].message").value("Ready. Qdrant collection local_genai_lab_docs has 123 points."));
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is present with 123 points."));
     }
 
     @Test
@@ -214,12 +193,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantReachable").value(false))
                 .andExpect(jsonPath("$.qdrantCollectionExists").doesNotExist())
                 .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
-                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not reachable at http://localhost:6333."))
-                .andExpect(jsonPath("$.retrievalTargets[2].value").value("vector:qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].label").value("Vector - Qdrant Unavailable"))
-                .andExpect(jsonPath("$.retrievalTargets[2].available").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].ready").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].message").value("Qdrant is not reachable at http://localhost:6333. Start Qdrant before selecting this target."));
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant is not reachable at http://localhost:6333."));
     }
 
     @Test
@@ -232,11 +206,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.qdrantReachable").value(true))
                 .andExpect(jsonPath("$.qdrantCollectionExists").value(false))
                 .andExpect(jsonPath("$.qdrantPointCount").doesNotExist())
-                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is missing. Rebuild the index."))
-                .andExpect(jsonPath("$.retrievalTargets[2].value").value("vector:qdrant"))
-                .andExpect(jsonPath("$.retrievalTargets[2].available").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].ready").value(false))
-                .andExpect(jsonPath("$.retrievalTargets[2].message").value("Qdrant collection local_genai_lab_docs is missing. Rebuild the index."));
+                .andExpect(jsonPath("$.qdrantStatusMessage").value("Qdrant collection local_genai_lab_docs is missing. Rebuild the index."));
     }
 
     @Test

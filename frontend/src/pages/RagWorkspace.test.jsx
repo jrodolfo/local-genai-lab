@@ -302,12 +302,7 @@ describe('RagWorkspace', () => {
                 qdrantPointCount: 123,
                 qdrantStatusMessage: 'Qdrant collection local_genai_lab_docs is present with 123 points.',
                 embeddingProvider: 'ollama',
-                embeddingModel: 'nomic-embed-text',
-                retrievalTargets: [
-                    retrievalTarget('lexical:in-memory', 'Lexical', true, true, 'Ready. Uses the zero-dependency lexical index for this request.'),
-                    retrievalTarget('vector:in-memory', 'Vector - In Memory', true, true, 'Ready. Uses Ollama embeddings and an in-memory vector index.'),
-                    retrievalTarget('vector:qdrant', 'Vector - Qdrant', true, true, 'Ready. Qdrant collection local_genai_lab_docs has 123 points.', 123)
-                ]
+                embeddingModel: 'nomic-embed-text'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -326,8 +321,6 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Collection')).toBeInTheDocument();
         expect(screen.getByText('Present, 123 points')).toBeInTheDocument();
         expect(screen.getByText('Qdrant collection local_genai_lab_docs is present with 123 points.')).toBeInTheDocument();
-        expect(screen.getByRole('option', {name: 'Vector - Qdrant'})).toBeEnabled();
-        expect(screen.getByText('Ready. Qdrant collection local_genai_lab_docs has 123 points.')).toBeInTheDocument();
     });
 
     it('shows qdrant missing collection guidance when rebuild is needed', async () => {
@@ -385,12 +378,7 @@ describe('RagWorkspace', () => {
                 qdrantCollectionExists: null,
                 qdrantStatusMessage: 'Qdrant is not reachable at http://localhost:6333.',
                 embeddingProvider: 'ollama',
-                embeddingModel: 'nomic-embed-text',
-                retrievalTargets: [
-                    retrievalTarget('lexical:in-memory', 'Lexical', true, true, 'Ready. Uses the zero-dependency lexical index for this request.'),
-                    retrievalTarget('vector:in-memory', 'Vector - In Memory', true, true, 'Ready. Uses Ollama embeddings and an in-memory vector index.'),
-                    retrievalTarget('vector:qdrant', 'Vector - Qdrant Unavailable', false, false, 'Qdrant is not reachable at http://localhost:6333. Start Qdrant before selecting this target.')
-                ]
+                embeddingModel: 'nomic-embed-text'
             })),
             http.get('/api/models', () => HttpResponse.json({
                 provider: 'ollama',
@@ -408,8 +396,6 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Unavailable')).toBeInTheDocument();
         expect(screen.getByText('Not checked')).toBeInTheDocument();
         expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
-        expect(screen.getByRole('option', {name: 'Vector - Qdrant Unavailable'})).toBeDisabled();
-        expect(screen.getByText('Qdrant is not reachable at http://localhost:6333. Start Qdrant before selecting this target.')).toBeInTheDocument();
     });
 
     it('shows backend query failures clearly', async () => {
@@ -611,19 +597,5 @@ function ragMessage(role, content, timestamp) {
         metadata: role === 'assistant' ? {provider: 'ollama', modelId: 'llama3:8b'} : null,
         ragSources: role === 'assistant' ? [] : null,
         timestamp
-    };
-}
-
-function retrievalTarget(value, label, available, ready, message, pointCount = null) {
-    const [retrievalMode, vectorStore] = value.split(':');
-    return {
-        value,
-        label,
-        retrievalMode,
-        vectorStore,
-        available,
-        ready,
-        message,
-        pointCount
     };
 }

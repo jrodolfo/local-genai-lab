@@ -7,7 +7,6 @@ import net.jrodolfo.llm.rag.dto.RagIndexRequest;
 import net.jrodolfo.llm.rag.dto.RagIndexResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryRequest;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
-import net.jrodolfo.llm.rag.dto.RagRetrievalTargetResponse;
 import net.jrodolfo.llm.rag.dto.RagStatusResponse;
 import net.jrodolfo.llm.rag.qdrant.QdrantStatus;
 import net.jrodolfo.llm.rag.qdrant.QdrantStatusService;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -74,7 +72,6 @@ public class RagController {
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.snapshot();
         RagRetrievalMode mode = retrievalMode();
         QdrantStatus qdrantStatus = qdrantStatusService.status(ragProperties);
-        QdrantStatus qdrantTargetStatus = qdrantStatusService.status(qdrantTargetProperties());
         return new RagStatusResponse(
                 ragProperties.enabled(),
                 snapshot != null,
@@ -92,8 +89,7 @@ public class RagController {
                 qdrantStatus.pointCount(),
                 qdrantStatus.message(),
                 ragProperties.embeddingProvider(),
-                ragProperties.embeddingModel(),
-                retrievalTargets(qdrantTargetStatus)
+                ragProperties.embeddingModel()
         );
     }
 
@@ -188,92 +184,5 @@ public class RagController {
             return RagRetrievalOptions.fromConfig(ragProperties);
         }
         return RagRetrievalOptions.fromRequest(ragProperties, request.retrievalMode(), request.vectorStore());
-    }
-
-    private List<RagRetrievalTargetResponse> retrievalTargets(QdrantStatus qdrantStatus) {
-        boolean enabled = ragProperties.enabled();
-        return List.of(
-                new RagRetrievalTargetResponse(
-                        "lexical:in-memory",
-                        "Lexical",
-                        "lexical",
-                        "in-memory",
-                        enabled,
-                        enabled,
-                        enabled
-                                ? "Ready. Uses the zero-dependency lexical index for this request."
-                                : "RAG is disabled.",
-                        null
-                ),
-                new RagRetrievalTargetResponse(
-                        "vector:in-memory",
-                        "Vector - In Memory",
-                        "vector",
-                        "in-memory",
-                        enabled,
-                        enabled,
-                        enabled
-                                ? "Ready. Uses Ollama embeddings and an in-memory vector index."
-                                : "RAG is disabled.",
-                        null
-                ),
-                qdrantTarget(qdrantStatus)
-        );
-    }
-
-    private RagRetrievalTargetResponse qdrantTarget(QdrantStatus qdrantStatus) {
-        boolean enabled = ragProperties.enabled();
-        boolean reachable = Boolean.TRUE.equals(qdrantStatus.reachable());
-        boolean collectionExists = Boolean.TRUE.equals(qdrantStatus.collectionExists());
-        boolean ready = enabled && reachable && collectionExists;
-        String label = ready ? "Vector - Qdrant" : "Vector - Qdrant Unavailable";
-        String message = qdrantTargetMessage(enabled, qdrantStatus, reachable, collectionExists);
-        return new RagRetrievalTargetResponse(
-                "vector:qdrant",
-                label,
-                "vector",
-                "qdrant",
-                ready,
-                ready,
-                message,
-                qdrantStatus.pointCount()
-        );
-    }
-
-    private String qdrantTargetMessage(
-            boolean enabled,
-            QdrantStatus qdrantStatus,
-            boolean reachable,
-            boolean collectionExists
-    ) {
-        if (!enabled) {
-            return "RAG is disabled.";
-        }
-        if (!reachable) {
-            return qdrantStatus.message() + " Start Qdrant before selecting this target.";
-        }
-        if (!collectionExists) {
-            return qdrantStatus.message();
-        }
-        Long pointCount = qdrantStatus.pointCount();
-        String pointText = pointCount == null ? "points unknown" : pointCount + " points";
-        return "Ready. Qdrant collection " + ragProperties.qdrantCollection() + " has " + pointText + ".";
-    }
-
-    private RagProperties qdrantTargetProperties() {
-        return new RagProperties(
-                ragProperties.enabled(),
-                ragProperties.corpusRoot(),
-                ragProperties.maxChunkSize(),
-                ragProperties.chunkOverlap(),
-                ragProperties.topK(),
-                RagRetrievalMode.VECTOR.configValue(),
-                "qdrant",
-                ragProperties.qdrantUrl(),
-                ragProperties.qdrantCollection(),
-                ragProperties.embeddingProvider(),
-                ragProperties.embeddingModel(),
-                ragProperties.excludedSourcePaths()
-        );
     }
 }

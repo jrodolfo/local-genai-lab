@@ -293,10 +293,6 @@ function RagWorkspace() {
                                 <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
                             </div>
                             <div>
-                                <dt>Selected</dt>
-                                <dd>{selectedRetrievalTargetLabel(selectedRetrievalTarget, ragStatus)}</dd>
-                            </div>
-                            <div>
                                 <dt>Store</dt>
                                 <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
                             </div>
@@ -414,7 +410,7 @@ function RagWorkspace() {
                                     <select value={selectedRetrievalTarget}
                                             onChange={(event) => setSelectedRetrievalTarget(event.target.value)}>
                                         {retrievalTargets(ragStatus).map((target) => (
-                                            <option key={target.value} value={target.value} disabled={!target.available}>
+                                            <option key={target.value} value={target.value} disabled={target.disabled}>
                                                 {target.label}
                                             </option>
                                         ))}
@@ -654,51 +650,35 @@ function retrievalOptionsFromTarget(target) {
 }
 
 function retrievalTargets(status) {
-    if (Array.isArray(status?.retrievalTargets) && status.retrievalTargets.length > 0) {
-        return status.retrievalTargets.map((target) => ({
-            ...target,
-            available: target.available !== false
-        }));
-    }
-
-    const qdrantReady = status?.qdrantReachable !== false && status?.qdrantCollectionExists !== false;
+    const qdrantDisabled = status?.qdrantReachable === false;
     return [
         {
             value: 'lexical:in-memory',
-            label: 'Lexical',
-            available: true,
-            message: 'Uses the zero-dependency lexical index for this request.'
+            label: 'Lexical'
         },
         {
             value: 'vector:in-memory',
-            label: 'Vector - In Memory',
-            available: true,
-            message: 'Uses Ollama embeddings and an in-memory vector index for this request.'
+            label: 'Vector - In Memory'
         },
         {
             value: 'vector:qdrant',
-            label: qdrantReady ? 'Vector - Qdrant' : 'Vector - Qdrant Unavailable',
-            available: qdrantReady,
-            message: qdrantReady
-                ? 'Uses Ollama embeddings and Qdrant for vector search. Rebuild the index after switching to this target.'
-                : 'Qdrant is unavailable. Start Qdrant, rebuild the index, or choose another retrieval mode.'
+            label: qdrantDisabled ? 'Vector - Qdrant Unavailable' : 'Vector - Qdrant',
+            disabled: qdrantDisabled
         }
     ];
 }
 
 function retrievalTargetHint(target, status) {
-    const selectedTarget = retrievalTargets(status).find((candidate) => candidate.value === target);
-    if (selectedTarget?.message) {
-        return selectedTarget.message;
+    if (target === 'vector:qdrant') {
+        if (status?.qdrantReachable === false) {
+            return 'Qdrant is unavailable. Start Qdrant, rebuild the index, or choose another retrieval mode.';
+        }
+        return 'Uses Ollama embeddings and Qdrant for vector search. Rebuild the index after switching to this target.';
     }
     if (target === 'vector:in-memory') {
         return 'Uses Ollama embeddings and an in-memory vector index for this request.';
     }
     return 'Uses the zero-dependency lexical index for this request.';
-}
-
-function selectedRetrievalTargetLabel(target, status) {
-    return retrievalTargets(status).find((candidate) => candidate.value === target)?.label || formatRagStatusValue(target);
 }
 
 export default RagWorkspace;
