@@ -674,26 +674,22 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 20px;
 }
 
-.composer-row {
-    display: flex;
-    gap: 10px;
+.composer-field {
+    margin-top: 1rem;
 }
 
-.composer-row textarea {
-    flex: 1;
+.composer-field textarea {
     resize: vertical;
-    min-height: 88px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 10px;
-    font: inherit;
+    min-height: 112px;
 }
 
-.composer-row button {
-    align-self: flex-end;
+.composer-actions {
+    align-items: center;
+}
+
+.composer-actions button {
     border: none;
     border-radius: 8px;
     background: #0f172a;
@@ -703,7 +699,7 @@
     cursor: pointer;
 }
 
-.composer-row button:disabled {
+.composer-actions button:disabled {
     cursor: not-allowed;
     opacity: 0.55;
 }
@@ -761,11 +757,7 @@
         align-items: flex-start;
     }
 
-    .composer-row {
-        flex-direction: column;
-    }
-
-    .composer-row button {
+    .composer-actions button {
         width: 100%;
     }
 

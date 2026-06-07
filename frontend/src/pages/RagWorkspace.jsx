@@ -440,8 +440,8 @@ function RagWorkspace() {
 
                     <section className="rag-workspace">
                         <form className="rag-query-form workspace-main-card" onSubmit={handleSubmit}>
-                            <div className="rag-field-grid">
-                                <label>
+                            <div className="rag-field-grid workspace-control-grid">
+                                <label className="workspace-control-field">
                                     Provider
                                     <select value={selectedProvider}
                                             onChange={(event) => setSelectedProvider(event.target.value)}>
@@ -452,7 +452,7 @@ function RagWorkspace() {
                                         ))}
                                     </select>
                                 </label>
-                                <label>
+                                <label className="workspace-control-field">
                                     Retrieval
                                     <select value={selectedRetrievalTarget}
                                             onChange={(event) => setSelectedRetrievalTarget(event.target.value)}>
@@ -470,8 +470,8 @@ function RagWorkspace() {
                                 {' '}Rebuild Index applies to the selected retrieval target. If a vector target has not been indexed yet, rebuild before asking.
                             </p>
 
-                            <div className="rag-field-grid rag-field-grid--single">
-                                <label>
+                            <div className="rag-field-grid rag-field-grid--single workspace-control-grid">
+                                <label className="workspace-control-field">
                                     Model
                                     <select value={selectedModel}
                                             onChange={(event) => setSelectedModel(event.target.value)}>
@@ -484,7 +484,7 @@ function RagWorkspace() {
                                 </label>
                             </div>
 
-                            <label className="rag-question-field">
+                            <label className="rag-question-field workspace-control-field">
                                 Question
                                 <textarea
                                     value={question}
@@ -494,7 +494,7 @@ function RagWorkspace() {
                                 />
                             </label>
 
-                            <div className="rag-actions">
+                            <div className="rag-actions workspace-form-actions">
                                 <button type="submit" className="rag-action-button workspace-action-button rag-primary-button"
                                         disabled={querying || comparing || !question.trim()}>
                                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
@@ -505,7 +505,7 @@ function RagWorkspace() {
                                     {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
                                 </button>
                             </div>
-                            <div className="rag-action-help" aria-live="polite">
+                            <div className="rag-action-help workspace-form-help" aria-live="polite">
                                 {!question.trim() ? (
                                     <p>Enter a question to ask or compare retrieval targets.</p>
                                 ) : null}

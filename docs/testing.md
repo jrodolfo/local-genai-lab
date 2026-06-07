@@ -263,7 +263,13 @@ These flows are still worth running manually after meaningful changes:
    - user flow through backend endpoints -> MSW-backed integration test
    - local UI-only behavior -> mocked unit/component test
 
-10. Cross-provider evaluation
+10. Frontend visual review
+   When changing Agent or RAG layout, run the browser checklist in
+   [frontend-visual-checklist.md](./frontend-visual-checklist.md). This is
+   especially important for sidebar wrapping, status-strip spacing, form
+   controls, empty states, and mobile overflow.
+
+11. Cross-provider evaluation
    Use:
    - [provider-evaluation-template.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/provider-evaluation-template.md)
 
