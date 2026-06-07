@@ -91,20 +91,6 @@ function InputBox({
                     </select>
                 </label>
 
-            </div>
-
-            <label className="composer-field workspace-control-field">
-                <span>Prompt</span>
-                <textarea
-                    value={message}
-                    onChange={(event) => setMessage(event.target.value)}
-                    placeholder="Type your prompt..."
-                    rows={4}
-                    disabled={sendDisabled}
-                />
-            </label>
-
-            <div className="composer-actions workspace-form-actions">
                 <label className="checkbox-wrap">
                     <input
                         type="checkbox"
@@ -114,6 +100,16 @@ function InputBox({
                     />
                     Streaming
                 </label>
+            </div>
+
+            <div className="composer-row">
+        <textarea
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder="Type your prompt..."
+            rows={3}
+            disabled={sendDisabled}
+        />
                 {loading ? (
                     <button type="button" onClick={onCancel}>
                         Cancel
