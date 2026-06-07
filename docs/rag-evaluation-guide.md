@@ -69,9 +69,7 @@ These questions are good phase-1 checks because the answers should come from
 the repository docs and ADRs, not from general model knowledge alone.
 
 Use [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
-when you want to record a repeatable retrieval comparison. For a filled-in
-example, see
-[rag-retrieval-evaluation-example.md](./rag-retrieval-evaluation-example.md).
+when you want to record a repeatable lexical vs vector comparison.
 
 ## Recommended Retrieval Comparison
 
@@ -102,8 +100,6 @@ Compare:
 
 Record the results in a local copy of
 [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
-Use [rag-retrieval-evaluation-example.md](./rag-retrieval-evaluation-example.md)
-as a reference for the level of detail that is useful.
 Those observations should drive the next engineering task, such as chunking,
 scoring, answer grounding, or retrieval target readiness.
 
