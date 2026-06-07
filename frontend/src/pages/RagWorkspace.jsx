@@ -10,8 +10,6 @@ import {deleteSession, exportSession, getSession, importSession, listSessions} f
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
 
-const RAG_TECHNICAL_DETAILS_STORAGE_KEY = 'local-genai-lab-rag-technical-details';
-
 /**
  * RagWorkspace component.
  *
@@ -28,12 +26,6 @@ function RagWorkspace() {
     const [sessionId, setSessionId] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
-    const [showTechnicalDetails, setShowTechnicalDetails] = useState(() => {
-        if (typeof window === 'undefined') {
-            return false;
-        }
-        return window.localStorage.getItem(RAG_TECHNICAL_DETAILS_STORAGE_KEY) === 'true';
-    });
     const [question, setQuestion] = useState('');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -46,10 +38,6 @@ function RagWorkspace() {
     useEffect(() => {
         loadWorkspace();
     }, []);
-
-    useEffect(() => {
-        window.localStorage.setItem(RAG_TECHNICAL_DETAILS_STORAGE_KEY, String(showTechnicalDetails));
-    }, [showTechnicalDetails]);
 
     useEffect(() => {
         if (!selectedProvider) {
@@ -124,7 +112,6 @@ function RagWorkspace() {
         try {
             setQuerying(true);
             setError('');
-            const startedAt = Date.now();
             const payload = await queryRag({
                 question: submittedQuestion,
                 provider: selectedProvider,
@@ -132,14 +119,16 @@ function RagWorkspace() {
                 sessionId,
                 ...retrievalOptionsFromTarget(selectedRetrievalTarget)
             });
-            const elapsedMs = Date.now() - startedAt;
             setSessionId(payload.sessionId);
             setMessages((currentMessages) => [
                 ...currentMessages,
                 createRagQuestionMessage(submittedQuestion),
-                createRagAnswerMessage(payload, selectedProvider, selectedModel, elapsedMs)
+                createRagAnswerMessage(payload, selectedProvider, selectedModel)
             ]);
-            await loadRagSessions();
+            await Promise.all([
+                openSession(payload.sessionId),
+                loadRagSessions()
+            ]);
         } catch (err) {
             setError(err.message || 'Failed to query the RAG workspace.');
         } finally {
@@ -161,7 +150,6 @@ function RagWorkspace() {
             const results = [];
             for (const target of targets) {
                 try {
-                    const startedAt = Date.now();
                     const payload = await queryRag({
                         question: submittedQuestion,
                         provider: selectedProvider,
@@ -172,10 +160,7 @@ function RagWorkspace() {
                     results.push({
                         status: 'success',
                         target,
-                        payload: {
-                            ...payload,
-                            elapsedMs: Date.now() - startedAt
-                        }
+                        payload
                     });
                 } catch (err) {
                     results.push({
@@ -300,41 +285,24 @@ function RagWorkspace() {
                 <div className="rag-hero__copy">
                     <div className="rag-hero__header">
                         <div>
+                            <p className="rag-eyebrow">Experimental</p>
                             <h1>RAG</h1>
-                            <p>Ask questions against the local docs corpus.</p>
                         </div>
-                        <div className="rag-header-controls">
-                            <label className="rag-debug-toggle">
-                                <input
-                                    type="checkbox"
-                                    checked={showTechnicalDetails}
-                                    onChange={(event) => setShowTechnicalDetails(event.target.checked)}
-                                />
-                                <span>show technical details</span>
-                            </label>
-                            <button
-                                type="button"
-                                className="rag-action-button rag-sidebar-toggle"
-                                aria-expanded={showSessionsSidebar}
-                                aria-controls="rag-sessions-sidebar"
-                                onClick={() => setShowSessionsSidebar((current) => !current)}
-                            >
-                                {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            className="rag-action-button rag-sidebar-toggle"
+                            aria-expanded={showSessionsSidebar}
+                            aria-controls="rag-sessions-sidebar"
+                            onClick={() => setShowSessionsSidebar((current) => !current)}
+                        >
+                            {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
+                        </button>
                     </div>
+                    <p>Ask questions against the local docs corpus.</p>
                 </div>
-                <div className="rag-status-strip" aria-label="RAG index status">
-                    {loading ? <span>Loading RAG status...</span> : null}
-                    {!loading && ragStatus ? (
-                        <div className="rag-status-strip__items">
-                            <span><strong>Status</strong> {ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</span>
-                            <span><strong>Corpus</strong> docs/</span>
-                            <span><strong>Chunks</strong> {ragStatus.chunkCount}</span>
-                            <span><strong>Selected</strong> {selectedRetrievalTargetLabel(selectedRetrievalTarget, ragStatus)}</span>
-                        </div>
-                    ) : null}
-                    <div className="rag-status-strip__actions">
+                <div className="rag-status-card">
+                    <div className="rag-status-card__header">
+                        <h2>Index</h2>
                         {ragStatus?.enabled ? (
                             <button type="button" className="rag-action-button rag-primary-button"
                                     onClick={handleRebuildIndex} disabled={rebuilding}>
@@ -342,13 +310,8 @@ function RagWorkspace() {
                             </button>
                         ) : null}
                     </div>
-                </div>
-                {!loading && ragStatus && showTechnicalDetails ? (
-                    <div className="rag-status-card" aria-label="RAG technical status">
-                    <div className="rag-status-card__header">
-                        <h2>Index Details</h2>
-                    </div>
-                    <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
+                    {loading ? <p>Loading RAG status...</p> : null}
+                    {!loading && ragStatus ? (
                         <dl className="rag-status-grid">
                             <div>
                                 <dt>Status</dt>
@@ -397,13 +360,16 @@ function RagWorkspace() {
                                 </div>
                             ) : null}
                         </dl>
-                    {ragStatus.enabled && isQdrantRequired(ragStatus) ? (
+                    ) : null}
+                    {!loading && ragStatus?.enabled ? (
+                        <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
+                    ) : null}
+                    {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
                         <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
                             {qdrantStatusMessage(ragStatus)}
                         </p>
                     ) : null}
                 </div>
-                ) : null}
             </section>
 
             {error ? <p className="rag-error">{error}</p> : null}
@@ -559,7 +525,6 @@ function RagWorkspace() {
                                             result={result}
                                             selectedProvider={selectedProvider}
                                             selectedModel={selectedModel}
-                                            showTechnicalDetails={showTechnicalDetails}
                                         />
                                     ))}
                                 </div>
@@ -568,11 +533,7 @@ function RagWorkspace() {
 
                         {latestTurn ? (
                             <section className="rag-latest-turn" aria-label="Latest RAG turn">
-                                <RagTurn
-                                    turn={latestTurn}
-                                    selectedModel={selectedModel}
-                                    showTechnicalDetails={showTechnicalDetails}
-                                />
+                                <RagTurn turn={latestTurn} selectedModel={selectedModel}/>
                             </section>
                         ) : null}
 
@@ -583,7 +544,6 @@ function RagWorkspace() {
                                         key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
                                         turn={turn}
                                         selectedModel={selectedModel}
-                                        showTechnicalDetails={showTechnicalDetails}
                                     />
                                 ))}
                             </section>
@@ -603,7 +563,7 @@ function RagWorkspace() {
     );
 }
 
-function RagTurn({turn, selectedModel, showTechnicalDetails}) {
+function RagTurn({turn, selectedModel}) {
     return (
         <>
             {turn.question ? (
@@ -618,18 +578,16 @@ function RagTurn({turn, selectedModel, showTechnicalDetails}) {
                         answer: turn.answer.content,
                         provider: turn.answer.metadata?.provider,
                         model: turn.answer.metadata?.modelId || selectedModel,
-                        elapsedMs: turn.answer.metadata?.elapsedMs,
                         ragRetrieval: turn.answer.ragRetrieval,
                         sources: turn.answer.ragSources || []
                     }}
-                    showTechnicalDetails={showTechnicalDetails}
                 />
             ) : null}
         </>
     );
 }
 
-function RagComparisonCard({result, selectedProvider, selectedModel, showTechnicalDetails}) {
+function RagComparisonCard({result, selectedProvider, selectedModel}) {
     if (result.status === 'error') {
         return (
             <article className="rag-comparison-card rag-comparison-card--error">
@@ -647,11 +605,9 @@ function RagComparisonCard({result, selectedProvider, selectedModel, showTechnic
                     answer: result.payload.answer,
                     provider: result.payload.metadata?.provider || result.payload.provider || selectedProvider,
                     model: result.payload.metadata?.modelId || result.payload.model || selectedModel,
-                    elapsedMs: result.payload.elapsedMs,
                     ragRetrieval: result.payload.ragRetrieval || retrievalMetadataFromTarget(result.target.value),
                     sources: result.payload.sources || []
                 }}
-                showTechnicalDetails={showTechnicalDetails}
             />
         </article>
     );
@@ -764,14 +720,13 @@ function createRagQuestionMessage(content) {
     };
 }
 
-function createRagAnswerMessage(payload, selectedProvider, selectedModel, elapsedMs) {
+function createRagAnswerMessage(payload, selectedProvider, selectedModel) {
     return {
         role: 'assistant',
         content: payload.answer,
         metadata: {
             provider: payload.metadata?.provider || payload.provider || selectedProvider,
-            modelId: payload.metadata?.modelId || payload.model || selectedModel,
-            elapsedMs
+            modelId: payload.metadata?.modelId || payload.model || selectedModel
         },
         ragSources: payload.sources || [],
         ragRetrieval: payload.ragRetrieval || null,
