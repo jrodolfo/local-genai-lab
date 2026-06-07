@@ -131,13 +131,31 @@
 
 .rag-session-sidebar__header {
     align-items: center;
+    flex-wrap: wrap;
     justify-content: space-between;
     gap: 0.75rem;
 }
 
 .rag-session-sidebar__actions,
 .rag-session-item__actions {
+    flex-wrap: wrap;
     gap: 0.5rem;
+    min-width: 0;
+}
+
+.rag-session-sidebar__header h2 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.rag-session-sidebar__actions .rag-action-button {
+    flex: 1 1 110px;
+    max-width: 100%;
+}
+
+.rag-session-item__actions .rag-action-button {
+    flex: 1 1 100%;
+    max-width: 100%;
 }
 
 .rag-session-sidebar__import {

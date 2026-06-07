@@ -388,7 +388,7 @@ function RagWorkspace() {
                     {showSessionsSidebar ? (
                         <aside id="rag-sessions-sidebar" className="rag-session-sidebar workspace-sidebar">
                             <div className="rag-session-sidebar__header">
-                                <h2>RAG sessions</h2>
+                                <h2>Sessions</h2>
                                 <div className="rag-session-sidebar__actions">
                                     <button type="button" className="rag-action-button workspace-action-button" onClick={startNewSession}>New
                                         Session
