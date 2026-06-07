@@ -26,9 +26,8 @@ public class ChatToolRouterService {
             "bucket", "buckets", "metric", "metrics", "report", "reports", "name",
             "the", "a", "an", "all", "latest", "recent", "cloudwatch", "s3"
     );
-    private static final String S3_BUCKET_CLARIFICATION = "I can run an S3 CloudWatch report using your local AWS CLI credentials. "
-            + "The current report tool runs one bucket at a time. Please provide the bucket name. "
-            + "If you are not sure which buckets are available, run an AWS audit first to list accessible S3 buckets.";
+    private static final String S3_BUCKET_CLARIFICATION = "I can run an S3 report using your local AWS CLI credentials. "
+            + "Do you want all accessible buckets, or one specific bucket?";
     private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
             + "Please provide one bucket name, or run an AWS audit to list accessible S3 buckets first.";
     private static final List<String> AUDIT_SERVICES = List.of(

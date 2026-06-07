@@ -126,8 +126,7 @@ class ChatOrchestratorServiceTest {
 
         ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "ollama", "llama3:8b", null);
 
-        assertTrue(response.response().contains("I can run an S3 CloudWatch report using your local AWS CLI credentials."));
-        assertTrue(response.response().contains("one bucket at a time"));
+        assertTrue(response.response().contains("I can run an S3 report using your local AWS CLI credentials."));
         assertNotNull(response.tool());
         assertEquals("clarification-needed", response.tool().status());
         assertFalse(chatModelProvider.generateCalled);
@@ -146,11 +145,8 @@ class ChatOrchestratorServiceTest {
         ChatResponse response = orchestrator.chat("Give me a report from AWS S3 for the last month.", "ollama", "llama3:8b", null);
 
         assertTrue(response.response().contains("local AWS CLI credentials"));
-        assertTrue(response.response().contains("one bucket at a time"));
-        assertTrue(response.response().contains("Please provide the bucket name"));
         assertFalse(response.response().toLowerCase().contains("account id"));
         assertFalse(response.response().toLowerCase().contains("username"));
-        assertFalse(response.response().contains("Do you want all accessible buckets"));
         assertEquals("clarification-needed", response.tool().status());
         PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
         assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, pendingToolCall.type());
@@ -354,10 +350,8 @@ class ChatOrchestratorServiceTest {
         ChatResponse response = orchestrator.chat("Give me a report from AWS S3 for the last month.", "ollama", "llama3:8b", null);
 
         assertTrue(response.response().contains("local AWS CLI credentials"));
-        assertTrue(response.response().contains("one bucket at a time"));
         assertFalse(response.response().toLowerCase().contains("account id"));
         assertFalse(response.response().toLowerCase().contains("username"));
-        assertFalse(response.response().contains("Do you want all accessible buckets"));
         assertEquals("clarification-needed", response.tool().status());
         assertEquals(1, chatModelProvider.plannerCalls);
         PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
