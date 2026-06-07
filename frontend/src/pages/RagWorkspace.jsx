@@ -490,7 +490,7 @@ function RagWorkspace() {
                                     value={question}
                                     onChange={(event) => setQuestion(event.target.value)}
                                     placeholder="Ask a question about the project docs and ADRs."
-                                    rows={6}
+                                    rows={4}
                                 />
                             </label>
 
@@ -509,10 +509,10 @@ function RagWorkspace() {
                                 {!question.trim() ? (
                                     <p>Enter a question to ask or compare retrieval targets.</p>
                                 ) : null}
-                                <p><strong>Ask Docs Corpus</strong> saves one answer using the selected retrieval target.</p>
+                                <p><strong>Ask Docs Corpus</strong> saves one answer.</p>
                                 <p>
                                     <strong>Compare Retrieval Targets</strong>
-                                    {` runs the same question across ${comparisonTargetSummary(ragStatus)} without saving results.`}
+                                    {` checks ${comparisonTargetSummary(ragStatus)} without saving results.`}
                                 </p>
                             </div>
                         </form>
