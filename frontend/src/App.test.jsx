@@ -1,6 +1,6 @@
 /**
  * @fileoverview Tests for the main App component.
- * Verifies navigation between Agent and RAG modes based on backend RAG status.
+ * Verifies navigation between Chat and RAG modes based on backend RAG status.
  */
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -43,7 +43,7 @@ describe('App mode navigation', () => {
 
         render(<App/>);
 
-        const chatTab = await screen.findByRole('tab', {name: /agent/i});
+        const chatTab = await screen.findByRole('tab', {name: /chat/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
         expect(chatTab).toBeDisabled();
         expect(chatTab).toHaveAttribute('aria-selected', 'true');
@@ -84,7 +84,7 @@ describe('App mode navigation', () => {
         render(<App/>);
         const user = userEvent.setup();
 
-        const chatTab = await screen.findByRole('tab', {name: /agent/i});
+        const chatTab = await screen.findByRole('tab', {name: /chat/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
 
         expect(chatTab).toBeDisabled();

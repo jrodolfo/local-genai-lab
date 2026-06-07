@@ -57,7 +57,7 @@ function App() {
                         className={mode === 'chat' ? 'app-nav__tab--active' : ''}
                         onClick={() => setMode('chat')}
                     >
-                        Agent
+                        Chat
                     </button>
                     <button
                         type="button"

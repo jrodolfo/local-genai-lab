@@ -143,9 +143,7 @@ describe('Home', () => {
         render(<Home/>);
 
         expect(await screen.findByText('Artifact inspector')).toBeInTheDocument();
-        expect(screen.getByText(/Artifacts from tool runs will appear here after you select a report or file\./i)).toBeInTheDocument();
-        expect(screen.getByText(/Select an artifact action from a tool result to inspect generated reports, summaries, or files\./i)).toBeInTheDocument();
-        expect(screen.queryByRole('button', {name: /close/i})).not.toBeInTheDocument();
+        expect(screen.getAllByText(/Select a summary, report, or file list to inspect artifacts\./i).length).toBeGreaterThan(0);
     });
 
     it('shows the active provider in the header for bedrock mode', async () => {
@@ -168,10 +166,8 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
         });
-        expect(screen.getAllByText('Provider').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Bedrock').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Status').length).toBeGreaterThan(0);
-        expect((await screen.findAllByText(/misconfigured/i)).length).toBeGreaterThan(0);
+        expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Bedrock status: misconfigured/i)).toBeInTheDocument();
     });
 
     it('shows configured, usable, and rejected hugging face models in the status banner', async () => {
@@ -200,18 +196,11 @@ describe('Home', () => {
         });
 
         render(<Home/>);
-        const user = userEvent.setup();
 
         expect(await screen.findByRole('combobox', {name: /model/i})).toHaveValue('meta-llama/Llama-3.1-8B-Instruct');
-        expect(screen.getAllByText('Provider').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Hugging Face').length).toBeGreaterThan(0);
-        expect((await screen.findAllByText('Status')).length).toBeGreaterThan(0);
-        expect((await screen.findAllByText(/ready/i)).length).toBeGreaterThan(0);
-        expect(await screen.findByText('Last checked')).toBeInTheDocument();
-        expect(screen.queryByText(/Configured: meta-llama\/Llama-3\.1-8B-Instruct/i)).not.toBeInTheDocument();
-
-        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
-
+        expect(screen.getByText(/provider: Hugging Face/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Hugging Face status: ready/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Last checked:/i)).toBeInTheDocument();
         expect(screen.getByText(/Configured: meta-llama\/Llama-3\.1-8B-Instruct, Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
         expect(screen.getByText(/Usable: meta-llama\/Llama-3\.1-8B-Instruct/i)).toBeInTheDocument();
         expect(screen.getByText(/Rejected: Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
@@ -235,15 +224,15 @@ describe('Home', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        const initialLastChecked = await screen.findByText('Last checked');
-        const initialText = initialLastChecked.parentElement?.textContent;
+        const initialLastChecked = await screen.findByText(/Last checked:/i);
+        const initialText = initialLastChecked.textContent;
         await user.click(screen.getByRole('button', {name: /refresh status/i}));
 
         await waitFor(() => {
             expect(getProviderStatus).toHaveBeenCalledTimes(2);
         });
         await waitFor(() => {
-            expect(screen.getByText('Last checked').parentElement?.textContent).not.toEqual(initialText);
+            expect(screen.getByText(/Last checked:/i).textContent).not.toEqual(initialText);
         });
     });
 
@@ -269,9 +258,7 @@ describe('Home', () => {
         expect(await screen.findByRole('button', {name: /refresh status/i})).toBeInTheDocument();
         await user.click(screen.getByRole('button', {name: /refresh status/i}));
 
-        await waitFor(() => {
-            expect(screen.getByRole('button', {name: /refreshing/i})).toBeDisabled();
-        });
+        expect(screen.getByRole('button', {name: /refreshing/i})).toBeDisabled();
 
         resolveStatus({
             provider: 'ollama',
@@ -322,10 +309,8 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
         });
-        expect(screen.getAllByText('Provider').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Bedrock').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Status').length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/misconfigured/i).length).toBeGreaterThan(0);
+        expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
+        expect(screen.getByText(/Bedrock status: misconfigured/i)).toBeInTheDocument();
     });
 
     it('shows the sessions sidebar by default and toggles it on demand', async () => {

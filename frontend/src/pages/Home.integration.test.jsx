@@ -77,11 +77,9 @@ describe('Home integration', () => {
         render(<Home/>);
 
         expect(await screen.findByRole('combobox', {name: /chat provider/i})).toHaveValue('ollama');
-        expect(screen.getAllByText('Provider').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Ollama').length).toBeGreaterThan(0);
-        expect(screen.getAllByText('Status').length).toBeGreaterThan(0);
-        expect(screen.getAllByText(/ready/i).length).toBeGreaterThan(0);
-        expect(screen.getByText('Last checked')).toBeInTheDocument();
+        expect(screen.getByText(/provider: Ollama/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ollama status: ready/i)).toBeInTheDocument();
+        expect(screen.getByText(/Last checked:/i)).toBeInTheDocument();
     });
 
     it('shows a backend error when a non-streaming chat request fails', async () => {

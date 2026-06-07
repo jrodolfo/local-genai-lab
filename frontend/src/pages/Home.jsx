@@ -755,8 +755,8 @@ function Home() {
                 <section className="chat-card">
                     <header>
                         <div>
-                            <h1>Agent</h1>
-                            <p>Ask models directly or run tool-assisted AWS workflows.</p>
+                            <h1>Local GenAI Lab</h1>
+                            <p>{`React + Spring Boot + provider: ${formatProviderName(selectedProvider)}`}</p>
                         </div>
                         <div className="header-controls">
                             <label className="debug-toggle">
@@ -782,25 +782,10 @@ function Home() {
                     {error ? <div className="error-banner">{error}</div> : null}
 
                     {providerStatus ? (
-                        <div className={`provider-status-strip provider-status-${providerStatus.status}`}>
-                            <div className="provider-status-summary">
-                                <span><strong>Provider</strong> {formatProviderName(providerStatus.provider)}</span>
-                                <span><strong>Status</strong> {formatProviderStatus(providerStatus.status)}</span>
-                                <span><strong>Model</strong> {selectedModel || 'none selected'}</span>
-                                {providerStatus.refreshedAt ? (
-                                    <span><strong>Last checked</strong> {new Date(providerStatus.refreshedAt).toLocaleString()}</span>
-                                ) : null}
-                            </div>
-                            <button
-                                type="button"
-                                className="page-action-button provider-status-refresh"
-                                onClick={() => loadProviderStatus(selectedProvider, {manual: true})}
-                                disabled={providerStatusRefreshing || !selectedProvider}
-                            >
-                                {providerStatusRefreshing ? 'Refreshing...' : 'Refresh Status'}
-                            </button>
-                            <span className="provider-status-message">{providerStatus.message}</span>
-                            {showTechnicalDetails && providerStatus.configuredModels?.length ? (
+                        <div className={`provider-status-banner provider-status-${providerStatus.status}`}>
+                            <strong>{`${formatProviderName(providerStatus.provider)} status: ${formatProviderStatus(providerStatus.status)}`}</strong>
+                            <span>{providerStatus.message}</span>
+                            {providerStatus.configuredModels?.length ? (
                                 <div className="provider-status-details">
                                     <span>{`Configured: ${providerStatus.configuredModels.join(', ')}`}</span>
                                     {providerStatus.usableModels?.length ? (
@@ -811,6 +796,19 @@ function Home() {
                                     ) : null}
                                 </div>
                             ) : null}
+                            {providerStatus.refreshedAt ? (
+                                <span className="provider-status-refreshed">
+                {`Last checked: ${new Date(providerStatus.refreshedAt).toLocaleString()}`}
+              </span>
+                            ) : null}
+                            <button
+                                type="button"
+                                className="page-action-button provider-status-refresh"
+                                onClick={() => loadProviderStatus(selectedProvider, {manual: true})}
+                                disabled={providerStatusRefreshing || !selectedProvider}
+                            >
+                                {providerStatusRefreshing ? 'Refreshing...' : 'Refresh status'}
+                            </button>
                         </div>
                     ) : null}
 
@@ -828,25 +826,23 @@ function Home() {
                             <div>
                                 <strong>{artifactPanelTitle || 'Artifact inspector'}</strong>
                                 {artifactPanelMode === 'idle' ? (
-                                    <span>Artifacts from tool runs will appear here after you select a report or file.</span>
+                                    <span>Select a summary, report, or file list to inspect artifacts.</span>
                                 ) : null}
                                 {artifactPreview?.relativePath ?
                                     <span>{`Relative path: ${artifactPreview.relativePath}`}</span> : null}
                                 {!artifactPreview?.relativePath && artifactPanelPath ?
                                     <span>{`Path: ${artifactPanelPath}`}</span> : null}
                             </div>
-                            {artifactPanelMode !== 'idle' ? (
-                                <button
-                                    type="button"
-                                    onClick={resetArtifactPanel}
-                                >
-                                    Close
-                                </button>
-                            ) : null}
+                            <button
+                                type="button"
+                                onClick={resetArtifactPanel}
+                            >
+                                Close
+                            </button>
                         </div>
                         {artifactPanelMode === 'idle' ? (
                             <div className="artifact-panel-empty">
-                                <span>Select an artifact action from a tool result to inspect generated reports, summaries, or files.</span>
+                                <span>Select a summary, report, or file list to inspect artifacts.</span>
                             </div>
                         ) : null}
                         {artifactPanelMode === 'files' && artifactPanelMessage ? (
