@@ -45,6 +45,7 @@ describe('App mode navigation', () => {
 
         const chatTab = await screen.findByRole('tab', {name: /agent/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
+        expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['RAG', 'Agent']);
         expect(chatTab).toBeDisabled();
         expect(chatTab).toHaveAttribute('aria-selected', 'true');
         expect(ragTab).toBeDisabled();
