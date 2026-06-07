@@ -51,6 +51,17 @@ function App() {
                     <button
                         type="button"
                         role="tab"
+                        aria-selected={mode === 'chat'}
+                        aria-current={mode === 'chat' ? 'page' : undefined}
+                        disabled={mode === 'chat'}
+                        className={mode === 'chat' ? 'app-nav__tab--active' : ''}
+                        onClick={() => setMode('chat')}
+                    >
+                        Agent
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
                         aria-selected={mode === 'rag'}
                         aria-current={mode === 'rag' ? 'page' : undefined}
                         aria-disabled={!ragEnabled}
@@ -64,17 +75,6 @@ function App() {
                         }}
                     >
                         RAG
-                    </button>
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={mode === 'chat'}
-                        aria-current={mode === 'chat' ? 'page' : undefined}
-                        disabled={mode === 'chat'}
-                        className={mode === 'chat' ? 'app-nav__tab--active' : ''}
-                        onClick={() => setMode('chat')}
-                    >
-                        Agent
                     </button>
                 </div>
             </header>
