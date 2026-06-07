@@ -24,12 +24,8 @@ public class ChatToolRouterService {
     private static final Pattern DOMAIN_LIKE_PATTERN = Pattern.compile("\\b([a-z0-9][a-z0-9.-]{1,253}[a-z0-9])\\b");
     private static final Set<String> BUCKET_STOP_WORDS = Set.of(
             "bucket", "buckets", "metric", "metrics", "report", "reports", "name",
-            "the", "a", "an", "all", "latest", "recent", "cloudwatch", "s3"
+            "the", "a", "an", "latest", "recent", "cloudwatch", "s3"
     );
-    private static final String S3_BUCKET_CLARIFICATION = "I can run an S3 report using your local AWS CLI credentials. "
-            + "Do you want all accessible buckets, or one specific bucket?";
-    private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
-            + "Please provide one bucket name, or run an AWS audit to list accessible S3 buckets first.";
     private static final List<String> AUDIT_SERVICES = List.of(
             "sts", "aws-config", "s3", "ec2", "elbv2", "rds", "lambda",
             "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "logs", "tagging"
@@ -176,8 +172,7 @@ public class ChatToolRouterService {
                 || (normalized.contains("bucket") && normalized.contains("metrics"))
                 || normalized.contains("bucket report")
                 || normalized.contains("cloudwatch report for bucket")
-                || normalized.contains("cloudwatch metrics for bucket")
-                || (normalized.contains("s3") && (normalized.contains("report") || normalized.contains("usage")));
+                || normalized.contains("cloudwatch metrics for bucket");
 
         if (!mentionsS3Intent) {
             return null;
@@ -187,12 +182,7 @@ public class ChatToolRouterService {
         if (bucket == null) {
             return ToolDecision.clarification(
                     DecisionType.S3_CLOUDWATCH_REPORT,
-                    null,
-                    null,
-                    extractRegion(normalized),
-                    extractDays(normalized),
-                    "s3 report request",
-                    S3_BUCKET_CLARIFICATION
+                    "I can run the S3 CloudWatch report, but I need the bucket name."
             );
         }
 
@@ -249,25 +239,9 @@ public class ChatToolRouterService {
             if (looksLikeTopicChange(normalized)) {
                 return ToolDecision.none();
             }
-            if (wantsAllBuckets(normalized)) {
-                return ToolDecision.clarification(
-                        DecisionType.S3_CLOUDWATCH_REPORT,
-                        null,
-                        null,
-                        pendingToolCall.region(),
-                        pendingToolCall.days(),
-                        pendingToolCall.reason() != null ? pendingToolCall.reason() : "s3 report request",
-                        S3_ALL_BUCKETS_NOT_IMPLEMENTED
-                );
-            }
             return ToolDecision.clarification(
                     DecisionType.S3_CLOUDWATCH_REPORT,
-                    null,
-                    null,
-                    pendingToolCall.region(),
-                    pendingToolCall.days(),
-                    pendingToolCall.reason() != null ? pendingToolCall.reason() : "s3 report request",
-                    "I still need one S3 bucket name to run the S3 CloudWatch report."
+                    "I still need the bucket name to run the S3 CloudWatch report."
             );
         }
 
@@ -384,10 +358,6 @@ public class ChatToolRouterService {
      * @return the extracted days or null
      */
     private Integer extractDays(String normalized) {
-        if (normalized.contains("last month") || normalized.contains("past month") || normalized.contains("previous month")) {
-            return 30;
-        }
-
         Matcher daysMatcher = DAYS_PATTERN.matcher(normalized);
         if (!daysMatcher.find()) {
             return null;
@@ -433,19 +403,6 @@ public class ChatToolRouterService {
             return false;
         }
         return candidate.length() >= 3 && candidate.length() <= 255;
-    }
-
-    /**
-     * Checks if the user is asking for every accessible S3 bucket.
-     *
-     * @param normalized the normalized message
-     * @return true if the user requested all buckets
-     */
-    private boolean wantsAllBuckets(String normalized) {
-        return normalized.contains("all buckets")
-                || normalized.contains("all accessible buckets")
-                || normalized.contains("every bucket")
-                || normalized.contains("each bucket");
     }
 
     /**
@@ -558,30 +515,6 @@ public class ChatToolRouterService {
          */
         public static ToolDecision clarification(DecisionType type, String clarification) {
             return new ToolDecision(type, null, null, null, null, "clarification required", List.of(), clarification);
-        }
-
-        /**
-         * Creates a clarification decision while preserving extracted tool arguments.
-         *
-         * @param type          the type of decision
-         * @param reportType    the report type
-         * @param bucket        the bucket name
-         * @param region        the AWS region
-         * @param days          the number of days
-         * @param reason        the reason for the decision
-         * @param clarification the clarification text
-         * @return a tool decision with clarification and partial arguments
-         */
-        public static ToolDecision clarification(
-                DecisionType type,
-                String reportType,
-                String bucket,
-                String region,
-                Integer days,
-                String reason,
-                String clarification
-        ) {
-            return new ToolDecision(type, reportType, bucket, region, days, reason, List.of(), clarification);
         }
 
         /**

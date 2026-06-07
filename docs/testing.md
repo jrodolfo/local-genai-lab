@@ -242,7 +242,6 @@ These flows are still worth running manually after meaningful changes:
 
 5. Tool-assisted chat
    Verify prompts such as `Please audit my AWS account.` or S3 metrics requests execute the MCP-backed tools, show streaming tool phases when applicable, and render tool results correctly.
-   For S3, verify `Give me a report from AWS S3 for the last month.` enters the S3 tool flow and asks whether to use all accessible buckets or one specific bucket. The app should not ask for AWS account ID or username because the tool uses local AWS CLI credentials.
 
 6. Provider switching in one session
    Verify the configured providers in the current backend process can all answer in the same saved session and that the UI shows per-turn provider/model provenance.

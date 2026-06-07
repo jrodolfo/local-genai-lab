@@ -126,7 +126,7 @@ class ChatOrchestratorServiceTest {
 
         ChatResponse response = orchestrator.chat("check bucket metrics for the last 7 days", "ollama", "llama3:8b", null);
 
-        assertTrue(response.response().contains("I can run an S3 report using your local AWS CLI credentials."));
+        assertTrue(response.response().contains("I can run the S3 CloudWatch report, but I need the bucket name."));
         assertNotNull(response.tool());
         assertEquals("clarification-needed", response.tool().status());
         assertFalse(chatModelProvider.generateCalled);
@@ -134,23 +134,6 @@ class ChatOrchestratorServiceTest {
         PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
         assertNotNull(pendingToolCall);
         assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, pendingToolCall.type());
-    }
-
-    @Test
-    void genericS3ReportRequestReturnsCredentialAwareClarificationAndPreservesDays() {
-        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
-        FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new FakeMcpService(), sessionStore, "rules");
-
-        ChatResponse response = orchestrator.chat("Give me a report from AWS S3 for the last month.", "ollama", "llama3:8b", null);
-
-        assertTrue(response.response().contains("local AWS CLI credentials"));
-        assertFalse(response.response().toLowerCase().contains("account id"));
-        assertFalse(response.response().toLowerCase().contains("username"));
-        assertEquals("clarification-needed", response.tool().status());
-        PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
-        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, pendingToolCall.type());
-        assertEquals(30, pendingToolCall.days());
     }
 
     @Test
@@ -181,27 +164,9 @@ class ChatOrchestratorServiceTest {
         ChatResponse followUp = orchestrator.chat("jrodolfo.net", "ollama", "llama3:8b", clarification.sessionId());
 
         assertEquals("jrodolfo.net", mcpService.lastS3Request.bucket());
-        assertEquals(7, mcpService.lastS3Request.days());
         assertEquals("success", followUp.tool().status());
         assertNull(sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall());
         assertTrue(chatModelProvider.lastPrompt.contains("tool_name: s3_cloudwatch_report"));
-    }
-
-    @Test
-    void allBucketsFollowUpReturnsCurrentBoundaryWithoutCallingProvider() {
-        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
-        FileChatSessionStore sessionStore = newSessionStore();
-        FakeMcpService mcpService = new FakeMcpService();
-        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
-
-        ChatResponse clarification = orchestrator.chat("Give me a report from AWS S3 for the last month.", "ollama", "llama3:8b", null);
-        ChatResponse followUp = orchestrator.chat("all buckets", "ollama", "llama3:8b", clarification.sessionId());
-
-        assertTrue(followUp.response().contains("All-bucket S3 CloudWatch reports are not implemented yet."));
-        assertEquals("clarification-needed", followUp.tool().status());
-        assertFalse(chatModelProvider.generateCalled);
-        assertNull(mcpService.lastS3Request);
-        assertEquals(30, sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall().days());
     }
 
     @Test
