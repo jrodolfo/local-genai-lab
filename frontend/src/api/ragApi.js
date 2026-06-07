@@ -64,17 +64,16 @@ export async function rebuildRagIndex({retrievalMode, vectorStore} = {}) {
  * @param {string} params.sessionId - The active session ID.
  * @param {string} params.retrievalMode - The request-scoped retrieval mode.
  * @param {string} params.vectorStore - The request-scoped vector store.
- * @param {boolean} params.persist - Whether the backend should save the RAG turn.
  * @returns {Promise<Object>} A promise that resolves to the RAG query response.
  * @throws {Error} If the request fails.
  */
-export async function queryRag({question, provider, model, sessionId, retrievalMode, vectorStore, persist}) {
+export async function queryRag({question, provider, model, sessionId, retrievalMode, vectorStore}) {
     const response = await fetch('/api/rag/query', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({question, provider, model, sessionId, retrievalMode, vectorStore, persist})
+        body: JSON.stringify({question, provider, model, sessionId, retrievalMode, vectorStore})
     });
     if (!response.ok) {
         const payload = await parseJson(response);

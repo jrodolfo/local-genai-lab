@@ -11,7 +11,6 @@ import jakarta.validation.constraints.NotBlank;
  * @param sessionId The session identifier to maintain conversation context.
  * @param retrievalMode Optional request-scoped retrieval mode.
  * @param vectorStore Optional request-scoped vector store for vector retrieval.
- * @param persist Whether to save the turn in a RAG session. Null defaults to true.
  */
 public record RagQueryRequest(
         @NotBlank(message = "question is required")
@@ -20,10 +19,6 @@ public record RagQueryRequest(
         String model,
         String sessionId,
         String retrievalMode,
-        String vectorStore,
-        Boolean persist
+        String vectorStore
 ) {
-    public boolean shouldPersist() {
-        return persist == null || persist;
-    }
 }

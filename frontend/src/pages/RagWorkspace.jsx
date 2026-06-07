@@ -30,8 +30,6 @@ function RagWorkspace() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [querying, setQuerying] = useState(false);
-    const [comparing, setComparing] = useState(false);
-    const [comparisonResults, setComparisonResults] = useState([]);
     const [rebuilding, setRebuilding] = useState(false);
     const [error, setError] = useState('');
 
@@ -134,46 +132,6 @@ function RagWorkspace() {
             setError(err.message || 'Failed to query the RAG workspace.');
         } finally {
             setQuerying(false);
-        }
-    }
-
-    async function handleCompareRetrievalTargets() {
-        const submittedQuestion = question.trim();
-        if (!submittedQuestion || !ragStatus?.enabled) {
-            return;
-        }
-
-        const targets = retrievalTargets(ragStatus).filter((target) => target.available);
-        try {
-            setComparing(true);
-            setError('');
-            setComparisonResults([]);
-            const results = [];
-            for (const target of targets) {
-                try {
-                    const payload = await queryRag({
-                        question: submittedQuestion,
-                        provider: selectedProvider,
-                        model: selectedModel,
-                        persist: false,
-                        ...retrievalOptionsFromTarget(target.value)
-                    });
-                    results.push({
-                        status: 'success',
-                        target,
-                        payload
-                    });
-                } catch (err) {
-                    results.push({
-                        status: 'error',
-                        target,
-                        error: err.message || 'Failed to query this retrieval target.'
-                    });
-                }
-            }
-            setComparisonResults(results);
-        } finally {
-            setComparing(false);
         }
     }
 
@@ -494,35 +452,11 @@ function RagWorkspace() {
 
                             <div className="rag-actions">
                                 <button type="submit" className="rag-action-button rag-primary-button"
-                                        disabled={querying || comparing || !question.trim()}>
+                                        disabled={querying || !question.trim()}>
                                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
-                                </button>
-                                <button type="button" className="rag-action-button"
-                                        disabled={querying || comparing || !question.trim()}
-                                        onClick={handleCompareRetrievalTargets}>
-                                    {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
                                 </button>
                             </div>
                         </form>
-
-                        {comparisonResults.length > 0 ? (
-                            <section className="rag-comparison" aria-label="RAG retrieval comparison">
-                                <div className="rag-comparison__header">
-                                    <h2>Retrieval Comparison</h2>
-                                    <p>One question, compared across available retrieval targets. These results are not saved as conversation turns.</p>
-                                </div>
-                                <div className="rag-comparison__grid">
-                                    {comparisonResults.map((result) => (
-                                        <RagComparisonCard
-                                            key={result.target.value}
-                                            result={result}
-                                            selectedProvider={selectedProvider}
-                                            selectedModel={selectedModel}
-                                        />
-                                    ))}
-                                </div>
-                            </section>
-                        ) : null}
 
                         {latestTurn ? (
                             <section className="rag-latest-turn" aria-label="Latest RAG turn">
@@ -577,32 +511,6 @@ function RagTurn({turn, selectedModel}) {
                 />
             ) : null}
         </>
-    );
-}
-
-function RagComparisonCard({result, selectedProvider, selectedModel}) {
-    if (result.status === 'error') {
-        return (
-            <article className="rag-comparison-card rag-comparison-card--error">
-                <h3>{result.target.label}</h3>
-                <p>{result.error}</p>
-            </article>
-        );
-    }
-
-    return (
-        <article className="rag-comparison-card">
-            <h3>{result.target.label}</h3>
-            <RagAnswerWithSources
-                result={{
-                    answer: result.payload.answer,
-                    provider: result.payload.metadata?.provider || result.payload.provider || selectedProvider,
-                    model: result.payload.metadata?.modelId || result.payload.model || selectedModel,
-                    ragRetrieval: result.payload.ragRetrieval || retrievalMetadataFromTarget(result.target.value),
-                    sources: result.payload.sources || []
-                }}
-            />
-        </article>
     );
 }
 
@@ -744,14 +652,6 @@ function retrievalOptionsFromTarget(target) {
     return {
         retrievalMode: retrievalMode || 'lexical',
         vectorStore: vectorStore || 'in-memory'
-    };
-}
-
-function retrievalMetadataFromTarget(target) {
-    const options = retrievalOptionsFromTarget(target);
-    return {
-        ...options,
-        retrievalTarget: `${options.retrievalMode}:${options.vectorStore}`
     };
 }
 
