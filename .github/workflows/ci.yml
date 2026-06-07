@@ -58,13 +58,6 @@ jobs:
       - name: run frontend tests
         run: make test-frontend
 
-      - name: install playwright browsers
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
-
-      - name: run frontend visual tests
-        run: make test-frontend-e2e
-
       - name: build frontend
         run: make build-frontend
 

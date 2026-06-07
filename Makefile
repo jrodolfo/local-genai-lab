@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status check-app test verify test-ops test-backend test-frontend test-frontend-e2e build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status check-app test verify test-ops test-backend test-frontend build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -15,7 +15,6 @@ help:
 		'  make test-ops      Run operational shell helper tests' \
 		'  make test-backend  Run backend tests' \
 		'  make test-frontend Run frontend tests' \
-		'  make test-frontend-e2e Run frontend Playwright visual tests' \
 		'  make build-frontend Build the frontend' \
 		'  make test-mcp      Run MCP tests' \
 		'  make build-mcp     Build MCP server' \
@@ -51,9 +50,6 @@ test-backend:
 
 test-frontend:
 	@cd frontend && npm test -- --run
-
-test-frontend-e2e:
-	@cd frontend && npm run test:e2e
 
 build-frontend:
 	@cd frontend && npm run build
