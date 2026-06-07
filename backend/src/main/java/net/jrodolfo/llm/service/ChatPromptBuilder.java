@@ -193,9 +193,6 @@ public class ChatPromptBuilder {
         builder.append("- If tool output is present, ground your answer in it.\n");
         builder.append("- If tool output is present, summarize what the tool already completed instead of refusing or redirecting.\n");
         builder.append("- When the tool output includes counts, regions, services, bucket names, or artifact paths, prefer those concrete facts.\n");
-        builder.append("- If tool_name is aws_region_audit and tool_result_json includes bucketNames, list those bucket names directly.\n");
-        builder.append("- If bucketNames are available, suggest this exact next step: `run an S3 report for <bucket-name> for the last month`.\n");
-        builder.append("- Do not tell the user to ask for summary.json, report.txt, or an artifact path when bucketNames are already available.\n");
         builder.append("- Do not claim inability or lack of access when tool output is already available in the prompt.\n");
         builder.append("- Do not mention generic safety, privacy, or policy concerns unless the tool output itself requires it.\n");
         builder.append("- If artifacts were generated, mention the relevant run directory or artifact path when it helps the user.\n");

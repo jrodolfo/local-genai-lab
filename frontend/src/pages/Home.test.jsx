@@ -143,8 +143,8 @@ describe('Home', () => {
         render(<Home/>);
 
         expect(await screen.findByText('Artifact inspector')).toBeInTheDocument();
-        expect(screen.getByText(/Tool report previews appear here after you click Open Report, Open Summary, or Show Files\./i)).toBeInTheDocument();
-        expect(screen.getByText(/Run a tool-backed request first\. When a result card appears, use its artifact buttons to preview generated reports or file lists here\./i)).toBeInTheDocument();
+        expect(screen.getByText(/Artifacts from tool runs will appear here after you select a report or file\./i)).toBeInTheDocument();
+        expect(screen.getByText(/Select an artifact action from a tool result to inspect generated reports, summaries, or files\./i)).toBeInTheDocument();
         expect(screen.queryByRole('button', {name: /close/i})).not.toBeInTheDocument();
     });
 

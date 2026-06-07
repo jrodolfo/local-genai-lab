@@ -1,7 +1,5 @@
 package net.jrodolfo.llm.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.client.McpClientException;
 import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
@@ -20,11 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,7 +33,6 @@ import java.util.Map;
 public class ChatOrchestratorService {
 
     private static final Logger log = LoggerFactory.getLogger(ChatOrchestratorService.class);
-    private static final ObjectMapper TOOL_RESULT_OBJECT_MAPPER = new ObjectMapper();
 
     private final ChatModelProviderRegistry chatModelProviderRegistry;
     private final McpService mcpService;
@@ -444,8 +437,7 @@ public class ChatOrchestratorService {
                 List<String> regions = decision.region() != null ? List.of(decision.region()) : null;
                 List<String> services = decision.services().isEmpty() ? null : decision.services();
                 var response = mcpService.runAwsRegionAudit(new AwsRegionAuditToolRequest(regions, services));
-                Map<String, Object> enrichedResult = enrichAuditResult(response.result(), services);
-                yield new ToolExecution(response.tool(), enrichedResult, summarizeAudit(enrichedResult));
+                yield new ToolExecution(response.tool(), response.result(), summarizeAudit(response.result()));
             }
             case S3_CLOUDWATCH_REPORT -> {
                 if (decision.bucket() == null || decision.bucket().isBlank()) {
@@ -562,103 +554,12 @@ public class ChatOrchestratorService {
      */
     @SuppressWarnings("unchecked")
     private String summarizeAudit(Map<String, Object> result) {
-        List<String> bucketNames = result.get("bucketNames") instanceof List<?> buckets
-                ? buckets.stream().filter(String.class::isInstance).map(String.class::cast).toList()
-                : List.of();
-        if (!bucketNames.isEmpty()) {
-            return "S3 bucket discovery completed with bucket_count=%s.".formatted(bucketNames.size());
-        }
-
         Map<String, Object> summary = nestedMap(result, "summary");
         return "AWS audit completed with success_count=%s, failure_count=%s, skipped_count=%s.".formatted(
                 valueOrUnknown(summary, "success_count"),
                 valueOrUnknown(summary, "failure_count"),
                 valueOrUnknown(summary, "skipped_count")
         );
-    }
-
-    /**
-     * Adds first-class bucket names to S3-scoped audit results when the audit artifact exists.
-     *
-     * @param result   raw MCP result
-     * @param services selected services for the audit
-     * @return enriched result for the model prompt and UI
-     */
-    private Map<String, Object> enrichAuditResult(Map<String, Object> result, List<String> services) {
-        if (services == null || !services.contains("s3")) {
-            return result;
-        }
-
-        Map<String, Object> enriched = new LinkedHashMap<>(result);
-        List<String> bucketNames = readS3BucketNames(result.get("run_dir"));
-        if (!bucketNames.isEmpty()) {
-            enriched.put("bucketNames", bucketNames);
-        }
-        return enriched;
-    }
-
-    /**
-     * Reads S3 bucket names from the standard audit artifact.
-     *
-     * @param runDirValue raw run directory value from the MCP result
-     * @return bucket names in artifact order
-     */
-    private List<String> readS3BucketNames(Object runDirValue) {
-        if (!(runDirValue instanceof String runDir) || runDir.isBlank()) {
-            return List.of();
-        }
-
-        Path artifactPath = resolveReportPath(runDir, "json/s3_list_buckets.json");
-        if (artifactPath == null || !Files.isRegularFile(artifactPath)) {
-            return List.of();
-        }
-
-        try {
-            List<Map<String, Object>> buckets = TOOL_RESULT_OBJECT_MAPPER.readValue(
-                    artifactPath.toFile(),
-                    new TypeReference<>() {
-                    }
-            );
-            List<String> names = new ArrayList<>();
-            for (Map<String, Object> bucket : buckets) {
-                Object name = bucket.get("Name");
-                if (name instanceof String bucketName && !bucketName.isBlank()) {
-                    names.add(bucketName);
-                }
-            }
-            return names;
-        } catch (IOException ex) {
-            log.warn("Could not read S3 bucket audit artifact path={}", artifactPath, ex);
-            return List.of();
-        }
-    }
-
-    /**
-     * Resolves a generated report artifact path without allowing reads outside the reports root.
-     *
-     * @param runDir       raw run directory
-     * @param relativeFile relative file inside the run directory
-     * @return normalized artifact path, or null when outside the reports root
-     */
-    private Path resolveReportPath(String runDir, String relativeFile) {
-        List<Path> candidates = new ArrayList<>();
-        Path rawRunDir = Path.of(runDir);
-        if (rawRunDir.isAbsolute()) {
-            candidates.add(rawRunDir.resolve(relativeFile));
-        } else {
-            candidates.add(reportsDirectory.resolve(rawRunDir).resolve(relativeFile));
-            if (runDir.startsWith("reports/")) {
-                candidates.add(reportsDirectory.resolve(runDir.substring("reports/".length())).resolve(relativeFile));
-            }
-        }
-
-        for (Path candidate : candidates) {
-            Path normalized = candidate.toAbsolutePath().normalize();
-            if (normalized.startsWith(reportsDirectory) && Files.exists(normalized)) {
-                return normalized;
-            }
-        }
-        return null;
     }
 
     /**
@@ -766,7 +667,6 @@ public class ChatOrchestratorService {
                         Map.entry("accountId", String.valueOf(result.getOrDefault("account_id", ""))),
                         Map.entry("selectedRegions", result.getOrDefault("selected_regions", List.of())),
                         Map.entry("selectedServices", result.getOrDefault("selected_services", List.of())),
-                        Map.entry("bucketNames", result.getOrDefault("bucketNames", List.of())),
                         Map.entry("successCount", summary.getOrDefault("success_count", 0)),
                         Map.entry("failureCount", summary.getOrDefault("failure_count", 0)),
                         Map.entry("skippedCount", summary.getOrDefault("skipped_count", 0)),

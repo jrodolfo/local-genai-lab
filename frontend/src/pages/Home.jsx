@@ -828,7 +828,7 @@ function Home() {
                             <div>
                                 <strong>{artifactPanelTitle || 'Artifact inspector'}</strong>
                                 {artifactPanelMode === 'idle' ? (
-                                    <span>Tool report previews appear here after you click Open Report, Open Summary, or Show Files.</span>
+                                    <span>Artifacts from tool runs will appear here after you select a report or file.</span>
                                 ) : null}
                                 {artifactPreview?.relativePath ?
                                     <span>{`Relative path: ${artifactPreview.relativePath}`}</span> : null}
@@ -846,7 +846,7 @@ function Home() {
                         </div>
                         {artifactPanelMode === 'idle' ? (
                             <div className="artifact-panel-empty">
-                                <span>Run a tool-backed request first. When a result card appears, use its artifact buttons to preview generated reports or file lists here.</span>
+                                <span>Select an artifact action from a tool result to inspect generated reports, summaries, or files.</span>
                             </div>
                         ) : null}
                         {artifactPanelMode === 'files' && artifactPanelMessage ? (

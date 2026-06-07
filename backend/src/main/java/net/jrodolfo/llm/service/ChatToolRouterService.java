@@ -30,7 +30,7 @@ public class ChatToolRouterService {
             + "The current report tool runs one bucket at a time. Please provide the bucket name. "
             + "If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
     private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
-            + "Please provide one bucket name. If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
+            + "Please provide one bucket name, or run an AWS audit to list accessible S3 buckets first.";
     private static final List<String> AUDIT_SERVICES = List.of(
             "sts", "aws-config", "s3", "ec2", "elbv2", "rds", "lambda",
             "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "logs", "tagging"

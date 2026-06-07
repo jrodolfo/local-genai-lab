@@ -105,34 +105,6 @@ def factorial(n):
         expect(screen.getByRole('button', {name: /copy run directory/i})).toBeInTheDocument();
     });
 
-    it('renders S3 bucket discovery results with a concrete next prompt', () => {
-        render(
-            <MessageBubble
-                role="assistant"
-                content="I found your S3 buckets."
-                tool={{used: true, name: 'aws_region_audit', status: 'success', summary: 'S3 bucket discovery completed.'}}
-                toolResult={{
-                    type: 'audit_summary',
-                    selectedServices: ['s3'],
-                    bucketNames: ['first-bucket', 'second-bucket'],
-                    runDir: 'audit/aws-audit-2026-06-05_14-14-12',
-                    successCount: 1,
-                    failureCount: 0,
-                    skippedCount: 36,
-                    summaryPath: 'audit/aws-audit-2026-06-05_14-14-12/summary.json',
-                    reportPath: 'audit/aws-audit-2026-06-05_14-14-12/report.txt'
-                }}
-            />
-        );
-
-        expect(screen.getByText('S3 bucket discovery')).toBeInTheDocument();
-        expect(screen.getByText('Accessible buckets')).toBeInTheDocument();
-        expect(screen.getByText('first-bucket')).toBeInTheDocument();
-        expect(screen.getByText('second-bucket')).toBeInTheDocument();
-        expect(screen.getByText(/run an S3 report for first-bucket for the last month/i)).toBeInTheDocument();
-        expect(screen.getByRole('button', {name: /open report/i})).toBeInTheDocument();
-    });
-
     it('renders provider metadata for assistant messages', () => {
         render(
             <MessageBubble
