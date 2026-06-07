@@ -12,9 +12,6 @@ import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
-import net.jrodolfo.llm.rag.config.RagRetrievalMode;
-import net.jrodolfo.llm.rag.config.RagVectorStoreMode;
-import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
@@ -28,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RagAnswerServiceTest {
@@ -71,45 +66,6 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("confirm ollama embedding model: present"));
     }
 
-    @Test
-    void persistsRetrievalMetadataOnRagAssistantMessage() {
-        FileChatSessionStore sessionStore = new FileChatSessionStore(
-                new ObjectMapper().registerModule(new JavaTimeModule()),
-                new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()),
-                new SessionIdPolicy()
-        );
-        RagAnswerService answerService = new RagAnswerService(
-                new ChatModelProviderRegistry(new AppModelProperties("ollama"), Map.of("ollama", new CapturingProvider())),
-                new StubRetrievalService(List.of(new RagMatch(
-                        new RagChunk(
-                                "sessions.md#0",
-                                "sessions.md",
-                                "Sessions",
-                                "Sessions are stored as local JSON files."
-                        ),
-                        0.92
-                ))),
-                new RagSessionService(sessionStore, new ChatSessionMetadataService(), new SessionIdPolicy())
-        );
-
-        RagQueryResponse response = answerService.answer(
-                "How are sessions persisted?",
-                "ollama",
-                "llama3:8b",
-                null,
-                new RagRetrievalOptions(RagRetrievalMode.VECTOR, RagVectorStoreMode.QDRANT)
-        );
-
-        assertNotNull(response.ragRetrieval());
-        assertEquals("vector", response.ragRetrieval().retrievalMode());
-        assertEquals("qdrant", response.ragRetrieval().vectorStore());
-        assertEquals("vector:qdrant", response.ragRetrieval().retrievalTarget());
-
-        var savedSession = sessionStore.findById(response.sessionId()).orElseThrow();
-        var assistantMessage = savedSession.messages().get(1);
-        assertEquals("vector:qdrant", assistantMessage.ragRetrieval().retrievalTarget());
-    }
-
     private static final class StubRetrievalService extends RagRetrievalService {
         private final List<RagMatch> matches;
 
@@ -120,11 +76,6 @@ class RagAnswerServiceTest {
 
         @Override
         public List<RagMatch> retrieve(String question) {
-            return matches;
-        }
-
-        @Override
-        public List<RagMatch> retrieve(String question, RagRetrievalOptions options) {
             return matches;
         }
     }

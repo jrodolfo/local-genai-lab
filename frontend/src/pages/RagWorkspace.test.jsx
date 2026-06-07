@@ -54,11 +54,6 @@ describe('RagWorkspace', () => {
                     metadata: {
                         provider: 'ollama',
                         modelId: 'llama3:8b'
-                    },
-                    ragRetrieval: {
-                        retrievalMode: 'lexical',
-                        vectorStore: 'in-memory',
-                        retrievalTarget: 'lexical:in-memory'
                     }
                 });
             }),
@@ -97,11 +92,6 @@ describe('RagWorkspace', () => {
                                 score: 0.88
                             }
                         ],
-                        ragRetrieval: {
-                            retrievalMode: 'lexical',
-                            vectorStore: 'in-memory',
-                            retrievalTarget: 'lexical:in-memory'
-                        },
                         timestamp: '2026-05-27T12:00:05Z'
                     }
                 ],
@@ -133,7 +123,6 @@ describe('RagWorkspace', () => {
         expect(queryForm.compareDocumentPosition(latestTurn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(latestQuestionHeading.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
-        expect(within(latestTurn).getByText(/Retrieval: Lexical/i)).toBeInTheDocument();
         expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
@@ -192,11 +181,6 @@ describe('RagWorkspace', () => {
                     metadata: {
                         provider: 'ollama',
                         modelId: 'llama3:8b'
-                    },
-                    ragRetrieval: {
-                        retrievalMode: 'vector',
-                        vectorStore: 'in-memory',
-                        retrievalTarget: 'vector:in-memory'
                     }
                 });
             }),
@@ -210,12 +194,7 @@ describe('RagWorkspace', () => {
                 updatedAt: '2026-05-27T12:00:05Z',
                 messages: [
                     ragMessage('user', 'How are sessions persisted?', '2026-05-27T12:00:00Z'),
-                    ragMessage(
-                        'assistant',
-                        'Sessions are stored as local JSON files.',
-                        '2026-05-27T12:00:05Z',
-                        {retrievalMode: 'vector', vectorStore: 'in-memory', retrievalTarget: 'vector:in-memory'}
-                    )
+                    ragMessage('assistant', 'Sessions are stored as local JSON files.', '2026-05-27T12:00:05Z')
                 ],
                 pendingTool: null
             }))
@@ -242,7 +221,6 @@ describe('RagWorkspace', () => {
             retrievalMode: 'vector',
             vectorStore: 'in-memory'
         });
-        expect(screen.getByText(/Retrieval: Vector - In Memory/i)).toBeInTheDocument();
     });
 
     it('shows a disabled state when the backend reports RAG is off', async () => {
@@ -535,11 +513,6 @@ describe('RagWorkspace', () => {
                                 score: 0.91
                             }
                         ],
-                        ragRetrieval: {
-                            retrievalMode: 'vector',
-                            vectorStore: 'qdrant',
-                            retrievalTarget: 'vector:qdrant'
-                        },
                         timestamp: '2026-05-27T12:00:05Z'
                     }
                 ],
@@ -555,7 +528,6 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByRole('heading', {name: 'Answer'})).toBeInTheDocument();
         expect(screen.getAllByText('Sessions are stored as local JSON files.').length).toBeGreaterThan(0);
-        expect(screen.getByText(/Retrieval: Vector - Qdrant/i)).toBeInTheDocument();
         expect(screen.getByText('sessions.md')).toBeInTheDocument();
     });
 
@@ -630,7 +602,7 @@ describe('RagWorkspace', () => {
     });
 });
 
-function ragMessage(role, content, timestamp, ragRetrieval = null) {
+function ragMessage(role, content, timestamp) {
     return {
         role,
         content,
@@ -638,7 +610,6 @@ function ragMessage(role, content, timestamp, ragRetrieval = null) {
         toolResult: null,
         metadata: role === 'assistant' ? {provider: 'ollama', modelId: 'llama3:8b'} : null,
         ragSources: role === 'assistant' ? [] : null,
-        ragRetrieval,
         timestamp
     };
 }

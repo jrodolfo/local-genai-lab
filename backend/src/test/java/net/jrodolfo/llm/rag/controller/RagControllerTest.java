@@ -128,10 +128,7 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.model").value("llama3:8b"))
                 .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
-                .andExpect(jsonPath("$.metadata.provider").value("ollama"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalMode").value("lexical"))
-                .andExpect(jsonPath("$.ragRetrieval.vectorStore").value("in-memory"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalTarget").value("lexical:in-memory"));
+                .andExpect(jsonPath("$.metadata.provider").value("ollama"));
     }
 
     @Test
@@ -255,10 +252,7 @@ class RagControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
-                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalMode").value("vector"))
-                .andExpect(jsonPath("$.ragRetrieval.vectorStore").value("in-memory"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalTarget").value("vector:in-memory"));
+                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"));
     }
 
     @Test
@@ -276,9 +270,7 @@ class RagControllerTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
-                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalMode").value("lexical"))
-                .andExpect(jsonPath("$.ragRetrieval.retrievalTarget").value("lexical:in-memory"));
+                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"));
     }
 
     @Test

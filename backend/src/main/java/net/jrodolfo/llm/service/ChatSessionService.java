@@ -238,7 +238,6 @@ public class ChatSessionService {
                 message.toolResult(),
                 message.metadata(),
                 message.ragSources(),
-                message.ragRetrieval(),
                 message.timestamp()
         );
     }
