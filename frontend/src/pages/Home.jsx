@@ -783,8 +783,8 @@ function Home() {
                     {error ? <div className="error-banner">{error}</div> : null}
 
                     {providerStatus ? (
-                        <div className={`provider-status-strip workspace-status-strip provider-status-${providerStatus.status}`}>
-                            <div className="provider-status-summary workspace-status-items">
+                        <div className={`provider-status-strip provider-status-${providerStatus.status}`}>
+                            <div className="provider-status-summary">
                                 <span><strong>Provider</strong> {formatProviderName(providerStatus.provider)}</span>
                                 <span><strong>Status</strong> {formatProviderStatus(providerStatus.status)}</span>
                                 <span><strong>Model</strong> {selectedModel || 'none selected'}</span>
@@ -800,9 +800,9 @@ function Home() {
                             >
                                 {providerStatusRefreshing ? 'Refreshing...' : 'Refresh Status'}
                             </button>
-                            <span className="provider-status-message workspace-status-message">{providerStatus.message}</span>
+                            <span className="provider-status-message">{providerStatus.message}</span>
                             {showTechnicalDetails && providerStatus.configuredModels?.length ? (
-                                <div className="provider-status-details workspace-technical-details">
+                                <div className="provider-status-details">
                                     <span>{`Configured: ${providerStatus.configuredModels.join(', ')}`}</span>
                                     {providerStatus.usableModels?.length ? (
                                         <span>{`Usable: ${providerStatus.usableModels.join(', ')}`}</span>
@@ -824,8 +824,8 @@ function Home() {
                         </div>
                     ) : null}
 
-                    <section className={`artifact-panel workspace-secondary-panel ${artifactPanelMode === 'idle' ? 'artifact-panel--idle' : ''}`.trim()}>
-                        <div className="artifact-panel-header workspace-panel-header">
+                    <section className="artifact-panel">
+                        <div className="artifact-panel-header">
                             <div>
                                 <strong>{artifactPanelTitle || 'Artifact inspector'}</strong>
                                 {artifactPanelMode === 'idle' ? (
@@ -839,7 +839,6 @@ function Home() {
                             {artifactPanelMode !== 'idle' ? (
                                 <button
                                     type="button"
-                                    className="workspace-action-button"
                                     onClick={resetArtifactPanel}
                                 >
                                     Close
@@ -847,17 +846,17 @@ function Home() {
                             ) : null}
                         </div>
                         {artifactPanelMode === 'idle' ? (
-                            <div className="artifact-panel-empty workspace-empty-panel">
+                            <div className="artifact-panel-empty">
                                 <span>Run a tool-backed request first. When a result card appears, use its artifact buttons to preview generated reports or file lists here.</span>
                             </div>
                         ) : null}
                         {artifactPanelMode === 'files' && artifactPanelMessage ? (
-                            <div className="artifact-panel-empty workspace-empty-panel">
+                            <div className="artifact-panel-empty">
                                 <span>{artifactPanelMessage}</span>
                             </div>
                         ) : null}
                         {artifactPanelMode === 'files' && !artifactPanelMessage && artifactFiles.length === 0 ? (
-                            <div className="artifact-panel-empty workspace-empty-panel">
+                            <div className="artifact-panel-empty">
                                 <span>No files were found in this run directory.</span>
                             </div>
                         ) : null}
@@ -882,12 +881,12 @@ function Home() {
                             </div>
                         ) : null}
                         {artifactPanelMode === 'preview' && artifactPanelMessage ? (
-                            <div className="artifact-panel-empty workspace-empty-panel">
+                            <div className="artifact-panel-empty">
                                 <span>{artifactPanelMessage}</span>
                             </div>
                         ) : null}
                         {artifactPanelMode === 'preview' && !artifactPanelMessage && !artifactPreview ? (
-                            <div className="artifact-panel-empty workspace-empty-panel">
+                            <div className="artifact-panel-empty">
                                 <span>No preview content is available for this artifact.</span>
                             </div>
                         ) : null}

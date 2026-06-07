@@ -23,7 +23,7 @@ const ChatWindow = forwardRef(function ChatWindow(
 ) {
     if (messages.length === 0) {
         return (
-            <div ref={ref} className="chat-window empty-state workspace-empty-panel">
+            <div ref={ref} className="chat-window empty-state">
                 <p>Ask something to start a conversation.</p>
             </div>
         );

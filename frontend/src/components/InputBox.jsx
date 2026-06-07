@@ -57,9 +57,9 @@ function InputBox({
     };
 
     return (
-        <form className="input-box workspace-main-card" onSubmit={submit}>
-            <div className="controls-row workspace-control-grid">
-                <label className="control-field workspace-control-field">
+        <form className="input-box" onSubmit={submit}>
+            <div className="controls-row">
+                <label className="control-field">
                     <span>Provider</span>
                     <select
                         aria-label="Chat provider"
@@ -75,7 +75,7 @@ function InputBox({
                     </select>
                 </label>
 
-                <label className="control-field workspace-control-field">
+                <label className="control-field">
                     <span>Model</span>
                     <select
                         aria-label="Model"
