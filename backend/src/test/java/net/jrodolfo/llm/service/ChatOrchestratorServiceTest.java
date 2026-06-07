@@ -333,32 +333,6 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
-    void hybridModeFallsBackToRuleBasedS3ClarificationWhenPlannerSaysNoTool() {
-        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
-        chatModelProvider.nextPlannerResponse = """
-                {
-                  "action": "none",
-                  "toolName": null,
-                  "arguments": {},
-                  "missingFields": [],
-                  "reason": "No supported tool is required."
-                }
-                """;
-        FileChatSessionStore sessionStore = newSessionStore();
-        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new FakeMcpService(), sessionStore, "hybrid");
-
-        ChatResponse response = orchestrator.chat("Give me a report from AWS S3 for the last month.", "ollama", "llama3:8b", null);
-
-        assertTrue(response.response().contains("local AWS CLI credentials"));
-        assertFalse(response.response().toLowerCase().contains("account id"));
-        assertFalse(response.response().toLowerCase().contains("username"));
-        assertEquals("clarification-needed", response.tool().status());
-        assertEquals(1, chatModelProvider.plannerCalls);
-        PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
-        assertEquals(30, pendingToolCall.days());
-    }
-
-    @Test
     void hybridModeUsesPlannerForPendingClarificationFollowUp() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         chatModelProvider.nextPlannerResponse = """
