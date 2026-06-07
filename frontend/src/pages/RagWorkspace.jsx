@@ -19,8 +19,6 @@ const RAG_TECHNICAL_DETAILS_STORAGE_KEY = 'local-genai-lab-rag-technical-details
  */
 function RagWorkspace() {
     const importInputRef = useRef(null);
-    const latestTurnRef = useRef(null);
-    const shouldScrollLatestTurnRef = useRef(false);
     const [ragStatus, setRagStatus] = useState(null);
     const [availableProviders, setAvailableProviders] = useState([]);
     const [availableModels, setAvailableModels] = useState([]);
@@ -59,16 +57,6 @@ function RagWorkspace() {
         }
         loadModelsForProvider(selectedProvider);
     }, [selectedProvider]);
-
-    useEffect(() => {
-        if (!shouldScrollLatestTurnRef.current || !latestTurnRef.current) {
-            return;
-        }
-        shouldScrollLatestTurnRef.current = false;
-        if (typeof latestTurnRef.current.scrollIntoView === 'function') {
-            latestTurnRef.current.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }
-    }, [messages.length]);
 
     /**
      * Loads the initial workspace state, including RAG status, available models, and sessions.
@@ -146,7 +134,6 @@ function RagWorkspace() {
             });
             const elapsedMs = Date.now() - startedAt;
             setSessionId(payload.sessionId);
-            shouldScrollLatestTurnRef.current = true;
             setMessages((currentMessages) => [
                 ...currentMessages,
                 createRagQuestionMessage(submittedQuestion),
@@ -551,8 +538,7 @@ function RagWorkspace() {
                         ) : null}
 
                         {latestTurn ? (
-                            <section ref={latestTurnRef} className="rag-latest-turn" aria-label="Latest RAG turn">
-                                <div className="rag-latest-turn__label">Latest answer</div>
+                            <section className="rag-latest-turn" aria-label="Latest RAG turn">
                                 <RagTurn
                                     turn={latestTurn}
                                     selectedModel={selectedModel}

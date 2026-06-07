@@ -116,7 +116,8 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
-.rag-session-sidebar {
+.rag-session-sidebar,
+.rag-question-card {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(148, 163, 184, 0.35);
     border-radius: 18px;
@@ -221,15 +222,6 @@
 
 .rag-latest-turn {
     margin-top: 0;
-    scroll-margin-top: 1rem;
-}
-
-.rag-latest-turn__label {
-    color: #475569;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
 }
 
 .rag-session-item {
@@ -463,28 +455,7 @@
 }
 
 .rag-question-card h2 {
-    color: #475569;
-    font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-    margin: 0;
-    text-transform: uppercase;
-}
-
-.rag-question-card {
-    background: rgba(248, 250, 252, 0.9);
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    box-shadow: none;
-    display: grid;
-    gap: 0.35rem;
-    padding: 0.7rem 0.85rem;
-}
-
-.rag-question-card p {
-    color: #334155;
-    margin: 0;
-    white-space: pre-wrap;
+    margin-top: 0;
 }
 
 .rag-answer-card__sources ul {
