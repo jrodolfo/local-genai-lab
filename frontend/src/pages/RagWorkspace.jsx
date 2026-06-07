@@ -17,8 +17,6 @@ import './RagWorkspace.css';
  */
 function RagWorkspace() {
     const importInputRef = useRef(null);
-    const latestTurnRef = useRef(null);
-    const shouldScrollLatestTurnRef = useRef(false);
     const [ragStatus, setRagStatus] = useState(null);
     const [availableProviders, setAvailableProviders] = useState([]);
     const [availableModels, setAvailableModels] = useState([]);
@@ -44,16 +42,6 @@ function RagWorkspace() {
         }
         loadModelsForProvider(selectedProvider);
     }, [selectedProvider]);
-
-    useEffect(() => {
-        if (!shouldScrollLatestTurnRef.current || !latestTurnRef.current) {
-            return;
-        }
-        shouldScrollLatestTurnRef.current = false;
-        if (typeof latestTurnRef.current.scrollIntoView === 'function') {
-            latestTurnRef.current.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }
-    }, [messages.length]);
 
     /**
      * Loads the initial workspace state, including RAG status, available models, and sessions.
@@ -127,8 +115,6 @@ function RagWorkspace() {
                 sessionId
             });
             setSessionId(payload.sessionId);
-            setQuestion('');
-            shouldScrollLatestTurnRef.current = true;
             setMessages((currentMessages) => [
                 ...currentMessages,
                 createRagQuestionMessage(submittedQuestion),
@@ -402,73 +388,45 @@ function RagWorkspace() {
                     ) : null}
 
                     <section className="rag-workspace">
-                        <section className="rag-primary-workspace" aria-label="RAG query and latest result">
-                            <form className="rag-query-form" onSubmit={handleSubmit}>
-                                <div className="rag-field-grid">
-                                    <label>
-                                        Provider
-                                        <select value={selectedProvider}
-                                                onChange={(event) => setSelectedProvider(event.target.value)}>
-                                            {availableProviders.map((provider) => (
-                                                <option key={provider} value={provider}>
-                                                    {provider}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                    <label>
-                                        Model
-                                        <select value={selectedModel}
-                                                onChange={(event) => setSelectedModel(event.target.value)}>
-                                            {availableModels.map((model) => (
-                                                <option key={model} value={model}>
-                                                    {model}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </label>
-                                </div>
+                        <RagQueryCard
+                            availableProviders={availableProviders}
+                            availableModels={availableModels}
+                            selectedProvider={selectedProvider}
+                            selectedModel={selectedModel}
+                            question={question}
+                            querying={querying}
+                            onProviderChange={setSelectedProvider}
+                            onModelChange={setSelectedModel}
+                            onQuestionChange={setQuestion}
+                            onSubmit={handleSubmit}
+                        />
 
-                                <label className="rag-question-field">
-                                    Question
-                                    <textarea
-                                        value={question}
-                                        onChange={(event) => setQuestion(event.target.value)}
-                                        placeholder="Ask a question about the project docs and ADRs."
-                                        rows={5}
-                                    />
-                                </label>
-
-                                <div className="rag-actions">
-                                    <button type="submit" className="rag-action-button rag-primary-button"
-                                            disabled={querying || !question.trim()}>
-                                        {querying ? 'Querying...' : 'Ask Docs Corpus'}
-                                    </button>
-                                </div>
-                            </form>
-
-                            <section className="rag-result-panel" aria-label="RAG result">
-                                {latestTurn ? (
-                                    <section ref={latestTurnRef} className="rag-latest-turn" aria-label="Latest RAG turn">
-                                        <RagTurn turn={latestTurn} selectedModel={selectedModel}/>
-                                    </section>
-                                ) : (
-                                    <section className="rag-empty-state">
-                                        <h2>No answer yet</h2>
-                                        <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
-                                            answer.</p>
-                                    </section>
-                                )}
+                        {latestTurn ? (
+                            <section className="rag-latest-answer" aria-label="Latest RAG answer">
+                                <h2>Latest answer</h2>
+                                <RagAnswerTurn
+                                    turn={latestTurn}
+                                    selectedModel={selectedModel}
+                                    ariaLabel="Latest RAG turn"
+                                />
                             </section>
-                        </section>
+                        ) : (
+                            <section className="rag-empty-state">
+                                <h2>No answer yet</h2>
+                                <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
+                                    answer.</p>
+                            </section>
+                        )}
 
                         {olderTurns.length > 0 ? (
-                            <section className="rag-conversation" aria-label="RAG conversation history">
+                            <section className="rag-history" aria-label="RAG conversation history">
+                                <h2>Previous answers</h2>
                                 {olderTurns.map((turn, index) => (
-                                    <RagTurn
+                                    <RagAnswerTurn
                                         key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
                                         turn={turn}
                                         selectedModel={selectedModel}
+                                        ariaLabel="RAG history turn"
                                     />
                                 ))}
                             </section>
@@ -480,15 +438,69 @@ function RagWorkspace() {
     );
 }
 
-function RagTurn({turn, selectedModel}) {
+function RagQueryCard({
+                          availableProviders,
+                          availableModels,
+                          selectedProvider,
+                          selectedModel,
+                          question,
+                          querying,
+                          onProviderChange,
+                          onModelChange,
+                          onQuestionChange,
+                          onSubmit
+                      }) {
     return (
-        <>
-            {turn.question ? (
-                <section className="rag-question-card">
-                    <h2>Question</h2>
-                    <p>{turn.question.content}</p>
-                </section>
-            ) : null}
+        <form className="rag-query-card" aria-label="RAG query" onSubmit={onSubmit}>
+            <div className="rag-query-card__controls">
+                <label>
+                    Provider
+                    <select value={selectedProvider}
+                            onChange={(event) => onProviderChange(event.target.value)}>
+                        {availableProviders.map((provider) => (
+                            <option key={provider} value={provider}>
+                                {provider}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    Model
+                    <select value={selectedModel}
+                            onChange={(event) => onModelChange(event.target.value)}>
+                        {availableModels.map((model) => (
+                            <option key={model} value={model}>
+                                {model}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+            </div>
+
+            <label className="rag-query-card__question">
+                Question
+                <textarea
+                    value={question}
+                    onChange={(event) => onQuestionChange(event.target.value)}
+                    placeholder="Ask a question about the project docs and ADRs."
+                    rows={3}
+                />
+            </label>
+
+            <div className="rag-query-card__actions">
+                <button type="submit" className="rag-action-button rag-primary-button"
+                        disabled={querying || !question.trim()}>
+                    {querying ? 'Querying...' : 'Ask Docs Corpus'}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+function RagAnswerTurn({turn, selectedModel, ariaLabel}) {
+    return (
+        <section className="rag-answer-turn" aria-label={ariaLabel}>
+            <RagQuestionSummary question={turn.question?.content}/>
             {turn.answer ? (
                 <RagAnswerWithSources
                     result={{
@@ -499,7 +511,20 @@ function RagTurn({turn, selectedModel}) {
                     }}
                 />
             ) : null}
-        </>
+        </section>
+    );
+}
+
+function RagQuestionSummary({question}) {
+    if (!question) {
+        return null;
+    }
+
+    return (
+        <div className="rag-question-summary">
+            <span>Question</span>
+            <p>{question}</p>
+        </div>
     );
 }
 

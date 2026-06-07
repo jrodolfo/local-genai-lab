@@ -111,15 +111,15 @@ describe('RagWorkspace', () => {
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
+        const latestAnswer = await screen.findByRole('region', {name: /latest rag answer/i});
         const latestTurn = await screen.findByRole('region', {name: /latest rag turn/i});
-        const resultPanel = screen.getByRole('region', {name: /rag result/i});
-        const queryForm = screen.getByRole('button', {name: /Ask docs corpus/i}).closest('form');
-        const latestQuestionHeading = within(latestTurn).getByRole('heading', {name: 'Question'});
+        const queryForm = screen.getByRole('form', {name: /rag query/i});
+        const latestQuestionLabel = within(latestTurn).getByText('Question');
         const latestAnswerHeading = within(latestTurn).getByRole('heading', {name: 'Answer'});
 
-        expect(within(resultPanel).getByRole('region', {name: /latest rag turn/i})).toBe(latestTurn);
-        expect(queryForm.compareDocumentPosition(latestTurn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(latestQuestionHeading.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(queryForm.nextElementSibling).toBe(latestAnswer);
+        expect(within(latestAnswer).getByRole('region', {name: /latest rag turn/i})).toBe(latestTurn);
+        expect(latestQuestionLabel.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
         expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
