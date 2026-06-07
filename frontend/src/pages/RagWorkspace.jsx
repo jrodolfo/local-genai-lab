@@ -236,205 +236,240 @@ function RagWorkspace() {
 
     return (
         <main className="rag-page">
-            <section className="rag-hero">
-                <div className="rag-hero__copy">
-                    <div className="rag-hero__header">
+            <section className={`rag-shell ${showSessionsSidebar ? '' : 'sidebar-hidden'}`.trim()}>
+                {showSessionsSidebar ? (
+                    <RagSessionSidebar
+                        importInputRef={importInputRef}
+                        sessions={sessions}
+                        sessionId={sessionId}
+                        onStartNewSession={startNewSession}
+                        onImportClick={() => importInputRef.current?.click()}
+                        onImport={handleImport}
+                        onOpenSession={openSession}
+                        onDownloadSession={downloadSession}
+                        onRemoveSession={removeSession}
+                    />
+                ) : null}
+
+                <section className="rag-main-card">
+                    <header className="rag-main-header">
                         <div>
-                            <p className="rag-eyebrow">Experimental</p>
                             <h1>RAG</h1>
+                            <p>Ask questions against the local docs corpus.</p>
                         </div>
                         <button
                             type="button"
-                            className="rag-action-button rag-sidebar-toggle"
+                            className="rag-action-button"
                             aria-expanded={showSessionsSidebar}
                             aria-controls="rag-sessions-sidebar"
                             onClick={() => setShowSessionsSidebar((current) => !current)}
                         >
                             {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
                         </button>
-                    </div>
-                    <p>Ask questions against the local docs corpus.</p>
-                </div>
-                <div className="rag-status-card">
-                    <div className="rag-status-card__header">
-                        <h2>Index</h2>
-                        {ragStatus?.enabled ? (
-                            <button type="button" className="rag-action-button rag-primary-button"
-                                    onClick={handleRebuildIndex} disabled={rebuilding}>
-                                {rebuilding ? 'Rebuilding...' : 'Rebuild Index'}
-                            </button>
-                        ) : null}
-                    </div>
-                    {loading ? <p>Loading RAG status...</p> : null}
-                    {!loading && ragStatus ? (
-                        <dl className="rag-status-grid">
-                            <div>
-                                <dt>Status</dt>
-                                <dd>{ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</dd>
-                            </div>
-                            <div>
-                                <dt>Corpus</dt>
-                                <dd>docs/</dd>
-                            </div>
-                            <div>
-                                <dt>Documents</dt>
-                                <dd>{ragStatus.documentCount}</dd>
-                            </div>
-                            <div>
-                                <dt>Chunks</dt>
-                                <dd>{ragStatus.chunkCount}</dd>
-                            </div>
-                            <div>
-                                <dt>Retrieval</dt>
-                                <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
-                            </div>
-                            <div>
-                                <dt>Store</dt>
-                                <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
-                            </div>
-                            {isVectorRetrieval(ragStatus) ? (
-                                <div>
-                                    <dt>Embedding</dt>
-                                    <dd>{formatEmbeddingStatus(ragStatus)}</dd>
-                                </div>
-                            ) : null}
-                            {isQdrantRequired(ragStatus) ? (
-                                <div>
-                                    <dt>Qdrant</dt>
-                                    <dd>{ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</dd>
-                                </div>
-                            ) : null}
-                            {isQdrantRequired(ragStatus) ? (
-                                <div>
-                                    <dt>Collection</dt>
-                                    <dd>{qdrantCollectionSummary(ragStatus)}</dd>
-                                </div>
-                            ) : null}
-                        </dl>
+                    </header>
+
+                    <RagStatusStrip
+                        loading={loading}
+                        ragStatus={ragStatus}
+                        rebuilding={rebuilding}
+                        onRebuildIndex={handleRebuildIndex}
+                    />
+
+                    {error ? <p className="rag-error">{error}</p> : null}
+
+                    {!loading && ragStatus && !ragStatus.enabled ? (
+                        <section className="rag-empty-state">
+                            <h2>RAG is disabled</h2>
+                            <p>Enable `rag.enabled=true` in the backend to use this workspace.</p>
+                        </section>
                     ) : null}
+
                     {!loading && ragStatus?.enabled ? (
-                        <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
-                    ) : null}
-                    {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
-                        <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
-                            {qdrantStatusMessage(ragStatus)}
-                        </p>
-                    ) : null}
-                </div>
-            </section>
+                        <>
+                            <RagQueryCard
+                                availableProviders={availableProviders}
+                                availableModels={availableModels}
+                                selectedProvider={selectedProvider}
+                                selectedModel={selectedModel}
+                                question={question}
+                                querying={querying}
+                                onProviderChange={setSelectedProvider}
+                                onModelChange={setSelectedModel}
+                                onQuestionChange={setQuestion}
+                                onSubmit={handleSubmit}
+                            />
 
-            {error ? <p className="rag-error">{error}</p> : null}
-
-            {!loading && ragStatus && !ragStatus.enabled ? (
-                <section className="rag-empty-state">
-                    <h2>RAG is disabled</h2>
-                    <p>Enable `rag.enabled=true` in the backend to use this experimental workspace.</p>
-                </section>
-            ) : null}
-
-            {!loading && ragStatus?.enabled ? (
-                <section className={`rag-layout ${showSessionsSidebar ? '' : 'sidebar-hidden'}`.trim()}>
-                    {showSessionsSidebar ? (
-                        <aside id="rag-sessions-sidebar" className="rag-session-sidebar">
-                            <div className="rag-session-sidebar__header">
-                                <h2>RAG sessions</h2>
-                                <div className="rag-session-sidebar__actions">
-                                    <button type="button" className="rag-action-button" onClick={startNewSession}>New
-                                        Session
-                                    </button>
-                                    <button type="button" className="rag-action-button"
-                                            onClick={() => importInputRef.current?.click()}>Import Session
-                                    </button>
-                                    <input
-                                        ref={importInputRef}
-                                        type="file"
-                                        accept="application/json"
-                                        className="rag-session-sidebar__import"
-                                        onChange={handleImport}
-                                    />
-                                </div>
-                            </div>
-                            <div className="rag-session-list">
-                                {sessions.length === 0 ? (
-                                    <p className="rag-session-empty">No saved RAG sessions yet.</p>
-                                ) : sessions.map((session) => (
-                                    <article key={session.sessionId}
-                                             className={`rag-session-item ${session.sessionId === sessionId ? 'active' : ''}`}>
-                                        <button type="button" className="rag-session-open"
-                                                onClick={() => openSession(session.sessionId)}>
-                                            <span className="rag-session-title">{session.title}</span>
-                                            {session.summary ?
-                                                <span className="rag-session-summary">{session.summary}</span> : null}
-                                            <span
-                                                className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
-                                        </button>
-                                        <div className="rag-session-item__actions">
-                                            <button type="button" className="rag-action-button"
-                                                    onClick={() => downloadSession(session.sessionId, 'json')}>Export
-                                                JSON
-                                            </button>
-                                            <button type="button" className="rag-action-button"
-                                                    onClick={() => downloadSession(session.sessionId, 'markdown')}>Export
-                                                Markdown
-                                            </button>
-                                            <button type="button" className="rag-action-button rag-action-button-danger"
-                                                    onClick={() => removeSession(session.sessionId)}>Delete
-                                            </button>
-                                        </div>
-                                    </article>
-                                ))}
-                            </div>
-                        </aside>
-                    ) : null}
-
-                    <section className="rag-workspace">
-                        <RagQueryCard
-                            availableProviders={availableProviders}
-                            availableModels={availableModels}
-                            selectedProvider={selectedProvider}
-                            selectedModel={selectedModel}
-                            question={question}
-                            querying={querying}
-                            onProviderChange={setSelectedProvider}
-                            onModelChange={setSelectedModel}
-                            onQuestionChange={setQuestion}
-                            onSubmit={handleSubmit}
-                        />
-
-                        {latestTurn ? (
-                            <section className="rag-latest-answer" aria-label="Latest RAG answer">
-                                <h2>Latest answer</h2>
-                                <RagAnswerTurn
-                                    turn={latestTurn}
-                                    selectedModel={selectedModel}
-                                    ariaLabel="Latest RAG turn"
-                                />
-                            </section>
-                        ) : (
-                            <section className="rag-empty-state">
-                                <h2>No answer yet</h2>
-                                <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
-                                    answer.</p>
-                            </section>
-                        )}
-
-                        {olderTurns.length > 0 ? (
-                            <section className="rag-history" aria-label="RAG conversation history">
-                                <h2>Previous answers</h2>
-                                {olderTurns.map((turn, index) => (
+                            {latestTurn ? (
+                                <section className="rag-latest-answer" aria-label="Latest RAG answer">
+                                    <h2>Latest answer</h2>
                                     <RagAnswerTurn
-                                        key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
-                                        turn={turn}
+                                        turn={latestTurn}
                                         selectedModel={selectedModel}
-                                        ariaLabel="RAG history turn"
+                                        ariaLabel="Latest RAG turn"
                                     />
-                                ))}
-                            </section>
-                        ) : null}
-                    </section>
+                                </section>
+                            ) : (
+                                <section className="rag-empty-state rag-empty-state--inline">
+                                    <h2>No answer yet</h2>
+                                    <p>Ask a question to retrieve cited chunks from the docs corpus.</p>
+                                </section>
+                            )}
+
+                            {olderTurns.length > 0 ? (
+                                <section className="rag-history" aria-label="RAG conversation history">
+                                    <h2>Previous answers</h2>
+                                    {olderTurns.map((turn, index) => (
+                                        <RagAnswerTurn
+                                            key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
+                                            turn={turn}
+                                            selectedModel={selectedModel}
+                                            ariaLabel="RAG history turn"
+                                        />
+                                    ))}
+                                </section>
+                            ) : null}
+                        </>
+                    ) : null}
                 </section>
-            ) : null}
+            </section>
         </main>
+    );
+}
+
+function RagSessionSidebar({
+                               importInputRef,
+                               sessions,
+                               sessionId,
+                               onStartNewSession,
+                               onImportClick,
+                               onImport,
+                               onOpenSession,
+                               onDownloadSession,
+                               onRemoveSession
+                           }) {
+    return (
+        <aside id="rag-sessions-sidebar" className="rag-session-sidebar">
+            <div className="rag-session-sidebar__header">
+                <h2>Sessions</h2>
+                <div className="rag-session-sidebar__actions">
+                    <button type="button" className="rag-action-button" onClick={onStartNewSession}>
+                        New Session
+                    </button>
+                    <button type="button" className="rag-action-button" onClick={onImportClick}>
+                        Import Session
+                    </button>
+                    <input
+                        ref={importInputRef}
+                        type="file"
+                        accept="application/json"
+                        className="rag-session-sidebar__import"
+                        onChange={onImport}
+                    />
+                </div>
+            </div>
+            <div className="rag-session-list">
+                {sessions.length === 0 ? (
+                    <p className="rag-session-empty">No saved RAG sessions yet.</p>
+                ) : sessions.map((session) => (
+                    <article
+                        key={session.sessionId}
+                        className={`rag-session-item ${session.sessionId === sessionId ? 'active' : ''}`}
+                    >
+                        <button type="button" className="rag-session-open"
+                                onClick={() => onOpenSession(session.sessionId)}>
+                            <span className="rag-session-title">{session.title}</span>
+                            {session.summary ? <span className="rag-session-summary">{session.summary}</span> : null}
+                            <span className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                        </button>
+                        <div className="rag-session-item__actions">
+                            <button type="button" className="rag-action-button"
+                                    onClick={() => onDownloadSession(session.sessionId, 'json')}>
+                                Export JSON
+                            </button>
+                            <button type="button" className="rag-action-button"
+                                    onClick={() => onDownloadSession(session.sessionId, 'markdown')}>
+                                Export Markdown
+                            </button>
+                            <button type="button" className="rag-action-button rag-action-button-danger"
+                                    onClick={() => onRemoveSession(session.sessionId)}>
+                                Delete
+                            </button>
+                        </div>
+                    </article>
+                ))}
+            </div>
+        </aside>
+    );
+}
+
+function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
+    return (
+        <section className="rag-status-strip" aria-label="RAG index status">
+            <div className="rag-status-strip__summary">
+                <h2>Index</h2>
+                {loading ? <p>Loading RAG status...</p> : null}
+                {!loading && ragStatus ? (
+                    <dl>
+                        <div>
+                            <dt>Status</dt>
+                            <dd>{ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</dd>
+                        </div>
+                        <div>
+                            <dt>Corpus</dt>
+                            <dd>docs/</dd>
+                        </div>
+                        <div>
+                            <dt>Documents</dt>
+                            <dd>{ragStatus.documentCount}</dd>
+                        </div>
+                        <div>
+                            <dt>Chunks</dt>
+                            <dd>{ragStatus.chunkCount}</dd>
+                        </div>
+                        <div>
+                            <dt>Retrieval</dt>
+                            <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
+                        </div>
+                        <div>
+                            <dt>Store</dt>
+                            <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
+                        </div>
+                        {isVectorRetrieval(ragStatus) ? (
+                            <div>
+                                <dt>Embedding</dt>
+                                <dd>{formatEmbeddingStatus(ragStatus)}</dd>
+                            </div>
+                        ) : null}
+                        {isQdrantRequired(ragStatus) ? (
+                            <div>
+                                <dt>Qdrant</dt>
+                                <dd>{ragStatus.qdrantReachable ? 'Reachable' : 'Unavailable'}</dd>
+                            </div>
+                        ) : null}
+                        {isQdrantRequired(ragStatus) ? (
+                            <div>
+                                <dt>Collection</dt>
+                                <dd>{qdrantCollectionSummary(ragStatus)}</dd>
+                            </div>
+                        ) : null}
+                    </dl>
+                ) : null}
+                {ragStatus?.enabled ? (
+                    <button type="button" className="rag-action-button rag-primary-button"
+                            onClick={onRebuildIndex} disabled={rebuilding}>
+                        {rebuilding ? 'Rebuilding...' : 'Rebuild Index'}
+                    </button>
+                ) : null}
+            </div>
+            {!loading && ragStatus?.enabled ? (
+                <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
+            ) : null}
+            {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
+                <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
+                    {qdrantStatusMessage(ragStatus)}
+                </p>
+            ) : null}
+        </section>
     );
 }
 
