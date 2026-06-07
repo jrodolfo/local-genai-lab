@@ -324,17 +324,17 @@ function RagWorkspace() {
                         </div>
                     </div>
                 </div>
-                <div className="rag-status-strip" aria-label="RAG index status">
+                <div className="rag-status-strip workspace-status-strip" aria-label="RAG index status">
                     {loading ? <span>Loading RAG status...</span> : null}
                     {!loading && ragStatus ? (
-                        <div className="rag-status-strip__items">
+                        <div className="rag-status-strip__items workspace-status-items">
                             <span><strong>Status</strong> {ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</span>
                             <span><strong>Corpus</strong> docs/</span>
                             <span><strong>Chunks</strong> {ragStatus.chunkCount}</span>
                             <span><strong>Selected</strong> {selectedRetrievalTargetLabel(selectedRetrievalTarget, ragStatus)}</span>
                         </div>
                     ) : null}
-                    <div className="rag-status-strip__actions">
+                    <div className="rag-status-strip__actions workspace-status-actions">
                         {ragStatus?.enabled ? (
                             <button type="button" className="rag-action-button workspace-action-button rag-primary-button"
                                     onClick={handleRebuildIndex} disabled={rebuilding}>
@@ -344,8 +344,8 @@ function RagWorkspace() {
                     </div>
                 </div>
                 {!loading && ragStatus && showTechnicalDetails ? (
-                    <div className="rag-index-details-strip" aria-label="RAG technical status">
-                        <div className="rag-index-details-strip__items" aria-label="Index details">
+                    <div className="rag-index-details-strip workspace-secondary-panel" aria-label="RAG technical status">
+                        <div className="rag-index-details-strip__items workspace-technical-details" aria-label="Index details">
                             <span><strong>Index Details</strong> {ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</span>
                             <span><strong>Corpus</strong> docs/</span>
                             <span><strong>Documents</strong> {ragStatus.documentCount}</span>
@@ -376,7 +376,7 @@ function RagWorkspace() {
             {error ? <p className="rag-error">{error}</p> : null}
 
             {!loading && ragStatus && !ragStatus.enabled ? (
-                <section className="rag-empty-state">
+                <section className="rag-empty-state workspace-empty-panel">
                     <h2>RAG is disabled</h2>
                     <p>Enable `rag.enabled=true` in the backend to use this experimental workspace.</p>
                 </section>
@@ -561,7 +561,7 @@ function RagWorkspace() {
                         ) : null}
 
                         {messages.length === 0 ? (
-                            <section className="rag-empty-state">
+                            <section className="rag-empty-state workspace-empty-panel">
                                 <h2>No answer yet</h2>
                                 <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
                                     answer.</p>
