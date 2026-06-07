@@ -3,6 +3,7 @@ import {defineConfig, devices} from '@playwright/test';
 export default defineConfig({
     testDir: './e2e',
     snapshotDir: './e2e/__screenshots__',
+    snapshotPathTemplate: '{snapshotDir}/{testFilePath}-snapshots/{arg}{ext}',
     fullyParallel: true,
     reporter: [['list']],
     webServer: {
