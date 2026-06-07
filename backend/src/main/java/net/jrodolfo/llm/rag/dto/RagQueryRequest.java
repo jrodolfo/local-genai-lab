@@ -9,16 +9,12 @@ import jakarta.validation.constraints.NotBlank;
  * @param provider  The preferred LLM provider.
  * @param model     The preferred model name.
  * @param sessionId The session identifier to maintain conversation context.
- * @param retrievalMode Optional request-scoped retrieval mode.
- * @param vectorStore Optional request-scoped vector store for vector retrieval.
  */
 public record RagQueryRequest(
         @NotBlank(message = "question is required")
         String question,
         String provider,
         String model,
-        String sessionId,
-        String retrievalMode,
-        String vectorStore
+        String sessionId
 ) {
 }

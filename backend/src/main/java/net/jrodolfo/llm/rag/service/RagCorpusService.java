@@ -16,7 +16,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -34,7 +33,6 @@ public class RagCorpusService {
     private final InMemoryVectorRagRetrievalStore vectorRetrievalStore;
     private final QdrantVectorRagIndexingStore qdrantVectorIndexingStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
-    private final Set<String> indexedTargets = ConcurrentHashMap.newKeySet();
 
     /**
      * Constructs a new RagCorpusService.
@@ -91,15 +89,11 @@ public class RagCorpusService {
      * @return the current {@link CorpusSnapshot}
      */
     public synchronized CorpusSnapshot ensureIndexed() {
-        return ensureIndexed(RagRetrievalOptions.fromConfig(ragProperties));
-    }
-
-    public synchronized CorpusSnapshot ensureIndexed(RagRetrievalOptions options) {
         CorpusSnapshot snapshot = snapshotRef.get();
-        if (snapshot != null && indexedTargets.contains(options.indexKey())) {
+        if (snapshot != null) {
             return snapshot;
         }
-        return rebuildIndex(options);
+        return rebuildIndex();
     }
 
     /**
@@ -108,10 +102,6 @@ public class RagCorpusService {
      * @return the new {@link CorpusSnapshot}
      */
     public synchronized CorpusSnapshot rebuildIndex() {
-        return rebuildIndex(RagRetrievalOptions.fromConfig(ragProperties));
-    }
-
-    public synchronized CorpusSnapshot rebuildIndex(RagRetrievalOptions options) {
         Path corpusRoot = ragProperties.resolvedCorpusRoot();
         List<RagDocument> documents = filterExcludedDocuments(documentLoader.loadMarkdownDocuments(corpusRoot));
         List<RagChunk> chunks = chunkingService.chunkDocuments(
@@ -119,10 +109,10 @@ public class RagCorpusService {
                 ragProperties.maxChunkSize(),
                 ragProperties.chunkOverlap()
         );
-        RagRetrievalMode mode = options.retrievalMode();
+        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
         if (mode == RagRetrievalMode.VECTOR) {
             RagVectorIndexResult vectorIndex = vectorIndexingService.index(chunks);
-            RagVectorStoreMode vectorStoreMode = options.vectorStore();
+            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
             switch (vectorStoreMode) {
                 case IN_MEMORY -> vectorRetrievalStore.replaceAllEmbedded(vectorIndex.chunks());
                 case QDRANT -> {
@@ -137,7 +127,6 @@ public class RagCorpusService {
         }
         CorpusSnapshot snapshot = new CorpusSnapshot(corpusRoot, documents, chunks);
         snapshotRef.set(snapshot);
-        indexedTargets.add(options.indexKey());
         return snapshot;
     }
 
