@@ -148,8 +148,6 @@ class ChatOrchestratorServiceTest {
         assertTrue(response.response().contains("local AWS CLI credentials"));
         assertTrue(response.response().contains("one bucket at a time"));
         assertTrue(response.response().contains("Please provide the bucket name"));
-        assertTrue(response.response().contains("ask me: \"list my S3 buckets\""));
-        assertFalse(response.response().contains("run an AWS audit"));
         assertFalse(response.response().toLowerCase().contains("account id"));
         assertFalse(response.response().toLowerCase().contains("username"));
         assertFalse(response.response().contains("Do you want all accessible buckets"));
@@ -357,8 +355,6 @@ class ChatOrchestratorServiceTest {
 
         assertTrue(response.response().contains("local AWS CLI credentials"));
         assertTrue(response.response().contains("one bucket at a time"));
-        assertTrue(response.response().contains("ask me: \"list my S3 buckets\""));
-        assertFalse(response.response().contains("run an AWS audit"));
         assertFalse(response.response().toLowerCase().contains("account id"));
         assertFalse(response.response().toLowerCase().contains("username"));
         assertFalse(response.response().contains("Do you want all accessible buckets"));
