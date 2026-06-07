@@ -112,10 +112,12 @@ describe('RagWorkspace', () => {
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
         const latestTurn = await screen.findByRole('region', {name: /latest rag turn/i});
+        const resultPanel = screen.getByRole('region', {name: /rag result/i});
         const queryForm = screen.getByRole('button', {name: /Ask docs corpus/i}).closest('form');
         const latestQuestionHeading = within(latestTurn).getByRole('heading', {name: 'Question'});
         const latestAnswerHeading = within(latestTurn).getByRole('heading', {name: 'Answer'});
 
+        expect(within(resultPanel).getByRole('region', {name: /latest rag turn/i})).toBe(latestTurn);
         expect(queryForm.compareDocumentPosition(latestTurn) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(latestQuestionHeading.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();

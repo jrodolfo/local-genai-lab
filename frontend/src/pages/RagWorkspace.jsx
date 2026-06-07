@@ -389,55 +389,65 @@ function RagWorkspace() {
                     ) : null}
 
                     <section className="rag-workspace">
-                        <form className="rag-query-form" onSubmit={handleSubmit}>
-                            <div className="rag-field-grid">
-                                <label>
-                                    Provider
-                                    <select value={selectedProvider}
-                                            onChange={(event) => setSelectedProvider(event.target.value)}>
-                                        {availableProviders.map((provider) => (
-                                            <option key={provider} value={provider}>
-                                                {provider}
-                                            </option>
-                                        ))}
-                                    </select>
+                        <section className="rag-primary-workspace" aria-label="RAG query and latest result">
+                            <form className="rag-query-form" onSubmit={handleSubmit}>
+                                <div className="rag-field-grid">
+                                    <label>
+                                        Provider
+                                        <select value={selectedProvider}
+                                                onChange={(event) => setSelectedProvider(event.target.value)}>
+                                            {availableProviders.map((provider) => (
+                                                <option key={provider} value={provider}>
+                                                    {provider}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label>
+                                        Model
+                                        <select value={selectedModel}
+                                                onChange={(event) => setSelectedModel(event.target.value)}>
+                                            {availableModels.map((model) => (
+                                                <option key={model} value={model}>
+                                                    {model}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <label className="rag-question-field">
+                                    Question
+                                    <textarea
+                                        value={question}
+                                        onChange={(event) => setQuestion(event.target.value)}
+                                        placeholder="Ask a question about the project docs and ADRs."
+                                        rows={5}
+                                    />
                                 </label>
-                                <label>
-                                    Model
-                                    <select value={selectedModel}
-                                            onChange={(event) => setSelectedModel(event.target.value)}>
-                                        {availableModels.map((model) => (
-                                            <option key={model} value={model}>
-                                                {model}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
 
-                            <label className="rag-question-field">
-                                Question
-                                <textarea
-                                    value={question}
-                                    onChange={(event) => setQuestion(event.target.value)}
-                                    placeholder="Ask a question about the project docs and ADRs."
-                                    rows={6}
-                                />
-                            </label>
+                                <div className="rag-actions">
+                                    <button type="submit" className="rag-action-button rag-primary-button"
+                                            disabled={querying || !question.trim()}>
+                                        {querying ? 'Querying...' : 'Ask Docs Corpus'}
+                                    </button>
+                                </div>
+                            </form>
 
-                            <div className="rag-actions">
-                                <button type="submit" className="rag-action-button rag-primary-button"
-                                        disabled={querying || !question.trim()}>
-                                    {querying ? 'Querying...' : 'Ask Docs Corpus'}
-                                </button>
-                            </div>
-                        </form>
-
-                        {latestTurn ? (
-                            <section className="rag-latest-turn" aria-label="Latest RAG turn">
-                                <RagTurn turn={latestTurn} selectedModel={selectedModel}/>
+                            <section className="rag-result-panel" aria-label="RAG result">
+                                {latestTurn ? (
+                                    <section className="rag-latest-turn" aria-label="Latest RAG turn">
+                                        <RagTurn turn={latestTurn} selectedModel={selectedModel}/>
+                                    </section>
+                                ) : (
+                                    <section className="rag-empty-state">
+                                        <h2>No answer yet</h2>
+                                        <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
+                                            answer.</p>
+                                    </section>
+                                )}
                             </section>
-                        ) : null}
+                        </section>
 
                         {olderTurns.length > 0 ? (
                             <section className="rag-conversation" aria-label="RAG conversation history">
@@ -448,14 +458,6 @@ function RagWorkspace() {
                                         selectedModel={selectedModel}
                                     />
                                 ))}
-                            </section>
-                        ) : null}
-
-                        {messages.length === 0 ? (
-                            <section className="rag-empty-state">
-                                <h2>No answer yet</h2>
-                                <p>Ask a question to retrieve the most relevant doc chunks and generate a cited
-                                    answer.</p>
                             </section>
                         ) : null}
                     </section>
