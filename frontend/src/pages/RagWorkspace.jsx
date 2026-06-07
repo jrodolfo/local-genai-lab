@@ -620,7 +620,6 @@ function RagTurn({turn, selectedModel, showTechnicalDetails}) {
                         model: turn.answer.metadata?.modelId || selectedModel,
                         elapsedMs: turn.answer.metadata?.elapsedMs,
                         ragRetrieval: turn.answer.ragRetrieval,
-                        ragTiming: turn.answer.ragTiming,
                         sources: turn.answer.ragSources || []
                     }}
                     showTechnicalDetails={showTechnicalDetails}
@@ -650,7 +649,6 @@ function RagComparisonCard({result, selectedProvider, selectedModel, showTechnic
                     model: result.payload.metadata?.modelId || result.payload.model || selectedModel,
                     elapsedMs: result.payload.elapsedMs,
                     ragRetrieval: result.payload.ragRetrieval || retrievalMetadataFromTarget(result.target.value),
-                    ragTiming: result.payload.ragTiming,
                     sources: result.payload.sources || []
                 }}
                 showTechnicalDetails={showTechnicalDetails}
@@ -777,7 +775,6 @@ function createRagAnswerMessage(payload, selectedProvider, selectedModel, elapse
         },
         ragSources: payload.sources || [],
         ragRetrieval: payload.ragRetrieval || null,
-        ragTiming: payload.ragTiming || null,
         timestamp: new Date().toISOString()
     };
 }

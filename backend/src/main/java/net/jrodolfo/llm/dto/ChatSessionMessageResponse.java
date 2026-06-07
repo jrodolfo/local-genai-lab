@@ -17,7 +17,6 @@ public record ChatSessionMessageResponse(
         ModelProviderMetadata metadata,
         List<ChatRagSourceChunk> ragSources,
         RagRetrievalMetadata ragRetrieval,
-        RagTimingMetadata ragTiming,
         Instant timestamp
 ) {
     public ChatSessionMessageResponse(
@@ -29,19 +28,6 @@ public record ChatSessionMessageResponse(
             List<ChatRagSourceChunk> ragSources,
             Instant timestamp
     ) {
-        this(role, content, tool, toolResult, metadata, ragSources, null, null, timestamp);
-    }
-
-    public ChatSessionMessageResponse(
-            String role,
-            String content,
-            ChatToolMetadata tool,
-            Map<String, Object> toolResult,
-            ModelProviderMetadata metadata,
-            List<ChatRagSourceChunk> ragSources,
-            RagRetrievalMetadata ragRetrieval,
-            Instant timestamp
-    ) {
-        this(role, content, tool, toolResult, metadata, ragSources, ragRetrieval, null, timestamp);
+        this(role, content, tool, toolResult, metadata, ragSources, null, timestamp);
     }
 }

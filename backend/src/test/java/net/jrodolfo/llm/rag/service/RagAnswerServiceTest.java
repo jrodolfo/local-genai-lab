@@ -104,18 +104,10 @@ class RagAnswerServiceTest {
         assertEquals("vector", response.ragRetrieval().retrievalMode());
         assertEquals("qdrant", response.ragRetrieval().vectorStore());
         assertEquals("vector:qdrant", response.ragRetrieval().retrievalTarget());
-        assertNotNull(response.ragTiming());
-        assertNotNull(response.ragTiming().retrievalDurationMs());
-        assertNotNull(response.ragTiming().providerDurationMs());
-        assertNotNull(response.ragTiming().totalDurationMs());
 
         var savedSession = sessionStore.findById(response.sessionId()).orElseThrow();
         var assistantMessage = savedSession.messages().get(1);
         assertEquals("vector:qdrant", assistantMessage.ragRetrieval().retrievalTarget());
-        assertNotNull(assistantMessage.ragTiming());
-        assertNotNull(assistantMessage.ragTiming().retrievalDurationMs());
-        assertNotNull(assistantMessage.ragTiming().providerDurationMs());
-        assertNotNull(assistantMessage.ragTiming().totalDurationMs());
     }
 
     @Test
@@ -144,7 +136,6 @@ class RagAnswerServiceTest {
         );
 
         assertEquals(null, response.sessionId());
-        assertNotNull(response.ragTiming());
         assertTrue(sessionStore.findAll().isEmpty());
     }
 

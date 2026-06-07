@@ -11,7 +11,6 @@
  * @param {string} props.result.provider - The LLM provider used.
  * @param {string} props.result.model - The model ID used.
  * @param {Object} props.result.ragRetrieval - Retrieval metadata used by the answer.
- * @param {Object} props.result.ragTiming - Backend timing metadata for the answer.
  * @param {Array<Object>} props.result.sources - Array of source objects.
  * @param {boolean} [props.showTechnicalDetails=false] - Whether to show diagnostic metadata.
  * @returns {React.JSX.Element|null} The rendered component or null if no result.
@@ -35,18 +34,7 @@ function RagAnswerWithSources({result, showTechnicalDetails = false}) {
                     <span>provider: {labelForProvider(result.provider)}</span>
                     <span>model: {result.model || 'unknown'}</span>
                     {result.ragRetrieval ? <span>retrieval: {labelForRetrieval(result.ragRetrieval)}</span> : null}
-                    {result.ragTiming?.retrievalDurationMs != null ? (
-                        <span>retrieval duration: {formatDuration(result.ragTiming.retrievalDurationMs)}</span>
-                    ) : null}
-                    {result.ragTiming?.providerDurationMs != null ? (
-                        <span>provider duration: {formatDuration(result.ragTiming.providerDurationMs)}</span>
-                    ) : null}
-                    {result.ragTiming?.totalDurationMs != null ? (
-                        <span>backend total: {formatDuration(result.ragTiming.totalDurationMs)}</span>
-                    ) : null}
-                    {!result.ragTiming && result.elapsedMs != null ? (
-                        <span>request elapsed: {formatDuration(result.elapsedMs)}</span>
-                    ) : null}
+                    {result.elapsedMs != null ? <span>request elapsed: {formatDuration(result.elapsedMs)}</span> : null}
                 </div>
             ) : null}
             <div className="rag-answer-card__body">
