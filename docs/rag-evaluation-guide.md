@@ -7,15 +7,10 @@ Current scope:
 - separate `RAG` workspace in the frontend
 - fixed local corpus from [`docs/`](./)
 - in-memory lexical retrieval through `InMemoryLexicalRagRetrievalStore`
-- in-memory vector retrieval through Ollama embeddings
-- optional Qdrant vector retrieval when Qdrant is available and indexed
-- request-scoped retrieval selection in the UI
-- side-by-side retrieval comparison for available targets
 - provider-generated answer with cited source chunks
 
 This is intentionally a small, isolated RAG slice. It does not yet include
-uploads, report-corpus ingestion, automatic routing through the main chat/tool
-flow, or MCP retrieval.
+uploads, vector-backed retrieval, or routing through the main chat/tool flow.
 
 Evaluation-only files such as this guide and the retrieval evaluation template
 are excluded from the indexed corpus by default. This keeps manual test prompts
@@ -44,14 +39,12 @@ To use it:
 1. start the app with `./start.sh` or `./restart.sh`
 2. open the frontend
 3. switch from `Chat` to `RAG`
-4. confirm the status card shows the docs corpus, backend defaults, and selected retrieval target readiness
-5. use the `Retrieval` selector to choose `Lexical`, `Vector - In Memory`, or `Vector - Qdrant` when available
+4. confirm the status card shows the docs corpus, retrieval mode, and retrieval store
 
 If the workspace is disabled or vector mode does not index, run `./status.sh`
 and follow [rag-troubleshooting.md](./rag-troubleshooting.md).
 
-If needed, use `Rebuild Index` before testing. Rebuild applies to the currently
-selected retrieval target.
+If needed, use `Rebuild index` before testing.
 
 If you change `RAG_EXCLUDED_SOURCE_PATHS`, rebuild the index before comparing
 retrieval results.
@@ -71,51 +64,40 @@ the repository docs and ADRs, not from general model knowledge alone.
 Use [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
 when you want to record a repeatable lexical vs vector comparison.
 
-## Recommended Retrieval Comparison
+## Manual Lexical Vs Vector Comparison
 
-Use this pass when you want to compare lexical, in-memory vector, and Qdrant
-retrieval with the same corpus and prompt.
+Use this short pass when you want to compare the dependency-free lexical
+baseline against local vector retrieval with the same corpus and prompts.
 
-Normal UI workflow:
+Start with lexical retrieval:
 
-1. start the app with `./restart.sh`
-2. open the `RAG` workspace
-3. make sure the available retrieval targets look correct
-4. type one of these prompts:
+```bash
+RAG_RETRIEVAL_MODE=lexical ./restart.sh
+```
 
-   - `How are sessions persisted?`
-   - `Where does conversation history live?`
-   - `What should I check when vector RAG is not working?`
+Run these prompts in the `RAG` workspace:
 
-5. click `Compare Retrieval Targets`
-6. compare the answer, cited chunks, and source scores across the cards
+1. `How are sessions persisted?`
+2. `Where does conversation history live?`
+3. `What should I check when vector RAG is not working?`
 
-Compare:
+Then switch to vector retrieval:
+
+```bash
+RAG_RETRIEVAL_MODE=vector ./restart.sh
+```
+
+Run the same prompts again and compare:
 
 - whether the answer is more directly useful
 - whether the cited chunks are closer to the question
 - whether vector mode finds relevant chunks when the wording differs from the docs
 - whether lexical mode remains good enough for exact terminology questions
-- whether Qdrant behaves like the in-memory vector store after the same index rebuild
 
 Record the results in a local copy of
 [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
 Those observations should drive the next engineering task, such as chunking,
-scoring, answer grounding, or retrieval target readiness.
-
-Comparison results are not saved as normal RAG conversation turns. Use
-`Ask Docs Corpus` when you want a single selected-target answer saved in the
-RAG session history.
-
-Advanced backend-default workflow:
-
-```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
-```
-
-Use backend defaults when you specifically want startup scripts and `status.sh`
-to treat Qdrant as the active configured vector store. For normal evaluation,
-prefer the UI selector and comparison button.
+scoring, answer grounding, or UI comparison support.
 
 ## What To Evaluate
 
@@ -184,9 +166,9 @@ Tradeoff:
 - vector search is usually better for semantic matching, but needs embeddings and often a vector database or vector index
 
 For this lab, lexical search is valuable because it is a clean baseline. The
-backend can also run experimental local vector retrieval and Qdrant-backed
-vector retrieval. Use the RAG UI retrieval selector or `Compare Retrieval
-Targets` button to compare them directly against the same corpus.
+backend can also run experimental local vector retrieval when started with
+`RAG_RETRIEVAL_MODE=vector`, so lexical and vector retrieval can be compared
+directly against the same corpus.
 
 ## Retrieval Modes
 
@@ -202,20 +184,14 @@ Experimental mode:
 - backed by Ollama embeddings and an in-memory vector store
 - useful when questions and docs use different wording but similar meaning
 
-Optional vector database mode:
-
-- `vector` with `qdrant`
-- backed by Ollama embeddings and a local Qdrant collection
-- useful for evaluating a realistic vector database path while keeping the same
-  fixed docs corpus
-
 The intended shape is comparison, not replacement. Lexical retrieval should
 remain available as a lab baseline and fallback even when vector-backed
 retrieval is enabled locally.
 
-The UI now exposes request-scoped retrieval target selection. Saved answers show
-which retrieval target produced them, and comparison runs show available targets
-side by side without persisting those runs as session turns.
+The UI should expose a retrieval-mode selector only after at least two real
+retrieval implementations are mature enough for normal UI switching. Until then,
+start vector mode through backend configuration and use the status card to
+confirm the active mode and store.
 
 For the phase-2 vector retrieval direction, including Qdrant as the first
 external vector database candidate, see
