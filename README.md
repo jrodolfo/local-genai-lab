@@ -107,6 +107,7 @@ local-genai-lab/
 ├── stop.sh
 ├── restart.sh
 ├── status.sh
+├── build.sh
 ├── Makefile
 ├── ops/
 │   ├── lib/
@@ -210,6 +211,17 @@ Backend URLs:
 uses `./stop.sh --all`, so it also clears processes occupying the configured
 backend and frontend ports before starting the app again.
 
+If you want to build generated artifacts before restarting, run:
+
+```bash
+./build.sh
+./restart.sh
+```
+
+`./build.sh` builds the backend package, frontend production build, and MCP
+server build without starting or stopping the app. Use `./build.sh --skip-tests`
+for a faster local build when you have already run tests.
+
 ## Verification Commands
 
 Use these commands depending on what you need to verify:
@@ -217,12 +229,14 @@ Use these commands depending on what you need to verify:
 ```bash
 make test
 make verify
+make build
 ./status.sh
 make check-app
 ```
 
 - `make test`: normal local pre-commit suite for operational helpers, backend tests, and frontend tests
 - `make verify`: broader project verification aligned with CI coverage, including frontend build, MCP tests/build, and MCP tool script lint/tests
+- `make build`: build backend, frontend, and MCP artifacts without changing the running app
 - `./status.sh`: read-only runtime readiness check for local processes, health URLs, RAG mode, and Ollama readiness
 - `make check-app`: live-stack smoke check after the app is running
 

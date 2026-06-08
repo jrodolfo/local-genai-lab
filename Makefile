@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status check-app test verify test-ops test-backend test-frontend build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app test verify test-ops test-backend test-frontend build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -9,6 +9,7 @@ help:
 		'  make stop          Stop background backend and frontend processes' \
 		'  make restart       Restart backend and frontend' \
 		'  make status        Show process, URL, and log status' \
+		'  make build         Build backend, frontend, and MCP artifacts' \
 		'  make check-app     Run the local stack smoke check' \
 		'  make test          Run ops, backend, and frontend tests' \
 		'  make verify        Run broader project verification' \
@@ -32,6 +33,9 @@ restart:
 status:
 	@./status.sh
 
+build:
+	@./build.sh
+
 check-app:
 	@./ops/check-app.sh
 
@@ -42,6 +46,7 @@ verify: test build-frontend test-mcp build-mcp test-scripts
 test-ops:
 	@bash ./ops/tests/test-start.sh
 	@bash ./ops/tests/test-start-backend-helper.sh
+	@bash ./ops/tests/test-build.sh
 	@bash ./ops/tests/test-status.sh
 	@bash ./ops/tests/test-stop.sh
 

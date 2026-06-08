@@ -9,11 +9,14 @@ Use the repository root for the public lifecycle commands:
 ./stop.sh
 ./restart.sh
 ./status.sh
+./build.sh
 ```
 
 `./stop.sh` stops PID-file-managed processes by default. Use `./stop.sh --all`
 to also stop processes currently listening on the configured backend/frontend
 ports. `./restart.sh` uses that broader stop behavior before starting the app.
+`./build.sh` builds backend, frontend, and MCP artifacts without starting
+or stopping the app.
 
 or:
 
@@ -22,6 +25,7 @@ make start
 make stop
 make restart
 make status
+make build
 make check-app
 make test-ops
 ```
