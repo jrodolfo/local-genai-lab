@@ -5,6 +5,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.config.AppStorageProperties;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
+import net.jrodolfo.llm.dto.RagTimingMetadata;
 import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.PendingToolCall;
@@ -278,6 +280,32 @@ class SessionControllerTest {
                         .string(org.hamcrest.Matchers.containsString("provider: bedrock")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
                         .string("Content-Disposition", "attachment; filename=\"session-1.md\""));
+    }
+
+    @Test
+    void exportRagSessionMarkdownIncludesTechnicalDetails() throws Exception {
+        saveRagSession("rag-session", "How are sessions persisted?", Instant.parse("2026-04-10T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions/rag-session/export").queryParam("format", "markdown"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .contentType("text/markdown"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag retrieval mode: lexical")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag retrieval target: lexical")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag retrieval store: in-memory")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag vector store: in-memory")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag top k: 4")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag retrieval duration: <1 ms")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag provider duration: 3254 ms")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("- rag backend total: 3255 ms")));
     }
 
     @Test
@@ -640,6 +668,16 @@ class SessionControllerTest {
                                         "Sessions are stored as local JSON files so they can be reopened, exported, and imported.",
                                         0.91
                                 )),
+                                new RagRetrievalMetadata(
+                                        "lexical",
+                                        "in-memory",
+                                        "in-memory",
+                                        "lexical",
+                                        4,
+                                        null,
+                                        null
+                                ),
+                                new RagTimingMetadata(0L, 3254L, 3255L),
                                 timestamp.plusSeconds(30)
                         )
                 ),

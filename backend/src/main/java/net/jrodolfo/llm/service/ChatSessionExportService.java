@@ -173,13 +173,13 @@ public class ChatSessionExportService {
             return;
         }
         if (ragTiming.retrievalDurationMs() != null) {
-            markdown.append("- rag retrieval duration: ").append(ragTiming.retrievalDurationMs()).append(" ms\n");
+            markdown.append("- rag retrieval duration: ").append(formatDurationMs(ragTiming.retrievalDurationMs())).append("\n");
         }
         if (ragTiming.providerDurationMs() != null) {
-            markdown.append("- rag provider duration: ").append(ragTiming.providerDurationMs()).append(" ms\n");
+            markdown.append("- rag provider duration: ").append(formatDurationMs(ragTiming.providerDurationMs())).append("\n");
         }
         if (ragTiming.totalDurationMs() != null) {
-            markdown.append("- rag backend total: ").append(ragTiming.totalDurationMs()).append(" ms\n");
+            markdown.append("- rag backend total: ").append(formatDurationMs(ragTiming.totalDurationMs())).append("\n");
         }
     }
 
@@ -213,6 +213,22 @@ public class ChatSessionExportService {
      */
     private String formatInstant(Instant instant) {
         return instant == null ? "unknown" : instant.toString();
+    }
+
+    /**
+     * Formats a millisecond duration for Markdown export.
+     *
+     * @param durationMs duration in milliseconds
+     * @return formatted duration
+     */
+    private String formatDurationMs(Long durationMs) {
+        if (durationMs == null) {
+            return "unknown";
+        }
+        if (durationMs == 0L) {
+            return "<1 ms";
+        }
+        return durationMs + " ms";
     }
 
     /**
