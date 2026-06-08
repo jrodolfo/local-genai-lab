@@ -111,7 +111,7 @@ public class ModelController {
     @ExceptionHandler(InvalidProviderException.class)
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleInvalidProviderException(InvalidProviderException ex) {
-        log.warn("Invalid provider requested", ex);
+        log.debug("Invalid provider requested: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
     }
 }
