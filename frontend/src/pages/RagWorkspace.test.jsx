@@ -131,7 +131,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Lexical')).toBeInTheDocument();
         expect(screen.getByText('Store')).toBeInTheDocument();
         expect(screen.getByText('In memory')).toBeInTheDocument();
-        expect(screen.getByText(/Default zero-dependency lexical baseline/i)).toBeInTheDocument();
+        expect(screen.getByText(/Lexical mode uses keyword search over the local docs/i)).toBeInTheDocument();
         const questionInput = screen.getByPlaceholderText(/Ask a question about the project docs/i);
         await user.type(questionInput, 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
@@ -226,8 +226,8 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('In memory vector')).toBeInTheDocument();
         expect(screen.getByText('Embedding')).toBeInTheDocument();
         expect(screen.getByText('Ollama / nomic-embed-text')).toBeInTheDocument();
-        expect(screen.getByText(/Experimental local vector retrieval/i)).toBeInTheDocument();
-        expect(screen.getByText(/Change RAG_RETRIEVAL_MODE and restart/i)).toBeInTheDocument();
+        expect(screen.getByText(/Vector mode uses semantic search over the local docs/i)).toBeInTheDocument();
+        expect(screen.getByText(/uses embeddings to find related content/i)).toBeInTheDocument();
     });
 
     it('shows qdrant readiness when qdrant vector store is reachable', async () => {

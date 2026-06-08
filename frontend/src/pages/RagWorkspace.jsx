@@ -590,9 +590,9 @@ function formatEmbeddingStatus(status) {
 
 function retrievalModeHint(status) {
     if (isVectorRetrieval(status)) {
-        return 'Experimental local vector retrieval. Change RAG_RETRIEVAL_MODE and restart to switch modes.';
+        return 'Vector mode uses semantic search over the local docs. This mode uses embeddings to find related content even when the wording is different.';
     }
-    return 'Default zero-dependency lexical baseline. Change RAG_RETRIEVAL_MODE=vector and restart to try vector retrieval.';
+    return 'Lexical mode uses keyword search over the local docs. It is the simplest mode and works without embeddings or a vector database.';
 }
 
 function qdrantStatusMessage(status) {
