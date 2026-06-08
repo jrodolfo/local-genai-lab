@@ -14,6 +14,7 @@ import net.jrodolfo.llm.service.ChatSessionImportService;
 import net.jrodolfo.llm.service.ChatSessionNotFoundException;
 import net.jrodolfo.llm.service.ChatSessionService;
 import net.jrodolfo.llm.service.InvalidSessionIdException;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -137,7 +138,7 @@ public class SessionController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("Content-Disposition", "attachment; filename=\"" + session.sessionId() + ".json\"")
-                .body(session);
+                .body(new ByteArrayResource(chatSessionExportService.toJson(session)));
     }
 
     /**

@@ -1,18 +1,54 @@
 package net.jrodolfo.llm.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.List;
 
 /**
- * Service for exporting chat sessions to different formats, such as Markdown.
+ * Service for exporting chat sessions to readable download formats.
  */
 @Service
 public class ChatSessionExportService {
+
+    private final ObjectMapper objectMapper;
+
+    public ChatSessionExportService() {
+        this(new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS));
+    }
+
+    @Autowired
+    public ChatSessionExportService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
+
+    /**
+     * Converts a chat session detail response to pretty-printed JSON bytes.
+     *
+     * @param session the chat session details
+     * @return the session exported as formatted JSON
+     */
+    public byte[] toJson(ChatSessionDetailResponse session) {
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(exportSession(session))
+                    .getBytes(StandardCharsets.UTF_8);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to export chat session as JSON.", exception);
+        }
+    }
 
     /**
      * Converts a chat session detail response to a Markdown string.
@@ -21,25 +57,26 @@ public class ChatSessionExportService {
      * @return the session exported as Markdown
      */
     public String toMarkdown(ChatSessionDetailResponse session) {
+        ChatSessionDetailResponse exportSession = exportSession(session);
         StringBuilder markdown = new StringBuilder();
-        markdown.append("# ").append(valueOrFallback(session.title(), "Untitled session")).append("\n\n");
+        markdown.append("# ").append(valueOrFallback(exportSession.title(), "Untitled session")).append("\n\n");
 
-        if (hasText(session.summary())) {
+        if (hasText(exportSession.summary())) {
             markdown.append("## summary\n\n");
-            markdown.append(session.summary()).append("\n\n");
+            markdown.append(exportSession.summary()).append("\n\n");
         }
 
         markdown.append("## session metadata\n\n");
-        markdown.append("- session id: ").append(session.sessionId()).append("\n");
-        markdown.append("- mode: ").append(valueOrFallback(session.mode(), "chat")).append("\n");
-        markdown.append("- model: ").append(valueOrFallback(session.model(), "unknown")).append("\n");
-        markdown.append("- created at: ").append(formatInstant(session.createdAt())).append("\n");
-        markdown.append("- updated at: ").append(formatInstant(session.updatedAt())).append("\n\n");
+        markdown.append("- session id: ").append(exportSession.sessionId()).append("\n");
+        markdown.append("- mode: ").append(valueOrFallback(exportSession.mode(), "chat")).append("\n");
+        markdown.append("- model: ").append(valueOrFallback(exportSession.model(), "unknown")).append("\n");
+        markdown.append("- created at: ").append(formatInstant(exportSession.createdAt())).append("\n");
+        markdown.append("- updated at: ").append(formatInstant(exportSession.updatedAt())).append("\n\n");
 
-        appendPendingTool(markdown, session.pendingTool());
+        appendPendingTool(markdown, exportSession.pendingTool());
 
         markdown.append("## conversation\n\n");
-        for (ChatSessionMessageResponse message : session.messages()) {
+        for (ChatSessionMessageResponse message : exportSession.messages()) {
             markdown.append("### ").append(valueOrFallback(message.role(), "unknown")).append("\n\n");
             markdown.append("- timestamp: ").append(formatInstant(message.timestamp())).append("\n");
 
@@ -62,6 +99,50 @@ public class ChatSessionExportService {
         }
 
         return markdown.toString().trim() + "\n";
+    }
+
+    private ChatSessionDetailResponse exportSession(ChatSessionDetailResponse session) {
+        return new ChatSessionDetailResponse(
+                session.sessionId(),
+                session.title(),
+                exportSummary(session),
+                session.mode(),
+                session.model(),
+                session.createdAt(),
+                session.updatedAt(),
+                session.messages(),
+                session.pendingTool()
+        );
+    }
+
+    private String exportSummary(ChatSessionDetailResponse session) {
+        if (!isTruncated(session.summary())) {
+            return session.summary();
+        }
+
+        return latestAssistantContent(session.messages())
+                .stream()
+                .findFirst()
+                .orElse(session.summary());
+    }
+
+    private List<String> latestAssistantContent(List<ChatSessionMessageResponse> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return List.of();
+        }
+
+        for (int index = messages.size() - 1; index >= 0; index--) {
+            ChatSessionMessageResponse message = messages.get(index);
+            if ("assistant".equals(message.role()) && hasText(message.content())) {
+                return List.of(normalizeWhitespace(message.content()));
+            }
+        }
+
+        return List.of();
+    }
+
+    private boolean isTruncated(String value) {
+        return hasText(value) && value.endsWith("…");
     }
 
     /**
@@ -240,6 +321,10 @@ public class ChatSessionExportService {
      */
     private String valueOrFallback(String value, String fallback) {
         return hasText(value) ? value : fallback;
+    }
+
+    private String normalizeWhitespace(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ");
     }
 
     /**

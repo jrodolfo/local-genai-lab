@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
+import org.springframework.http.converter.ResourceHttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.web.MockMultipartFile;
@@ -59,9 +60,10 @@ class SessionControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new SessionController(sessionService, exportService, importService))
                 .setMessageConverters(
-                        new MappingJackson2HttpMessageConverter(objectMapper),
+                        new ResourceHttpMessageConverter(),
+                        new ByteArrayHttpMessageConverter(),
                         new StringHttpMessageConverter(),
-                        new ByteArrayHttpMessageConverter()
+                        new MappingJackson2HttpMessageConverter(objectMapper)
                 )
                 .build();
     }
@@ -239,6 +241,8 @@ class SessionControllerTest {
 
         mockMvc.perform(get("/api/sessions/session-1/export"))
                 .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("\n  \"sessionId\"")))
                 .andExpect(jsonPath("$.sessionId").value("session-1"))
                 .andExpect(jsonPath("$.messages[1].metadata.provider").value("bedrock"))
                 .andExpect(jsonPath("$.messages[1].tool.name").value("aws_region_audit"))
@@ -246,6 +250,21 @@ class SessionControllerTest {
                 .andExpect(jsonPath("$.pendingTool").doesNotExist())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
                         .string("Content-Disposition", "attachment; filename=\"session-1.json\""));
+    }
+
+    @Test
+    void exportSessionJsonExpandsTruncatedSummaryForReadability() throws Exception {
+        String answer = """
+                According to the excerpts, provider selection works through explicit request fields and backend configuration.
+                The frontend sends the selected provider and model, the backend validates the provider, and the provider registry resolves the concrete model client.
+                This full explanation is useful in an export because the reader should not have to infer the missing words from a truncated sidebar summary.
+                """;
+        saveRagSession("rag-session", "How does provider selection work?", answer, Instant.parse("2026-04-10T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions/rag-session/export"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary").value(org.hamcrest.Matchers.containsString("the provider registry resolves the concrete model client")))
+                .andExpect(jsonPath("$.summary").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.endsWith("…"))));
     }
 
     @Test
@@ -280,6 +299,23 @@ class SessionControllerTest {
                         .string(org.hamcrest.Matchers.containsString("provider: bedrock")))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
                         .string("Content-Disposition", "attachment; filename=\"session-1.md\""));
+    }
+
+    @Test
+    void exportSessionMarkdownExpandsTruncatedSummaryForReadability() throws Exception {
+        String answer = """
+                According to the excerpts, provider selection works through explicit request fields and backend configuration.
+                The frontend sends the selected provider and model, the backend validates the provider, and the provider registry resolves the concrete model client.
+                This full explanation is useful in an export because the reader should not have to infer the missing words from a truncated sidebar summary.
+                """;
+        saveRagSession("rag-session", "How does provider selection work?", answer, Instant.parse("2026-04-10T10:00:00Z"));
+
+        mockMvc.perform(get("/api/sessions/rag-session/export").queryParam("format", "markdown"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.containsString("the provider registry resolves the concrete model client")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                        .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("mo…"))));
     }
 
     @Test
@@ -411,7 +447,7 @@ class SessionControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        String importedJson = exportedJson.replace("\"sessionId\":\"mixed-session\"", "\"sessionId\":\"mixed-session-imported\"");
+        String importedJson = replaceSessionId(exportedJson, "mixed-session", "mixed-session-imported");
         MockMultipartFile file = new MockMultipartFile("file", "mixed-session.json", "application/json", importedJson.getBytes());
 
         mockMvc.perform(multipart("/api/sessions/import").file(file))
@@ -484,7 +520,7 @@ class SessionControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        String importedJson = exportedJson.replace("\"sessionId\":\"pending-tool-session\"", "\"sessionId\":\"pending-tool-session-imported\"");
+        String importedJson = replaceSessionId(exportedJson, "pending-tool-session", "pending-tool-session-imported");
         MockMultipartFile file = new MockMultipartFile("file", "pending-tool-session.json", "application/json", importedJson.getBytes());
 
         mockMvc.perform(multipart("/api/sessions/import").file(file))
@@ -518,7 +554,7 @@ class SessionControllerTest {
                 .getResponse()
                 .getContentAsString();
 
-        String importedJson = exportedJson.replace("\"sessionId\":\"rag-session\"", "\"sessionId\":\"rag-session-imported\"");
+        String importedJson = replaceSessionId(exportedJson, "rag-session", "rag-session-imported");
         MockMultipartFile file = new MockMultipartFile("file", "rag-session.json", "application/json", importedJson.getBytes());
 
         mockMvc.perform(multipart("/api/sessions/import").file(file))
@@ -617,6 +653,13 @@ class SessionControllerTest {
         saveSession(sessionId, userMessage, timestamp, null);
     }
 
+    private String replaceSessionId(String json, String currentSessionId, String replacementSessionId) {
+        return json.replaceFirst(
+                "\"sessionId\"\\s*:\\s*\"" + java.util.regex.Pattern.quote(currentSessionId) + "\"",
+                "\"sessionId\" : \"" + replacementSessionId + "\""
+        );
+    }
+
     private void saveSession(String sessionId, String userMessage, Instant timestamp, PendingToolCall pendingToolCall) {
         saveSession(sessionId, userMessage, timestamp, pendingToolCall, "bedrock", false);
     }
@@ -659,6 +702,10 @@ class SessionControllerTest {
     }
 
     private void saveRagSession(String sessionId, String userMessage, Instant timestamp) {
+        saveRagSession(sessionId, userMessage, "Sessions are stored as local JSON files.", timestamp);
+    }
+
+    private void saveRagSession(String sessionId, String userMessage, String assistantMessage, Instant timestamp) {
         ChatSession session = new ChatSession(
                 sessionId,
                 "llama3:8b",
@@ -668,7 +715,7 @@ class SessionControllerTest {
                         new net.jrodolfo.llm.model.ChatSessionMessage("user", userMessage, null, null, null, null, timestamp),
                         new net.jrodolfo.llm.model.ChatSessionMessage(
                                 "assistant",
-                                "Sessions are stored as local JSON files.",
+                                assistantMessage,
                                 null,
                                 null,
                                 new ModelProviderMetadata("ollama", "llama3:8b", "stop", 1, 2, 3, 100L, 90L, 110L, 120L),
