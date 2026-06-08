@@ -132,6 +132,9 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Store')).toBeInTheDocument();
         expect(screen.getByText('In memory')).toBeInTheDocument();
         expect(screen.getByText(/Lexical mode uses keyword search over the local docs/i)).toBeInTheDocument();
+        expect(screen.getByText(/Rebuild Index is optional/i)).toBeInTheDocument();
+        expect(screen.getByText(/Export Markdown for reading/i)).toBeInTheDocument();
+        expect(screen.getByText(/Export JSON for import or backup/i)).toBeInTheDocument();
         const questionInput = screen.getByPlaceholderText(/Ask a question about the project docs/i);
         await user.type(questionInput, 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
@@ -168,6 +171,105 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('architecture.md')).toBeInTheDocument();
         expect(within(latestTurn).getByText('How does provider selection work?')).toBeInTheDocument();
         expect(screen.queryByRole('region', {name: /rag conversation history/i})).not.toBeInTheDocument();
+    });
+
+    it('explains lazy indexing and refreshes index status after the first successful query', async () => {
+        let statusCallCount = 0;
+        server.use(
+            http.get('/api/rag/status', () => {
+                statusCallCount += 1;
+                return HttpResponse.json({
+                    enabled: true,
+                    indexed: statusCallCount > 1,
+                    corpusRoot: '/repo/docs',
+                    documentCount: statusCallCount > 1 ? 12 : 0,
+                    chunkCount: statusCallCount > 1 ? 48 : 0,
+                    retrievalMode: 'lexical',
+                    retrievalStore: 'in-memory'
+                });
+            }),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([])),
+            http.post('/api/rag/query', () => HttpResponse.json({
+                answer: 'Sessions are stored as local JSON files.',
+                provider: 'ollama',
+                model: 'llama3:8b',
+                sessionId: 'rag-session-1',
+                sources: [],
+                metadata: {
+                    provider: 'ollama',
+                    modelId: 'llama3:8b'
+                },
+                ragRetrieval: {
+                    retrievalMode: 'lexical',
+                    retrievalStore: 'in-memory',
+                    vectorStore: 'in-memory',
+                    retrievalTarget: 'lexical',
+                    topK: 4
+                },
+                ragTiming: {
+                    retrievalDurationMs: 0,
+                    providerDurationMs: 345,
+                    totalDurationMs: 400
+                }
+            })),
+            http.get('/api/sessions/rag-session-1', () => HttpResponse.json({
+                sessionId: 'rag-session-1',
+                title: 'How are sessions persisted?',
+                summary: 'Sessions are stored as local JSON files.',
+                mode: 'rag',
+                model: 'llama3:8b',
+                createdAt: '2026-05-27T12:00:00Z',
+                updatedAt: '2026-05-27T12:00:05Z',
+                messages: [
+                    {
+                        role: 'user',
+                        content: 'How are sessions persisted?',
+                        tool: null,
+                        toolResult: null,
+                        metadata: null,
+                        ragSources: null,
+                        timestamp: '2026-05-27T12:00:00Z'
+                    },
+                    {
+                        role: 'assistant',
+                        content: 'Sessions are stored as local JSON files.',
+                        tool: null,
+                        toolResult: null,
+                        metadata: {
+                            provider: 'ollama',
+                            modelId: 'llama3:8b'
+                        },
+                        ragSources: [],
+                        timestamp: '2026-05-27T12:00:05Z'
+                    }
+                ],
+                pendingTool: null
+            }))
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+        const statusRegion = await screen.findByRole('region', {name: /rag index status/i});
+
+        expect(within(statusRegion).getByText('will index on first question')).toBeInTheDocument();
+        expect(within(statusRegion).getAllByText('not loaded yet')).toHaveLength(2);
+
+        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How are sessions persisted?');
+        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
+
+        await waitFor(() => {
+            expect(within(statusRegion).getByText('ready')).toBeInTheDocument();
+        });
+        expect(within(statusRegion).getByText('12')).toBeInTheDocument();
+        expect(within(statusRegion).getByText('48')).toBeInTheDocument();
+        expect(statusCallCount).toBeGreaterThan(1);
     });
 
     it('shows a disabled state when the backend reports RAG is off', async () => {

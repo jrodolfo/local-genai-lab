@@ -72,6 +72,11 @@ function RagWorkspace() {
         setSessions(payload);
     }
 
+    async function refreshRagStatus() {
+        const statusPayload = await getRagStatus();
+        setRagStatus(statusPayload);
+    }
+
     async function loadModelsForProvider(provider) {
         try {
             const payload = await retryAsync(() => listAvailableModels(provider), {retries: 4, delayMs: 500});
@@ -123,7 +128,8 @@ function RagWorkspace() {
             setQuestion('');
             await Promise.all([
                 openSession(payload.sessionId),
-                loadRagSessions()
+                loadRagSessions(),
+                refreshRagStatus().catch(() => null)
             ]);
         } catch (err) {
             setError(err.message || 'Failed to query the RAG workspace.');
@@ -367,6 +373,9 @@ function RagSessionSidebar({
                         onChange={onImport}
                     />
                 </div>
+                <p className="rag-session-export-help">
+                    Export Markdown for reading. Export JSON for import or backup.
+                </p>
             </div>
             <div className="rag-session-list">
                 {sessions.length === 0 ? (
@@ -413,7 +422,7 @@ function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
                     <dl>
                         <div>
                             <dt>Status</dt>
-                            <dd>{ragStatus.enabled ? (ragStatus.indexed ? 'ready' : 'not indexed') : 'disabled'}</dd>
+                            <dd>{formatIndexStatus(ragStatus)}</dd>
                         </div>
                         <div>
                             <dt>Corpus</dt>
@@ -421,11 +430,11 @@ function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
                         </div>
                         <div>
                             <dt>Documents</dt>
-                            <dd>{ragStatus.documentCount}</dd>
+                            <dd>{formatIndexCount(ragStatus, ragStatus.documentCount)}</dd>
                         </div>
                         <div>
                             <dt>Chunks</dt>
-                            <dd>{ragStatus.chunkCount}</dd>
+                            <dd>{formatIndexCount(ragStatus, ragStatus.chunkCount)}</dd>
                         </div>
                         <div>
                             <dt>Retrieval</dt>
@@ -464,6 +473,11 @@ function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
             </div>
             {!loading && ragStatus?.enabled ? (
                 <p className="rag-status-note">{retrievalModeHint(ragStatus)}</p>
+            ) : null}
+            {!loading && ragStatus?.enabled ? (
+                <p className="rag-status-note">
+                    Rebuild Index is optional. Use it after changing docs, switching retrieval settings, or troubleshooting stale results.
+                </p>
             ) : null}
             {!loading && ragStatus?.enabled && isQdrantRequired(ragStatus) ? (
                 <p className={`rag-status-note ${qdrantStatusTone(ragStatus)}`}>
@@ -586,6 +600,20 @@ function formatEmbeddingStatus(status) {
     const provider = formatRagStatusValue(status?.embeddingProvider || 'ollama');
     const model = status?.embeddingModel || 'nomic-embed-text';
     return `${provider} / ${model}`;
+}
+
+function formatIndexStatus(status) {
+    if (!status?.enabled) {
+        return 'disabled';
+    }
+    return status.indexed ? 'ready' : 'will index on first question';
+}
+
+function formatIndexCount(status, count) {
+    if (status?.enabled && !status.indexed) {
+        return 'not loaded yet';
+    }
+    return count;
 }
 
 function retrievalModeHint(status) {
