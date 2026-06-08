@@ -12,6 +12,7 @@ import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
+import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RagAnswerServiceTest {
@@ -57,13 +59,17 @@ class RagAnswerServiceTest {
                 )
         );
 
-        answerService.answer("What should I check when vector RAG is not working?", "ollama", "llama3:8b", null);
+        RagQueryResponse response = answerService.answer("What should I check when vector RAG is not working?", "ollama", "llama3:8b", null);
 
         assertTrue(provider.prompt.prompt().contains("Do not add generic caveats that contradict the excerpts."));
         assertTrue(provider.prompt.prompt().contains("Do not say there is no specific mention of something"));
         assertTrue(provider.prompt.prompt().contains("For troubleshooting questions, answer as a concise checklist"));
         assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));
         assertTrue(provider.prompt.prompt().contains("confirm ollama embedding model: present"));
+        assertNotNull(response.ragTiming());
+        assertTrue(response.ragTiming().retrievalDurationMs() >= 0);
+        assertTrue(response.ragTiming().providerDurationMs() >= 0);
+        assertTrue(response.ragTiming().totalDurationMs() >= response.ragTiming().retrievalDurationMs());
     }
 
     private static final class StubRetrievalService extends RagRetrievalService {

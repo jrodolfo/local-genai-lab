@@ -127,7 +127,10 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.model").value("llama3:8b"))
                 .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
-                .andExpect(jsonPath("$.metadata.provider").value("ollama"));
+                .andExpect(jsonPath("$.metadata.provider").value("ollama"))
+                .andExpect(jsonPath("$.ragTiming.retrievalDurationMs").isNumber())
+                .andExpect(jsonPath("$.ragTiming.providerDurationMs").isNumber())
+                .andExpect(jsonPath("$.ragTiming.totalDurationMs").isNumber());
     }
 
     @Test

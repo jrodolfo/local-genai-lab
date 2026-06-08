@@ -2,6 +2,7 @@ package net.jrodolfo.llm.model;
 
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.dto.RagTimingMetadata;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -71,8 +72,34 @@ public record ChatSession(
             List<ChatRagSourceChunk> ragSources,
             Instant timestamp
     ) {
+        return appendMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, null, timestamp);
+    }
+
+    /**
+     * Appends a new message to the session and updates the {@code updatedAt} timestamp.
+     *
+     * @param role             the role of the message sender (e.g., "user", "assistant")
+     * @param content          the text content of the message
+     * @param toolMetadata     metadata about a tool call, if any
+     * @param toolResult       the result of a tool execution, if any
+     * @param providerMetadata metadata about the model provider
+     * @param ragSources       any RAG sources associated with this message
+     * @param ragTiming        backend timing metadata for a RAG answer
+     * @param timestamp        the timestamp of the message
+     * @return a new ChatSession instance with the message appended
+     */
+    public ChatSession appendMessage(
+            String role,
+            String content,
+            ChatToolMetadata toolMetadata,
+            Map<String, Object> toolResult,
+            ModelProviderMetadata providerMetadata,
+            List<ChatRagSourceChunk> ragSources,
+            RagTimingMetadata ragTiming,
+            Instant timestamp
+    ) {
         List<ChatSessionMessage> updatedMessages = new ArrayList<>(messages);
-        updatedMessages.add(new ChatSessionMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, timestamp));
+        updatedMessages.add(new ChatSessionMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, ragTiming, timestamp));
         return new ChatSession(sessionId, model, createdAt, timestamp, updatedMessages, pendingToolCall, title, summary, mode);
     }
 

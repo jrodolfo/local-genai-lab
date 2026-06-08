@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.dto.RagTimingMetadata;
 import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
@@ -70,13 +71,15 @@ public class RagSessionService {
      * @param answer           the assistant's generated answer
      * @param providerMetadata metadata from the LLM provider
      * @param ragSources       the source chunks used to generate the answer
+     * @param ragTiming        backend timing metadata for the RAG answer
      * @return the updated and persisted {@link ChatSession}
      */
     public ChatSession finishTurn(
             ChatSession session,
             String answer,
             ModelProviderMetadata providerMetadata,
-            List<ChatRagSourceChunk> ragSources
+            List<ChatRagSourceChunk> ragSources,
+            RagTimingMetadata ragTiming
     ) {
         ChatSession updatedSession = session.appendMessage(
                 "assistant",
@@ -85,6 +88,7 @@ public class RagSessionService {
                 null,
                 providerMetadata,
                 ragSources,
+                ragTiming,
                 Instant.now()
         );
         return sessionStore.save(chatSessionMetadataService.enrich(updatedSession));

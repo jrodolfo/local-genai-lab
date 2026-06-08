@@ -54,6 +54,7 @@ public class ChatSessionExportService {
             }
 
             appendProviderMetadata(markdown, message.metadata());
+            appendRagTiming(markdown, message.ragTiming());
             appendRagSources(markdown, message.ragSources());
             markdown.append("\n");
             markdown.append(message.content() == null ? "" : message.content()).append("\n\n");
@@ -124,6 +125,27 @@ public class ChatSessionExportService {
         }
         if (metadata.uiWaitMs() != null) {
             markdown.append("- ui wait: ").append(metadata.uiWaitMs()).append(" ms\n");
+        }
+    }
+
+    /**
+     * Appends RAG backend timing metadata to the Markdown builder.
+     *
+     * @param markdown  the Markdown builder
+     * @param ragTiming the RAG timing metadata
+     */
+    private void appendRagTiming(StringBuilder markdown, net.jrodolfo.llm.dto.RagTimingMetadata ragTiming) {
+        if (ragTiming == null) {
+            return;
+        }
+        if (ragTiming.retrievalDurationMs() != null) {
+            markdown.append("- rag retrieval duration: ").append(ragTiming.retrievalDurationMs()).append(" ms\n");
+        }
+        if (ragTiming.providerDurationMs() != null) {
+            markdown.append("- rag provider duration: ").append(ragTiming.providerDurationMs()).append(" ms\n");
+        }
+        if (ragTiming.totalDurationMs() != null) {
+            markdown.append("- rag backend total: ").append(ragTiming.totalDurationMs()).append(" ms\n");
         }
     }
 
