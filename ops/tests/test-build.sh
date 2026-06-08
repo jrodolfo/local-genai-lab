@@ -48,8 +48,12 @@ test_help_prints_usage() {
   output="$(bash "${SCRIPT_PATH}" --help)"
 
   assert_contains "${output}" 'build.sh'
+  assert_contains "${output}" 'Builds local-genai-lab artifacts without starting or stopping the app.'
   assert_contains "${output}" './build.sh [--skip-tests] [--clean-frontend]'
   assert_contains "${output}" '--skip-tests'
+  assert_contains "${output}" 'By default, backend tests run during the Maven package.'
+  assert_contains "${output}" '--clean-frontend'
+  assert_contains "${output}" 'Remove frontend/dist before building the frontend.'
 }
 
 test_default_dry_run_builds_all_artifacts_with_tests() {

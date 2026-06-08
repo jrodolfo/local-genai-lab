@@ -12,6 +12,7 @@
 #
 # Options:
 #   --skip-tests       Build the backend package without running backend tests.
+#                      By default, backend tests run during the Maven package.
 #   --clean-frontend   Remove frontend/dist before building the frontend.
 #   --help             Show usage.
 #
