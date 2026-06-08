@@ -269,6 +269,10 @@ The RAG index is built automatically on the first question. You do not need to
 click `Rebuild Index` before normal first use. Use `Rebuild Index` after
 changing docs, switching retrieval settings, or troubleshooting stale results.
 
+For a plain-language explanation of RAG page terms such as `Index`, `Rebuild
+Index`, `Sources`, and `Technical Details`, see
+[docs/rag-troubleshooting.md#rag-page-mental-model](./docs/rag-troubleshooting.md#rag-page-mental-model).
+
 If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when `RAG_VECTOR_STORE=qdrant`. Common fixes and the RAG answer `Technical Details` fields are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
