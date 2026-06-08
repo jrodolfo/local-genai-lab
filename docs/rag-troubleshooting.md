@@ -24,6 +24,8 @@ them to the local docs workflow:
 - `Rebuild Index`: reloads docs and recreates the searchable copy.
 - `Lexical mode`: keyword search over the local docs.
 - `Vector mode`: semantic search over the local docs using embeddings.
+- `Retrieval` selector: chooses `Lexical`, `Vector - In Memory`, or
+  `Vector - Qdrant` for the next question without restarting the app.
 - `Qdrant`: optional external vector database used only when Qdrant vector
   retrieval is selected.
 - `Sources`: cited doc chunks that were retrieved and sent to the model for the

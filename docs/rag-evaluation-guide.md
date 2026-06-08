@@ -72,25 +72,15 @@ when you want to record a repeatable lexical vs vector comparison.
 Use this short pass when you want to compare the dependency-free lexical
 baseline against local vector retrieval with the same corpus and prompts.
 
-Start with lexical retrieval:
-
-```bash
-RAG_RETRIEVAL_MODE=lexical ./restart.sh
-```
-
-Run these prompts in the `RAG` workspace:
+Use the `Retrieval` selector in the `RAG` workspace to choose `Lexical`, then
+run these prompts:
 
 1. `How are sessions persisted?`
 2. `Where does conversation history live?`
 3. `What should I check when vector RAG is not working?`
 
-Then switch to vector retrieval:
-
-```bash
-RAG_RETRIEVAL_MODE=vector ./restart.sh
-```
-
-Run the same prompts again and compare:
+Then switch the selector to `Vector - In Memory` or `Vector - Qdrant`, run the
+same prompts again, and compare:
 
 - whether the answer is more directly useful
 - whether the cited chunks are closer to the question

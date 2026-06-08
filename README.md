@@ -260,7 +260,11 @@ For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phase
 
 The separate `RAG` workspace is enabled by default. In phase 1, it queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
 
-Lexical retrieval remains the default. For experimental local vector retrieval, start the backend with `RAG_RETRIEVAL_MODE=vector`; the backend embeds the same docs corpus with `RAG_EMBEDDING_PROVIDER=ollama` and `RAG_EMBEDDING_MODEL=nomic-embed-text` and uses an in-memory vector store.
+Lexical retrieval remains the default. The RAG question form can select
+`Lexical`, `Vector - In Memory`, or `Vector - Qdrant` per question. Vector
+retrieval embeds the same docs corpus with `RAG_EMBEDDING_PROVIDER=ollama` and
+`RAG_EMBEDDING_MODEL=nomic-embed-text`; `RAG_RETRIEVAL_MODE` and
+`RAG_VECTOR_STORE` still define the backend default target at startup.
 
 Evaluation-only RAG docs are excluded from the indexed corpus by default so
 manual test prompts do not become misleading retrieval sources.

@@ -124,7 +124,8 @@ public class RagController {
                 request.question(),
                 request.provider(),
                 request.model(),
-                request.sessionId()
+                request.sessionId(),
+                request.retrievalTarget()
         ));
     }
 

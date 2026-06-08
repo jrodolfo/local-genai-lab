@@ -34,7 +34,8 @@ describe('RagWorkspace', () => {
                 expect(body).toMatchObject({
                     question: 'How does provider selection work?',
                     provider: 'ollama',
-                    model: 'llama3:8b'
+                    model: 'llama3:8b',
+                    retrievalTarget: 'lexical'
                 });
                 return HttpResponse.json({
                     answer: 'Provider selection is handled by the provider registry.',
@@ -127,10 +128,14 @@ describe('RagWorkspace', () => {
         expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
         expect(screen.getByText('Status')).toBeInTheDocument();
         expect(screen.getByText('ready')).toBeInTheDocument();
-        expect(screen.getByText('Retrieval')).toBeInTheDocument();
-        expect(screen.getByText('Lexical')).toBeInTheDocument();
-        expect(screen.getByText('Store')).toBeInTheDocument();
-        expect(screen.getByText('In memory')).toBeInTheDocument();
+        const statusRegion = screen.getByRole('region', {name: /rag index status/i});
+        expect(within(statusRegion).getByText('Default Retrieval')).toBeInTheDocument();
+        expect(within(statusRegion).getByText('Lexical')).toBeInTheDocument();
+        expect(within(statusRegion).getByText('Default Store')).toBeInTheDocument();
+        expect(within(statusRegion).getByText('In memory')).toBeInTheDocument();
+        expect(screen.getByRole('combobox', {name: /retrieval/i})).toHaveValue('lexical');
+        expect(screen.getByRole('option', {name: 'Vector - In Memory'})).toBeInTheDocument();
+        expect(screen.getByRole('option', {name: 'Vector - Qdrant'})).toBeInTheDocument();
         expect(screen.getByText(/Lexical mode uses keyword search over the local docs/i)).toBeInTheDocument();
         expect(screen.getByText(/Rebuild Index is optional/i)).toBeInTheDocument();
         expect(screen.getByText(/Export Markdown for reading/i)).toBeInTheDocument();
@@ -270,6 +275,83 @@ describe('RagWorkspace', () => {
         expect(within(statusRegion).getByText('12')).toBeInTheDocument();
         expect(within(statusRegion).getByText('48')).toBeInTheDocument();
         expect(statusCallCount).toBeGreaterThan(1);
+    });
+
+    it('sends the selected retrieval target with a rag query', async () => {
+        let queryBody = null;
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([])),
+            http.post('/api/rag/query', async ({request}) => {
+                queryBody = await request.json();
+                return HttpResponse.json({
+                    answer: 'Provider selection is handled by the provider registry.',
+                    provider: 'ollama',
+                    model: 'llama3:8b',
+                    sessionId: 'rag-session-1',
+                    sources: [],
+                    metadata: {
+                        provider: 'ollama',
+                        modelId: 'llama3:8b'
+                    },
+                    ragRetrieval: {
+                        retrievalMode: 'vector',
+                        retrievalStore: 'in-memory-vector',
+                        vectorStore: 'in-memory',
+                        retrievalTarget: 'vector:in-memory',
+                        topK: 4,
+                        embeddingProvider: 'ollama',
+                        embeddingModel: 'nomic-embed-text'
+                    },
+                    ragTiming: {
+                        retrievalDurationMs: 0,
+                        providerDurationMs: 345,
+                        totalDurationMs: 400
+                    }
+                });
+            }),
+            http.get('/api/sessions/rag-session-1', () => HttpResponse.json({
+                sessionId: 'rag-session-1',
+                title: 'How does provider selection work?',
+                summary: 'Provider selection is handled by the provider registry.',
+                mode: 'rag',
+                model: 'llama3:8b',
+                createdAt: '2026-05-27T12:00:00Z',
+                updatedAt: '2026-05-27T12:00:05Z',
+                messages: [],
+                pendingTool: null
+            }))
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        await screen.findByRole('heading', {name: /^rag$/i});
+        await user.selectOptions(screen.getByRole('combobox', {name: /retrieval/i}), 'vector:in-memory');
+        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
+        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
+
+        await waitFor(() => {
+            expect(queryBody).toMatchObject({
+                question: 'How does provider selection work?',
+                retrievalTarget: 'vector:in-memory'
+            });
+        });
     });
 
     it('shows a disabled state when the backend reports RAG is off', async () => {

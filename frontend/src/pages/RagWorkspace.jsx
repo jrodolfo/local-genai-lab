@@ -22,6 +22,7 @@ function RagWorkspace() {
     const [availableModels, setAvailableModels] = useState([]);
     const [selectedProvider, setSelectedProvider] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
+    const [selectedRetrievalTarget, setSelectedRetrievalTarget] = useState('lexical');
     const [sessionId, setSessionId] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
@@ -58,6 +59,7 @@ function RagWorkspace() {
                 retryAsync(() => listSessions({mode: 'rag'}), {retries: 8, delayMs: 500})
             ]);
             setRagStatus(statusPayload);
+            setSelectedRetrievalTarget(defaultRetrievalTarget(statusPayload));
             hydrateProviders(modelsPayload);
             setSessions(sessionsPayload);
         } catch (err) {
@@ -117,7 +119,8 @@ function RagWorkspace() {
                 question: submittedQuestion,
                 provider: selectedProvider,
                 model: selectedModel,
-                sessionId
+                sessionId,
+                retrievalTarget: selectedRetrievalTarget
             });
             setSessionId(payload.sessionId);
             setMessages((currentMessages) => [
@@ -298,10 +301,13 @@ function RagWorkspace() {
                                 availableModels={availableModels}
                                 selectedProvider={selectedProvider}
                                 selectedModel={selectedModel}
+                                selectedRetrievalTarget={selectedRetrievalTarget}
+                                ragStatus={ragStatus}
                                 question={question}
                                 querying={querying}
                                 onProviderChange={setSelectedProvider}
                                 onModelChange={setSelectedModel}
+                                onRetrievalTargetChange={setSelectedRetrievalTarget}
                                 onQuestionChange={setQuestion}
                                 onSubmit={handleSubmit}
                             />
@@ -437,11 +443,11 @@ function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
                             <dd>{formatIndexCount(ragStatus, ragStatus.chunkCount)}</dd>
                         </div>
                         <div>
-                            <dt>Retrieval</dt>
+                            <dt>Default Retrieval</dt>
                             <dd>{formatRagStatusValue(ragStatus.retrievalMode)}</dd>
                         </div>
                         <div>
-                            <dt>Store</dt>
+                            <dt>Default Store</dt>
                             <dd>{formatRagStatusValue(ragStatus.retrievalStore || 'in-memory')}</dd>
                         </div>
                         {isVectorRetrieval(ragStatus) ? (
@@ -493,10 +499,13 @@ function RagQueryCard({
                           availableModels,
                           selectedProvider,
                           selectedModel,
+                          selectedRetrievalTarget,
+                          ragStatus,
                           question,
                           querying,
                           onProviderChange,
                           onModelChange,
+                          onRetrievalTargetChange,
                           onQuestionChange,
                           onSubmit
                       }) {
@@ -521,6 +530,17 @@ function RagQueryCard({
                         {availableModels.map((model) => (
                             <option key={model} value={model}>
                                 {model}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    Retrieval
+                    <select value={selectedRetrievalTarget}
+                            onChange={(event) => onRetrievalTargetChange(event.target.value)}>
+                        {retrievalTargetOptions(ragStatus).map((option) => (
+                            <option key={option.value} value={option.value} disabled={option.disabled}>
+                                {option.label}
                             </option>
                         ))}
                     </select>
@@ -600,6 +620,22 @@ function formatEmbeddingStatus(status) {
     const provider = formatRagStatusValue(status?.embeddingProvider || 'ollama');
     const model = status?.embeddingModel || 'nomic-embed-text';
     return `${provider} / ${model}`;
+}
+
+function defaultRetrievalTarget(status) {
+    if (String(status?.retrievalMode || '').toLowerCase() !== 'vector') {
+        return 'lexical';
+    }
+    return String(status?.vectorStore || '').toLowerCase() === 'qdrant' ? 'vector:qdrant' : 'vector:in-memory';
+}
+
+function retrievalTargetOptions(status) {
+    const qdrantUnavailable = isQdrantRequired(status) && status?.qdrantReachable === false;
+    return [
+        {value: 'lexical', label: 'Lexical'},
+        {value: 'vector:in-memory', label: 'Vector - In Memory'},
+        {value: 'vector:qdrant', label: 'Vector - Qdrant', disabled: qdrantUnavailable}
+    ];
 }
 
 function formatIndexStatus(status) {

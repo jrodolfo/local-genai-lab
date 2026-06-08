@@ -2,7 +2,7 @@ package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
-import net.jrodolfo.llm.rag.config.RagVectorStoreMode;
+import net.jrodolfo.llm.rag.config.RagRetrievalTarget;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagDocument;
 import net.jrodolfo.llm.rag.model.RagVectorIndexResult;
@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +34,7 @@ public class RagCorpusService {
     private final InMemoryVectorRagRetrievalStore vectorRetrievalStore;
     private final QdrantVectorRagIndexingStore qdrantVectorIndexingStore;
     private final AtomicReference<CorpusSnapshot> snapshotRef = new AtomicReference<>();
+    private final Set<RagRetrievalTarget> indexedTargets = EnumSet.noneOf(RagRetrievalTarget.class);
 
     /**
      * Constructs a new RagCorpusService.
@@ -89,11 +91,15 @@ public class RagCorpusService {
      * @return the current {@link CorpusSnapshot}
      */
     public synchronized CorpusSnapshot ensureIndexed() {
+        return ensureIndexed(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
+    }
+
+    public synchronized CorpusSnapshot ensureIndexed(RagRetrievalTarget target) {
         CorpusSnapshot snapshot = snapshotRef.get();
-        if (snapshot != null) {
+        if (snapshot != null && indexedTargets.contains(target)) {
             return snapshot;
         }
-        return rebuildIndex();
+        return rebuildIndex(target);
     }
 
     /**
@@ -102,6 +108,10 @@ public class RagCorpusService {
      * @return the new {@link CorpusSnapshot}
      */
     public synchronized CorpusSnapshot rebuildIndex() {
+        return rebuildIndex(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
+    }
+
+    public synchronized CorpusSnapshot rebuildIndex(RagRetrievalTarget target) {
         Path corpusRoot = ragProperties.resolvedCorpusRoot();
         List<RagDocument> documents = filterExcludedDocuments(documentLoader.loadMarkdownDocuments(corpusRoot));
         List<RagChunk> chunks = chunkingService.chunkDocuments(
@@ -109,11 +119,9 @@ public class RagCorpusService {
                 ragProperties.maxChunkSize(),
                 ragProperties.chunkOverlap()
         );
-        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
-        if (mode == RagRetrievalMode.VECTOR) {
+        if (target.retrievalMode() == RagRetrievalMode.VECTOR) {
             RagVectorIndexResult vectorIndex = vectorIndexingService.index(chunks);
-            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
-            switch (vectorStoreMode) {
+            switch (target.vectorStoreMode()) {
                 case IN_MEMORY -> vectorRetrievalStore.replaceAllEmbedded(vectorIndex.chunks());
                 case QDRANT -> {
                     if (qdrantVectorIndexingStore == null) {
@@ -127,6 +135,8 @@ public class RagCorpusService {
         }
         CorpusSnapshot snapshot = new CorpusSnapshot(corpusRoot, documents, chunks);
         snapshotRef.set(snapshot);
+        indexedTargets.clear();
+        indexedTargets.add(target);
         return snapshot;
     }
 

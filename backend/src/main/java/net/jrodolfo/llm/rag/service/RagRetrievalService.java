@@ -3,6 +3,7 @@ package net.jrodolfo.llm.rag.service;
 import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
+import net.jrodolfo.llm.rag.config.RagRetrievalTarget;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.rag.store.RagRetrievalStore;
 import org.springframework.stereotype.Service;
@@ -48,11 +49,14 @@ public class RagRetrievalService {
      * @return a list of {@link RagMatch} objects representing the most relevant chunks
      */
     public List<RagMatch> retrieve(String question) {
-        ragCorpusService.ensureIndexed();
-        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
-        return switch (mode) {
+        return retrieve(question, RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
+    }
+
+    public List<RagMatch> retrieve(String question, RagRetrievalTarget target) {
+        ragCorpusService.ensureIndexed(target);
+        return switch (target.retrievalMode()) {
             case LEXICAL -> ragRetrievalStore.search(question, ragProperties.topK());
-            case VECTOR -> ragVectorRetrievalService.retrieve(question, ragProperties.topK());
+            case VECTOR -> ragVectorRetrievalService.retrieve(question, ragProperties.topK(), target.vectorStoreMode());
         };
     }
 
@@ -62,14 +66,16 @@ public class RagRetrievalService {
      * @return retrieval metadata for the current RAG configuration
      */
     public RagRetrievalMetadata activeMetadata() {
-        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
-        String vectorStore = ragProperties.vectorStore();
-        boolean vectorMode = mode == RagRetrievalMode.VECTOR;
+        return activeMetadata(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
+    }
+
+    public RagRetrievalMetadata activeMetadata(RagRetrievalTarget target) {
+        boolean vectorMode = target.retrievalMode() == RagRetrievalMode.VECTOR;
         return new RagRetrievalMetadata(
-                mode.configValue(),
-                mode.retrievalStore(),
-                vectorStore,
-                vectorMode ? mode.configValue() + ":" + vectorStore : mode.configValue(),
+                target.retrievalMode().configValue(),
+                target.retrievalStore(),
+                target.vectorStoreMode().configValue(),
+                target.value(),
                 ragProperties.topK(),
                 vectorMode ? ragProperties.embeddingProvider() : null,
                 vectorMode ? ragProperties.embeddingModel() : null

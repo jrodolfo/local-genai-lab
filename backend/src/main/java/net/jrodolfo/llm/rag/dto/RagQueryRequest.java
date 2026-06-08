@@ -9,12 +9,14 @@ import jakarta.validation.constraints.NotBlank;
  * @param provider  The preferred LLM provider.
  * @param model     The preferred model name.
  * @param sessionId The session identifier to maintain conversation context.
+ * @param retrievalTarget Optional retrieval target for this request.
  */
 public record RagQueryRequest(
         @NotBlank(message = "question is required")
         String question,
         String provider,
         String model,
-        String sessionId
+        String sessionId,
+        String retrievalTarget
 ) {
 }

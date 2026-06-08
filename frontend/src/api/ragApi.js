@@ -56,16 +56,17 @@ export async function rebuildRagIndex() {
  * @param {string} params.provider - The LLM provider.
  * @param {string} params.model - The model ID.
  * @param {string} params.sessionId - The active session ID.
+ * @param {string} params.retrievalTarget - The selected retrieval target.
  * @returns {Promise<Object>} A promise that resolves to the RAG query response.
  * @throws {Error} If the request fails.
  */
-export async function queryRag({question, provider, model, sessionId}) {
+export async function queryRag({question, provider, model, sessionId, retrievalTarget}) {
     const response = await fetch('/api/rag/query', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({question, provider, model, sessionId})
+        body: JSON.stringify({question, provider, model, sessionId, retrievalTarget})
     });
     if (!response.ok) {
         const payload = await parseJson(response);

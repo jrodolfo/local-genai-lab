@@ -10,7 +10,10 @@ import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.dto.RagSourceChunkResponse;
+import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.config.RagRetrievalTarget;
 import net.jrodolfo.llm.rag.model.RagMatch;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +28,7 @@ public class RagAnswerService {
     private final ChatModelProviderRegistry providerRegistry;
     private final RagRetrievalService ragRetrievalService;
     private final RagSessionService ragSessionService;
+    private final RagProperties ragProperties;
 
     /**
      * Constructs a new RagAnswerService.
@@ -33,14 +37,30 @@ public class RagAnswerService {
      * @param ragRetrievalService the service used for document retrieval
      * @param ragSessionService   the service used for session management
      */
+    @Autowired
+    public RagAnswerService(
+            ChatModelProviderRegistry providerRegistry,
+            RagRetrievalService ragRetrievalService,
+            RagSessionService ragSessionService,
+            RagProperties ragProperties
+    ) {
+        this.providerRegistry = providerRegistry;
+        this.ragRetrievalService = ragRetrievalService;
+        this.ragSessionService = ragSessionService;
+        this.ragProperties = ragProperties;
+    }
+
     public RagAnswerService(
             ChatModelProviderRegistry providerRegistry,
             RagRetrievalService ragRetrievalService,
             RagSessionService ragSessionService
     ) {
-        this.providerRegistry = providerRegistry;
-        this.ragRetrievalService = ragRetrievalService;
-        this.ragSessionService = ragSessionService;
+        this(
+                providerRegistry,
+                ragRetrievalService,
+                ragSessionService,
+                new RagProperties(true, "docs", 900, 160, 4, "lexical", "ollama", "nomic-embed-text")
+        );
     }
 
     /**
@@ -54,9 +74,14 @@ public class RagAnswerService {
      * @throws IllegalStateException if no relevant source chunks are found
      */
     public RagQueryResponse answer(String question, String provider, String model, String sessionId) {
+        return answer(question, provider, model, sessionId, null);
+    }
+
+    public RagQueryResponse answer(String question, String provider, String model, String sessionId, String retrievalTarget) {
+        RagRetrievalTarget target = RagRetrievalTarget.fromRequestOrDefault(retrievalTarget, ragProperties);
         long requestStartedAt = System.nanoTime();
         long retrievalStartedAt = System.nanoTime();
-        List<RagMatch> matches = ragRetrievalService.retrieve(question);
+        List<RagMatch> matches = ragRetrievalService.retrieve(question, target);
         long retrievalDurationMs = elapsedMillis(retrievalStartedAt);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
@@ -88,7 +113,7 @@ public class RagAnswerService {
         List<ChatRagSourceChunk> persistedSources = sources.stream()
                 .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
                 .toList();
-        RagRetrievalMetadata ragRetrieval = ragRetrievalService.activeMetadata();
+        RagRetrievalMetadata ragRetrieval = ragRetrievalService.activeMetadata(target);
         RagTimingMetadata ragTiming = new RagTimingMetadata(
                 retrievalDurationMs,
                 providerDurationMs,

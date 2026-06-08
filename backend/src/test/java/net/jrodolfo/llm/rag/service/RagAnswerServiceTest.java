@@ -14,6 +14,7 @@ import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
 import net.jrodolfo.llm.provider.StreamingChatResult;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
+import net.jrodolfo.llm.rag.config.RagRetrievalTarget;
 import net.jrodolfo.llm.rag.model.RagChunk;
 import net.jrodolfo.llm.rag.model.RagMatch;
 import net.jrodolfo.llm.service.ChatSessionMetadataService;
@@ -92,7 +93,17 @@ class RagAnswerServiceTest {
         }
 
         @Override
+        public List<RagMatch> retrieve(String question, RagRetrievalTarget target) {
+            return matches;
+        }
+
+        @Override
         public RagRetrievalMetadata activeMetadata() {
+            return new RagRetrievalMetadata("lexical", "in-memory", "in-memory", "lexical", 3, null, null);
+        }
+
+        @Override
+        public RagRetrievalMetadata activeMetadata(RagRetrievalTarget target) {
             return new RagRetrievalMetadata("lexical", "in-memory", "in-memory", "lexical", 3, null, null);
         }
     }

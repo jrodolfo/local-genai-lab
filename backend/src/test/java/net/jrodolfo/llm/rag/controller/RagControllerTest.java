@@ -235,6 +235,43 @@ class RagControllerTest {
     }
 
     @Test
+    void queryCanOverrideConfiguredDefaultWithVectorInMemoryTarget() throws Exception {
+        mockMvc.perform(post("/api/rag/query")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b",
+                                  "retrievalTarget": "vector:in-memory"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.answer").value(containsString("provider registry")))
+                .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalMode").value("vector"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalStore").value("in-memory-vector"))
+                .andExpect(jsonPath("$.ragRetrieval.vectorStore").value("in-memory"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalTarget").value("vector:in-memory"))
+                .andExpect(jsonPath("$.ragRetrieval.embeddingProvider").value("ollama"))
+                .andExpect(jsonPath("$.ragRetrieval.embeddingModel").value("nomic-embed-text"));
+    }
+
+    @Test
+    void unsupportedRetrievalTargetReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/rag/query")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "retrievalTarget": "semantic"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Unsupported RAG retrieval target: semantic. Supported targets: lexical, vector:in-memory, vector:qdrant."));
+    }
+
+    @Test
     void invalidRetrievalModeReturnsBadRequest() throws Exception {
         invalidModeMockMvc.perform(post("/api/rag/index"))
                 .andExpect(status().isBadRequest())

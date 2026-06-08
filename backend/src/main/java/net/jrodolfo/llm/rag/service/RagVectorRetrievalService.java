@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.rag.config.RagProperties;
+import net.jrodolfo.llm.rag.config.RagRetrievalTarget;
 import net.jrodolfo.llm.rag.config.RagVectorStoreMode;
 import net.jrodolfo.llm.rag.embedding.EmbeddingService;
 import net.jrodolfo.llm.rag.embedding.EmbeddingVector;
@@ -60,12 +61,16 @@ public class RagVectorRetrievalService {
      * @return vector-ranked matches
      */
     public List<RagMatch> retrieve(String question, int topK) {
+        RagRetrievalTarget target = RagRetrievalTarget.fromRequestOrDefault(null, ragProperties);
+        return retrieve(question, topK, target.vectorStoreMode());
+    }
+
+    public List<RagMatch> retrieve(String question, int topK, RagVectorStoreMode vectorStoreMode) {
         if (question == null || question.isBlank() || topK <= 0) {
             return List.of();
         }
         try {
             EmbeddingVector queryEmbedding = embeddingService.embed(question);
-            RagVectorStoreMode vectorStoreMode = RagVectorStoreMode.fromConfig(ragProperties.vectorStore());
             return switch (vectorStoreMode) {
                 case IN_MEMORY -> inMemoryVectorStore.searchByVector(queryEmbedding.values(), topK);
                 case QDRANT -> {
