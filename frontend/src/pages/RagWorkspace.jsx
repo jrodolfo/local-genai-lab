@@ -543,7 +543,9 @@ function RagAnswerTurn({turn, selectedModel, ariaLabel}) {
                         answer: turn.answer.content,
                         provider: turn.answer.metadata?.provider,
                         model: turn.answer.metadata?.modelId || selectedModel,
-                        sources: turn.answer.ragSources || []
+                        sources: turn.answer.ragSources || [],
+                        ragRetrieval: turn.answer.ragRetrieval || null,
+                        ragTiming: turn.answer.ragTiming || null
                     }}
                 />
             ) : null}

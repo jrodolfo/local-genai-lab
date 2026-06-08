@@ -238,6 +238,58 @@
     gap: 0.55rem;
 }
 
+.rag-answer-card__technical {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.rag-technical-toggle {
+    align-self: start;
+    background: transparent;
+    border: 0;
+    color: #2563eb;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 800;
+    padding: 0;
+    text-align: left;
+}
+
+.rag-technical-toggle:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+.rag-technical-details {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+}
+
+.rag-technical-details div {
+    display: grid;
+    gap: 0.25rem;
+    grid-template-columns: minmax(8rem, 0.42fr) 1fr;
+}
+
+.rag-technical-details dt {
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.rag-technical-details dd {
+    color: #0f172a;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
 .rag-answer-card__sources ul {
     display: grid;
     gap: 0.65rem;

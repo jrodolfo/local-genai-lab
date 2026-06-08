@@ -52,6 +52,18 @@ describe('RagWorkspace', () => {
                     metadata: {
                         provider: 'ollama',
                         modelId: 'llama3:8b'
+                    },
+                    ragRetrieval: {
+                        retrievalMode: 'lexical',
+                        retrievalStore: 'in-memory',
+                        vectorStore: 'in-memory',
+                        retrievalTarget: 'lexical',
+                        topK: 3
+                    },
+                    ragTiming: {
+                        retrievalDurationMs: 12,
+                        providerDurationMs: 345,
+                        totalDurationMs: 400
                     }
                 });
             }),
@@ -81,6 +93,18 @@ describe('RagWorkspace', () => {
                         metadata: {
                             provider: 'ollama',
                             modelId: 'llama3:8b'
+                        },
+                        ragRetrieval: {
+                            retrievalMode: 'lexical',
+                            retrievalStore: 'in-memory',
+                            vectorStore: 'in-memory',
+                            retrievalTarget: 'lexical',
+                            topK: 3
+                        },
+                        ragTiming: {
+                            retrievalDurationMs: 12,
+                            providerDurationMs: 345,
+                            totalDurationMs: 400
                         },
                         ragSources: [
                             {
@@ -123,6 +147,22 @@ describe('RagWorkspace', () => {
         expect(latestQuestionLabel.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
         expect(questionInput).toHaveValue('');
+        expect(within(latestTurn).getByRole('button', {name: /technical details/i})).toHaveAttribute('aria-expanded', 'false');
+        expect(within(latestTurn).queryByText('Retrieval mode')).not.toBeInTheDocument();
+        await user.click(within(latestTurn).getByRole('button', {name: /technical details/i}));
+        expect(within(latestTurn).getByRole('button', {name: /technical details/i})).toHaveAttribute('aria-expanded', 'true');
+        expect(within(latestTurn).getByText('Retrieval mode')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Lexical')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Retrieval target')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('lexical')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Top K')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('3')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Retrieval duration')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('12 ms')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Provider duration')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('345 ms')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('Backend total')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('400 ms')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();

@@ -1,6 +1,7 @@
 /**
  * @fileoverview RagAnswerWithSources component for displaying a RAG query answer and its source documents.
  */
+import {useState} from 'react';
 
 /**
  * RagAnswerWithSources component.
@@ -11,12 +12,18 @@
  * @param {string} props.result.provider - The LLM provider used.
  * @param {string} props.result.model - The model ID used.
  * @param {Array<Object>} props.result.sources - Array of source objects.
+ * @param {Object|null} props.result.ragRetrieval - Retrieval metadata for the answer.
+ * @param {Object|null} props.result.ragTiming - Backend timing metadata for the answer.
  * @returns {React.JSX.Element|null} The rendered component or null if no result.
  */
 function RagAnswerWithSources({result}) {
+    const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
+
     if (!result) {
         return null;
     }
+
+    const technicalRows = buildTechnicalRows(result);
 
     return (
         <section className="rag-answer-card" aria-label="RAG answer">
@@ -29,6 +36,28 @@ function RagAnswerWithSources({result}) {
             <div className="rag-answer-card__body">
                 <p>{result.answer}</p>
             </div>
+            {technicalRows.length > 0 ? (
+                <div className="rag-answer-card__technical">
+                    <button
+                        type="button"
+                        className="rag-technical-toggle"
+                        aria-expanded={showTechnicalDetails}
+                        onClick={() => setShowTechnicalDetails((current) => !current)}
+                    >
+                        Technical Details
+                    </button>
+                    {showTechnicalDetails ? (
+                        <dl className="rag-technical-details">
+                            {technicalRows.map((row) => (
+                                <div key={row.label}>
+                                    <dt>{row.label}</dt>
+                                    <dd>{row.value}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    ) : null}
+                </div>
+            ) : null}
             <div className="rag-answer-card__sources">
                 <h3>Sources</h3>
                 <ul>
@@ -46,6 +75,47 @@ function RagAnswerWithSources({result}) {
             </div>
         </section>
     );
+}
+
+function buildTechnicalRows(result) {
+    const rows = [];
+    const retrieval = result.ragRetrieval || {};
+    const timing = result.ragTiming || {};
+
+    addRow(rows, 'Retrieval mode', formatLabel(retrieval.retrievalMode));
+    addRow(rows, 'Retrieval target', retrieval.retrievalTarget);
+    addRow(rows, 'Retrieval store', formatLabel(retrieval.retrievalStore));
+    addRow(rows, 'Vector store', formatLabel(retrieval.vectorStore));
+    addRow(rows, 'Top K', retrieval.topK);
+    addRow(rows, 'Embedding provider', formatLabel(retrieval.embeddingProvider));
+    addRow(rows, 'Embedding model', retrieval.embeddingModel);
+    addRow(rows, 'Retrieval duration', formatDuration(timing.retrievalDurationMs));
+    addRow(rows, 'Provider duration', formatDuration(timing.providerDurationMs));
+    addRow(rows, 'Backend total', formatDuration(timing.totalDurationMs));
+
+    return rows;
+}
+
+function addRow(rows, label, value) {
+    if (value === null || value === undefined || value === '') {
+        return;
+    }
+    rows.push({label, value: String(value)});
+}
+
+function formatDuration(value) {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    return `${value} ms`;
+}
+
+function formatLabel(value) {
+    if (!value) {
+        return null;
+    }
+    const normalized = String(value).replaceAll('-', ' ');
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
 /**
