@@ -1,6 +1,9 @@
 package net.jrodolfo.llm.service;
 
+import net.jrodolfo.llm.model.PendingToolCall;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -62,6 +65,60 @@ class ChatToolRouterServiceTest {
         assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
         assertTrue(decision.needsClarification());
         assertEquals(null, decision.bucket());
+    }
+
+    @Test
+    void routesGenericS3ReportRequestsAndPreservesLastMonthWindow() {
+        var decision = router.route("Give me a report from AWS S3 for the last month.");
+
+        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
+        assertTrue(decision.needsClarification());
+        assertEquals(30, decision.days());
+        assertTrue(decision.clarification().contains("local AWS CLI credentials"));
+        assertTrue(decision.clarification().contains("one bucket at a time"));
+        assertTrue(decision.clarification().contains("Please provide the bucket name"));
+        assertTrue(decision.clarification().contains("ask me: \"list my S3 buckets\""));
+        assertFalse(decision.clarification().contains("run an AWS audit"));
+    }
+
+    @Test
+    void routesS3BucketListRequestsToS3ScopedAudit() {
+        var decision = router.route("list my S3 buckets");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertTrue(decision.shouldUseTool());
+        assertEquals(List.of("s3"), decision.services());
+    }
+
+    @Test
+    void routesNaturalS3BucketDiscoveryQuestionsToS3ScopedAudit() {
+        var decision = router.route("what S3 buckets do I have?");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertEquals(List.of("s3"), decision.services());
+    }
+
+    @Test
+    void allBucketsFollowUpKeepsS3PendingStateButExplainsCurrentBoundary() {
+        var clarification = router.route("Give me a report from AWS S3 for the last month.");
+        var decision = router.resolvePending(
+                new PendingToolCall(
+                        clarification.type(),
+                        clarification.reportType(),
+                        clarification.bucket(),
+                        clarification.region(),
+                        clarification.days(),
+                        clarification.reason(),
+                        clarification.services(),
+                        List.of("bucket")
+                ),
+                "all buckets"
+        );
+
+        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, decision.type());
+        assertTrue(decision.needsClarification());
+        assertEquals(30, decision.days());
+        assertTrue(decision.clarification().contains("not implemented yet"));
     }
 
     @Test
