@@ -265,6 +265,10 @@ Lexical retrieval remains the default. For experimental local vector retrieval, 
 Evaluation-only RAG docs are excluded from the indexed corpus by default so
 manual test prompts do not become misleading retrieval sources.
 
+The RAG index is built automatically on the first question. You do not need to
+click `Rebuild Index` before normal first use. Use `Rebuild Index` after
+changing docs, switching retrieval settings, or troubleshooting stale results.
+
 If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when `RAG_VECTOR_STORE=qdrant`. Common fixes and the RAG answer `Technical Details` fields are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
@@ -306,8 +310,10 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ```
 
 Qdrant readiness and collection point count are visible in status output and
-the RAG UI. After startup, open the RAG workspace and click `Rebuild Index` to
-populate the configured Qdrant collection.
+the RAG UI. The first RAG question can build the configured index automatically.
+Use `Rebuild Index` when you want to populate the Qdrant collection before
+asking, or after changing docs, retrieval mode, embedding model, or vector
+store settings.
 
 ## Configuration Overview
 

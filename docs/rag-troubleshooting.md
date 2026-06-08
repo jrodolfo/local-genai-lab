@@ -52,6 +52,29 @@ When vector RAG is not working, check these items first:
 - run `ollama pull nomic-embed-text` if the embedding model is missing
 - click `Rebuild Index` after changing retrieval mode, embedding model, or corpus files
 
+## Index Status Looks Empty Before First Use
+
+The RAG workspace uses lazy indexing. After a fresh backend start, the UI may
+show:
+
+```text
+Status: will index on first question
+Documents: not loaded yet
+Chunks: not loaded yet
+```
+
+This does not mean the docs corpus is empty and it does not mean RAG is broken.
+The first RAG question builds the in-memory index automatically, then the UI
+refreshes status and shows the real document and chunk counts.
+
+`Rebuild Index` is optional for normal first use. Use it when:
+
+- docs under the configured corpus changed
+- retrieval mode changed
+- embedding model changed
+- vector store settings changed
+- answers look stale or troubleshooting requires a clean index
+
 ## RAG Button Is Missing Or Disabled
 
 Check whether the backend is running with RAG enabled:
@@ -115,9 +138,11 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
-After Qdrant is reachable, open the RAG workspace and click `Rebuild Index`.
-In Qdrant mode, rebuild embeds the docs corpus, recreates the configured Qdrant
-collection, and upserts the chunk vectors with citation payloads.
+After Qdrant is reachable, the first RAG question can build the configured
+Qdrant index automatically. You can also click `Rebuild Index` before asking if
+you want to prebuild the collection. In Qdrant mode, rebuild embeds the docs
+corpus, recreates the configured Qdrant collection, and upserts the chunk
+vectors with citation payloads.
 
 If status reports:
 
@@ -159,8 +184,10 @@ RAG_RETRIEVAL_MODE=vector ./restart.sh
 ## Empty Or Stale Index
 
 The RAG page shows index status, document count, chunk count, retrieval mode, and
-retrieval store. If the corpus was changed, the retrieval mode was switched, or
-the index looks empty, use `Rebuild Index` from the RAG page.
+retrieval store. A fresh backend can show `will index on first question` with
+`not loaded yet` counts before the first RAG query; that is expected lazy
+indexing. If the corpus was changed, the retrieval mode was switched, or answers
+look stale, use `Rebuild Index` from the RAG page.
 
 Rebuild is especially important after:
 

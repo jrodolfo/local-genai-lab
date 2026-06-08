@@ -44,7 +44,10 @@ To use it:
 If the workspace is disabled or vector mode does not index, run `./status.sh`
 and follow [rag-troubleshooting.md](./rag-troubleshooting.md).
 
-If needed, use `Rebuild index` before testing.
+The RAG index is built automatically on the first question. You do not need to
+use `Rebuild Index` before every prompt. Rebuild once after changing docs,
+retrieval mode, embedding model, vector store settings, or when investigating
+stale results.
 
 If you change `RAG_EXCLUDED_SOURCE_PATHS`, rebuild the index before comparing
 retrieval results.
