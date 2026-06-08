@@ -509,6 +509,11 @@ class SessionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mode").value("rag"))
                 .andExpect(jsonPath("$.messages[1].ragSources[0].sourcePath").value("sessions.md"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.retrievalMode").value("lexical"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.topK").value(4))
+                .andExpect(jsonPath("$.messages[1].ragTiming.retrievalDurationMs").value(0))
+                .andExpect(jsonPath("$.messages[1].ragTiming.totalDurationMs").value(3255))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
@@ -524,7 +529,12 @@ class SessionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mode").value("rag"))
                 .andExpect(jsonPath("$.messages[1].ragSources[0].sourcePath").value("sessions.md"))
-                .andExpect(jsonPath("$.messages[1].metadata.provider").value("ollama"));
+                .andExpect(jsonPath("$.messages[1].metadata.provider").value("ollama"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.retrievalMode").value("lexical"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.messages[1].ragRetrieval.topK").value(4))
+                .andExpect(jsonPath("$.messages[1].ragTiming.retrievalDurationMs").value(0))
+                .andExpect(jsonPath("$.messages[1].ragTiming.totalDurationMs").value(3255));
     }
 
     @Test
