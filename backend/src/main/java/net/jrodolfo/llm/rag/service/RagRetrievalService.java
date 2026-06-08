@@ -1,5 +1,6 @@
 package net.jrodolfo.llm.rag.service;
 
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
 import net.jrodolfo.llm.rag.model.RagMatch;
@@ -53,5 +54,25 @@ public class RagRetrievalService {
             case LEXICAL -> ragRetrievalStore.search(question, ragProperties.topK());
             case VECTOR -> ragVectorRetrievalService.retrieve(question, ragProperties.topK());
         };
+    }
+
+    /**
+     * Describes the active retrieval target used by {@link #retrieve(String)}.
+     *
+     * @return retrieval metadata for the current RAG configuration
+     */
+    public RagRetrievalMetadata activeMetadata() {
+        RagRetrievalMode mode = RagRetrievalMode.fromConfig(ragProperties.retrievalMode());
+        String vectorStore = ragProperties.vectorStore();
+        boolean vectorMode = mode == RagRetrievalMode.VECTOR;
+        return new RagRetrievalMetadata(
+                mode.configValue(),
+                mode.retrievalStore(),
+                vectorStore,
+                vectorMode ? mode.configValue() + ":" + vectorStore : mode.configValue(),
+                ragProperties.topK(),
+                vectorMode ? ragProperties.embeddingProvider() : null,
+                vectorMode ? ragProperties.embeddingModel() : null
+        );
     }
 }

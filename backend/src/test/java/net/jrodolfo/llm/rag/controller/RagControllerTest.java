@@ -128,6 +128,13 @@ class RagControllerTest {
                 .andExpect(jsonPath("$.sessionId").isNotEmpty())
                 .andExpect(jsonPath("$.sources[0].sourcePath").value("architecture.md"))
                 .andExpect(jsonPath("$.metadata.provider").value("ollama"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalMode").value("lexical"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalStore").value("in-memory"))
+                .andExpect(jsonPath("$.ragRetrieval.vectorStore").value("in-memory"))
+                .andExpect(jsonPath("$.ragRetrieval.retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.ragRetrieval.topK").value(3))
+                .andExpect(jsonPath("$.ragRetrieval.embeddingProvider").doesNotExist())
+                .andExpect(jsonPath("$.ragRetrieval.embeddingModel").doesNotExist())
                 .andExpect(jsonPath("$.ragTiming.retrievalDurationMs").isNumber())
                 .andExpect(jsonPath("$.ragTiming.providerDurationMs").isNumber())
                 .andExpect(jsonPath("$.ragTiming.totalDurationMs").isNumber());

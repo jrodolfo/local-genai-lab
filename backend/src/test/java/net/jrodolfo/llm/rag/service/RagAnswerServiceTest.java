@@ -8,6 +8,7 @@ import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
@@ -66,6 +67,11 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("For troubleshooting questions, answer as a concise checklist"));
         assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));
         assertTrue(provider.prompt.prompt().contains("confirm ollama embedding model: present"));
+        assertNotNull(response.ragRetrieval());
+        assertTrue(response.ragRetrieval().retrievalMode().equals("lexical"));
+        assertTrue(response.ragRetrieval().retrievalStore().equals("in-memory"));
+        assertTrue(response.ragRetrieval().retrievalTarget().equals("lexical"));
+        assertTrue(response.ragRetrieval().topK() == 3);
         assertNotNull(response.ragTiming());
         assertTrue(response.ragTiming().retrievalDurationMs() >= 0);
         assertTrue(response.ragTiming().providerDurationMs() >= 0);
@@ -83,6 +89,11 @@ class RagAnswerServiceTest {
         @Override
         public List<RagMatch> retrieve(String question) {
             return matches;
+        }
+
+        @Override
+        public RagRetrievalMetadata activeMetadata() {
+            return new RagRetrievalMetadata("lexical", "in-memory", "in-memory", "lexical", 3, null, null);
         }
     }
 

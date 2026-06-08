@@ -54,6 +54,7 @@ public class ChatSessionExportService {
             }
 
             appendProviderMetadata(markdown, message.metadata());
+            appendRagRetrieval(markdown, message.ragRetrieval());
             appendRagTiming(markdown, message.ragTiming());
             appendRagSources(markdown, message.ragSources());
             markdown.append("\n");
@@ -125,6 +126,39 @@ public class ChatSessionExportService {
         }
         if (metadata.uiWaitMs() != null) {
             markdown.append("- ui wait: ").append(metadata.uiWaitMs()).append(" ms\n");
+        }
+    }
+
+    /**
+     * Appends RAG retrieval metadata to the Markdown builder.
+     *
+     * @param markdown     the Markdown builder
+     * @param ragRetrieval the RAG retrieval metadata
+     */
+    private void appendRagRetrieval(StringBuilder markdown, net.jrodolfo.llm.dto.RagRetrievalMetadata ragRetrieval) {
+        if (ragRetrieval == null) {
+            return;
+        }
+        if (hasText(ragRetrieval.retrievalMode())) {
+            markdown.append("- rag retrieval mode: ").append(ragRetrieval.retrievalMode()).append("\n");
+        }
+        if (hasText(ragRetrieval.retrievalStore())) {
+            markdown.append("- rag retrieval store: ").append(ragRetrieval.retrievalStore()).append("\n");
+        }
+        if (hasText(ragRetrieval.vectorStore())) {
+            markdown.append("- rag vector store: ").append(ragRetrieval.vectorStore()).append("\n");
+        }
+        if (hasText(ragRetrieval.retrievalTarget())) {
+            markdown.append("- rag retrieval target: ").append(ragRetrieval.retrievalTarget()).append("\n");
+        }
+        if (ragRetrieval.topK() != null) {
+            markdown.append("- rag top k: ").append(ragRetrieval.topK()).append("\n");
+        }
+        if (hasText(ragRetrieval.embeddingProvider())) {
+            markdown.append("- rag embedding provider: ").append(ragRetrieval.embeddingProvider()).append("\n");
+        }
+        if (hasText(ragRetrieval.embeddingModel())) {
+            markdown.append("- rag embedding model: ").append(ragRetrieval.embeddingModel()).append("\n");
         }
     }
 

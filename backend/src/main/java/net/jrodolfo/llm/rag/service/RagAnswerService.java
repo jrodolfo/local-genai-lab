@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.rag.service;
 
 import net.jrodolfo.llm.dto.ChatResponse;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.dto.RagTimingMetadata;
 import net.jrodolfo.llm.model.ChatRagSourceChunk;
 import net.jrodolfo.llm.model.ChatSession;
@@ -87,6 +88,7 @@ public class RagAnswerService {
         List<ChatRagSourceChunk> persistedSources = sources.stream()
                 .map(source -> new ChatRagSourceChunk(source.sourcePath(), source.title(), source.excerpt(), source.score()))
                 .toList();
+        RagRetrievalMetadata ragRetrieval = ragRetrievalService.activeMetadata();
         RagTimingMetadata ragTiming = new RagTimingMetadata(
                 retrievalDurationMs,
                 providerDurationMs,
@@ -97,6 +99,7 @@ public class RagAnswerService {
                 response.response(),
                 response.metadata(),
                 persistedSources,
+                ragRetrieval,
                 ragTiming
         );
 
@@ -107,6 +110,7 @@ public class RagAnswerService {
                 persistedSession.sessionId(),
                 sources,
                 response.metadata(),
+                ragRetrieval,
                 ragTiming
         );
     }

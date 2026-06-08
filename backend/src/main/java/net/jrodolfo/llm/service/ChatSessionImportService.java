@@ -157,7 +157,7 @@ public class ChatSessionImportService {
 
             Instant timestamp = message.timestamp() != null ? message.timestamp() : lastTimestamp;
             lastTimestamp = timestamp;
-            normalized.add(new ChatSessionMessage(role, content, message.tool(), message.toolResult(), message.metadata(), message.ragSources(), message.ragTiming(), timestamp));
+            normalized.add(new ChatSessionMessage(role, content, message.tool(), message.toolResult(), message.metadata(), message.ragSources(), message.ragRetrieval(), message.ragTiming(), timestamp));
         }
 
         return normalized;

@@ -2,6 +2,7 @@ package net.jrodolfo.llm.model;
 
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
+import net.jrodolfo.llm.dto.RagRetrievalMetadata;
 import net.jrodolfo.llm.dto.RagTimingMetadata;
 
 import java.time.Instant;
@@ -72,7 +73,7 @@ public record ChatSession(
             List<ChatRagSourceChunk> ragSources,
             Instant timestamp
     ) {
-        return appendMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, null, timestamp);
+        return appendMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, null, null, timestamp);
     }
 
     /**
@@ -84,6 +85,7 @@ public record ChatSession(
      * @param toolResult       the result of a tool execution, if any
      * @param providerMetadata metadata about the model provider
      * @param ragSources       any RAG sources associated with this message
+     * @param ragRetrieval     retrieval target metadata for a RAG answer
      * @param ragTiming        backend timing metadata for a RAG answer
      * @param timestamp        the timestamp of the message
      * @return a new ChatSession instance with the message appended
@@ -95,11 +97,12 @@ public record ChatSession(
             Map<String, Object> toolResult,
             ModelProviderMetadata providerMetadata,
             List<ChatRagSourceChunk> ragSources,
+            RagRetrievalMetadata ragRetrieval,
             RagTimingMetadata ragTiming,
             Instant timestamp
     ) {
         List<ChatSessionMessage> updatedMessages = new ArrayList<>(messages);
-        updatedMessages.add(new ChatSessionMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, ragTiming, timestamp));
+        updatedMessages.add(new ChatSessionMessage(role, content, toolMetadata, toolResult, providerMetadata, ragSources, ragRetrieval, ragTiming, timestamp));
         return new ChatSession(sessionId, model, createdAt, timestamp, updatedMessages, pendingToolCall, title, summary, mode);
     }
 

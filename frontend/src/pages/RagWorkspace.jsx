@@ -679,6 +679,7 @@ function createRagAnswerMessage(payload, selectedProvider, selectedModel) {
             modelId: payload.metadata?.modelId || payload.model || selectedModel
         },
         ragSources: payload.sources || [],
+        ragRetrieval: payload.ragRetrieval || null,
         ragTiming: payload.ragTiming || null,
         timestamp: new Date().toISOString()
     };
