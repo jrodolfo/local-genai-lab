@@ -18,6 +18,12 @@ ports. `./restart.sh` uses that broader stop behavior before starting the app.
 `./build.sh` builds backend, frontend, and MCP artifacts without starting
 or stopping the app.
 
+`./build.sh` runs tests unless explicitly skipped, so normal output includes
+Maven and npm test/build progress. JVM/native-access warnings from Java
+dependencies may still appear during backend tests. Application/controller stack
+traces from expected negative-path tests should not be treated as normal build
+noise.
+
 or:
 
 ```bash

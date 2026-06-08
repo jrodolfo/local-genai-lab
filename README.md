@@ -222,6 +222,12 @@ If you want to build generated artifacts before restarting, run:
 server build without starting or stopping the app. Use `./build.sh --skip-tests`
 for a faster local build when you have already run tests.
 
+Expected build output includes Maven and npm progress plus any JVM/native-access
+warnings emitted by Java dependencies during tests. Application/controller stack
+traces from expected negative-path tests should not appear in normal build
+output. If they do, treat that as test-log noise to investigate rather than as
+an expected part of the build.
+
 ## Verification Commands
 
 Use these commands depending on what you need to verify:
@@ -239,6 +245,10 @@ make check-app
 - `make build`: build backend, frontend, and MCP artifacts without changing the running app
 - `./status.sh`: read-only runtime readiness check for local processes, health URLs, RAG mode, and Ollama readiness
 - `make check-app`: live-stack smoke check after the app is running
+
+Use `make test` when you only need verification. Use `make build` or
+`./build.sh` when you also want fresh generated backend, frontend, and MCP
+artifacts before restarting the local app.
 
 For the full testing matrix, see [docs/testing.md](./docs/testing.md).
 
