@@ -13,6 +13,27 @@ The status output reports whether RAG is enabled, which retrieval mode is active
 which embedding provider/model are configured, whether Ollama is reachable when
 needed, and whether the configured embedding model is installed for vector mode.
 
+## RAG Page Mental Model
+
+The `RAG` workspace has a few terms that are easier to understand if you map
+them to the local docs workflow:
+
+- `Ask Docs Corpus`: asks one question against the local docs and saves the
+  answer as a RAG session.
+- `Index`: the backend's searchable copy of the local docs corpus.
+- `Rebuild Index`: reloads docs and recreates the searchable copy.
+- `Lexical mode`: keyword search over the local docs.
+- `Vector mode`: semantic search over the local docs using embeddings.
+- `Qdrant`: optional external vector database used only when Qdrant vector
+  retrieval is selected.
+- `Sources`: cited doc chunks that were retrieved and sent to the model for the
+  answer.
+- `Technical Details`: retrieval target, top K, embedding metadata, and backend
+  timing for a saved answer.
+
+The index can be built automatically on the first question, so `Rebuild Index`
+is not required before normal first use.
+
 ## Quick Checks
 
 RAG is enabled by default:
