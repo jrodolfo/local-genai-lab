@@ -108,7 +108,8 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Store')).toBeInTheDocument();
         expect(screen.getByText('In memory')).toBeInTheDocument();
         expect(screen.getByText(/Default zero-dependency lexical baseline/i)).toBeInTheDocument();
-        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How does provider selection work?');
+        const questionInput = screen.getByPlaceholderText(/Ask a question about the project docs/i);
+        await user.type(questionInput, 'How does provider selection work?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
         const latestAnswer = await screen.findByRole('region', {name: /latest rag answer/i});
@@ -121,6 +122,7 @@ describe('RagWorkspace', () => {
         expect(within(latestAnswer).getByRole('region', {name: /latest rag turn/i})).toBe(latestTurn);
         expect(latestQuestionLabel.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
+        expect(questionInput).toHaveValue('');
         expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();

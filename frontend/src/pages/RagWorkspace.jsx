@@ -120,6 +120,7 @@ function RagWorkspace() {
                 createRagQuestionMessage(submittedQuestion),
                 createRagAnswerMessage(payload, selectedProvider, selectedModel)
             ]);
+            setQuestion('');
             await Promise.all([
                 openSession(payload.sessionId),
                 loadRagSessions()
