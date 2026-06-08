@@ -107,6 +107,9 @@ function formatDuration(value) {
     if (value === null || value === undefined) {
         return null;
     }
+    if (Number(value) === 0) {
+        return '<1 ms';
+    }
     return `${value} ms`;
 }
 

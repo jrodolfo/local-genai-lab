@@ -61,7 +61,7 @@ describe('RagWorkspace', () => {
                         topK: 3
                     },
                     ragTiming: {
-                        retrievalDurationMs: 12,
+                        retrievalDurationMs: 0,
                         providerDurationMs: 345,
                         totalDurationMs: 400
                     }
@@ -102,7 +102,7 @@ describe('RagWorkspace', () => {
                             topK: 3
                         },
                         ragTiming: {
-                            retrievalDurationMs: 12,
+                            retrievalDurationMs: 0,
                             providerDurationMs: 345,
                             totalDurationMs: 400
                         },
@@ -158,7 +158,7 @@ describe('RagWorkspace', () => {
         expect(within(latestTurn).getByText('Top K')).toBeInTheDocument();
         expect(within(latestTurn).getByText('3')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Retrieval duration')).toBeInTheDocument();
-        expect(within(latestTurn).getByText('12 ms')).toBeInTheDocument();
+        expect(within(latestTurn).getByText('<1 ms')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Provider duration')).toBeInTheDocument();
         expect(within(latestTurn).getByText('345 ms')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Backend total')).toBeInTheDocument();
