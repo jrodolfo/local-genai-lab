@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Builds embedded chunk records for future vector-backed RAG retrieval.
+ * Builds embedded chunk records for active RAG vector retrieval stores.
  *
- * <p>This service is intentionally detached from the active lexical retrieval
- * flow until a real vector store implementation exists.
+ * <p>The generated embedded chunks can populate the in-memory vector index or
+ * the configured Qdrant collection during a rebuild.
  */
 @Service
 public class RagVectorIndexingService {

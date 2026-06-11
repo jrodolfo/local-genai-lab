@@ -1,7 +1,7 @@
 package net.jrodolfo.llm.rag.embedding;
 
 /**
- * Converts text into an embedding vector for future vector-backed RAG retrieval.
+ * Converts text into embedding vectors for active RAG vector retrieval.
  */
 public interface EmbeddingService {
 

@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * Ollama-backed embedding service for future vector-backed RAG retrieval.
+ * Ollama-backed embedding service for active RAG vector retrieval.
  */
 @Service
 public class OllamaEmbeddingService implements EmbeddingService {

@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * In-memory vector retrieval store for future vector-backed RAG experiments.
+ * In-memory vector retrieval store for active local RAG vector experiments.
  *
  * <p>This store is intentionally separate from the active lexical store. It
  * receives already-embedded chunks and ranks them against a query embedding

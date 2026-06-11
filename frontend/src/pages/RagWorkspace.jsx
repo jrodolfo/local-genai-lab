@@ -97,6 +97,16 @@ function RagWorkspace() {
         }
     }
 
+    /**
+     * Hydrates provider and model selector state from the backend model payload.
+     *
+     * @param {Object} payload backend response from the model discovery endpoint
+     * @param {string[]} [payload.providers] provider ids configured in the backend
+     * @param {string[]} [payload.models] models available for the selected provider
+     * @param {string} [payload.provider] active provider selected by the backend
+     * @param {string} [payload.defaultProvider] fallback provider when no active provider is present
+     * @param {string} [payload.defaultModel] preferred model for the selected provider
+     */
     function hydrateProviders(payload) {
         const providers = Array.isArray(payload.providers) ? payload.providers : [];
         const models = Array.isArray(payload.models) ? payload.models : [];

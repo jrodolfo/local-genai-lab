@@ -14,11 +14,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Query-time vector retrieval service for future RAG vector mode.
+ * Query-time vector retrieval service for active RAG vector targets.
  *
- * <p>The service embeds the user question, then delegates vector math and
- * ranking to the in-memory vector store. It is not wired into the active
- * lexical RAG query flow yet.
+ * <p>The service embeds the user question with the configured embedding
+ * provider, then routes the query vector to either the in-memory vector store or
+ * the Qdrant-backed vector store selected for the request.
  */
 @Service
 public class RagVectorRetrievalService {
@@ -65,6 +65,14 @@ public class RagVectorRetrievalService {
         return retrieve(question, topK, target.vectorStoreMode());
     }
 
+    /**
+     * Searches the selected vector store using an embedding of the question.
+     *
+     * @param question user question
+     * @param topK maximum number of matches
+     * @param vectorStoreMode vector store selected for this retrieval request
+     * @return vector-ranked matches
+     */
     public List<RagMatch> retrieve(String question, int topK, RagVectorStoreMode vectorStoreMode) {
         if (question == null || question.isBlank() || topK <= 0) {
             return List.of();

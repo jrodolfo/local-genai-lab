@@ -14,12 +14,12 @@ import java.util.List;
  * @param maxChunkSize  The maximum size of a text chunk in characters.
  * @param chunkOverlap  The number of overlapping characters between consecutive chunks.
  * @param topK          The number of top relevant chunks to retrieve for each query.
- * @param retrievalMode     The mode of retrieval to use.
- * @param vectorStore       The configured vector store for future vector retrieval persistence.
- * @param qdrantUrl         The configured Qdrant endpoint for future vector retrieval persistence.
- * @param qdrantCollection  The configured Qdrant collection name for future vector retrieval persistence.
- * @param embeddingProvider The embedding runtime to use for future vector retrieval.
- * @param embeddingModel    The embedding model to use for future vector retrieval.
+ * @param retrievalMode     The backend default retrieval mode when a request does not choose a target.
+ * @param vectorStore       The backend default vector store when vector retrieval is selected.
+ * @param qdrantUrl         The Qdrant endpoint used when the selected vector store is Qdrant.
+ * @param qdrantCollection  The Qdrant collection used when the selected vector store is Qdrant.
+ * @param embeddingProvider The embedding runtime used by vector retrieval.
+ * @param embeddingModel    The embedding model used by vector retrieval.
  * @param excludedSourcePaths Relative corpus paths that should not be indexed.
  */
 @ConfigurationProperties(prefix = "rag")

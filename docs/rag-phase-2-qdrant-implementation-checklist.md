@@ -68,7 +68,7 @@ Acceptance criteria:
 - `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh`
   preserves the current vector behavior.
 - `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` selects the
-  future Qdrant path explicitly.
+  Qdrant path explicitly.
 
 ## Phase 2 Slice 2: Docker Compose
 
