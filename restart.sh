@@ -9,6 +9,10 @@
 # Usage:
 #   ./restart.sh
 #
+# Important Environment:
+#   Pass the same variables accepted by start.sh, for example:
+#   RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+#
 # Required Tools:
 #   - bash
 #

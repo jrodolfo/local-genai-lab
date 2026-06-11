@@ -10,6 +10,13 @@
 # Usage:
 #   ./start.sh
 #
+# Important Environment:
+#   SERVER_PORT / FRONTEND_PORT override the backend and frontend ports.
+#   BACKEND_URL / FRONTEND_URL override the health-check URLs.
+#   WAIT_TIMEOUT_SECONDS controls backend/frontend readiness wait time.
+#   RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant start Qdrant first.
+#   START_DRY_RUN=true prints startup configuration without launching processes.
+#
 # Required Tools:
 #   - bash
 #   - npm (for frontend dependencies and dev server)
@@ -106,6 +113,8 @@ start_detached_process() {
   local log_file="$1"
   shift
 
+  # Prefer Python when available because it can detach the child into a new
+  # process session while sending stdout/stderr directly to the managed log.
   if command -v python3 >/dev/null 2>&1; then
     python3 - "${log_file}" "$@" <<'PY'
 import os
@@ -138,7 +147,8 @@ PY
 : > "${BACKEND_LOG_FILE}"
 : > "${FRONTEND_LOG_FILE}"
 
-# Start Backend
+# The managed PID files track the parent backend/frontend processes started by
+# this script. stop.sh uses those files first, then optionally checks ports.
 backend_pid="$(start_detached_process "${BACKEND_LOG_FILE}" bash -c '
   set -euo pipefail
   repo_root="$1"

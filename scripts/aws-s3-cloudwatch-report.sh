@@ -10,6 +10,18 @@
 # Usage:
 #   ./scripts/aws-s3-cloudwatch-report.sh --bucket example.com [--region us-east-2] [--days 14]
 #
+# Important Environment:
+#   AWS_BIN overrides the AWS CLI executable, mainly for tests.
+#   JQ_BIN overrides jq.
+#   REPORTS_DIR overrides the output root; default is reports/s3-cloudwatch
+#   relative to the current working directory.
+#   TIMESTAMP_OVERRIDE fixes the run directory timestamp for repeatable tests.
+#
+# AWS Assumptions:
+#   Uses the caller's local AWS CLI configuration and credentials. Bucket region
+#   is detected from S3 when --region is not provided. Request metrics are only
+#   useful when the bucket has CloudWatch request metrics configured.
+#
 # Required Tools:
 #   - aws CLI (configured and authenticated)
 #   - jq (optional, for JSON formatting and summary generation)
@@ -25,6 +37,8 @@
 #
 # Exit Behavior:
 #   Exits with 0 on successful execution of the flow.
+#   Optional CloudWatch metric gaps are recorded as skipped/failed steps and
+#   included in the generated report.
 #   Exits with 1 on invalid arguments or mandatory command failures.
 #
 
@@ -89,6 +103,7 @@ EOF
 
 # init_output
 # Purpose: Initializes output directory and subdirectories, ensuring uniqueness.
+#          If the timestamped directory already exists, appends -1, -2, etc.
 init_output() {
   OUTDIR="$BASE_OUTDIR"
   RUN_SUFFIX=0
@@ -113,6 +128,7 @@ init_output() {
 
 # cleanup_empty_output_on_error
 # Purpose: Removes the output directory if it contains no non-empty files on failure.
+#          Keeps partial reports when any useful artifact was produced.
 # Exit Behavior: Returns the original exit code.
 cleanup_empty_output_on_error() {
   local exit_code=$?
@@ -333,7 +349,7 @@ record_status() {
 }
 
 # run_cmd
-# Purpose: Executes a command, captures artifacts, and records status.
+# Purpose: Executes a command, captures stdout/stderr artifacts, and records status.
 # Inputs:
 #   $1 - Step name.
 #   $2 - Scope.

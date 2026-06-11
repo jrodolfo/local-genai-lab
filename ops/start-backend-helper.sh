@@ -10,6 +10,14 @@
 # Usage:
 #   ./ops/start-backend-helper.sh
 #
+# Important Environment:
+#   APP_MODEL_PROVIDER selects ollama, bedrock, or huggingface.
+#   SERVER_PORT selects the Spring Boot port.
+#   MCP_ENABLED controls local MCP tool integration.
+#   Provider-specific variables such as OLLAMA_DEFAULT_MODEL, BEDROCK_REGION,
+#   BEDROCK_MODEL_ID, HUGGINGFACE_* are passed through to Spring Boot config.
+#   DRY_RUN=true validates and prints configuration without starting Maven.
+#
 # Required Tools:
 #   - bash
 #   - mvn (Maven)
@@ -34,6 +42,7 @@ ENV_FILE="${ENV_FILE:-${REPO_ROOT}/.env}"
 
 # load_env_defaults
 # Purpose: Loads environment variables from a .env file if they are not already set.
+#          Existing shell variables win over .env values.
 # Inputs:
 #   $1 - Path to the environment file.
 # Outputs:

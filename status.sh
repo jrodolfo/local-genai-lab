@@ -9,6 +9,12 @@
 # Usage:
 #   ./status.sh
 #
+# Important Environment:
+#   SERVER_PORT / FRONTEND_PORT select the local URLs to inspect.
+#   RAG_* values are compared with the running backend's /api/rag/status when
+#   available, so the output can show requested-vs-effective configuration.
+#   OLLAMA_BASE_URL controls the optional Ollama readiness check.
+#
 # Required Tools:
 #   - bash
 #   - curl (for health checks)
@@ -142,6 +148,9 @@ else
 fi
 
 # --- RAG and Ollama Readiness ---
+# Prefer backend-reported RAG configuration when the backend is reachable. This
+# avoids misleading output when the user runs status.sh with env vars that differ
+# from the already-running backend process.
 rag_enabled_normalized="$(normalize_bool "${RAG_ENABLED}")"
 rag_retrieval_mode_normalized="$(normalize_lower "${RAG_RETRIEVAL_MODE}")"
 rag_vector_store_normalized="$(normalize_lower "${RAG_VECTOR_STORE}")"
@@ -228,6 +237,8 @@ fi
 if [ "${effective_rag_enabled}" = 'true' ] \
   && [ "${effective_rag_retrieval_mode}" = 'vector' ] \
   && [ "${effective_rag_vector_store}" = 'qdrant' ]; then
+  # Qdrant collection status is only meaningful when the running backend is in
+  # vector + qdrant mode; lexical and in-memory vector modes do not require it.
   printf '%s\n' \
     "backend rag qdrant url: ${effective_rag_qdrant_url}" \
     "backend rag qdrant collection: ${effective_rag_qdrant_collection}"
@@ -250,6 +261,8 @@ if [ "${effective_rag_enabled}" = 'true' ] \
 fi
 
 if [ "${needs_ollama_status}" = 'true' ]; then
+  # Ollama is checked when it is the chat provider or when vector RAG needs the
+  # configured embedding model. Lexical RAG does not require embeddings.
   if command -v ollama >/dev/null 2>&1; then
     printf '%s\n' 'ollama cli: available'
     if curl -fsS "${OLLAMA_BASE_URL:-http://localhost:11434}/api/tags" >/dev/null 2>&1; then

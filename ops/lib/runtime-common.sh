@@ -6,6 +6,11 @@
 #   Provides shared utility functions and environment configuration for local
 #   runtime management (backend/frontend).
 #
+# Design Notes:
+#   Functions are intentionally POSIX-ish Bash helpers used by root scripts.
+#   load_env_defaults never overwrites variables already set in the caller's
+#   shell, so one-off commands such as SERVER_PORT=8090 ./start.sh work.
+#
 # Usage:
 #   source ops/lib/runtime-common.sh
 #
@@ -38,6 +43,7 @@ FRONTEND_LOG_FILE="${RUN_DIR}/frontend.log"
 
 # load_env_defaults
 # Purpose: Loads environment variables from a .env file if they are not already set.
+#          Existing shell variables win over .env values.
 # Inputs:
 #   $1 - Path to the environment file.
 # Outputs:
@@ -250,6 +256,8 @@ normalize_bool() {
 
 # qdrant_required_for_current_config
 # Purpose: Determines whether the current RAG configuration requires Qdrant.
+#          UI-level per-question target selection does not affect startup; only
+#          backend startup defaults decide whether Qdrant must be started here.
 # Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE.
 # Outputs: None.
 # Exit Behavior: Returns 0 if Qdrant is required, 1 otherwise.

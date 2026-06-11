@@ -10,6 +10,18 @@
 #   ./scripts/aws-region-audit-report.sh [--regions us-east-1,us-east-2] [--services sagemaker,ec2]
 #   ./scripts/aws-region-audit-report.sh [--regions us-east-1 us-east-2] [--services sagemaker ec2]
 #
+# Important Environment:
+#   AWS_BIN overrides the AWS CLI executable, mainly for tests.
+#   JQ_BIN overrides jq.
+#   REPORTS_DIR overrides the output root; default is reports/audit relative to
+#   the current working directory.
+#   TIMESTAMP_OVERRIDE fixes the run directory timestamp for repeatable tests.
+#
+# AWS Assumptions:
+#   Uses the caller's local AWS CLI configuration and credentials. The script
+#   does not ask for an account id because `aws sts get-caller-identity`
+#   discovers the active account from those credentials.
+#
 # Required Tools:
 #   - aws CLI (configured and authenticated)
 #   - jq (optional, for JSON formatting and summary generation)
@@ -24,6 +36,8 @@
 #
 # Exit Behavior:
 #   Exits with 0 on successful execution of the audit flow.
+#   Individual AWS command failures are recorded in artifacts and summary.json;
+#   the script still completes so partial audits are inspectable.
 #   Exits with 1 on invalid arguments.
 #
 
@@ -295,6 +309,7 @@ parse_args() {
 
 # init_output
 # Purpose: Initializes output directory and subdirectories, ensuring uniqueness.
+#          If the timestamped directory already exists, appends -1, -2, etc.
 init_output() {
   OUTDIR="$BASE_OUTDIR"
   RUN_SUFFIX=0
@@ -443,7 +458,8 @@ record_status() {
 }
 
 # run_audit_cmd
-# Purpose: Executes an AWS CLI command, captures artifacts, and records status.
+# Purpose: Executes an AWS CLI command, captures stdout/stderr artifacts, and
+#          records status without aborting the whole audit on command failure.
 # Inputs:
 #   $1 - Scope (global or region name).
 #   $2 - Service key.

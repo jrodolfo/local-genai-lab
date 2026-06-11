@@ -11,6 +11,10 @@
 #   ./stop.sh
 #   ./stop.sh --all
 #
+# Important Environment:
+#   SERVER_PORT / FRONTEND_PORT select which unmanaged port owners --all may stop.
+#   RUN_DIR selects where PID files are read from.
+#
 # Required Tools:
 #   - bash
 #   - kill (via terminate_pid in runtime-common.sh)
@@ -63,6 +67,8 @@ stop_unmanaged_port_owner() {
   local managed_pid="$3"
   local owner_pid
 
+  # --all exists for the common developer case where a previous run was started
+  # outside the managed PID files but still owns the configured port.
   owner_pid="$(find_port_process "${port}")"
   if [ -z "${owner_pid}" ]; then
     return 0

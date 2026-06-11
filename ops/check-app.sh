@@ -10,6 +10,11 @@
 # Usage:
 #   ./ops/check-app.sh
 #
+# Important Environment:
+#   BACKEND_URL / FRONTEND_URL / OLLAMA_URL override local endpoints.
+#   CHECK_MODELS=false skips the backend /api/models readiness check.
+#   CHECK_OLLAMA=false skips the local Ollama readiness check.
+#
 # Required Tools:
 #   - curl
 #   - grep
