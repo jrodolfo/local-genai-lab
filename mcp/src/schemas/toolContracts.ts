@@ -18,8 +18,10 @@ export const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
 );
 
 /**
- * Zod schema for the result of a process execution.
- * Captures command, arguments, output, and execution metadata.
+ * Contract for shell-script execution metadata returned by report-producing tools.
+ *
+ * `ok` lives on the outer tool result; this nested object preserves the raw
+ * process outcome so callers can inspect stdout/stderr and timeout state.
  */
 export const processRunResultSchema = z.object({
     command: z.string().min(1),
@@ -38,8 +40,10 @@ export const processRunResultSchema = z.object({
 export const reportSummarySchema = z.record(jsonValueSchema);
 
 /**
- * Zod schema representing a reference to an existing report.
- * Includes metadata and file paths for the report.
+ * Contract for a discoverable report bundle.
+ *
+ * Paths are absolute backend-visible paths. The backend uses them to preview or
+ * list generated artifacts from the Agent UI.
  */
 export const reportReferenceSchema = z.object({
     report_type: concreteReportTypeSchema,
@@ -51,7 +55,7 @@ export const reportReferenceSchema = z.object({
 }).strict();
 
 /**
- * Zod schema for the result of an AWS region audit tool execution.
+ * Public structured result for the `aws_region_audit` MCP tool.
  */
 export const awsRegionAuditResultSchema = z.object({
     ok: z.boolean(),
@@ -64,7 +68,7 @@ export const awsRegionAuditResultSchema = z.object({
 }).strict();
 
 /**
- * Zod schema for the result of an S3 CloudWatch report tool execution.
+ * Public structured result for the one-bucket `s3_cloudwatch_report` MCP tool.
  */
 export const s3CloudwatchReportResultSchema = z.object({
     ok: z.boolean(),
@@ -77,7 +81,7 @@ export const s3CloudwatchReportResultSchema = z.object({
 }).strict();
 
 /**
- * Zod schema for the result of listing recent reports.
+ * Public structured result for listing existing report bundles without running AWS commands.
  */
 export const listRecentReportsResultSchema = z.object({
     ok: z.literal(true),
@@ -87,7 +91,7 @@ export const listRecentReportsResultSchema = z.object({
 }).strict();
 
 /**
- * Zod schema for the result of reading a report summary.
+ * Public structured result for reading an existing report bundle summary and preview.
  */
 export const readReportSummaryResultSchema = z.object({
     ok: z.literal(true),

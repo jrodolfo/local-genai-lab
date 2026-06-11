@@ -3,12 +3,16 @@ import path from "node:path";
 import {config} from "../config.js";
 
 /**
- * Supported report types.
+ * Concrete report families written by the shell-based MCP tools.
  */
 export type ReportType = "audit" | "s3_cloudwatch";
 
 /**
- * Information about a report directory.
+ * Valid report bundle discovered under `scripts/reports`.
+ *
+ * A directory is considered valid only when it contains both `summary.json`
+ * and `report.txt`; incomplete script output is ignored by listing and lookup
+ * helpers.
  */
 export type ReportDirectory = {
     /** The type of report stored in the directory. */
@@ -51,7 +55,11 @@ async function hasReportBundle(runDir: string): Promise<boolean> {
 }
 
 /**
- * Lists all valid report directories for a specific report type, sorted by creation time (newest first).
+ * Lists valid report directories for a specific report type.
+ *
+ * Only complete report bundles are returned, sorted by directory modification
+ * time with newest first. This protects the backend from surfacing partially
+ * written or manually created report folders.
  *
  * @param reportType - The type of reports to list.
  * @returns A promise that resolves to an array of {@link ReportDirectory} objects.
@@ -86,7 +94,12 @@ export async function listReportDirectories(reportType: ReportType): Promise<Rep
 }
 
 /**
- * Detects a newly created run directory by comparing directories before and after an operation.
+ * Detects the report directory produced by a script invocation.
+ *
+ * The handler snapshots report directories before running a script and calls
+ * this function afterward. If no new directory is found, the newest valid run
+ * is returned as a fallback because some scripts may rewrite an existing run
+ * directory in local development.
  *
  * @param reportType - The type of report to look for.
  * @param beforeRunDirectories - A set of directory paths that existed before the operation.
@@ -102,8 +115,10 @@ export async function detectNewRunDirectory(
 }
 
 /**
- * Validates that a requested path is within the allowed reports directory.
- * Prevents directory traversal attacks.
+ * Validates that a requested path stays inside the configured reports root.
+ *
+ * This is used before reading report summaries/previews so MCP callers cannot
+ * use report-related tools as arbitrary filesystem readers.
  *
  * @param requestedPath - The path to validate.
  * @returns The resolved absolute path if it's within the allowed directory.

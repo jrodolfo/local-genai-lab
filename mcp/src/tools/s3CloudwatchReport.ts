@@ -26,9 +26,11 @@ function buildArgs(input: S3CloudwatchReportInput): string[] {
 }
 
 /**
- * Handler for the S3 CloudWatch report tool.
- * Executes the `aws-s3-cloudwatch-report.sh` script to analyze S3 bucket usage via CloudWatch metrics.
- * Involved AWS services: S3, CloudWatch.
+ * Handles the `s3_cloudwatch_report` MCP tool.
+ *
+ * The tool intentionally runs one bucket at a time. It delegates collection to
+ * the repository shell script, then returns the generated report bundle in the
+ * same structured shape used by the backend artifact and prompt flows.
  *
  * @param input - Configuration for the report, including bucket name, region, and time range.
  * @returns A promise that resolves to the report result, including execution metadata, report summary, and preview.

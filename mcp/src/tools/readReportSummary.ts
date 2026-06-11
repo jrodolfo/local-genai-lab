@@ -3,8 +3,11 @@ import {readReportSummaryResultSchema} from "../schemas/toolContracts.js";
 import {parseReportBundle} from "../services/reportParser.js";
 
 /**
- * Handler for the read report summary tool.
- * Reads and parses the summary and preview of an existing report from a specified directory.
+ * Handles the `read_report_summary` MCP tool.
+ *
+ * The handler reads an existing report bundle after validating that the
+ * requested directory is inside the reports root. It is used when the user asks
+ * to inspect a previously generated report without rerunning AWS commands.
  *
  * @param input - Configuration including the report directory and number of preview lines.
  * @returns A promise that resolves to the report summary and preview data.

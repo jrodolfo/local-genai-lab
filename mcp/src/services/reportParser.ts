@@ -16,8 +16,11 @@ function resolveRepoRelativePath(value: string): string {
 }
 
 /**
- * Recursively scans a summary object and converts relative paths to absolute paths.
- * Paths are identified by keys ending in '_path' or equal to 'output_directory'.
+ * Recursively converts report summary paths into absolute repository paths.
+ *
+ * Shell scripts often write paths relative to `scripts/`. The backend and UI
+ * artifact endpoints need absolute paths, so summary keys ending in `_path` and
+ * `output_directory` are normalized while preserving all other JSON values.
  *
  * @param value - The JSON value to process.
  * @returns The processed JSON value with absolute paths.
@@ -68,7 +71,11 @@ export function inferReportType(runDir: string): ReportType {
 }
 
 /**
- * Parses a report bundle from a directory, including its summary and a preview of the full report.
+ * Parses the standard report bundle produced by local MCP shell scripts.
+ *
+ * A valid bundle contains `summary.json` and `report.txt`. The summary remains
+ * structured JSON for backend prompt enrichment, while `report_preview` gives
+ * the UI and model a bounded human-readable excerpt.
  *
  * @param runDir - The directory containing the report bundle.
  * @param previewLines - The number of lines to include in the report preview (default: 20).

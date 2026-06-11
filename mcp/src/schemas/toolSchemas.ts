@@ -1,7 +1,7 @@
 import {z} from "zod";
 
 /**
- * List of AWS services supported by the audit tool.
+ * AWS service filters accepted by the audit shell script and MCP schema.
  */
 export const AUDIT_SERVICES = [
     "sts",
@@ -21,15 +21,18 @@ export const AUDIT_SERVICES = [
 ] as const;
 
 /**
- * Supported report types.
- * - audit: AWS region audit reports.
- * - s3_cloudwatch: S3 CloudWatch usage reports.
- * - all: Both types of reports.
+ * Report type filters used by report-listing tools.
+ *
+ * - `audit`: AWS region audit reports.
+ * - `s3_cloudwatch`: one-bucket S3 CloudWatch reports.
+ * - `all`: both report families.
  */
 export const REPORT_TYPES = ["audit", "s3_cloudwatch", "all"] as const;
 
 /**
- * Zod schema for the AWS region audit tool input parameters.
+ * Input contract for `aws_region_audit`.
+ *
+ * Empty input means the shell script uses its default region/service coverage.
  */
 export const awsRegionAuditSchema = z.object({
     regions: z.array(z.string().trim().min(1)).max(20).optional(),
@@ -37,7 +40,10 @@ export const awsRegionAuditSchema = z.object({
 });
 
 /**
- * Zod schema for the S3 CloudWatch report tool input parameters.
+ * Input contract for `s3_cloudwatch_report`.
+ *
+ * `bucket` is required because the current script intentionally reports one
+ * bucket at a time.
  */
 export const s3CloudwatchReportSchema = z.object({
     bucket: z.string().trim().min(3),
@@ -46,7 +52,7 @@ export const s3CloudwatchReportSchema = z.object({
 });
 
 /**
- * Zod schema for listing recent reports tool input parameters.
+ * Input contract for `list_recent_reports`.
  */
 export const listRecentReportsSchema = z.object({
     report_type: z.enum(REPORT_TYPES).default("all"),
@@ -54,7 +60,10 @@ export const listRecentReportsSchema = z.object({
 });
 
 /**
- * Zod schema for reading a report summary tool input parameters.
+ * Input contract for `read_report_summary`.
+ *
+ * `run_dir` must resolve under `scripts/reports`; that containment check is
+ * performed by the report parser before file reads.
  */
 export const readReportSummarySchema = z.object({
     run_dir: z.string().trim().min(1),

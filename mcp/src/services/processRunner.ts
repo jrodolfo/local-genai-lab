@@ -1,7 +1,11 @@
 import {spawn} from "node:child_process";
 
 /**
- * Result of a process execution.
+ * Captured result of one shell-script execution.
+ *
+ * The MCP tools return this object as part of structured tool output so the
+ * backend and UI can distinguish successful script completion, script failure,
+ * timeout, stdout, and stderr without parsing text logs.
  */
 export type ProcessRunResult = {
     /** The command that was executed. */
@@ -39,7 +43,11 @@ type RunCommandOptions = {
 };
 
 /**
- * Executes a command as a child process and returns its output and execution metadata.
+ * Executes a repository script as a child process.
+ *
+ * The runner does not use a shell, which keeps argument passing explicit and
+ * avoids accidental shell expansion. Output is trimmed before it is returned to
+ * the MCP tool result payload.
  *
  * @param options - Configuration for the command execution.
  * @returns A promise that resolves to a {@link ProcessRunResult} containing the output and status.

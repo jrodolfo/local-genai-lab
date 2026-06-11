@@ -4,7 +4,10 @@ import {listRecentReportsResultSchema} from "../schemas/toolContracts.js";
 import {listReportDirectories, type ReportDirectory} from "../services/reportLocator.js";
 
 /**
- * Converts a {@link ReportDirectory} internal object to the standardized report reference response shape.
+ * Converts an internal report directory into the public MCP response shape.
+ *
+ * The response includes direct paths to `report.txt` and `summary.json` so the
+ * backend can offer artifact actions without re-discovering files.
  *
  * @param directory - The internal report directory object.
  * @returns An object conforming to the report reference schema.
@@ -21,8 +24,11 @@ function toResponseShape(directory: ReportDirectory) {
 }
 
 /**
- * Handler for the list recent reports tool.
- * Retrieves a list of recently generated reports of the specified type, sorted by creation date.
+ * Handles the `list_recent_reports` MCP tool.
+ *
+ * The tool reads already-generated report bundles only; it never starts AWS
+ * scripts. `report_type=all` merges audit and S3 report directories and returns
+ * the newest entries across both families.
  *
  * @param input - Configuration for listing reports, including report type and result limit.
  * @returns A promise that resolves to the list of recent reports.

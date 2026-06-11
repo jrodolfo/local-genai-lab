@@ -26,9 +26,12 @@ function buildArgs(input: AwsRegionAuditInput): string[] {
 }
 
 /**
- * Handler for the AWS region audit tool.
- * Executes the `aws-region-audit-report.sh` script to audit AWS resources across specified regions and services.
- * Involved AWS services: multiple (depending on input), commonly includes STS, S3, EC2, RDS, Lambda, etc.
+ * Handles the `aws_region_audit` MCP tool.
+ *
+ * The handler snapshots existing audit report directories, runs the repository
+ * shell script, discovers the produced report bundle, parses its summary and
+ * preview, then validates the final structured payload against the public tool
+ * contract.
  *
  * @param input - Configuration for the audit including target regions and services.
  * @returns A promise that resolves to the audit result, including execution metadata, report summary, and preview.

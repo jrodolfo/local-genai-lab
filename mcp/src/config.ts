@@ -50,8 +50,12 @@ assertDirectoryExists(auditReportsDir);
 assertDirectoryExists(s3ReportsDir);
 
 /**
- * Configuration for the MCP server.
- * Includes resolved paths to repository scripts and reports, and configurable timeouts.
+ * Runtime configuration for the local MCP server.
+ *
+ * <p>The MCP tools execute shell scripts from {@link config.scriptsDir} and
+ * discover generated report bundles under {@link config.reportsDir}. Timeout
+ * values are intentionally environment-driven so long-running local AWS audits
+ * can be tuned without changing tool code.
  */
 export const config = {
     repoRoot,
