@@ -8,7 +8,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Interface representing a provider for Large Language Model (LLM) chat capabilities.
+ * Common contract implemented by every chat model provider.
+ *
+ * <p>Provider implementations adapt a normalized backend prompt to a concrete
+ * runtime such as Ollama, Bedrock, or Hugging Face. The orchestration layer owns
+ * tools and persistence; providers own model resolution, request execution, and
+ * provider-specific metadata.
  */
 public interface ChatModelProvider {
 

@@ -16,7 +16,11 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Service for exporting chat sessions to readable download formats.
+ * Converts stored session details into download formats.
+ *
+ * <p>JSON exports are pretty-printed and importable. Markdown exports are
+ * optimized for human reading and include provider, tool, and RAG metadata when
+ * present.
  */
 @Service
 public class ChatSessionExportService {
@@ -35,10 +39,13 @@ public class ChatSessionExportService {
     }
 
     /**
-     * Converts a chat session detail response to pretty-printed JSON bytes.
+     * Converts a session detail response to pretty-printed JSON bytes.
      *
-     * @param session the chat session details
-     * @return the session exported as formatted JSON
+     * <p>If the stored summary is truncated, the export replaces it with the
+     * latest assistant message content when available.
+     *
+     * @param session session details loaded from storage
+     * @return importable formatted JSON bytes
      */
     public byte[] toJson(ChatSessionDetailResponse session) {
         try {
@@ -51,10 +58,10 @@ public class ChatSessionExportService {
     }
 
     /**
-     * Converts a chat session detail response to a Markdown string.
+     * Converts a session detail response to Markdown for reading.
      *
-     * @param session the chat session details
-     * @return the session exported as Markdown
+     * @param session session details loaded from storage
+     * @return human-readable Markdown export
      */
     public String toMarkdown(ChatSessionDetailResponse session) {
         ChatSessionDetailResponse exportSession = exportSession(session);

@@ -15,7 +15,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * Local file-based store for chat sessions.
+ * Local JSON-file store for chat and RAG sessions.
+ *
+ * <p>Each session is stored as {@code <sessionId>.json} under the configured
+ * sessions directory. Session ids are validated before path resolution so API
+ * callers cannot escape the storage directory.
  */
 @Service
 public class FileChatSessionStore {
@@ -57,10 +61,10 @@ public class FileChatSessionStore {
     }
 
     /**
-     * Saves a chat session to a file.
+     * Saves a session as pretty-printed JSON.
      *
-     * @param session the chat session to save
-     * @return the saved chat session
+     * @param session session to write
+     * @return the same session after successful persistence
      */
     public ChatSession save(ChatSession session) {
         try {

@@ -12,7 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Service for managing chat session memory, including starting and finishing turns.
+ * Persists conversation turns to the local session store.
+ *
+ * <p>The service is the write side of chat memory. It appends user messages at
+ * turn start, appends assistant messages at turn finish, and preserves pending
+ * tool state between turns when the backend needs more user input.
  */
 @Service
 public class ChatMemoryService {
@@ -35,13 +39,13 @@ public class ChatMemoryService {
     }
 
     /**
-     * Starts a new turn in a chat session.
+     * Starts a turn by loading or creating a session and appending the user message.
      *
-     * @param requestedSessionId the session ID requested by the client
-     * @param requestedModel     the model name requested by the client
-     * @param resolvedModel      the actual model ID to be used
-     * @param userMessage        the message from the user
-     * @return the updated chat session
+     * @param requestedSessionId session id from the client, or null/blank to create one
+     * @param requestedModel     model requested by the client, retained for compatibility with older callers
+     * @param resolvedModel      provider-resolved model stored on the session
+     * @param userMessage        user message to append
+     * @return in-memory session containing the new user message; not saved until the turn finishes
      */
     public ChatSession startTurn(String requestedSessionId, String requestedModel, String resolvedModel, String userMessage) {
         Instant now = Instant.now();
@@ -67,15 +71,15 @@ public class ChatMemoryService {
     }
 
     /**
-     * Finishes a turn in a chat session with full details.
+     * Finishes a turn by appending the assistant message and saving the session.
      *
-     * @param session          the current chat session
-     * @param assistantMessage the message from the assistant
-     * @param toolMetadata     metadata about the tool used, if any
-     * @param toolResult       the result of the tool invocation, if any
-     * @param providerMetadata metadata from the model provider, if any
-     * @param pendingToolCall  the pending tool call, if any
-     * @return the updated and saved chat session
+     * @param session          session returned from {@link #startTurn(String, String, String, String)}
+     * @param assistantMessage assistant text or clarification shown to the user
+     * @param toolMetadata     tool metadata stored on the assistant message, if any
+     * @param toolResult       structured tool result stored on the assistant message, if any
+     * @param providerMetadata provider metadata stored on the assistant message, if any
+     * @param pendingToolCall  pending tool state to preserve for the next user turn, if any
+     * @return enriched and saved session
      */
     public ChatSession finishTurn(
             ChatSession session,

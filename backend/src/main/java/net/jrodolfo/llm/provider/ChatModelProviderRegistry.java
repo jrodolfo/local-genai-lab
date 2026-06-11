@@ -8,7 +8,10 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Registry for managing and retrieving available {@link ChatModelProvider} instances.
+ * Resolves configured chat model providers by stable provider id.
+ *
+ * <p>The registry validates the configured default provider at startup and is
+ * the single place where blank provider requests fall back to that default.
  */
 public class ChatModelProviderRegistry {
 
@@ -33,11 +36,11 @@ public class ChatModelProviderRegistry {
     }
 
     /**
-     * Retrieves a provider by its identifier. If no identifier is provided, returns the default provider.
+     * Retrieves a provider by id, falling back to the configured default for blank input.
      *
-     * @param provider the identifier of the requested provider
-     * @return the resolved ChatModelProvider
-     * @throws net.jrodolfo.llm.service.InvalidProviderException if the provider is not supported
+     * @param provider requested provider id
+     * @return resolved provider implementation
+     * @throws InvalidProviderException if the provider is not registered
      */
     public ChatModelProvider get(String provider) {
         String resolvedProvider = provider == null || provider.isBlank() ? defaultProvider : normalizeProvider(provider);

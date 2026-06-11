@@ -29,11 +29,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Coordinates the backend chat lifecycle.
+ * Coordinates the backend lifecycle for one Agent chat turn.
  *
- * <p>This service decides whether a turn should go directly to the active model provider, request
- * more information from the user, execute an MCP-backed tool first, or return an immediate
- * fallback after tool failure.
+ * <p>The orchestrator owns the decision boundary between plain chat, pending
+ * tool clarification, MCP-backed tool execution, and provider invocation. It
+ * also ensures that every completed turn is persisted through
+ * {@link ChatMemoryService}, so controller code does not need to know whether a
+ * response came directly from a model or from a tool-assisted prompt.
  */
 @Service
 public class ChatOrchestratorService {
@@ -81,27 +83,27 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Executes a chat turn.
+     * Executes and persists a non-streaming chat turn.
      *
-     * @param message   the user message
-     * @param provider  the model provider name
-     * @param model     the model name
-     * @param sessionId the session ID
-     * @return the chat response
+     * @param message   user message for this turn
+     * @param provider  requested provider, or null/blank for the configured default
+     * @param model     requested model, or null/blank for the provider default
+     * @param sessionId existing session id, or null/blank to create a new session
+     * @return complete chat response with session id, tool metadata, and provider metadata when available
      */
     public ChatResponse chat(String message, String provider, String model, String sessionId) {
         return chat(message, provider, model, sessionId, null);
     }
 
     /**
-     * Executes a chat turn with a request ID.
+     * Executes and persists a non-streaming chat turn with request correlation.
      *
-     * @param message   the user message
-     * @param provider  the model provider name
-     * @param model     the model name
-     * @param sessionId the session ID
-     * @param requestId the request ID for logging
-     * @return the chat response
+     * @param message   user message for this turn
+     * @param provider  requested provider, or null/blank for the configured default
+     * @param model     requested model, or null/blank for the provider default
+     * @param sessionId existing session id, or null/blank to create a new session
+     * @param requestId request id used only for structured logs
+     * @return complete chat response with session id, tool metadata, and provider metadata when available
      */
     public ChatResponse chat(String message, String provider, String model, String sessionId, String requestId) {
         PreparedChat preparedChat = prepareChat(message, provider, model, sessionId, requestId);
@@ -128,16 +130,18 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Prepares a chat turn before the controller chooses normal or streaming provider execution.
+     * Prepares a turn before the caller chooses normal or streaming provider execution.
      *
-     * <p>The result is either an immediate response for clarification/failure cases or a
-     * prompt-backed continuation that can be executed later.
+     * <p>The result is either an immediate response for clarification/failure
+     * paths, or a prompt-backed continuation that the controller can pass to a
+     * provider. This split is what allows streaming responses to emit explicit
+     * backend tool phases before provider tokens begin.
      *
-     * @param message   the user message
-     * @param provider  the model provider name
-     * @param model     the model name
-     * @param sessionId the session ID
-     * @return the prepared chat object
+     * @param message   user message for this turn
+     * @param provider  requested provider, or null/blank for the configured default
+     * @param model     requested model, or null/blank for the provider default
+     * @param sessionId existing session id, or null/blank to create a new session
+     * @return prepared immediate response or provider continuation
      */
     public PreparedChat prepareChat(String message, String provider, String model, String sessionId) {
         return prepareChat(message, provider, model, sessionId, null);
@@ -158,15 +162,15 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Prepares a chat turn with full context and a tool phase listener.
+     * Prepares a chat turn with full context and tool-phase callbacks.
      *
-     * @param message           the user message
-     * @param provider          the model provider name
-     * @param model             the model name
-     * @param sessionId         the session ID
-     * @param requestId         the request ID for logging
-     * @param toolPhaseListener the listener for tool execution phases
-     * @return the prepared chat object
+     * @param message           user message for this turn
+     * @param provider          requested provider, or null/blank for the configured default
+     * @param model             requested model, or null/blank for the provider default
+     * @param sessionId         existing session id, or null/blank to create a new session
+     * @param requestId         request id used only for structured logs
+     * @param toolPhaseListener callback used by streaming transports to surface tool progress
+     * @return prepared immediate response or provider continuation
      */
     public PreparedChat prepareChat(
             String message,
@@ -293,12 +297,12 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Completes a prepared chat with the assistant's response.
+     * Persists the assistant response for a prompt-backed prepared chat.
      *
-     * @param preparedChat      the prepared chat object
-     * @param assistantResponse the assistant's response text
-     * @param providerMetadata  metadata from the model provider
-     * @return the updated and saved chat session
+     * @param preparedChat      prepared prompt continuation returned by {@link #prepareChat(String, String, String, String)}
+     * @param assistantResponse final assistant text produced by the provider
+     * @param providerMetadata  provider/model timing and token metadata, when supplied
+     * @return updated and saved session
      */
     public ChatSession completePreparedChat(
             PreparedChat preparedChat,
@@ -309,13 +313,14 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Completes a prepared chat with the assistant's response and a request ID.
+     * Persists the assistant response for a prompt-backed prepared chat with request correlation.
      *
-     * @param preparedChat      the prepared chat object
-     * @param assistantResponse the assistant's response text
-     * @param providerMetadata  metadata from the model provider
-     * @param requestId         the request ID for logging
-     * @return the updated and saved chat session
+     * @param preparedChat      prepared prompt continuation returned by {@code prepareChat}
+     * @param assistantResponse final assistant text produced by the provider
+     * @param providerMetadata  provider/model timing and token metadata, when supplied
+     * @param requestId         request id used only for structured logs
+     * @return updated and saved session
+     * @throws IllegalArgumentException when called for an immediate-response preparation
      */
     public ChatSession completePreparedChat(
             PreparedChat preparedChat,
@@ -344,14 +349,11 @@ public class ChatOrchestratorService {
     }
 
     /**
-     * Resolves the tool decision based on the current session state and the new message.
+     * Resolves whether the new user message completes a pending tool request.
      *
-     * @param session        the current chat session
-     * @param message        the user message
-     * @param provider       the model provider name
-     * @param model          the model name
-     * @param routedDecision the initial routing decision
-     * @return the resolved tool decision
+     * <p>Pending tool calls take precedence over fresh routing only when the new
+     * message supplies the missing information or still needs clarification.
+     * Otherwise the fresh routing decision wins, so users can change direction.
      */
     private ChatToolRouterService.ToolDecision resolveDecision(
             ChatSession session,

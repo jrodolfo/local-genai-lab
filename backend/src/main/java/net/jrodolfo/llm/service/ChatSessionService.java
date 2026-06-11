@@ -16,7 +16,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Service for managing chat sessions, including listing, retrieving, and deleting sessions.
+ * Read/delete facade for locally persisted chat and RAG sessions.
+ *
+ * <p>This service turns internal {@link ChatSession} files into frontend DTOs,
+ * applies sidebar filters, and hides fallback title/summary logic from
+ * controllers.
  */
 @Service
 public class ChatSessionService {
@@ -36,14 +40,14 @@ public class ChatSessionService {
     }
 
     /**
-     * Lists chat sessions based on various filters.
+     * Lists sessions for the sidebar using optional filters.
      *
-     * @param query     search query
-     * @param provider  filter by provider
-     * @param toolUsage filter by tool usage
-     * @param pending   filter by pending status
-     * @param mode      filter by mode
-     * @return a list of chat session summaries
+     * @param query     text matched against title, summary, and message content
+     * @param provider  provider metadata filter; unknown provider values are ignored
+     * @param toolUsage {@code used}, {@code unused}, or ignored for any other value
+     * @param pending   true for sessions awaiting clarification, false for sessions without pending tools
+     * @param mode      session mode such as {@code chat} or {@code rag}
+     * @return newest matching sessions first
      */
     public List<ChatSessionSummaryResponse> listSessions(String query, String provider, String toolUsage, Boolean pending, String mode) {
         return sessionStore.findAll().stream()
@@ -58,10 +62,11 @@ public class ChatSessionService {
     }
 
     /**
-     * Retrieves a detailed response for a specific chat session.
+     * Loads one session with full message details.
      *
-     * @param sessionId the session ID
-     * @return the detailed session response
+     * @param sessionId session id validated by the store
+     * @return full session details for restoration or export
+     * @throws ChatSessionNotFoundException when no local JSON session exists for the id
      */
     public ChatSessionDetailResponse getSession(String sessionId) {
         ChatSession session = sessionStore.findById(sessionId)

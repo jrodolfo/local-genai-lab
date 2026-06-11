@@ -33,7 +33,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * REST controller for managing chat sessions, including listing, retrieval, deletion, and import/export.
+ * HTTP API for locally persisted conversation sessions.
+ *
+ * <p>Sessions are stored as JSON files by the service layer and can represent
+ * normal chat or RAG conversations. The controller keeps the transport contract
+ * small: list/filter sessions, load one session, delete one session, and move
+ * sessions across machines through JSON or Markdown export/import.
  */
 @RestController
 @RequestMapping("/api/sessions")
@@ -62,15 +67,15 @@ public class SessionController {
     }
 
     /**
-     * Lists stored chat sessions with optional filters.
+     * Lists stored sessions with optional frontend filters.
      *
-     * @param query     text query for title, summary, or content.
-     * @param q         legacy alias for query.
-     * @param provider  optional provider filter.
-     * @param toolUsage optional tool usage filter.
-     * @param pending   optional pending clarification filter.
-     * @param mode      optional session mode filter.
-     * @return a list of session summaries.
+     * @param query     text query for title, summary, or message content
+     * @param q         legacy alias for {@code query}
+     * @param provider  optional provider filter, applied to provider metadata stored on messages
+     * @param toolUsage optional tool usage filter: {@code used} or {@code unused}
+     * @param pending   optional pending clarification filter
+     * @param mode      optional session mode filter such as {@code chat} or {@code rag}
+     * @return newest sessions first, reduced to summary DTOs
      */
     @GetMapping
     @Operation(summary = "List stored chat sessions", description = "Returns local session summaries filtered by optional text query, provider, tool usage, and pending clarification state.")
@@ -114,11 +119,14 @@ public class SessionController {
     }
 
     /**
-     * Exports a specific chat session in JSON or Markdown format.
+     * Exports one session for backup, sharing, or reading.
      *
-     * @param sessionId the unique identifier of the session.
-     * @param format    the export format (json, markdown, or md).
-     * @return a ResponseEntity containing the exported session data.
+     * <p>JSON exports preserve the importable session structure. Markdown
+     * exports are intended for human review and are not used for import.
+     *
+     * @param sessionId the unique identifier of the session
+     * @param format    the export format: {@code json}, {@code markdown}, or {@code md}
+     * @return the exported session with a download filename
      */
     @GetMapping("/{sessionId}/export")
     @Operation(summary = "Export a stored chat session", description = "Returns the saved session as JSON by default, or Markdown when `format=markdown` or `format=md`.")
@@ -159,10 +167,10 @@ public class SessionController {
     }
 
     /**
-     * Imports a chat session from a JSON file.
+     * Imports a JSON session export without overwriting an existing session.
      *
-     * @param file the multipart file containing the session JSON.
-     * @return the import result.
+     * @param file multipart file containing a JSON export produced by this app
+     * @return import result including the stored session id and whether it changed
      */
     @PostMapping("/import")
     @Operation(summary = "Import a JSON chat session export", description = "Accepts a JSON session export produced by this app. If the imported `sessionId` already exists locally, a new identifier is generated instead of overwriting.")

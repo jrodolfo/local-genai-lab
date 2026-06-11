@@ -17,8 +17,9 @@ import java.util.Map;
 /**
  * Application-facing wrapper around the local MCP client.
  *
- * <p>This service isolates HTTP/controller code from MCP tool names and argument shapes while
- * keeping the repository's MCP usage small and explicit.
+ * <p>This service is the backend boundary for MCP integration. Controllers and
+ * orchestration code call typed Java methods, while this class translates those
+ * calls into stable MCP tool names and snake_case argument payloads.
  */
 @Service
 public class McpService {
@@ -60,10 +61,10 @@ public class McpService {
     }
 
     /**
-     * Runs an AWS region audit tool.
+     * Runs the AWS region audit MCP tool.
      *
-     * @param request the audit request
-     * @return the tool invocation response
+     * @param request typed audit request from the REST or orchestration layer
+     * @return tool invocation response with the raw structured MCP result
      */
     public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
@@ -77,10 +78,10 @@ public class McpService {
     }
 
     /**
-     * Runs an S3 CloudWatch report tool.
+     * Runs the one-bucket S3 CloudWatch report MCP tool.
      *
-     * @param request the report request
-     * @return the tool invocation response
+     * @param request typed report request; bucket is required and trimmed before invocation
+     * @return tool invocation response with the raw structured MCP result
      */
     public McpToolInvocationResponse runS3CloudwatchReport(S3CloudwatchReportToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
@@ -95,10 +96,10 @@ public class McpService {
     }
 
     /**
-     * Lists recent reports using the MCP tool.
+     * Lists recent generated report directories through the MCP tool.
      *
-     * @param request the list reports request
-     * @return the tool invocation response
+     * @param request report type and result limit
+     * @return tool invocation response with recent report metadata
      */
     public McpToolInvocationResponse listRecentReports(ListReportsRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();
@@ -108,10 +109,10 @@ public class McpService {
     }
 
     /**
-     * Reads a report summary using the MCP tool.
+     * Reads a summary and preview for an existing generated report.
      *
-     * @param request the read report summary request
-     * @return the tool invocation response
+     * @param request report run directory and preview line count
+     * @return tool invocation response with parsed report summary and preview
      */
     public McpToolInvocationResponse readReportSummary(ReadReportSummaryToolRequest request) {
         Map<String, Object> arguments = new LinkedHashMap<>();

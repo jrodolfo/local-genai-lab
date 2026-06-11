@@ -12,7 +12,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Service for routing user messages to appropriate tools based on intent and extraction.
+ * Rule-based router for local MCP tool intents.
+ *
+ * <p>The router deliberately uses explicit heuristics instead of asking the LLM
+ * to decide tool usage. This keeps tool routing deterministic for local AWS
+ * audit/report workflows and makes pending clarification flows testable.
  */
 @Service
 public class ChatToolRouterService {
@@ -53,10 +57,10 @@ public class ChatToolRouterService {
     );
 
     /**
-     * Routes a message to a tool decision.
+     * Routes a new user message to a tool decision.
      *
-     * @param message the user message
-     * @return the tool decision
+     * @param message raw user message
+     * @return a tool decision, clarification request, or {@link ToolDecision#none()}
      */
     public ToolDecision route(String message) {
         String normalized = message.toLowerCase(Locale.ROOT).trim();
@@ -85,11 +89,11 @@ public class ChatToolRouterService {
     }
 
     /**
-     * Resolves a pending tool call based on a new user message.
+     * Attempts to complete a previously pending tool call with the user's follow-up.
      *
-     * @param pendingToolCall the pending tool call
-     * @param message         the new user message
-     * @return the tool decision
+     * @param pendingToolCall pending tool state persisted on the session
+     * @param message         new user message that may contain missing fields
+     * @return a runnable tool decision, a continued clarification, or {@link ToolDecision#none()}
      */
     public ToolDecision resolvePending(PendingToolCall pendingToolCall, String message) {
         String normalized = message.toLowerCase(Locale.ROOT).trim();

@@ -18,7 +18,11 @@ import java.util.Locale;
 import java.util.UUID;
 
 /**
- * Service for importing chat sessions from JSON files.
+ * Imports JSON session exports back into local storage.
+ *
+ * <p>The importer validates roles, preserves supported metadata, normalizes
+ * missing timestamps, and generates a new id when the imported id is invalid or
+ * already exists locally.
  */
 @Service
 public class ChatSessionImportService {
@@ -49,10 +53,11 @@ public class ChatSessionImportService {
     }
 
     /**
-     * Imports a chat session from a multipart file.
+     * Imports a session from a JSON multipart upload.
      *
-     * @param file the multipart file containing the session JSON
-     * @return the import response details
+     * @param file JSON export produced by this app
+     * @return import summary including the stored id and message count
+     * @throws ChatSessionImportException when the file is empty, invalid, or unsupported
      */
     public ChatSessionImportResponse importSession(MultipartFile file) {
         if (file == null || file.isEmpty()) {
