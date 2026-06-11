@@ -1,14 +1,14 @@
 package net.jrodolfo.llm.rag.dto;
 
 /**
- * Response DTO containing the current status of the RAG (Retrieval-Augmented Generation) system.
+ * Response DTO containing current RAG readiness and default retrieval configuration.
  *
  * @param enabled       Whether the RAG system is currently enabled.
- * @param indexed       Whether the corpus has been indexed and is ready for retrieval.
+ * @param indexed       Whether the backend default retrieval target has been indexed.
  * @param corpusRoot    The root directory of the document corpus.
  * @param documentCount The number of documents loaded in the system.
  * @param chunkCount    The total number of text chunks generated from the documents.
- * @param retrievalMode     The current retrieval mode being used.
+ * @param retrievalMode     The backend default retrieval mode.
  * @param retrievalStore    The storage/index style used by the retrieval implementation.
  * @param vectorStore       The configured vector store for vector retrieval.
  * @param qdrantUrl         The configured Qdrant endpoint.

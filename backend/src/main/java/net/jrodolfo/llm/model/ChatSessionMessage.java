@@ -10,9 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a single message within a chat session.
+ * Persisted message within a local session.
  *
- * @param role       the role of the message sender (e.g., "user", "assistant", "system")
+ * <p>Assistant messages may carry provider metadata, MCP tool metadata/results,
+ * or RAG source metadata. User messages normally contain only role, content,
+ * and timestamp.
+ *
+ * @param role       the role of the message sender, usually {@code user} or {@code assistant}
  * @param content    the text content of the message
  * @param tool       metadata about a tool call, if the message involves one
  * @param toolResult the result of a tool execution, if applicable

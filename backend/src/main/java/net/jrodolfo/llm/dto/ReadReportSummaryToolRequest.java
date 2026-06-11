@@ -5,7 +5,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Request payload for the tool that reads report summaries.
+ * Request payload for the tool that reads existing report summaries.
+ *
+ * @param runDir       backend-visible report run directory under the reports root
+ * @param previewLines number of report.txt lines to include in the preview
  */
 public record ReadReportSummaryToolRequest(
         @NotBlank String runDir,

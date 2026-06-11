@@ -5,9 +5,13 @@ import net.jrodolfo.llm.service.ChatToolRouterService;
 import java.util.List;
 
 /**
- * Represents a tool call pending user confirmation or more information.
+ * Persisted tool clarification state.
  *
- * @param type          the type of decision required (e.g., confirm, clarify)
+ * <p>The router stores this record on a session when it needs a follow-up user
+ * message before running a tool. The next turn can complete the missing fields
+ * without requiring the user to repeat the original request.
+ *
+ * @param type          the router decision type waiting for completion
  * @param reportType    the type of report being generated
  * @param bucket        the S3 bucket involved
  * @param region        the AWS region involved

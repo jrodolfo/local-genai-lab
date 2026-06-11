@@ -9,7 +9,7 @@ import java.time.Instant;
  */
 @Schema(description = "Read-only preview of a text or JSON artifact under the reports directory.")
 public record ArtifactPreviewResponse(
-        @Schema(description = "Artifact path relative to the configured reports directory.")
+        @Schema(description = "Absolute backend-visible artifact path used by preview/copy actions.")
         String path,
         @Schema(description = "Artifact path relative to the configured reports directory.")
         String relativePath,

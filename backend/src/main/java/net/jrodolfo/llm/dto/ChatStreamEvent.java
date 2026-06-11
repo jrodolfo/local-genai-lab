@@ -6,10 +6,15 @@ import java.util.Map;
 
 /**
  * Structured SSE event payload emitted by the streaming chat endpoint.
+ *
+ * <p>The frontend receives all events under the SSE event name {@code chat}
+ * and switches on {@code type}. Tool phase events are additive progress
+ * notifications; {@code delta} carries visible tokens; {@code complete}
+ * carries final metadata.
  */
 @Schema(description = "Structured SSE event payload emitted by the streaming chat endpoint.")
 public record ChatStreamEvent(
-        @Schema(description = "Event type.", example = "start")
+        @Schema(description = "Event type, such as start, delta, complete, or a tool-phase event.", example = "start")
         String type,
         @Schema(description = "Active session identifier for the stream.", example = "session-123")
         String sessionId,

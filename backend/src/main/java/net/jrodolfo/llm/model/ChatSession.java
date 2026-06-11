@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a chat session containing a sequence of messages and session metadata.
+ * Persisted local conversation session.
+ *
+ * <p>Instances are serialized as JSON under the configured sessions directory.
+ * The same shape stores Agent chat sessions and RAG sessions; {@code mode}
+ * distinguishes those flows for filtering and UI restoration.
  *
  * @param sessionId       the unique identifier for the session
  * @param model           the identifier of the LLM model being used
@@ -21,7 +25,7 @@ import java.util.Map;
  * @param pendingToolCall any tool call that is waiting for user confirmation or more information
  * @param title           the title of the chat session
  * @param summary         a summary of the chat conversation
- * @param mode            the operational mode of the session (e.g., "chat")
+ * @param mode            the operational mode of the session, usually {@code chat} or {@code rag}
  */
 public record ChatSession(
         String sessionId,
@@ -35,7 +39,7 @@ public record ChatSession(
         String mode
 ) {
     /**
-     * Compact constructor to ensure messages list is mutable and mode has a default value.
+     * Compact constructor to normalize collection mutability and legacy session mode.
      */
     public ChatSession {
         messages = messages == null ? new ArrayList<>() : new ArrayList<>(messages);
@@ -128,7 +132,7 @@ public record ChatSession(
     }
 
     /**
-     * Factory method to create a new ChatSession with default mode.
+     * Factory method to create a new Agent chat session.
      *
      * @param sessionId the unique identifier for the session
      * @param model     the model identifier
