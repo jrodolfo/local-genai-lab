@@ -17,15 +17,15 @@ async function parseJson(response) {
 }
 
 /**
- * Fetches a list of chat sessions, with optional filtering.
+ * Fetches persisted session summaries, with optional filtering.
  *
  * @param {Object} [filters] - Filter parameters.
  * @param {string} [filters.query=''] - Search query for session titles or messages.
  * @param {string} [filters.provider=''] - Filter by LLM provider.
- * @param {string} [filters.toolUsage=''] - Filter by tool usage.
- * @param {boolean} [filters.pending=false] - If true, only show pending sessions.
+ * @param {string} [filters.toolUsage=''] - Filter by tool usage (`used` or `unused`).
+ * @param {boolean} [filters.pending=false] - If true, only show sessions waiting for tool input.
  * @param {string} [filters.mode=''] - Filter by session mode (e.g., 'chat', 'rag').
- * @returns {Promise<Object[]>} A promise that resolves to an array of session objects.
+ * @returns {Promise<Object[]>} Session summary objects sorted by newest update first.
  * @throws {Error} If the request fails.
  */
 export async function listSessions({query = '', provider = '', toolUsage = '', pending = false, mode = ''} = {}) {
@@ -105,6 +105,9 @@ function filenameFromDisposition(contentDisposition, sessionId, format) {
 /**
  * Exports a session in the specified format.
  *
+ * JSON exports are meant for backup/import. Markdown exports are meant for
+ * human reading and are not imported by the app.
+ *
  * @param {string} sessionId - The ID of the session to export.
  * @param {string} [format='json'] - The export format ('json' or 'markdown').
  * @returns {Promise<{blob: Blob, filename: string}>} A promise that resolves to the exported data.
@@ -124,10 +127,10 @@ export async function exportSession(sessionId, format = 'json') {
 }
 
 /**
- * Imports a session from a file.
+ * Imports a JSON session export.
  *
- * @param {File} file - The session file to import.
- * @returns {Promise<Object>} A promise that resolves to the imported session object.
+ * @param {File} file - JSON session export produced by this app.
+ * @returns {Promise<Object>} Import result including the stored session ID.
  * @throws {Error} If the request fails.
  */
 export async function importSession(file) {

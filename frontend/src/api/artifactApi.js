@@ -21,8 +21,8 @@ async function parseJson(response) {
 /**
  * Fetches a list of artifact files for a specific run directory.
  *
- * @param {string} runDir - The directory path of the tool run.
- * @returns {Promise<string[]>} A promise that resolves to an array of file paths.
+ * @param {string} runDir - The backend-visible directory path of the tool run.
+ * @returns {Promise<Object[]>} Artifact file descriptors with absolute path, relative path, and previewability.
  * @throws {Error} If the request fails or the server returns an error.
  */
 export async function listArtifacts(runDir) {
@@ -39,8 +39,8 @@ export async function listArtifacts(runDir) {
 /**
  * Fetches a preview of a specific artifact file.
  *
- * @param {string} path - The full path of the artifact file to preview.
- * @returns {Promise<Object>} A promise that resolves to the artifact preview data.
+ * @param {string} path - The backend-visible full path of the artifact file to preview.
+ * @returns {Promise<Object>} Artifact preview payload including content, content type, size, and truncation state.
  * @throws {Error} If the request fails or the server returns an error.
  */
 export async function previewArtifact(path) {

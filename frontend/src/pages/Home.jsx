@@ -130,7 +130,11 @@ function Home() {
     }, [messages, loading, loadingMessage]);
 
     /**
-     * Adds a new message to the chat history.
+     * Appends a local message to the current conversation view.
+     *
+     * Messages loaded from persisted sessions already have stable backend data.
+     * Locally-created messages get a browser UUID so optimistic user/assistant
+     * entries can render immediately while the backend request is still running.
      *
      * @param {string} role - Message sender role ('user' or 'assistant').
      * @param {string} content - Message content.
@@ -142,6 +146,11 @@ function Home() {
         setMessages((current) => [...current, {id: crypto.randomUUID(), role, content, tool, toolResult, metadata}]);
     };
 
+    /**
+     * Updates the optimistic assistant message used by streaming responses.
+     *
+     * @param {(content: string) => string} updater - Function that receives the current assistant text.
+     */
     const updateLastAssistant = (updater) => {
         setMessages((current) =>
             current.map((message, index) => {
@@ -153,6 +162,17 @@ function Home() {
         );
     };
 
+    /**
+     * Merges backend metadata into the latest optimistic assistant message.
+     *
+     * Streaming responses deliver text and metadata independently, so tool
+     * results and provider metadata may arrive before or after visible tokens.
+     *
+     * @param {Object} details - Partial assistant details from a stream event.
+     * @param {Object|null} [details.tool] - Tool usage metadata.
+     * @param {Object|null} [details.toolResult] - Structured tool result.
+     * @param {Object|null} [details.metadata] - Provider metadata.
+     */
     const updateLastAssistantDetails = ({tool, toolResult, metadata}) => {
         setMessages((current) =>
             current.map((message, index) => {
@@ -169,6 +189,9 @@ function Home() {
         );
     };
 
+    /**
+     * Marks a partial streamed answer as canceled, or removes it if no tokens arrived.
+     */
     const finalizeCanceledAssistant = () => {
         setMessages((current) => {
             if (current.length === 0) {
@@ -193,6 +216,11 @@ function Home() {
         });
     };
 
+    /**
+     * Adds browser-observed wait time to the latest assistant message metadata.
+     *
+     * @param {number} uiWaitMs - Elapsed time between submit and final UI completion.
+     */
     const applyUiWaitToLastAssistant = (uiWaitMs) => {
         setMessages((current) =>
             current.map((message, index) => {
@@ -323,6 +351,12 @@ function Home() {
         importInputRef.current?.click();
     };
 
+    /**
+     * Imports a JSON session export and opens the stored session returned by the backend.
+     *
+     * @param {Event} event - File input change event.
+     * @returns {Promise<void>}
+     */
     const handleImportChange = async (event) => {
         const [file] = Array.from(event.target.files || []);
         event.target.value = '';
@@ -348,7 +382,7 @@ function Home() {
     };
 
     /**
-     * Opens a specific session by ID and loads its messages.
+     * Opens a specific session by ID and maps backend messages into renderable UI messages.
      *
      * @param {string} targetSessionId - The session ID to open.
      * @returns {Promise<void>}
@@ -430,9 +464,12 @@ function Home() {
     };
 
     /**
-     * Lists all artifact files in a specific run directory.
+     * Lists all artifact files in a specific tool run directory.
      *
-     * @param {string} runDir - The directory path.
+     * The artifact panel keeps its own empty/error state so a missing restored
+     * run directory can be explained without clearing the chat transcript.
+     *
+     * @param {string} runDir - The backend-visible run directory path.
      * @param {string} [title='artifact files'] - Title for the artifact panel.
      * @returns {Promise<void>}
      */
@@ -462,9 +499,9 @@ function Home() {
     };
 
     /**
-     * Previews a specific artifact file.
+     * Previews a specific artifact file in the side panel.
      *
-     * @param {string} path - Full path to the artifact.
+     * @param {string} path - Backend-visible full path to the artifact.
      * @param {string} [title='artifact preview'] - Title for the artifact panel.
      * @returns {Promise<void>}
      */
@@ -520,8 +557,12 @@ function Home() {
     };
 
     /**
-     * Handles sending a message to the backend.
-     * Supports both streaming and non-streaming modes.
+     * Sends one Agent message through the selected backend mode.
+     *
+     * Non-streaming requests append the assistant message after the complete
+     * payload returns. Streaming requests create an empty assistant placeholder
+     * first, then merge typed SSE events into that placeholder as tool phases,
+     * token deltas, metadata, and completion events arrive.
      *
      * @param {Object} params - Send parameters.
      * @param {string} params.message - The prompt text.

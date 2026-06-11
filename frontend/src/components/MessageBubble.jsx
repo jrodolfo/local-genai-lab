@@ -1,6 +1,7 @@
 /**
  * @fileoverview MessageBubble component for displaying a single message in the chat.
- * Supports rendering a subset of Markdown, tool usage details, and technical metadata.
+ * Supports rendering a deliberately small Markdown subset, tool usage details,
+ * tool artifacts, and provider technical metadata.
  */
 import ToolResultCard from './ToolResultCard';
 
@@ -10,13 +11,13 @@ import ToolResultCard from './ToolResultCard';
  * @param {Object} props - Component props.
  * @param {string} props.role - The role of the message sender ('user' or 'assistant').
  * @param {string} props.content - The message text content.
- * @param {Object} [props.tool] - Information about tool usage.
+ * @param {Object} [props.tool] - Tool usage metadata persisted on assistant messages.
  * @param {Object} [props.toolResult] - Structured result of a tool execution.
- * @param {Object} [props.metadata] - Technical metadata (tokens, duration, etc.).
+ * @param {Object} [props.metadata] - Provider and timing metadata.
  * @param {boolean} [props.showTechnicalDetails=false] - Whether to show verbose technical details.
- * @param {Function} props.onPreviewArtifact - Callback to preview an artifact.
- * @param {Function} props.onListArtifacts - Callback to list artifacts for a run.
- * @param {Function} props.onCopyPath - Callback to copy a file path to clipboard.
+ * @param {(path: string, title?: string) => void} props.onPreviewArtifact - Callback to preview an artifact.
+ * @param {(runDir: string, title?: string) => void} props.onListArtifacts - Callback to list artifacts for a run.
+ * @param {(path: string) => void} props.onCopyPath - Callback to copy a file path to clipboard.
  * @returns {React.JSX.Element} The rendered MessageBubble component.
  */
 function MessageBubble({
@@ -181,6 +182,9 @@ function formatToolStatus(status) {
 
 /**
  * Renders Markdown-like blocks (code, headings, lists, paragraphs) into React elements.
+ *
+ * This is intentionally not a full Markdown parser. It handles only the subset
+ * commonly returned by local providers so assistant output can stay dependency-free.
  *
  * @param {string} [content=''] - The raw text content.
  * @returns {React.JSX.Element|React.JSX.Element[]} The rendered React elements.

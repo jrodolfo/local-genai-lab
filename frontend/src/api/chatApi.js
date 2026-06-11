@@ -15,11 +15,11 @@ const JSON_HEADERS = {
  *
  * @param {Object} params - The message parameters.
  * @param {string} params.message - The message text.
- * @param {string} params.provider - The LLM provider (e.g., 'bedrock', 'openai').
+ * @param {string} params.provider - The LLM provider (e.g., 'ollama', 'bedrock', 'huggingface').
  * @param {string} params.model - The model ID.
- * @param {string} params.sessionId - The active chat session ID.
+ * @param {string} [params.sessionId] - The active chat session ID. Omit to create a new session.
  * @param {AbortSignal} [params.signal] - Optional signal to abort the request.
- * @returns {Promise<Object>} A promise that resolves to the chat response payload.
+ * @returns {Promise<Object>} Chat response payload including response text, session ID, tool data, and metadata.
  * @throws {Error} If the request fails.
  */
 export async function sendMessage({message, provider, model, sessionId, signal}) {
@@ -41,12 +41,15 @@ export async function sendMessage({message, provider, model, sessionId, signal})
 /**
  * Sends a chat message and streams the response via Server-Sent Events (SSE).
  *
+ * The backend emits `chat` events whose JSON payload contains a `type` field.
+ * The UI currently handles tool phase events, `start`, `delta`, and `complete`.
+ *
  * @param {Object} params - The message parameters.
  * @param {string} params.message - The message text.
  * @param {string} params.provider - The LLM provider.
  * @param {string} params.model - The model ID.
- * @param {string} params.sessionId - The active chat session ID.
- * @param {Function} params.onEvent - Callback function invoked for each streamed event.
+ * @param {string} [params.sessionId] - The active chat session ID. Omit to create a new session.
+ * @param {(event: Object) => void} params.onEvent - Callback invoked for each parsed `chat` event.
  * @param {AbortSignal} [params.signal] - Optional signal to abort the stream.
  * @returns {Promise<void>} A promise that resolves when the stream is complete.
  * @throws {Error} If the stream request fails or streaming is not supported.
@@ -103,6 +106,9 @@ export async function streamMessage({message, provider, model, sessionId, onEven
 
 /**
  * Parses a raw SSE event chunk into a structured object.
+ *
+ * Non-`chat` events and malformed JSON chunks are ignored so a noisy stream
+ * does not break an otherwise valid response.
  *
  * @param {string} chunk - The raw SSE chunk text.
  * @returns {Object|null} The parsed event payload or null if the chunk is invalid or not a 'chat' event.

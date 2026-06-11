@@ -17,10 +17,13 @@ async function parseJson(response) {
 }
 
 /**
- * Fetches the list of available models, optionally filtered by provider.
+ * Fetches backend-approved provider and model selector options.
+ *
+ * The backend filters providers to those configured in the current process and
+ * returns provider-specific models for the requested provider.
  *
  * @param {string} [provider] - Optional provider ID to filter models.
- * @returns {Promise<Object[]>} A promise that resolves to an array of model objects.
+ * @returns {Promise<Object>} Provider/model selector payload.
  * @throws {Error} If the request fails.
  */
 export async function listAvailableModels(provider) {
@@ -40,10 +43,10 @@ export async function listAvailableModels(provider) {
 }
 
 /**
- * Fetches the status of model providers.
+ * Fetches a provider health summary for the Agent page status banner.
  *
  * @param {string} [provider] - Optional provider ID to check status for.
- * @returns {Promise<Object>} A promise that resolves to the provider status object.
+ * @returns {Promise<Object>} Provider status payload with status, message, and optional model diagnostics.
  * @throws {Error} If the request fails.
  */
 export async function getProviderStatus(provider) {
