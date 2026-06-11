@@ -11,8 +11,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Service for retrieving relevant documents from the RAG corpus based on a user's question.
- * It delegates ranking to the configured retrieval store.
+ * Service for retrieving relevant chunks from the RAG corpus.
+ *
+ * <p>Requests may use the backend's configured default retrieval target or pass
+ * an explicit target selected in the UI. Explicit targets are intentionally
+ * resolved here so the rest of the answer flow receives consistent source
+ * chunks and metadata.
  */
 @Service
 public class RagRetrievalService {
@@ -52,6 +56,13 @@ public class RagRetrievalService {
         return retrieve(question, RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
     }
 
+    /**
+     * Retrieves source chunks with an explicit request-level retrieval target.
+     *
+     * @param question the user's question
+     * @param target   the retrieval target to use for this request
+     * @return ranked source chunks for the target
+     */
     public List<RagMatch> retrieve(String question, RagRetrievalTarget target) {
         ragCorpusService.ensureIndexed(target);
         return switch (target.retrievalMode()) {
@@ -69,6 +80,12 @@ public class RagRetrievalService {
         return activeMetadata(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
     }
 
+    /**
+     * Builds metadata describing a specific retrieval target.
+     *
+     * @param target the retrieval target used for the current answer
+     * @return metadata persisted with the RAG assistant message
+     */
     public RagRetrievalMetadata activeMetadata(RagRetrievalTarget target) {
         boolean vectorMode = target.retrievalMode() == RagRetrievalMode.VECTOR;
         return new RagRetrievalMetadata(

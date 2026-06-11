@@ -56,7 +56,8 @@ export async function rebuildRagIndex() {
  * @param {string} params.provider - The LLM provider.
  * @param {string} params.model - The model ID.
  * @param {string} params.sessionId - The active session ID.
- * @param {string} params.retrievalTarget - The selected retrieval target.
+ * @param {string} [params.retrievalTarget] - Optional per-question retrieval target.
+ * Supported values are `lexical`, `vector:in-memory`, and `vector:qdrant`.
  * @returns {Promise<Object>} A promise that resolves to the RAG query response.
  * @throws {Error} If the request fails.
  */

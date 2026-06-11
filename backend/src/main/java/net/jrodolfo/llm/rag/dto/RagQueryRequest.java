@@ -9,7 +9,9 @@ import jakarta.validation.constraints.NotBlank;
  * @param provider  The preferred LLM provider.
  * @param model     The preferred model name.
  * @param sessionId The session identifier to maintain conversation context.
- * @param retrievalTarget Optional retrieval target for this request.
+ * @param retrievalTarget Optional per-question retrieval target. Supported values are
+ *                        {@code lexical}, {@code vector:in-memory}, and {@code vector:qdrant}.
+ *                        When omitted, the backend uses the configured RAG retrieval defaults.
  */
 public record RagQueryRequest(
         @NotBlank(message = "question is required")

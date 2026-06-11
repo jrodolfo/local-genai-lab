@@ -622,6 +622,12 @@ function formatEmbeddingStatus(status) {
     return `${provider} / ${model}`;
 }
 
+/**
+ * Resolves the initial selector value from backend startup defaults.
+ *
+ * @param {Object|null} status - RAG status payload from the backend.
+ * @returns {string} One of the API retrieval target values.
+ */
 function defaultRetrievalTarget(status) {
     if (String(status?.retrievalMode || '').toLowerCase() !== 'vector') {
         return 'lexical';
@@ -629,6 +635,12 @@ function defaultRetrievalTarget(status) {
     return String(status?.vectorStore || '').toLowerCase() === 'qdrant' ? 'vector:qdrant' : 'vector:in-memory';
 }
 
+/**
+ * Builds the RAG retrieval selector options shown in the query form.
+ *
+ * @param {Object|null} status - RAG status payload used to disable unavailable targets.
+ * @returns {Array<{value: string, label: string, disabled?: boolean}>} Selectable retrieval targets.
+ */
 function retrievalTargetOptions(status) {
     const qdrantUnavailable = isQdrantRequired(status) && status?.qdrantReachable === false;
     return [

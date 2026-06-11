@@ -77,6 +77,16 @@ public class RagAnswerService {
         return answer(question, provider, model, sessionId, null);
     }
 
+    /**
+     * Generates an answer using an optional request-level retrieval target.
+     *
+     * @param question        the user's question
+     * @param provider        the LLM provider to use
+     * @param model           the requested model ID
+     * @param sessionId       the session identifier, or null to create a new session
+     * @param retrievalTarget optional retrieval target such as {@code lexical} or {@code vector:qdrant}
+     * @return the generated answer, cited chunks, session ID, and retrieval metadata
+     */
     public RagQueryResponse answer(String question, String provider, String model, String sessionId, String retrievalTarget) {
         RagRetrievalTarget target = RagRetrievalTarget.fromRequestOrDefault(retrievalTarget, ragProperties);
         long requestStartedAt = System.nanoTime();

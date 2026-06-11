@@ -20,8 +20,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * Orchestrator service for the RAG corpus.
- * It manages the lifecycle of the document index, including loading, chunking, and indexing into the retrieval store.
+ * Orchestrates loading, chunking, and indexing the fixed local RAG corpus.
+ *
+ * <p>The service keeps one corpus snapshot but tracks which retrieval target
+ * has been indexed. This supports lazy indexing for the selected target while
+ * keeping lexical and vector stores isolated from each other.
  */
 @Service
 public class RagCorpusService {
@@ -94,6 +97,16 @@ public class RagCorpusService {
         return ensureIndexed(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
     }
 
+    /**
+     * Ensures that the selected retrieval target has an up-to-date index.
+     *
+     * <p>If the corpus was already loaded for this target, the current snapshot
+     * is reused. Otherwise, documents are reloaded and indexed into the target's
+     * backing store.
+     *
+     * @param target retrieval target that must be query-ready
+     * @return the current corpus snapshot
+     */
     public synchronized CorpusSnapshot ensureIndexed(RagRetrievalTarget target) {
         CorpusSnapshot snapshot = snapshotRef.get();
         if (snapshot != null && indexedTargets.contains(target)) {
@@ -111,6 +124,12 @@ public class RagCorpusService {
         return rebuildIndex(RagRetrievalTarget.fromRequestOrDefault(null, ragProperties));
     }
 
+    /**
+     * Rebuilds the corpus index for the selected retrieval target.
+     *
+     * @param target target whose backing store should receive the rebuilt index
+     * @return the rebuilt corpus snapshot
+     */
     public synchronized CorpusSnapshot rebuildIndex(RagRetrievalTarget target) {
         Path corpusRoot = ragProperties.resolvedCorpusRoot();
         List<RagDocument> documents = filterExcludedDocuments(documentLoader.loadMarkdownDocuments(corpusRoot));

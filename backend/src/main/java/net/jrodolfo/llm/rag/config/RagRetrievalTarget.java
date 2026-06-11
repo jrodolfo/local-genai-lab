@@ -3,7 +3,11 @@ package net.jrodolfo.llm.rag.config;
 import java.util.Arrays;
 
 /**
- * User-selectable RAG retrieval targets.
+ * User-selectable RAG retrieval target for a single RAG question.
+ *
+ * <p>The target combines the broad retrieval mode with the concrete backing
+ * store. This lets the UI ask one question against lexical search, in-memory
+ * vector search, or Qdrant-backed vector search without restarting the backend.
  */
 public enum RagRetrievalTarget {
     LEXICAL("lexical", RagRetrievalMode.LEXICAL, RagVectorStoreMode.IN_MEMORY),
@@ -36,10 +40,23 @@ public enum RagRetrievalTarget {
         return retrievalMode == RagRetrievalMode.VECTOR;
     }
 
+    /**
+     * Returns the retrieval store label persisted with RAG answer metadata.
+     *
+     * @return a user-facing store label for exported sessions and technical details
+     */
     public String retrievalStore() {
         return vector() ? "in-memory-vector" : retrievalMode.retrievalStore();
     }
 
+    /**
+     * Resolves a request-level retrieval target, falling back to startup RAG configuration.
+     *
+     * @param value      optional API request value such as {@code lexical} or {@code vector:qdrant}
+     * @param properties configured backend defaults used when the request does not specify a target
+     * @return the resolved retrieval target
+     * @throws IllegalArgumentException if the request value is not supported
+     */
     public static RagRetrievalTarget fromRequestOrDefault(String value, RagProperties properties) {
         if (value != null && !value.isBlank()) {
             return fromValue(value);
@@ -52,6 +69,13 @@ public enum RagRetrievalTarget {
         return vectorStoreMode == RagVectorStoreMode.QDRANT ? VECTOR_QDRANT : VECTOR_IN_MEMORY;
     }
 
+    /**
+     * Parses the API value for a retrieval target.
+     *
+     * @param value target value from the frontend or API client
+     * @return the matching retrieval target
+     * @throws IllegalArgumentException if the value does not match a supported target
+     */
     public static RagRetrievalTarget fromValue(String value) {
         if (value != null) {
             for (RagRetrievalTarget target : values()) {
