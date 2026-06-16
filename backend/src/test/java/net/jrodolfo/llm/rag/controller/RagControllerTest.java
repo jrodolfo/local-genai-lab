@@ -366,7 +366,8 @@ class RagControllerTest {
     void vectorIndexingFailureReturnsClearBadRequest() throws Exception {
         qdrantMockMvcWithFailingIndex().perform(post("/api/rag/index"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Failed to index RAG chunks in Qdrant."));
+                .andExpect(jsonPath("$.error").value(containsString("Failed to index RAG chunks in Qdrant at http://localhost:6333.")))
+                .andExpect(jsonPath("$.error").value(containsString("docker compose up -d qdrant")));
     }
 
     @Test
@@ -527,7 +528,12 @@ class RagControllerTest {
 
         @Override
         public synchronized CorpusSnapshot rebuildIndex() {
-            throw new RagVectorIndexingException("Failed to index RAG chunks in Qdrant.");
+            throw new RagVectorIndexingException(
+                    "Failed to index RAG chunks in Qdrant at http://localhost:6333. "
+                            + "Confirm Qdrant is running and reachable, then click Rebuild Index or run Compare Retrieval Targets again. "
+                            + "For the local Docker setup, run: docker compose up -d qdrant. "
+                            + "Details: Qdrant failed."
+            );
         }
     }
 

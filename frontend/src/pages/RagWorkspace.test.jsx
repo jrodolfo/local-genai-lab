@@ -354,6 +354,112 @@ describe('RagWorkspace', () => {
         });
     });
 
+    it('compares retrieval targets without saving a rag answer', async () => {
+        let compareBody = null;
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([])),
+            http.post('/api/rag/compare', async ({request}) => {
+                compareBody = await request.json();
+                return HttpResponse.json({
+                    question: 'How are sessions persisted?',
+                    results: [
+                        {
+                            retrievalTarget: 'lexical',
+                            success: true,
+                            error: null,
+                            answer: 'Sessions are stored as local JSON files.',
+                            provider: 'ollama',
+                            model: 'llama3:8b',
+                            sources: [
+                                {
+                                    sourcePath: 'docs/adr/0006-persist-sessions-as-local-json-files.md',
+                                    title: 'ADR 0006',
+                                    excerpt: 'Persist sessions as local JSON files.',
+                                    score: 0.91
+                                }
+                            ],
+                            ragRetrieval: {
+                                retrievalMode: 'lexical',
+                                retrievalStore: 'in-memory',
+                                vectorStore: 'in-memory',
+                                retrievalTarget: 'lexical',
+                                topK: 4
+                            },
+                            ragTiming: {
+                                retrievalDurationMs: 1,
+                                providerDurationMs: 50,
+                                totalDurationMs: 51
+                            }
+                        },
+                        {
+                            retrievalTarget: 'vector:qdrant',
+                            success: false,
+                            error: 'Failed to index RAG chunks in Qdrant at http://localhost:6333. Confirm Qdrant is running and reachable, then click Rebuild Index or run Compare Retrieval Targets again. For the local Docker setup, run: docker compose up -d qdrant. Details: connection refused',
+                            answer: null,
+                            provider: null,
+                            model: null,
+                            sources: [],
+                            ragRetrieval: {
+                                retrievalMode: 'vector',
+                                retrievalStore: 'in-memory-vector',
+                                vectorStore: 'qdrant',
+                                retrievalTarget: 'vector:qdrant',
+                                topK: 4,
+                                embeddingProvider: 'ollama',
+                                embeddingModel: 'nomic-embed-text'
+                            },
+                            ragTiming: null
+                        }
+                    ]
+                });
+            })
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        await screen.findByRole('heading', {name: /^rag$/i});
+        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How are sessions persisted?');
+        await user.click(screen.getByRole('button', {name: /Compare Retrieval Targets/i}));
+
+        await waitFor(() => {
+            expect(compareBody).toMatchObject({
+                question: 'How are sessions persisted?',
+                provider: 'ollama',
+                model: 'llama3:8b'
+            });
+        });
+
+        const comparison = await screen.findByRole('region', {name: /rag retrieval comparison/i});
+        expect(within(comparison).getByText('Retrieval comparison')).toBeInTheDocument();
+        expect(within(comparison).getByText(/Diagnostic results only/i)).toBeInTheDocument();
+        expect(within(comparison).getByText('Lexical')).toBeInTheDocument();
+        expect(within(comparison).getByText('Vector - Qdrant')).toBeInTheDocument();
+        expect(within(comparison).getByText('Sessions are stored as local JSON files.')).toBeInTheDocument();
+        expect(within(comparison).getByText('docs/adr/0006-persist-sessions-as-local-json-files.md')).toBeInTheDocument();
+        expect(within(comparison).getByText('Unavailable')).toBeInTheDocument();
+        expect(within(comparison).getByText(/Confirm Qdrant is running and reachable/i)).toBeInTheDocument();
+        expect(within(comparison).getByText(/docker compose up -d qdrant/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /No answer yet/i})).toBeInTheDocument();
+        expect(screen.queryByRole('region', {name: /latest rag answer/i})).not.toBeInTheDocument();
+    });
+
     it('shows a disabled state when the backend reports RAG is off', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

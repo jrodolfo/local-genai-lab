@@ -4,7 +4,7 @@
  */
 import {useEffect, useRef, useState} from 'react';
 import {listAvailableModels} from '../api/modelApi';
-import {getRagStatus, queryRag, rebuildRagIndex} from '../api/ragApi';
+import {compareRagRetrievalTargets, getRagStatus, queryRag, rebuildRagIndex} from '../api/ragApi';
 import {retryAsync} from '../api/retry';
 import {deleteSession, exportSession, getSession, importSession, listSessions} from '../api/sessionApi';
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
@@ -30,6 +30,8 @@ function RagWorkspace() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [querying, setQuerying] = useState(false);
+    const [comparing, setComparing] = useState(false);
+    const [comparisonResult, setComparisonResult] = useState(null);
     const [rebuilding, setRebuilding] = useState(false);
     const [error, setError] = useState('');
 
@@ -125,6 +127,7 @@ function RagWorkspace() {
         try {
             setQuerying(true);
             setError('');
+            setComparisonResult(null);
             const payload = await queryRag({
                 question: submittedQuestion,
                 provider: selectedProvider,
@@ -148,6 +151,28 @@ function RagWorkspace() {
             setError(err.message || 'Failed to query the RAG workspace.');
         } finally {
             setQuerying(false);
+        }
+    }
+
+    async function handleCompareRetrievalTargets() {
+        const submittedQuestion = question.trim();
+        if (!submittedQuestion || !ragStatus?.enabled) {
+            return;
+        }
+        try {
+            setComparing(true);
+            setError('');
+            const payload = await compareRagRetrievalTargets({
+                question: submittedQuestion,
+                provider: selectedProvider,
+                model: selectedModel
+            });
+            setComparisonResult(payload);
+            await refreshRagStatus().catch(() => null);
+        } catch (err) {
+            setError(err.message || 'Failed to compare RAG retrieval targets.');
+        } finally {
+            setComparing(false);
         }
     }
 
@@ -199,6 +224,7 @@ function RagWorkspace() {
         setSessionId(null);
         setMessages([]);
         setQuestion('');
+        setComparisonResult(null);
         setError('');
     }
 
@@ -315,12 +341,21 @@ function RagWorkspace() {
                                 ragStatus={ragStatus}
                                 question={question}
                                 querying={querying}
+                                comparing={comparing}
                                 onProviderChange={setSelectedProvider}
                                 onModelChange={setSelectedModel}
                                 onRetrievalTargetChange={setSelectedRetrievalTarget}
                                 onQuestionChange={setQuestion}
                                 onSubmit={handleSubmit}
+                                onCompare={handleCompareRetrievalTargets}
                             />
+
+                            {comparisonResult ? (
+                                <RagComparisonResults
+                                    comparison={comparisonResult}
+                                    selectedModel={selectedModel}
+                                />
+                            ) : null}
 
                             {latestTurn ? (
                                 <section className="rag-latest-answer" aria-label="Latest RAG answer">
@@ -513,11 +548,13 @@ function RagQueryCard({
                           ragStatus,
                           question,
                           querying,
+                          comparing,
                           onProviderChange,
                           onModelChange,
                           onRetrievalTargetChange,
                           onQuestionChange,
-                          onSubmit
+                          onSubmit,
+                          onCompare
                       }) {
     return (
         <form className="rag-query-card" aria-label="RAG query" onSubmit={onSubmit}>
@@ -569,11 +606,62 @@ function RagQueryCard({
 
             <div className="rag-query-card__actions">
                 <button type="submit" className="rag-action-button rag-primary-button"
-                        disabled={querying || !question.trim()}>
+                        disabled={querying || comparing || !question.trim()}>
                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
                 </button>
+                <button type="button" className="rag-action-button"
+                        disabled={querying || comparing || !question.trim()}
+                        onClick={onCompare}>
+                    {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
+                </button>
             </div>
+            <p className="rag-query-card__help">
+                Compare Retrieval Targets runs the same question against Lexical, Vector - In Memory, and Vector - Qdrant without saving results.
+            </p>
         </form>
+    );
+}
+
+function RagComparisonResults({comparison, selectedModel}) {
+    const results = Array.isArray(comparison?.results) ? comparison.results : [];
+    if (results.length === 0) {
+        return null;
+    }
+
+    return (
+        <section className="rag-comparison-results" aria-label="RAG retrieval comparison">
+            <div className="rag-comparison-results__header">
+                <h2>Retrieval comparison</h2>
+                <p>Diagnostic results only. These answers are not saved to RAG sessions.</p>
+            </div>
+            <RagQuestionSummary question={comparison.question}/>
+            <div className="rag-comparison-results__list">
+                {results.map((result) => (
+                    <article key={result.retrievalTarget} className="rag-comparison-target">
+                        <header className="rag-comparison-target__header">
+                            <h3>{formatRetrievalTargetLabel(result.retrievalTarget)}</h3>
+                            <span className={result.success ? 'rag-comparison-target__status-ok' : 'rag-comparison-target__status-error'}>
+                                {comparisonStatusLabel(result)}
+                            </span>
+                        </header>
+                        {result.success ? (
+                            <RagAnswerWithSources
+                                result={{
+                                    answer: result.answer,
+                                    provider: result.provider,
+                                    model: result.model || selectedModel,
+                                    sources: result.sources || [],
+                                    ragRetrieval: result.ragRetrieval || null,
+                                    ragTiming: result.ragTiming || null
+                                }}
+                            />
+                        ) : (
+                            <p className="rag-comparison-target__error">{result.error || 'This retrieval target failed.'}</p>
+                        )}
+                    </article>
+                ))}
+            </div>
+        </section>
     );
 }
 
@@ -658,6 +746,22 @@ function retrievalTargetOptions(status) {
         {value: 'vector:in-memory', label: 'Vector - In Memory'},
         {value: 'vector:qdrant', label: 'Vector - Qdrant', disabled: qdrantUnavailable}
     ];
+}
+
+function formatRetrievalTargetLabel(value) {
+    const option = retrievalTargetOptions(null).find((candidate) => candidate.value === value);
+    return option?.label || formatRagStatusValue(value);
+}
+
+function comparisonStatusLabel(result) {
+    if (result?.success) {
+        return 'Success';
+    }
+    if (String(result?.retrievalTarget || '').toLowerCase() === 'vector:qdrant'
+            && /not reachable|not running|connection refused|connect/i.test(String(result?.error || ''))) {
+        return 'Unavailable';
+    }
+    return 'Failed';
 }
 
 function formatIndexStatus(status) {

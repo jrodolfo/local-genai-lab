@@ -61,8 +61,15 @@ public class QdrantVectorRagIndexingStore {
                     toPoints(indexResult, corpusRoot)
             );
         } catch (QdrantClientException ex) {
-            throw new RagVectorIndexingException("Failed to index RAG chunks in Qdrant.", ex);
+            throw new RagVectorIndexingException(qdrantIndexingFailureMessage(ex), ex);
         }
+    }
+
+    private String qdrantIndexingFailureMessage(QdrantClientException ex) {
+        return "Failed to index RAG chunks in Qdrant at " + ragProperties.qdrantUrl() + ". "
+                + "Confirm Qdrant is running and reachable, then click Rebuild Index or run Compare Retrieval Targets again. "
+                + "For the local Docker setup, run: docker compose up -d qdrant. "
+                + "Details: " + ex.getMessage();
     }
 
     private List<QdrantPoint> toPoints(RagVectorIndexResult indexResult, Path corpusRoot) {

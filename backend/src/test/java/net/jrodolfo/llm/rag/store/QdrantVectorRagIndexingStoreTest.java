@@ -67,7 +67,13 @@ class QdrantVectorRagIndexingStoreTest {
                 () -> store.replaceAllEmbedded(indexResult(), Path.of("/repo/docs"))
         );
 
-        assertEquals("Failed to index RAG chunks in Qdrant.", exception.getMessage());
+        assertEquals(
+                "Failed to index RAG chunks in Qdrant at http://localhost:6333. "
+                        + "Confirm Qdrant is running and reachable, then click Rebuild Index or run Compare Retrieval Targets again. "
+                        + "For the local Docker setup, run: docker compose up -d qdrant. "
+                        + "Details: Qdrant failed.",
+                exception.getMessage()
+        );
         assertTrue(exception.getCause() instanceof QdrantClientException);
     }
 
