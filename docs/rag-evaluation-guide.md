@@ -93,6 +93,28 @@ Record the results in a local copy of
 Those observations should drive the next engineering task, such as chunking,
 scoring, answer grounding, or UI comparison support.
 
+### Java version retrieval check
+
+Use this prompt after changing setup, build, or troubleshooting docs:
+
+```text
+What is the version of Java for this system?
+```
+
+Expected result:
+
+- all retrieval targets should answer `Java 21`
+- strong sources should include `README.md`, `docs/testing.md`, or
+  `docs/troubleshooting.md`
+- lexical retrieval should find the answer because the docs now use the exact
+  terms `Java`, `version`, and `Java 21`
+- vector retrieval should also find the answer when the wording differs, for
+  example `JDK version` or `backend Java baseline`
+
+If lexical misses this prompt while vector retrieval succeeds, the likely issue
+is corpus wording, not the retrieval implementation. Add clearer exact terms to
+high-signal docs, rebuild the index, and rerun the comparison.
+
 ## API-Based Retrieval Comparison
 
 Use the comparison API when you want to compare retrieval targets without saving
