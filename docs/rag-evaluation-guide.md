@@ -1,16 +1,21 @@
 # RAG Evaluation Guide
 
-Use this guide to manually evaluate the current phase-1 RAG workspace.
+Use this guide to manually evaluate the current RAG workspace.
 
 Current scope:
 
 - separate `RAG` workspace in the frontend
 - fixed local corpus from [`docs/`](./)
-- in-memory lexical retrieval through `InMemoryLexicalRagRetrievalStore`
+- lexical retrieval through `InMemoryLexicalRagRetrievalStore`
+- in-memory vector retrieval with Ollama embeddings
+- optional Qdrant-backed vector retrieval through the local Docker Compose service
+- per-question retrieval target selection in the UI
+- comparison mode across `Lexical`, `Vector - In Memory`, and `Vector - Qdrant`
 - provider-generated answer with cited source chunks
 
-This is intentionally a small, isolated RAG slice. It does not yet include
-uploads, vector-backed retrieval, or routing through the main chat/tool flow.
+This remains intentionally isolated from the main Agent chat/tool flow. It does
+not yet include uploads, report ingestion, or automatic routing from normal
+chat into RAG.
 
 Evaluation-only files such as this guide and the retrieval evaluation template
 are excluded from the indexed corpus by default. This keeps manual test prompts
@@ -62,11 +67,13 @@ Use the same prompt set across Ollama, Bedrock, and Hugging Face when possible:
 3. `How are sessions persisted?`
 4. `What ADR explains the Mermaid architecture diagram?`
 
-These questions are good phase-1 checks because the answers should come from
-the repository docs and ADRs, not from general model knowledge alone.
+These questions are good checks because the answers should come from the
+repository docs and ADRs, not from general model knowledge alone.
 
+Use `Compare Retrieval Targets` in the UI for the fastest manual comparison.
 Use [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md)
-when you want to record a repeatable lexical vs vector comparison.
+when you want to record a repeatable lexical, in-memory vector, and Qdrant
+comparison.
 
 ## Manual Lexical Vs Vector Comparison
 
@@ -80,8 +87,14 @@ run these prompts:
 2. `Where does conversation history live?`
 3. `What should I check when vector RAG is not working?`
 
-Then switch the selector to `Vector - In Memory` or `Vector - Qdrant`, run the
-same prompts again, and compare:
+Then either:
+
+- switch the selector to `Vector - In Memory` or `Vector - Qdrant`, run the
+  same prompts again, and compare manually
+- use `Compare Retrieval Targets` to run the same question across all supported
+  targets without saving the diagnostic answers to RAG session history
+
+Compare:
 
 - whether the answer is more directly useful
 - whether the cited chunks are closer to the question
@@ -186,7 +199,7 @@ Lexical search matches text by words.
 
 Vector search matches text by meaning.
 
-In the current phase-1 RAG workspace, `lexical retrieval` means:
+In the current RAG workspace, `lexical retrieval` means:
 
 - the query is split into tokens or words
 - each document chunk is split into tokens or words
@@ -219,32 +232,40 @@ Tradeoff:
 - vector search is usually better for semantic matching, but needs embeddings and often a vector database or vector index
 
 For this lab, lexical search is valuable because it is a clean baseline. The
-backend can also run experimental local vector retrieval when started with
-`RAG_RETRIEVAL_MODE=vector`, so lexical and vector retrieval can be compared
-directly against the same corpus.
+backend can also run local vector retrieval in memory or through Qdrant, and
+the UI can compare all supported retrieval targets directly against the same
+corpus.
 
 ## Retrieval Modes
 
-Default mode:
+Lexical:
 
 - `lexical`
 - implemented by `InMemoryLexicalRagRetrievalStore`
 - dependency-free baseline for local docs and ADRs
 
-Experimental mode:
+Vector - In Memory:
 
-- `vector`
-- backed by Ollama embeddings and an in-memory vector store
+- `vector:in-memory`
+- backed by Ollama embeddings and `InMemoryVectorRagRetrievalStore`
 - useful when questions and docs use different wording but similar meaning
+
+Vector - Qdrant:
+
+- `vector:qdrant`
+- backed by Ollama embeddings and the local Qdrant Docker Compose service
+- useful for testing a realistic vector database path while keeping the corpus
+  and prompt flow the same
 
 The intended shape is comparison, not replacement. Lexical retrieval should
 remain available as a lab baseline and fallback even when vector-backed
 retrieval is enabled locally.
 
-The UI should expose a retrieval-mode selector only after at least two real
-retrieval implementations are mature enough for normal UI switching. Until then,
-start vector mode through backend configuration and use the status card to
-confirm the active mode and store.
+The UI exposes a retrieval selector for one saved answer at a time and
+`Compare Retrieval Targets` for diagnostic side-by-side checks. If
+`Vector - Qdrant` reports that Qdrant is not running or the index is missing,
+run `./status.sh`, restart with `./restart.sh`, or click `Rebuild Index` as
+directed by the UI readiness hint.
 
 For the phase-2 vector retrieval direction, including Qdrant as the first
 external vector database candidate, see
@@ -261,15 +282,16 @@ Compare whether Ollama, Bedrock, and Hugging Face differ in:
 
 ## What A Good Result Looks Like
 
-A good phase-1 result is:
+A good result is:
 
 - the answer is mostly grounded in the local docs corpus
 - the cited chunks are recognizably relevant
 - the answer mentions the right ADR or architecture file when appropriate
 - the provider adds synthesis without drifting away from the retrieved material
 
-Phase 1 does not need perfect semantic retrieval. It needs a small, honest,
-useful docs-grounded workflow with clear citations.
+The RAG workspace does not need perfect semantic retrieval. It needs an honest,
+useful docs-grounded workflow with clear citations and explainable differences
+between lexical, in-memory vector, and Qdrant-backed retrieval.
 
 ## Problems Worth Recording
 
@@ -290,7 +312,7 @@ If the main issue is retrieval quality:
 
 - improve chunking
 - tune `top-k`
-- refine lexical scoring or add a second retrieval mode later
+- refine lexical or vector scoring
 
 If the main issue is answer grounding:
 
@@ -303,5 +325,5 @@ If the main issue is corpus coverage:
 
 If the main issue is scale or retrieval accuracy:
 
-- evaluate embeddings
-- evaluate vector-backed retrieval in a later phase
+- compare embedding models
+- compare in-memory vector retrieval against Qdrant-backed retrieval
