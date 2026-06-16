@@ -8,6 +8,8 @@ import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
+import net.jrodolfo.llm.rag.dto.RagComparisonResponse;
+import net.jrodolfo.llm.rag.dto.RagComparisonTargetResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
 import net.jrodolfo.llm.rag.dto.RagSourceChunkResponse;
 import net.jrodolfo.llm.rag.config.RagProperties;
@@ -16,6 +18,7 @@ import net.jrodolfo.llm.rag.model.RagMatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -151,6 +154,110 @@ public class RagAnswerService {
     }
 
     /**
+     * Compares one question across multiple retrieval targets without persisting
+     * the generated answers to a RAG session.
+     *
+     * @param question the user's question
+     * @param provider the LLM provider to use
+     * @param model the requested model ID
+     * @param retrievalTargets optional target values; defaults to all supported targets
+     * @return comparison response containing one result per target
+     */
+    public RagComparisonResponse compare(String question, String provider, String model, List<String> retrievalTargets) {
+        List<RagRetrievalTarget> targets = resolveComparisonTargets(retrievalTargets);
+        List<RagComparisonTargetResponse> results = targets.stream()
+                .map(target -> compareTarget(question, provider, model, target))
+                .toList();
+        return new RagComparisonResponse(question, results);
+    }
+
+    private List<RagRetrievalTarget> resolveComparisonTargets(List<String> retrievalTargets) {
+        if (retrievalTargets == null || retrievalTargets.isEmpty()) {
+            return Arrays.asList(RagRetrievalTarget.values());
+        }
+        return retrievalTargets.stream()
+                .map(RagRetrievalTarget::fromValue)
+                .toList();
+    }
+
+    private RagComparisonTargetResponse compareTarget(
+            String question,
+            String provider,
+            String model,
+            RagRetrievalTarget target
+    ) {
+        try {
+            return successfulComparisonTarget(question, provider, model, target);
+        } catch (RuntimeException ex) {
+            return failedComparisonTarget(target, ex);
+        }
+    }
+
+    private RagComparisonTargetResponse successfulComparisonTarget(
+            String question,
+            String provider,
+            String model,
+            RagRetrievalTarget target
+    ) {
+        long requestStartedAt = System.nanoTime();
+        long retrievalStartedAt = System.nanoTime();
+        List<RagMatch> matches = ragRetrievalService.retrieve(question, target);
+        long retrievalDurationMs = elapsedMillis(retrievalStartedAt);
+        if (matches.isEmpty()) {
+            throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
+        }
+
+        ChatModelProvider chatModelProvider = providerRegistry.get(provider);
+        String resolvedProvider = providerRegistry.resolveProviderName(provider);
+        String resolvedModel = chatModelProvider.resolveModel(model);
+        long providerStartedAt = System.nanoTime();
+        ChatResponse response = chatModelProvider.chat(
+                ProviderPrompt.forPrompt(buildPrompt(question, matches)),
+                resolvedModel,
+                null,
+                null,
+                null,
+                null
+        );
+        long providerDurationMs = elapsedMillis(providerStartedAt);
+
+        RagRetrievalMetadata ragRetrieval = ragRetrievalService.activeMetadata(target);
+        RagTimingMetadata ragTiming = new RagTimingMetadata(
+                retrievalDurationMs,
+                providerDurationMs,
+                elapsedMillis(requestStartedAt)
+        );
+
+        return new RagComparisonTargetResponse(
+                target.value(),
+                true,
+                null,
+                response.response(),
+                resolvedProvider,
+                response.model(),
+                toSourceResponses(matches),
+                response.metadata(),
+                ragRetrieval,
+                ragTiming
+        );
+    }
+
+    private RagComparisonTargetResponse failedComparisonTarget(RagRetrievalTarget target, RuntimeException ex) {
+        return new RagComparisonTargetResponse(
+                target.value(),
+                false,
+                ex.getMessage(),
+                null,
+                null,
+                null,
+                List.of(),
+                null,
+                ragRetrievalService.activeMetadata(target),
+                null
+        );
+    }
+
+    /**
      * Builds a prompt for the LLM using the provided question and retrieved matches.
      *
      * @param question The user's question.
@@ -183,6 +290,17 @@ public class RagAnswerService {
         }
         prompt.append("Answer the question using the excerpts above.");
         return prompt.toString();
+    }
+
+    private List<RagSourceChunkResponse> toSourceResponses(List<RagMatch> matches) {
+        return matches.stream()
+                .map(match -> new RagSourceChunkResponse(
+                        match.chunk().sourcePath(),
+                        match.chunk().title(),
+                        match.chunk().text(),
+                        roundScore(match.score())
+                ))
+                .toList();
     }
 
     /**

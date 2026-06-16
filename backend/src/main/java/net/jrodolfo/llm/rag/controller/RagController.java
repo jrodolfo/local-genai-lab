@@ -3,6 +3,8 @@ package net.jrodolfo.llm.rag.controller;
 import jakarta.validation.Valid;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
+import net.jrodolfo.llm.rag.dto.RagComparisonRequest;
+import net.jrodolfo.llm.rag.dto.RagComparisonResponse;
 import net.jrodolfo.llm.rag.dto.RagIndexResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryRequest;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
@@ -126,6 +128,25 @@ public class RagController {
                 request.model(),
                 request.sessionId(),
                 request.retrievalTarget()
+        ));
+    }
+
+    /**
+     * Compares one RAG question across multiple retrieval targets without
+     * persisting the generated answers.
+     *
+     * @param request The comparison request containing the question and optional targets.
+     * @return A response containing per-target answers or per-target errors.
+     * @throws IllegalStateException if RAG is disabled.
+     */
+    @PostMapping("/compare")
+    public ResponseEntity<RagComparisonResponse> compare(@Valid @RequestBody RagComparisonRequest request) {
+        ensureEnabled();
+        return ResponseEntity.ok(ragAnswerService.compare(
+                request.question(),
+                request.provider(),
+                request.model(),
+                request.retrievalTargets()
         ));
     }
 

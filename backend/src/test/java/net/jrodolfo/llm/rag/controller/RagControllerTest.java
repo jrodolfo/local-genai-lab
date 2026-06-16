@@ -44,8 +44,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -258,6 +260,88 @@ class RagControllerTest {
     }
 
     @Test
+    void compareRunsDefaultRetrievalTargetsWithPartialQdrantFailure() throws Exception {
+        mockMvc.perform(post("/api/rag/compare")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.question").value("How does provider selection work?"))
+                .andExpect(jsonPath("$.results", hasSize(3)))
+                .andExpect(jsonPath("$.results[0].retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.results[0].success").value(true))
+                .andExpect(jsonPath("$.results[0].answer").value(containsString("provider registry")))
+                .andExpect(jsonPath("$.results[0].sources[0].sourcePath").value("architecture.md"))
+                .andExpect(jsonPath("$.results[0].ragRetrieval.retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.results[0].ragTiming.totalDurationMs").isNumber())
+                .andExpect(jsonPath("$.results[1].retrievalTarget").value("vector:in-memory"))
+                .andExpect(jsonPath("$.results[1].success").value(true))
+                .andExpect(jsonPath("$.results[1].ragRetrieval.retrievalTarget").value("vector:in-memory"))
+                .andExpect(jsonPath("$.results[1].ragRetrieval.embeddingModel").value("nomic-embed-text"))
+                .andExpect(jsonPath("$.results[2].retrievalTarget").value("vector:qdrant"))
+                .andExpect(jsonPath("$.results[2].success").value(false))
+                .andExpect(jsonPath("$.results[2].error").value("Qdrant vector indexing store is not configured."))
+                .andExpect(jsonPath("$.results[2].sources", hasSize(0)))
+                .andExpect(jsonPath("$.results[2].ragRetrieval.retrievalTarget").value("vector:qdrant"));
+    }
+
+    @Test
+    void compareAcceptsExplicitRetrievalTargetList() throws Exception {
+        mockMvc.perform(post("/api/rag/compare")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How are sessions stored?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b",
+                                  "retrievalTargets": ["lexical"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results", hasSize(1)))
+                .andExpect(jsonPath("$.results[0].retrievalTarget").value("lexical"))
+                .andExpect(jsonPath("$.results[0].success").value(true))
+                .andExpect(jsonPath("$.results[0].sources[0].sourcePath").value("sessions.md"));
+    }
+
+    @Test
+    void compareDoesNotPersistRagSessionFiles() throws Exception {
+        mockMvc.perform(post("/api/rag/compare")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "provider": "ollama",
+                                  "model": "llama3:8b",
+                                  "retrievalTargets": ["lexical"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].success").value(true));
+
+        org.assertj.core.api.Assertions.assertThat(countSessionFiles()).isZero();
+    }
+
+    @Test
+    void compareRejectsUnsupportedRetrievalTarget() throws Exception {
+        mockMvc.perform(post("/api/rag/compare")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "question": "How does provider selection work?",
+                                  "retrievalTargets": ["semantic"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Unsupported RAG retrieval target: semantic. Supported targets: lexical, vector:in-memory, vector:qdrant."));
+    }
+
+    @Test
     void unsupportedRetrievalTargetReturnsBadRequest() throws Exception {
         mockMvc.perform(post("/api/rag/query")
                         .contentType("application/json")
@@ -328,7 +412,8 @@ class RagControllerTest {
                         Map.of("ollama", new FakeProvider())
                 ),
                 new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore)),
-                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
+                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy),
+                properties
         );
         QdrantStatusService qdrantStatusService = new QdrantStatusService() {
             @Override
@@ -399,7 +484,8 @@ class RagControllerTest {
                         Map.of("ollama", new FakeProvider())
                 ),
                 new RagRetrievalService(properties, corpusService, store, new RagVectorRetrievalService(embeddingService, vectorStore)),
-                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy)
+                new RagSessionService(sessionStore, new ChatSessionMetadataService(), sessionIdPolicy),
+                properties
         );
         return MockMvcBuilders.standaloneSetup(new RagController(
                         properties,
@@ -414,6 +500,16 @@ class RagControllerTest {
                 ))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
+    }
+
+    private long countSessionFiles() throws Exception {
+        Path sessionsDirectory = tempDir.resolve("sessions");
+        if (!Files.exists(sessionsDirectory)) {
+            return 0L;
+        }
+        try (Stream<Path> files = Files.list(sessionsDirectory)) {
+            return files.count();
+        }
     }
 
     private static final class FailingIndexRagCorpusService extends RagCorpusService {
