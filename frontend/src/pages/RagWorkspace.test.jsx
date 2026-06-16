@@ -435,7 +435,8 @@ describe('RagWorkspace', () => {
         const user = userEvent.setup();
 
         await screen.findByRole('heading', {name: /^rag$/i});
-        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'How are sessions persisted?');
+        const questionInput = screen.getByPlaceholderText(/Ask a question about the project docs/i);
+        await user.type(questionInput, 'How are sessions persisted?');
         await user.click(screen.getByRole('button', {name: /Compare Retrieval Targets/i}));
 
         await waitFor(() => {
@@ -456,6 +457,7 @@ describe('RagWorkspace', () => {
         expect(within(comparison).getByText('Unavailable')).toBeInTheDocument();
         expect(within(comparison).getByText(/Confirm Qdrant is running and reachable/i)).toBeInTheDocument();
         expect(within(comparison).getByText(/docker compose up -d qdrant/i)).toBeInTheDocument();
+        expect(questionInput).toHaveValue('');
         expect(screen.getByRole('heading', {name: /No answer yet/i})).toBeInTheDocument();
         expect(screen.queryByRole('region', {name: /latest rag answer/i})).not.toBeInTheDocument();
     });
@@ -558,6 +560,8 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Collection')).toBeInTheDocument();
         expect(screen.getByText('Present, 123 points')).toBeInTheDocument();
         expect(screen.getByText('Qdrant collection local_genai_lab_docs is present with 123 points.')).toBeInTheDocument();
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: ready.');
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('123 indexed chunks are available for Vector - Qdrant.');
     });
 
     it('shows qdrant missing collection guidance when rebuild is needed', async () => {
@@ -595,6 +599,8 @@ describe('RagWorkspace', () => {
         expect(await screen.findByText('Collection')).toBeInTheDocument();
         expect(screen.getByText('Missing')).toBeInTheDocument();
         expect(screen.getByText('Qdrant collection local_genai_lab_docs is missing. Rebuild the index.')).toBeInTheDocument();
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: index missing.');
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Click Rebuild Index before using Vector - Qdrant.');
     });
 
     it('shows qdrant unavailable guidance only when qdrant is required', async () => {
@@ -633,6 +639,75 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Unavailable')).toBeInTheDocument();
         expect(screen.getByText('Not checked')).toBeInTheDocument();
         expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: not running.');
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Run ./restart.sh, then use Rebuild Index or Compare Retrieval Targets again.');
+    });
+
+    it('shows optional qdrant readiness when lexical mode can still use qdrant comparison', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory',
+                qdrantUrl: 'http://localhost:6333',
+                qdrantCollection: 'local_genai_lab_docs',
+                qdrantRequired: false,
+                qdrantReachable: false,
+                qdrantCollectionExists: null,
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByRole('combobox', {name: /retrieval/i})).toHaveValue('lexical');
+        expect(screen.getByRole('option', {name: 'Vector - Qdrant'})).toBeEnabled();
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: not running.');
+        expect(screen.getByText(/Lexical mode uses keyword search over the local docs/i)).toBeInTheDocument();
+    });
+
+    it('shows qdrant not checked when status has qdrant settings without live readiness', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory',
+                qdrantUrl: 'http://localhost:6333',
+                qdrantCollection: 'local_genai_lab_docs',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: not checked.');
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Use Compare Retrieval Targets to verify Vector - Qdrant when needed.');
     });
 
     it('shows backend query failures clearly', async () => {

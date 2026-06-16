@@ -182,6 +182,33 @@
     margin: -0.25rem 0 0;
 }
 
+.rag-query-card__readiness {
+    border-radius: 12px;
+    font-size: 0.84rem;
+    line-height: 1.35;
+    margin: -0.1rem 0 0;
+    padding: 0.55rem 0.7rem;
+}
+
+.rag-query-card__readiness strong {
+    font-weight: 800;
+}
+
+.rag-query-card__readiness-ok {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.rag-query-card__readiness-warning {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.rag-query-card__readiness-neutral {
+    background: #f8fafc;
+    color: #475569;
+}
+
 .rag-latest-answer,
 .rag-history,
 .rag-answer-turn {

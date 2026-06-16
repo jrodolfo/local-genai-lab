@@ -168,6 +168,7 @@ function RagWorkspace() {
                 model: selectedModel
             });
             setComparisonResult(payload);
+            setQuestion('');
             await refreshRagStatus().catch(() => null);
         } catch (err) {
             setError(err.message || 'Failed to compare RAG retrieval targets.');
@@ -618,7 +619,23 @@ function RagQueryCard({
             <p className="rag-query-card__help">
                 Compare Retrieval Targets runs the same question against Lexical, Vector - In Memory, and Vector - Qdrant without saving results.
             </p>
+            <QdrantReadinessHint ragStatus={ragStatus}/>
         </form>
+    );
+}
+
+function QdrantReadinessHint({ragStatus}) {
+    const readiness = qdrantReadiness(ragStatus);
+    if (!readiness) {
+        return null;
+    }
+
+    return (
+        <p className={`rag-query-card__readiness ${readiness.className}`} aria-label="Qdrant readiness">
+            <strong>{readiness.label}</strong>
+            {' '}
+            {readiness.detail}
+        </p>
     );
 }
 
@@ -746,6 +763,51 @@ function retrievalTargetOptions(status) {
         {value: 'vector:in-memory', label: 'Vector - In Memory'},
         {value: 'vector:qdrant', label: 'Vector - Qdrant', disabled: qdrantUnavailable}
     ];
+}
+
+function qdrantReadiness(status) {
+    if (!status?.enabled || !hasQdrantStatus(status)) {
+        return null;
+    }
+
+    if (status.qdrantReachable === false) {
+        return {
+            label: 'Qdrant: not running.',
+            detail: 'Run ./restart.sh, then use Rebuild Index or Compare Retrieval Targets again.',
+            className: 'rag-query-card__readiness-warning'
+        };
+    }
+
+    if (status.qdrantReachable && status.qdrantCollectionExists === false) {
+        return {
+            label: 'Qdrant: index missing.',
+            detail: 'Click Rebuild Index before using Vector - Qdrant.',
+            className: 'rag-query-card__readiness-warning'
+        };
+    }
+
+    if (status.qdrantReachable && status.qdrantCollectionExists) {
+        return {
+            label: 'Qdrant: ready.',
+            detail: typeof status.qdrantPointCount === 'number'
+                ? `${status.qdrantPointCount} indexed chunks are available for Vector - Qdrant.`
+                : 'Vector - Qdrant is available.',
+            className: 'rag-query-card__readiness-ok'
+        };
+    }
+
+    return {
+        label: 'Qdrant: not checked.',
+        detail: 'Use Compare Retrieval Targets to verify Vector - Qdrant when needed.',
+        className: 'rag-query-card__readiness-neutral'
+    };
+}
+
+function hasQdrantStatus(status) {
+    return Boolean(status?.qdrantRequired)
+        || Object.hasOwn(status || {}, 'qdrantReachable')
+        || Object.hasOwn(status || {}, 'qdrantCollectionExists')
+        || Boolean(status?.qdrantUrl);
 }
 
 function formatRetrievalTargetLabel(value) {
