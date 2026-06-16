@@ -26,6 +26,7 @@ function RagWorkspace() {
     const [sessionId, setSessionId] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
+    const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
     const [question, setQuestion] = useState('');
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -304,15 +305,25 @@ function RagWorkspace() {
                             <h1>RAG</h1>
                             <p>Ask questions against the local docs corpus.</p>
                         </div>
-                        <button
-                            type="button"
-                            className="rag-action-button"
-                            aria-expanded={showSessionsSidebar}
-                            aria-controls="rag-sessions-sidebar"
-                            onClick={() => setShowSessionsSidebar((current) => !current)}
-                        >
-                            {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
-                        </button>
+                        <div className="rag-header-controls">
+                            <label className="rag-debug-toggle">
+                                <input
+                                    type="checkbox"
+                                    checked={showTechnicalDetails}
+                                    onChange={(event) => setShowTechnicalDetails(event.target.checked)}
+                                />
+                                <span>show technical details</span>
+                            </label>
+                            <button
+                                type="button"
+                                className="rag-action-button"
+                                aria-expanded={showSessionsSidebar}
+                                aria-controls="rag-sessions-sidebar"
+                                onClick={() => setShowSessionsSidebar((current) => !current)}
+                            >
+                                {showSessionsSidebar ? 'Hide Sessions' : 'Show Sessions'}
+                            </button>
+                        </div>
                     </header>
 
                     <RagStatusStrip
@@ -355,6 +366,7 @@ function RagWorkspace() {
                                 <RagComparisonResults
                                     comparison={comparisonResult}
                                     selectedModel={selectedModel}
+                                    showTechnicalDetails={showTechnicalDetails}
                                 />
                             ) : null}
 
@@ -364,6 +376,7 @@ function RagWorkspace() {
                                     <RagAnswerTurn
                                         turn={latestTurn}
                                         selectedModel={selectedModel}
+                                        showTechnicalDetails={showTechnicalDetails}
                                         ariaLabel="Latest RAG turn"
                                     />
                                 </section>
@@ -382,6 +395,7 @@ function RagWorkspace() {
                                             key={`${turn.question?.timestamp || turn.answer?.timestamp || index}-${index}`}
                                             turn={turn}
                                             selectedModel={selectedModel}
+                                            showTechnicalDetails={showTechnicalDetails}
                                             ariaLabel="RAG history turn"
                                         />
                                     ))}
@@ -639,7 +653,7 @@ function QdrantReadinessHint({ragStatus}) {
     );
 }
 
-function RagComparisonResults({comparison, selectedModel}) {
+function RagComparisonResults({comparison, selectedModel, showTechnicalDetails}) {
     const results = Array.isArray(comparison?.results) ? comparison.results : [];
     if (results.length === 0) {
         return null;
@@ -671,6 +685,7 @@ function RagComparisonResults({comparison, selectedModel}) {
                                     ragRetrieval: result.ragRetrieval || null,
                                     ragTiming: result.ragTiming || null
                                 }}
+                                showTechnicalDetails={showTechnicalDetails}
                             />
                         ) : (
                             <p className="rag-comparison-target__error">{result.error || 'This retrieval target failed.'}</p>
@@ -682,7 +697,7 @@ function RagComparisonResults({comparison, selectedModel}) {
     );
 }
 
-function RagAnswerTurn({turn, selectedModel, ariaLabel}) {
+function RagAnswerTurn({turn, selectedModel, showTechnicalDetails, ariaLabel}) {
     return (
         <section className="rag-answer-turn" aria-label={ariaLabel}>
             <RagQuestionSummary question={turn.question?.content}/>
@@ -696,6 +711,7 @@ function RagAnswerTurn({turn, selectedModel, ariaLabel}) {
                         ragRetrieval: turn.answer.ragRetrieval || null,
                         ragTiming: turn.answer.ragTiming || null
                     }}
+                    showTechnicalDetails={showTechnicalDetails}
                 />
             ) : null}
         </section>

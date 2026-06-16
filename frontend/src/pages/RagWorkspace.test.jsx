@@ -155,10 +155,11 @@ describe('RagWorkspace', () => {
         expect(latestQuestionLabel.compareDocumentPosition(latestAnswerHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(within(latestTurn).getByText(/Provider selection is handled by the provider registry/i)).toBeInTheDocument();
         expect(questionInput).toHaveValue('');
-        expect(within(latestTurn).getByRole('button', {name: /technical details/i})).toHaveAttribute('aria-expanded', 'false');
+        const technicalDetailsToggle = screen.getByRole('checkbox', {name: /show technical details/i});
+        expect(technicalDetailsToggle).not.toBeChecked();
         expect(within(latestTurn).queryByText('Retrieval mode')).not.toBeInTheDocument();
-        await user.click(within(latestTurn).getByRole('button', {name: /technical details/i}));
-        expect(within(latestTurn).getByRole('button', {name: /technical details/i})).toHaveAttribute('aria-expanded', 'true');
+        await user.click(technicalDetailsToggle);
+        expect(technicalDetailsToggle).toBeChecked();
         expect(within(latestTurn).getByText('Retrieval mode')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Lexical')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Retrieval target')).toBeInTheDocument();
@@ -171,6 +172,9 @@ describe('RagWorkspace', () => {
         expect(within(latestTurn).getByText('345 ms')).toBeInTheDocument();
         expect(within(latestTurn).getByText('Backend total')).toBeInTheDocument();
         expect(within(latestTurn).getByText('400 ms')).toBeInTheDocument();
+        await user.click(technicalDetailsToggle);
+        expect(technicalDetailsToggle).not.toBeChecked();
+        expect(within(latestTurn).queryByText('Retrieval mode')).not.toBeInTheDocument();
         expect(within(latestTurn).getByText('Sources')).toBeInTheDocument();
         expect(screen.getAllByText(/Provider selection is handled by the provider registry/i)).toHaveLength(1);
         expect(screen.getByText('architecture.md')).toBeInTheDocument();

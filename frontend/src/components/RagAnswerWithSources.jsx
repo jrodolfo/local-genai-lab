@@ -1,7 +1,6 @@
 /**
  * @fileoverview RagAnswerWithSources component for displaying a RAG query answer and its source documents.
  */
-import {useState} from 'react';
 
 /**
  * RagAnswerWithSources component.
@@ -14,11 +13,10 @@ import {useState} from 'react';
  * @param {Array<Object>} props.result.sources - Array of source objects.
  * @param {Object|null} props.result.ragRetrieval - Retrieval metadata for the answer.
  * @param {Object|null} props.result.ragTiming - Backend timing metadata for the answer.
+ * @param {boolean} [props.showTechnicalDetails=false] - Whether to show retrieval and timing metadata.
  * @returns {React.JSX.Element|null} The rendered component or null if no result.
  */
-function RagAnswerWithSources({result}) {
-    const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
-
+function RagAnswerWithSources({result, showTechnicalDetails = false}) {
     if (!result) {
         return null;
     }
@@ -36,27 +34,15 @@ function RagAnswerWithSources({result}) {
             <div className="rag-answer-card__body">
                 <p>{result.answer}</p>
             </div>
-            {technicalRows.length > 0 ? (
-                <div className="rag-answer-card__technical">
-                    <button
-                        type="button"
-                        className="rag-technical-toggle"
-                        aria-expanded={showTechnicalDetails}
-                        onClick={() => setShowTechnicalDetails((current) => !current)}
-                    >
-                        Technical Details
-                    </button>
-                    {showTechnicalDetails ? (
-                        <dl className="rag-technical-details">
-                            {technicalRows.map((row) => (
-                                <div key={row.label}>
-                                    <dt>{row.label}</dt>
-                                    <dd>{row.value}</dd>
-                                </div>
-                            ))}
-                        </dl>
-                    ) : null}
-                </div>
+            {showTechnicalDetails && technicalRows.length > 0 ? (
+                <dl className="rag-technical-details" aria-label="RAG technical details">
+                    {technicalRows.map((row) => (
+                        <div key={row.label}>
+                            <dt>{row.label}</dt>
+                            <dd>{row.value}</dd>
+                        </div>
+                    ))}
+                </dl>
             ) : null}
             <div className="rag-answer-card__sources">
                 <h3>Sources</h3>
