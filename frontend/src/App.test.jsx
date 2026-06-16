@@ -53,7 +53,7 @@ describe('App mode navigation', () => {
         expect(screen.getByText(/Enable `RAG_ENABLED=true` in the backend to use RAG mode\./i)).toBeInTheDocument();
     });
 
-    it('lets the user switch to rag when rag is enabled', async () => {
+    it('starts in rag when rag is enabled and lets the user switch to agent', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({
                 enabled: true,
@@ -89,14 +89,16 @@ describe('App mode navigation', () => {
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
 
         expect(ragTab.compareDocumentPosition(agentTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(agentTab).toBeDisabled();
-        expect(ragTab).not.toBeDisabled();
-
-        await user.click(ragTab);
-
         expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
         expect(ragTab).toBeDisabled();
         expect(ragTab).toHaveAttribute('aria-selected', 'true');
+        expect(agentTab).not.toBeDisabled();
+
+        await user.click(agentTab);
+
+        expect(await screen.findByText(/Ask something to start a conversation/i)).toBeInTheDocument();
+        expect(agentTab).toBeDisabled();
+        expect(agentTab).toHaveAttribute('aria-selected', 'true');
     });
 
     it('retries a transient rag status failure before disabling rag mode', async () => {
@@ -136,7 +138,9 @@ describe('App mode navigation', () => {
 
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
 
-        await waitFor(() => expect(ragTab).not.toBeDisabled());
+        expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
+        expect(ragTab).toHaveAttribute('aria-selected', 'true');
+        expect(ragTab).toBeDisabled();
         expect(screen.queryByText(/Enable `RAG_ENABLED=true`/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/RAG status is temporarily unavailable/i)).not.toBeInTheDocument();
     });
@@ -162,6 +166,7 @@ describe('App mode navigation', () => {
         render(<App/>);
 
         expect(await screen.findByText(/RAG status is temporarily unavailable/i, {}, {timeout: 6000})).toBeInTheDocument();
+        expect(screen.getByRole('tab', {name: /agent/i})).toHaveAttribute('aria-selected', 'true');
         expect(screen.queryByText(/Enable `RAG_ENABLED=true`/i)).not.toBeInTheDocument();
     });
 });

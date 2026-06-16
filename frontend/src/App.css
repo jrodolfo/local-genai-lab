@@ -62,3 +62,10 @@
     margin: 0;
     padding: 0.55rem 1rem 0.7rem;
 }
+
+.app-loading {
+    color: #475569;
+    display: grid;
+    min-height: 45vh;
+    place-items: center;
+}

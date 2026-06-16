@@ -16,7 +16,7 @@ import './App.css';
  * @returns {React.JSX.Element} The rendered App component.
  */
 function App() {
-    const [mode, setMode] = useState('chat');
+    const [mode, setMode] = useState(null);
     const [ragEnabled, setRagEnabled] = useState(false);
     const [ragStatusLoaded, setRagStatusLoaded] = useState(false);
     const [ragStatusError, setRagStatusError] = useState(false);
@@ -27,6 +27,7 @@ function App() {
             .then((payload) => {
                 if (active) {
                     setRagEnabled(Boolean(payload.enabled));
+                    setMode(Boolean(payload.enabled) ? 'rag' : 'chat');
                     setRagStatusError(false);
                     setRagStatusLoaded(true);
                 }
@@ -34,6 +35,7 @@ function App() {
             .catch(() => {
                 if (active) {
                     setRagEnabled(false);
+                    setMode('chat');
                     setRagStatusError(true);
                     setRagStatusLoaded(true);
                 }
@@ -54,7 +56,7 @@ function App() {
                         aria-selected={mode === 'rag'}
                         aria-current={mode === 'rag' ? 'page' : undefined}
                         aria-disabled={!ragEnabled}
-                        disabled={mode === 'rag' || !ragEnabled}
+                        disabled={!ragStatusLoaded || mode === 'rag' || !ragEnabled}
                         className={`${mode === 'rag' ? 'app-nav__tab--active' : ''} ${!ragEnabled ? 'app-nav__tab--disabled' : ''}`.trim()}
                         onClick={() => {
                             if (!ragEnabled) {
@@ -70,7 +72,7 @@ function App() {
                         role="tab"
                         aria-selected={mode === 'chat'}
                         aria-current={mode === 'chat' ? 'page' : undefined}
-                        disabled={mode === 'chat'}
+                        disabled={!ragStatusLoaded || mode === 'chat'}
                         className={mode === 'chat' ? 'app-nav__tab--active' : ''}
                         onClick={() => setMode('chat')}
                     >
@@ -84,7 +86,13 @@ function App() {
             {ragStatusLoaded && !ragEnabled && !ragStatusError ? (
                 <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use RAG mode.</p>
             ) : null}
-            {mode === 'rag' && ragEnabled ? <RagWorkspace/> : <Home/>}
+            {ragStatusLoaded ? (
+                mode === 'rag' && ragEnabled ? <RagWorkspace/> : <Home/>
+            ) : (
+                <main className="app-loading" aria-label="Application loading">
+                    <p>Loading workspace...</p>
+                </main>
+            )}
         </div>
     );
 }
