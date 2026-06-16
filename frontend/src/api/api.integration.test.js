@@ -1,6 +1,7 @@
 import {listArtifacts, previewArtifact} from './artifactApi';
 import {sendMessage, streamMessage} from './chatApi';
 import {getProviderStatus, listAvailableModels} from './modelApi';
+import {compareRagRetrievalTargets} from './ragApi';
 import {exportSession, importSession, listSessions} from './sessionApi';
 import {http, HttpResponse, server, sseResponse} from '../test/mswServer';
 
@@ -129,6 +130,124 @@ describe('frontend api integration', () => {
 
         const imported = await importSession(new File(['{}'], 'session.json', {type: 'application/json'}));
         expect(imported.sessionId).toBe('imported-session');
+    });
+
+    it('compares rag retrieval targets through the backend endpoint', async () => {
+        server.use(
+            http.post('/api/rag/compare', async ({request}) => {
+                const body = await request.json();
+                expect(body).toEqual({
+                    question: 'How are sessions persisted?',
+                    provider: 'ollama',
+                    model: 'llama3:8b',
+                    retrievalTargets: ['lexical', 'vector:in-memory']
+                });
+                return HttpResponse.json({
+                    question: 'How are sessions persisted?',
+                    results: [
+                        {
+                            retrievalTarget: 'lexical',
+                            success: true,
+                            error: null,
+                            answer: 'Sessions are stored as local JSON files.',
+                            provider: 'ollama',
+                            model: 'llama3:8b',
+                            sources: [{sourcePath: 'docs/adr/0006.md', title: 'Sessions', excerpt: 'local JSON files', score: 0.91}],
+                            ragRetrieval: {retrievalTarget: 'lexical', retrievalMode: 'lexical', retrievalStore: 'in-memory', vectorStore: 'in-memory', topK: 4},
+                            ragTiming: {retrievalDurationMs: 2, providerDurationMs: 120, totalDurationMs: 122}
+                        },
+                        {
+                            retrievalTarget: 'vector:in-memory',
+                            success: true,
+                            error: null,
+                            answer: 'Conversation history is persisted in local JSON session files.',
+                            provider: 'ollama',
+                            model: 'llama3:8b',
+                            sources: [{sourcePath: 'docs/adr/0006.md', title: 'Sessions', excerpt: 'session files', score: 0.88}],
+                            ragRetrieval: {
+                                retrievalTarget: 'vector:in-memory',
+                                retrievalMode: 'vector',
+                                retrievalStore: 'in-memory-vector',
+                                vectorStore: 'in-memory',
+                                topK: 4,
+                                embeddingProvider: 'ollama',
+                                embeddingModel: 'nomic-embed-text'
+                            },
+                            ragTiming: {retrievalDurationMs: 8, providerDurationMs: 130, totalDurationMs: 138}
+                        }
+                    ]
+                });
+            })
+        );
+
+        const result = await compareRagRetrievalTargets({
+            question: 'How are sessions persisted?',
+            provider: 'ollama',
+            model: 'llama3:8b',
+            retrievalTargets: ['lexical', 'vector:in-memory']
+        });
+
+        expect(result.results).toHaveLength(2);
+        expect(result.results[0].retrievalTarget).toBe('lexical');
+        expect(result.results[0].success).toBe(true);
+        expect(result.results[1].ragRetrieval.embeddingModel).toBe('nomic-embed-text');
+    });
+
+    it('keeps partial rag comparison failures in the successful backend response', async () => {
+        server.use(
+            http.post('/api/rag/compare', () => HttpResponse.json({
+                question: 'How are sessions persisted?',
+                results: [
+                    {
+                        retrievalTarget: 'lexical',
+                        success: true,
+                        error: null,
+                        answer: 'Sessions are stored as local JSON files.',
+                        provider: 'ollama',
+                        model: 'llama3:8b',
+                        sources: [],
+                        ragRetrieval: {retrievalTarget: 'lexical'},
+                        ragTiming: {totalDurationMs: 50}
+                    },
+                    {
+                        retrievalTarget: 'vector:qdrant',
+                        success: false,
+                        error: 'Qdrant is not reachable at http://localhost:6333.',
+                        answer: null,
+                        provider: null,
+                        model: null,
+                        sources: [],
+                        ragRetrieval: {retrievalTarget: 'vector:qdrant'},
+                        ragTiming: null
+                    }
+                ]
+            }))
+        );
+
+        const result = await compareRagRetrievalTargets({
+            question: 'How are sessions persisted?',
+            provider: 'ollama',
+            model: 'llama3:8b'
+        });
+
+        expect(result.results[0].success).toBe(true);
+        expect(result.results[1].success).toBe(false);
+        expect(result.results[1].error).toMatch(/Qdrant is not reachable/);
+    });
+
+    it('surfaces backend rag comparison errors', async () => {
+        server.use(
+            http.post('/api/rag/compare', () => HttpResponse.json({
+                error: 'Unsupported RAG retrieval target: semantic.'
+            }, {status: 400}))
+        );
+
+        await expect(compareRagRetrievalTargets({
+            question: 'How are sessions persisted?',
+            provider: 'ollama',
+            model: 'llama3:8b',
+            retrievalTargets: ['semantic']
+        })).rejects.toThrow('Unsupported RAG retrieval target: semantic.');
     });
 
     it('surfaces artifact and session loading failures', async () => {

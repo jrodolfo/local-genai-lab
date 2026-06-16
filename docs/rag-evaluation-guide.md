@@ -25,6 +25,7 @@ Related references:
 - [rag-phase-2-vector-retrieval-design.md](./rag-phase-2-vector-retrieval-design.md)
 - [ADR 0012](./adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md)
 - [ADR 0013](./adr/0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md)
+- [ADR 0014](./adr/0014-compare-rag-retrieval-targets-without-session-side-effects.md)
 
 ## Before You Start
 
@@ -91,6 +92,43 @@ Record the results in a local copy of
 [rag-retrieval-evaluation-template.md](./rag-retrieval-evaluation-template.md).
 Those observations should drive the next engineering task, such as chunking,
 scoring, answer grounding, or UI comparison support.
+
+## API-Based Retrieval Comparison
+
+Use the comparison API when you want to compare retrieval targets without saving
+diagnostic answers to RAG session history.
+
+Endpoint:
+
+```text
+POST /api/rag/compare
+```
+
+Example request:
+
+```json
+{
+  "question": "How are sessions persisted?",
+  "provider": "ollama",
+  "model": "llama3:8b",
+  "retrievalTargets": ["lexical", "vector:in-memory", "vector:qdrant"]
+}
+```
+
+If `retrievalTargets` is omitted, the backend compares all supported targets.
+Each result includes:
+
+- `retrievalTarget`
+- `success`
+- `answer` when successful
+- `error` when that target failed
+- `sources`
+- `ragRetrieval`
+- `ragTiming`
+
+This endpoint is useful when evaluating retrieval behavior or writing automated
+checks. For normal RAG use, submit a question through the RAG workspace or
+`POST /api/rag/query`, because that path saves the answer to the RAG session.
 
 ## What To Evaluate
 

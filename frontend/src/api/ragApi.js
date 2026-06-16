@@ -75,3 +75,29 @@ export async function queryRag({question, provider, model, sessionId, retrievalT
     }
     return response.json();
 }
+
+/**
+ * Compares one RAG question across multiple retrieval targets without saving a RAG session turn.
+ *
+ * @param {Object} params - The comparison parameters.
+ * @param {string} params.question - The user's question.
+ * @param {string} params.provider - The LLM provider.
+ * @param {string} params.model - The model ID.
+ * @param {string[]} [params.retrievalTargets] - Optional target list. Defaults to all backend-supported targets.
+ * @returns {Promise<Object>} A promise that resolves to the RAG comparison response.
+ * @throws {Error} If the request fails.
+ */
+export async function compareRagRetrievalTargets({question, provider, model, retrievalTargets}) {
+    const response = await fetch('/api/rag/compare', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({question, provider, model, retrievalTargets})
+    });
+    if (!response.ok) {
+        const payload = await parseJson(response);
+        throw new Error(payload.error || 'Failed to compare RAG retrieval targets.');
+    }
+    return response.json();
+}

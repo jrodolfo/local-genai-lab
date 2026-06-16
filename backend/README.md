@@ -85,6 +85,10 @@ Practical rule:
 - `POST /api/tools/s3-cloudwatch-report`
 - `GET /api/tools/reports`
 - `POST /api/tools/reports/read`
+- `GET /api/rag/status`
+- `POST /api/rag/index`
+- `POST /api/rag/query`
+- `POST /api/rag/compare`
 
 `/api/chat` and `/api/chat/stream` accept:
 
@@ -188,6 +192,45 @@ backend embeds the same docs corpus with the configured embedding provider/model
 and uses the in-memory vector retrieval store.
 
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
+
+## RAG API
+
+`POST /api/rag/query` asks one RAG question, uses one retrieval target, and saves
+the answer to a RAG session.
+
+```json
+{
+  "question": "How are sessions persisted?",
+  "provider": "ollama",
+  "model": "llama3:8b",
+  "sessionId": "optional-existing-rag-session-id",
+  "retrievalTarget": "lexical"
+}
+```
+
+Supported `retrievalTarget` values:
+
+- `lexical`
+- `vector:in-memory`
+- `vector:qdrant`
+
+`POST /api/rag/compare` runs the same question across multiple retrieval targets
+and does not save the generated answers to a RAG session. Use it for retrieval
+evaluation, not normal conversation history.
+
+```json
+{
+  "question": "How are sessions persisted?",
+  "provider": "ollama",
+  "model": "llama3:8b",
+  "retrievalTargets": ["lexical", "vector:in-memory", "vector:qdrant"]
+}
+```
+
+If `retrievalTargets` is omitted, the backend compares all supported targets.
+The response contains one result per target. A target can fail, for example
+because Qdrant is unavailable, while the overall comparison request still
+returns the other target results.
 
 ## Sessions and Storage
 
