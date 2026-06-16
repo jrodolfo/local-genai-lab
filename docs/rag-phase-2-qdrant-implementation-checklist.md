@@ -63,8 +63,11 @@ Backend tasks:
 
 Acceptance criteria:
 
-- Normal startup still works without Docker and without Qdrant.
-- `RAG_RETRIEVAL_MODE=lexical ./restart.sh` does not require Qdrant.
+- Normal startup still works without Docker and without Qdrant, but warns that
+  the optional `Vector - Qdrant` comparison target is unavailable.
+- `RAG_RETRIEVAL_MODE=lexical ./restart.sh` does not require Qdrant, but tries
+  to start the local Compose service when `RAG_QDRANT_AUTO_START=true`.
+- `RAG_QDRANT_AUTO_START=false ./restart.sh` skips best-effort Qdrant startup.
 - `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh`
   preserves the current vector behavior.
 - `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` selects the
@@ -88,11 +91,14 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 Acceptance criteria:
 
 - `docker compose up -d qdrant` starts Qdrant without starting the whole app.
+- `./restart.sh` tries to start the Qdrant Compose service automatically for
+  the optional `Vector - Qdrant` comparison target.
 - `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` starts the
-  Qdrant Compose service automatically before backend/frontend startup.
+  Qdrant Compose service as a hard dependency before backend/frontend startup.
 - Existing `docker compose up --build` still works.
-- Documentation states that Qdrant is optional and only needed for
-  `RAG_VECTOR_STORE=qdrant`.
+- Documentation states that Qdrant is optional for normal lexical and in-memory
+  vector use, but needed for the `Vector - Qdrant` comparison target and
+  required for `RAG_VECTOR_STORE=qdrant`.
 
 ## Phase 2 Slice 3: Qdrant Client Boundary
 

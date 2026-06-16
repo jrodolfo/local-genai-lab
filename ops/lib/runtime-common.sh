@@ -256,8 +256,7 @@ normalize_bool() {
 
 # qdrant_required_for_current_config
 # Purpose: Determines whether the current RAG configuration requires Qdrant.
-#          UI-level per-question target selection does not affect startup; only
-#          backend startup defaults decide whether Qdrant must be started here.
+#          This is strict: startup should fail if Qdrant cannot be started.
 # Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE.
 # Outputs: None.
 # Exit Behavior: Returns 0 if Qdrant is required, 1 otherwise.
@@ -273,30 +272,87 @@ qdrant_required_for_current_config() {
     && [ "${rag_vector_store}" = 'qdrant' ]
 }
 
-# ensure_qdrant_service_if_required
-# Purpose: Starts Qdrant through Docker Compose only when the current RAG
-#          configuration explicitly selects the Qdrant vector store.
-# Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE.
-# Outputs: Prints startup status when Qdrant is required.
-# Exit Behavior: Returns 0 if Qdrant is not required or starts successfully,
-#                non-zero if Docker/Qdrant startup fails.
-ensure_qdrant_service_if_required() {
-  if ! qdrant_required_for_current_config; then
-    return 0
+# qdrant_auto_start_enabled
+# Purpose: Determines whether startup should also try to start Qdrant for the
+#          optional RAG comparison target. This is best-effort unless the active
+#          backend configuration explicitly requires Qdrant.
+# Inputs: Environment variables RAG_ENABLED, RAG_QDRANT_AUTO_START.
+# Outputs: None.
+# Exit Behavior: Returns 0 if opportunistic Qdrant startup is enabled.
+qdrant_auto_start_enabled() {
+  local rag_enabled qdrant_auto_start
+
+  rag_enabled="$(normalize_bool "${RAG_ENABLED:-true}")"
+  qdrant_auto_start="$(normalize_bool "${RAG_QDRANT_AUTO_START:-true}")"
+
+  [ "${rag_enabled}" = 'true' ] && [ "${qdrant_auto_start}" = 'true' ]
+}
+
+# start_qdrant_service
+# Purpose: Starts Qdrant through Docker Compose.
+# Inputs:
+#   $1 - "strict" to fail on Docker/Qdrant errors, otherwise best-effort.
+# Outputs: Prints startup status and any warnings/errors.
+# Exit Behavior: Returns non-zero only in strict mode when startup fails.
+start_qdrant_service() {
+  local mode="$1"
+  local strict='false'
+
+  if [ "${mode}" = 'strict' ]; then
+    strict='true'
   fi
 
   if ! command -v docker >/dev/null 2>&1; then
+    if [ "${strict}" = 'true' ]; then
+      printf '%s\n' \
+        'Error: RAG_VECTOR_STORE=qdrant requires Docker, but docker was not found.' \
+        'Install/start Docker or use RAG_VECTOR_STORE=in-memory.' >&2
+      return 1
+    fi
     printf '%s\n' \
-      'Error: RAG_VECTOR_STORE=qdrant requires Docker, but docker was not found.' \
-      'Install/start Docker or use RAG_VECTOR_STORE=in-memory.' >&2
-    return 1
+      'Warning: Qdrant auto-start skipped because docker was not found.' \
+      'Vector - Qdrant comparison will be unavailable until Qdrant is running.' >&2
+    return 0
   fi
 
   printf '%s\n' 'qdrant: starting via docker compose'
   if ! (cd "${REPO_ROOT}" && docker compose up -d qdrant); then
+    if [ "${strict}" = 'true' ]; then
+      printf '%s\n' \
+        'Error: failed to start Qdrant with docker compose.' \
+        'Check Docker is running, or use RAG_VECTOR_STORE=in-memory.' >&2
+      return 1
+    fi
     printf '%s\n' \
-      'Error: failed to start Qdrant with docker compose.' \
-      'Check Docker is running, or use RAG_VECTOR_STORE=in-memory.' >&2
-    return 1
+      'Warning: failed to auto-start Qdrant with docker compose.' \
+      'The app will continue, but Vector - Qdrant comparison will be unavailable until Qdrant is running.' >&2
+    return 0
+  fi
+}
+
+# ensure_qdrant_service_for_runtime
+# Purpose: Starts Qdrant when required by the active backend config, or tries to
+#          start it opportunistically for the optional RAG comparison target.
+# Inputs: Environment variables RAG_ENABLED, RAG_RETRIEVAL_MODE, RAG_VECTOR_STORE,
+#         RAG_QDRANT_AUTO_START.
+# Outputs: Prints startup status when Qdrant startup is attempted.
+# Exit Behavior: Returns non-zero only when the active config requires Qdrant.
+ensure_qdrant_service_for_runtime() {
+  if qdrant_required_for_current_config; then
+    start_qdrant_service strict
+    return $?
+  fi
+
+  if qdrant_auto_start_enabled; then
+    start_qdrant_service best_effort
+  fi
+}
+
+# ensure_qdrant_service_if_required
+# Purpose: Backward-compatible helper for callers that only want strict
+#          Qdrant startup when the active backend config requires it.
+ensure_qdrant_service_if_required() {
+  if qdrant_required_for_current_config; then
+    start_qdrant_service strict
   fi
 }

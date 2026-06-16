@@ -3,8 +3,8 @@
 # test-start.sh
 #
 # Purpose:
-#   Unit tests for the root start.sh preflight behavior. Verifies that Qdrant
-#   is started only when explicitly required by the RAG vector-store config.
+#   Unit tests for the root start.sh preflight behavior. Verifies strict Qdrant
+#   startup for explicit Qdrant mode and best-effort startup for RAG comparison.
 #
 # Usage:
 #   ./ops/tests/test-start.sh
@@ -98,7 +98,7 @@ run_start() {
 
 # --- Test Cases ---
 
-test_lexical_mode_does_not_start_qdrant() {
+test_lexical_mode_auto_starts_qdrant_for_comparison() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
   mkdir -p "${tmp_dir}/bin"
@@ -106,18 +106,35 @@ test_lexical_mode_does_not_start_qdrant() {
 
   output="$(run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical)"
 
+  assert_contains "${output}" 'qdrant: starting via docker compose'
   assert_contains "${output}" 'Start dry run complete.'
-  assert_file_missing "${tmp_dir}/docker.log"
+  assert_file_exists "${tmp_dir}/docker.log"
+  assert_contains "$(cat "${tmp_dir}/docker.log")" 'compose up -d qdrant'
   rm -rf "${tmp_dir}"
 }
 
-test_in_memory_vector_mode_does_not_start_qdrant() {
+test_in_memory_vector_mode_auto_starts_qdrant_for_comparison() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
   mkdir -p "${tmp_dir}/bin"
   write_mock_docker "${tmp_dir}/bin"
 
   output="$(run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory)"
+
+  assert_contains "${output}" 'qdrant: starting via docker compose'
+  assert_contains "${output}" 'Start dry run complete.'
+  assert_file_exists "${tmp_dir}/docker.log"
+  assert_contains "$(cat "${tmp_dir}/docker.log")" 'compose up -d qdrant'
+  rm -rf "${tmp_dir}"
+}
+
+test_qdrant_auto_start_can_be_disabled() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_docker "${tmp_dir}/bin"
+
+  output="$(run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical RAG_QDRANT_AUTO_START=false)"
 
   assert_contains "${output}" 'Start dry run complete.'
   assert_file_missing "${tmp_dir}/docker.log"
@@ -159,6 +176,23 @@ test_qdrant_vector_mode_requires_docker() {
   rm -rf "${tmp_dir}"
 }
 
+test_optional_qdrant_auto_start_without_docker_continues() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  link_required_tool "${tmp_dir}/bin" bash
+  link_required_tool "${tmp_dir}/bin" dirname
+  link_required_tool "${tmp_dir}/bin" pwd
+  link_required_tool "${tmp_dir}/bin" mkdir
+  link_required_tool "${tmp_dir}/bin" tr
+
+  output="$(START_TEST_PATH="${tmp_dir}/bin" run_start "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical 2>&1)"
+
+  assert_contains "${output}" 'Warning: Qdrant auto-start skipped because docker was not found.'
+  assert_contains "${output}" 'Start dry run complete.'
+  rm -rf "${tmp_dir}"
+}
+
 test_qdrant_vector_mode_reports_docker_failure() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
@@ -178,10 +212,12 @@ test_qdrant_vector_mode_reports_docker_failure() {
 # --- Main ---
 
 main() {
-  test_lexical_mode_does_not_start_qdrant
-  test_in_memory_vector_mode_does_not_start_qdrant
+  test_lexical_mode_auto_starts_qdrant_for_comparison
+  test_in_memory_vector_mode_auto_starts_qdrant_for_comparison
+  test_qdrant_auto_start_can_be_disabled
   test_qdrant_vector_mode_starts_qdrant
   test_qdrant_vector_mode_requires_docker
+  test_optional_qdrant_auto_start_without_docker_continues
   test_qdrant_vector_mode_reports_docker_failure
   printf 'start tests passed\n'
 }

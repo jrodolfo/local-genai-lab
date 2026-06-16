@@ -277,7 +277,12 @@ For a plain-language explanation of RAG page terms such as `Index`, `Rebuild
 Index`, `Sources`, and `Technical Details`, see
 [docs/rag-troubleshooting.md#rag-page-mental-model](./docs/rag-troubleshooting.md#rag-page-mental-model).
 
-If RAG or vector retrieval does not behave as expected, run `./status.sh` first. It reports RAG mode, Ollama readiness, whether the configured embedding model is installed, and Qdrant reachability plus collection point count when `RAG_VECTOR_STORE=qdrant`. Common fixes and the RAG answer `Technical Details` fields are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
+If RAG or vector retrieval does not behave as expected, run `./status.sh` first.
+It reports RAG mode, Ollama readiness, whether the configured embedding model is
+installed, and Qdrant reachability plus collection point count when the
+`Vector - Qdrant` comparison target is available. Common fixes and the RAG
+answer `Technical Details` fields are documented in
+[docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md).
 
 Good first RAG test prompts:
 
@@ -309,8 +314,23 @@ docker compose up --build
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
-in-memory vector retrieval. When Qdrant vector mode is selected, `start.sh` and
-`restart.sh` start the `qdrant` Docker Compose service automatically.
+in-memory vector retrieval. Because the RAG UI can compare against
+`Vector - Qdrant`, `start.sh` and `restart.sh` try to start the `qdrant` Docker
+Compose service by default when RAG is enabled.
+
+If Docker is unavailable during normal lexical startup, the app still starts and
+the `Vector - Qdrant` comparison target remains unavailable until Qdrant is
+running. If the backend is explicitly configured with
+`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`, Qdrant becomes a hard
+startup dependency.
+
+To disable best-effort Qdrant startup:
+
+```bash
+RAG_QDRANT_AUTO_START=false ./start.sh
+```
+
+To make Qdrant the active backend vector store:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh

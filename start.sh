@@ -14,7 +14,9 @@
 #   SERVER_PORT / FRONTEND_PORT override the backend and frontend ports.
 #   BACKEND_URL / FRONTEND_URL override the health-check URLs.
 #   WAIT_TIMEOUT_SECONDS controls backend/frontend readiness wait time.
-#   RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant start Qdrant first.
+#   RAG_QDRANT_AUTO_START=false disables best-effort Qdrant startup for the
+#   optional RAG comparison target.
+#   RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant require Qdrant.
 #   START_DRY_RUN=true prints startup configuration without launching processes.
 #
 # Required Tools:
@@ -22,7 +24,8 @@
 #   - npm (for frontend dependencies and dev server)
 #   - mvn (via start-backend-helper.sh)
 #   - curl (for health checks)
-#   - docker (only when RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant)
+#   - docker (optional for the RAG Vector - Qdrant comparison target; required
+#     when RAG_RETRIEVAL_MODE=vector and RAG_VECTOR_STORE=qdrant)
 #
 # Expected Output:
 #   Startup progress messages, runtime configuration header, and a success or
@@ -62,7 +65,7 @@ printf '%s\n' \
   "backend_log=${BACKEND_LOG_FILE}" \
   "frontend_log=${FRONTEND_LOG_FILE}"
 
-ensure_qdrant_service_if_required
+ensure_qdrant_service_for_runtime
 
 if [ "${START_DRY_RUN}" = "true" ]; then
   printf '%s\n' 'Start dry run complete.'

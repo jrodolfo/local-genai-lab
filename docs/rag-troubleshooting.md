@@ -143,18 +143,38 @@ ollama service: ok
 ollama embedding model: present (nomic-embed-text)
 ```
 
-If `RAG_VECTOR_STORE=qdrant` is selected, expected Qdrant readiness is:
+`./build.sh` does not start runtime services. Use `./start.sh` or
+`./restart.sh` to start backend, frontend, and the optional local Qdrant service.
+
+By default, `start.sh` and `restart.sh` try to start Qdrant when RAG is enabled
+because the RAG UI can run the `Vector - Qdrant` comparison target even when the
+default retrieval mode is lexical. This best-effort startup does not make
+Qdrant mandatory for lexical mode. To opt out:
+
+```bash
+RAG_QDRANT_AUTO_START=false ./start.sh
+```
+
+If `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant` is selected, Qdrant is a
+hard dependency. Expected Qdrant readiness is:
 
 ```text
-rag vector store: qdrant
-rag qdrant url: http://localhost:6333
-rag qdrant collection: local_genai_lab_docs
+backend rag vector store: qdrant
+backend rag qdrant url: http://localhost:6333
+backend rag qdrant collection: local_genai_lab_docs
 qdrant service: ok
 qdrant collection: present (points=123)
 ```
 
-If Qdrant is unavailable, restart in Qdrant mode. The startup script will start
-the `qdrant` Docker Compose service automatically:
+If Qdrant is unavailable, restart normally first. The startup script will try to
+start the `qdrant` Docker Compose service:
+
+```bash
+./restart.sh
+./status.sh
+```
+
+If you want Qdrant as the active backend vector store, restart in Qdrant mode:
 
 ```bash
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh

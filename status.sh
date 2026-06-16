@@ -49,6 +49,7 @@ APP_MODEL_PROVIDER="${APP_MODEL_PROVIDER:-ollama}"
 RAG_ENABLED="${RAG_ENABLED:-true}"
 RAG_RETRIEVAL_MODE="${RAG_RETRIEVAL_MODE:-lexical}"
 RAG_VECTOR_STORE="${RAG_VECTOR_STORE:-in-memory}"
+RAG_QDRANT_AUTO_START="${RAG_QDRANT_AUTO_START:-true}"
 RAG_QDRANT_URL="${RAG_QDRANT_URL:-http://localhost:6333}"
 RAG_QDRANT_COLLECTION="${RAG_QDRANT_COLLECTION:-local_genai_lab_docs}"
 RAG_EMBEDDING_PROVIDER="${RAG_EMBEDDING_PROVIDER:-ollama}"
@@ -73,7 +74,17 @@ normalize_lower() {
 
 ollama_model_installed() {
   local model_name="$1"
-  ollama list 2>/dev/null | awk 'NR > 1 {print $1}' | grep -Fxq "${model_name}"
+  local installed_models
+
+  installed_models="$(ollama list 2>/dev/null | awk 'NR > 1 {print $1}')"
+  if printf '%s\n' "${installed_models}" | grep -Fxq "${model_name}"; then
+    return 0
+  fi
+  if [[ "${model_name}" != *:* ]] \
+    && printf '%s\n' "${installed_models}" | grep -Fxq "${model_name}:latest"; then
+    return 0
+  fi
+  return 1
 }
 
 qdrant_collection_points() {
@@ -154,10 +165,12 @@ fi
 rag_enabled_normalized="$(normalize_bool "${RAG_ENABLED}")"
 rag_retrieval_mode_normalized="$(normalize_lower "${RAG_RETRIEVAL_MODE}")"
 rag_vector_store_normalized="$(normalize_lower "${RAG_VECTOR_STORE}")"
+rag_qdrant_auto_start_normalized="$(normalize_bool "${RAG_QDRANT_AUTO_START}")"
 app_model_provider_normalized="$(normalize_lower "${APP_MODEL_PROVIDER}")"
 rag_embedding_provider_normalized="$(normalize_lower "${RAG_EMBEDDING_PROVIDER}")"
 needs_ollama_status='false'
 needs_embedding_model='false'
+needs_qdrant_status='false'
 backend_rag_status_available='false'
 backend_rag_enabled=''
 backend_rag_retrieval_mode=''
@@ -200,17 +213,31 @@ if [ "${app_model_provider_normalized}" = 'ollama' ]; then
   needs_ollama_status='true'
 fi
 
-if [ "${effective_rag_enabled}" = 'true' ] \
-  && [ "${effective_rag_retrieval_mode}" = 'vector' ] \
+if [ "${effective_rag_enabled}" = 'true' ]; then
+  if [ "${effective_rag_retrieval_mode}" = 'vector' ]; then
+    needs_embedding_model='true'
+  fi
+  if [ "${rag_qdrant_auto_start_normalized}" = 'true' ] \
+    || { [ "${effective_rag_retrieval_mode}" = 'vector' ] && [ "${effective_rag_vector_store}" = 'qdrant' ]; }; then
+    needs_qdrant_status='true'
+  fi
+  if [ "${rag_qdrant_auto_start_normalized}" = 'true' ]; then
+    # The comparison UI can run vector targets even when the default backend
+    # retrieval mode is lexical, so surface embedding readiness in normal status.
+    needs_embedding_model='true'
+  fi
+fi
+
+if [ "${needs_embedding_model}" = 'true' ] \
   && [ "$(normalize_lower "${effective_rag_embedding_provider}")" = 'ollama' ]; then
   needs_ollama_status='true'
-  needs_embedding_model='true'
 fi
 
 printf '%s\n' \
   "requested rag enabled: ${rag_enabled_normalized}" \
   "requested rag retrieval mode: ${rag_retrieval_mode_normalized}" \
-  "requested rag vector store: ${rag_vector_store_normalized}"
+  "requested rag vector store: ${rag_vector_store_normalized}" \
+  "requested rag qdrant auto-start: ${rag_qdrant_auto_start_normalized}"
 
 if [ "${backend_rag_status_available}" = 'true' ]; then
   printf '%s\n' \
@@ -234,11 +261,12 @@ else
     "requested rag embedding model: ${RAG_EMBEDDING_MODEL}"
 fi
 
-if [ "${effective_rag_enabled}" = 'true' ] \
-  && [ "${effective_rag_retrieval_mode}" = 'vector' ] \
-  && [ "${effective_rag_vector_store}" = 'qdrant' ]; then
-  # Qdrant collection status is only meaningful when the running backend is in
-  # vector + qdrant mode; lexical and in-memory vector modes do not require it.
+if [ "${needs_qdrant_status}" = 'true' ]; then
+  if [ "${effective_rag_retrieval_mode}" = 'vector' ] && [ "${effective_rag_vector_store}" = 'qdrant' ]; then
+    printf '%s\n' 'qdrant usage: active backend vector store and Vector - Qdrant comparison target'
+  else
+    printf '%s\n' 'qdrant usage: optional Vector - Qdrant comparison target'
+  fi
   printf '%s\n' \
     "backend rag qdrant url: ${effective_rag_qdrant_url}" \
     "backend rag qdrant collection: ${effective_rag_qdrant_collection}"

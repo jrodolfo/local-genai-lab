@@ -101,7 +101,6 @@ case "${1:-}" in
     printf '%s\n' 'NAME                       ID              SIZE      MODIFIED'
     if [ "${MOCK_EMBEDDING_MODEL:-missing}" = "present" ]; then
       printf '%s\n' 'nomic-embed-text:latest    0a109f422b47    274 MB    7 weeks ago'
-      printf '%s\n' 'nomic-embed-text           0a109f422b47    274 MB    7 weeks ago'
     fi
     ;;
   *)
@@ -133,25 +132,47 @@ run_status() {
 
 # --- Test Cases ---
 
-# test_lexical_mode_does_not_require_embedding_model
-# Purpose: Verifies lexical RAG does not require the embedding model.
-test_lexical_mode_does_not_require_embedding_model() {
+# test_lexical_mode_without_qdrant_auto_start_does_not_require_embedding_model
+# Purpose: Verifies lightweight lexical RAG does not require embeddings when
+#          optional vector comparison startup is disabled.
+test_lexical_mode_without_qdrant_auto_start_does_not_require_embedding_model() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
   mkdir -p "${tmp_dir}/bin"
   write_mock_commands "${tmp_dir}/bin"
 
-  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=missing)"
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical RAG_QDRANT_AUTO_START=false MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=missing)"
 
   assert_contains "${output}" 'requested rag enabled: true'
   assert_contains "${output}" 'requested rag retrieval mode: lexical'
   assert_contains "${output}" 'requested rag vector store: in-memory'
+  assert_contains "${output}" 'requested rag qdrant auto-start: false'
   assert_contains "${output}" 'backend rag enabled: true'
   assert_contains "${output}" 'backend rag retrieval mode: lexical'
   assert_contains "${output}" 'backend rag vector store: in-memory'
   assert_contains "${output}" 'ollama cli: available'
   assert_contains "${output}" 'ollama service: ok'
   assert_contains "${output}" 'ollama embedding model: not required for current mode'
+  rm -rf "${tmp_dir}"
+}
+
+# test_lexical_mode_reports_optional_qdrant_comparison_readiness
+# Purpose: Verifies default lexical status still surfaces Qdrant readiness
+#          because the UI exposes Vector - Qdrant comparison.
+test_lexical_mode_reports_optional_qdrant_comparison_readiness() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_RETRIEVAL_MODE=lexical MOCK_QDRANT_SERVICE=up MOCK_QDRANT_COLLECTION=present MOCK_OLLAMA_SERVICE=up MOCK_EMBEDDING_MODEL=present)"
+
+  assert_contains "${output}" 'requested rag retrieval mode: lexical'
+  assert_contains "${output}" 'requested rag qdrant auto-start: true'
+  assert_contains "${output}" 'qdrant usage: optional Vector - Qdrant comparison target'
+  assert_contains "${output}" 'qdrant service: ok'
+  assert_contains "${output}" 'qdrant collection: present (points=123)'
+  assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   rm -rf "${tmp_dir}"
 }
 
@@ -252,7 +273,7 @@ test_non_ollama_non_vector_config_skips_ollama_readiness() {
   mkdir -p "${tmp_dir}/bin"
   write_mock_commands "${tmp_dir}/bin"
 
-  output="$(run_status "${tmp_dir}" APP_MODEL_PROVIDER=bedrock RAG_RETRIEVAL_MODE=lexical MOCK_OLLAMA_SERVICE=down)"
+  output="$(run_status "${tmp_dir}" APP_MODEL_PROVIDER=bedrock RAG_RETRIEVAL_MODE=lexical RAG_QDRANT_AUTO_START=false MOCK_OLLAMA_SERVICE=down)"
 
   assert_contains "${output}" 'backend rag retrieval mode: lexical'
   assert_contains "${output}" 'ollama readiness: not required for current configuration'
@@ -283,7 +304,8 @@ test_requested_config_mismatch_reports_warning() {
 # main
 # Purpose: Entry point for the test suite.
 main() {
-  test_lexical_mode_does_not_require_embedding_model
+  test_lexical_mode_without_qdrant_auto_start_does_not_require_embedding_model
+  test_lexical_mode_reports_optional_qdrant_comparison_readiness
   test_vector_mode_reports_present_embedding_model
   test_vector_mode_reports_missing_embedding_model
   test_qdrant_vector_mode_reports_reachable_service
