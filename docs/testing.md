@@ -42,6 +42,13 @@ Use `make verify` when you want to rerun the full broad suite.
 
 ### Backend
 
+The backend targets Java 21. Before running backend tests, confirm the active
+JDK with:
+
+```bash
+java -version
+```
+
 Run:
 
 ```bash

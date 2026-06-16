@@ -142,7 +142,7 @@ Script separation:
 
 ## Prerequisites
 
-- Java 21+
+- Java 21. This project targets Java 21 for the Spring Boot backend; confirm with `java -version` before building or running backend tests.
 - Maven 3.9+
 - Node 20+
 - Ollama installed locally for the default provider

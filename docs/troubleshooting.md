@@ -108,11 +108,13 @@ Fix:
 
 ## Java Version Warnings
 
+This project targets Java 21 for the Spring Boot backend.
+
 Symptoms:
 - backend startup shows warnings about restricted native access or Tomcat JNI loading
 
 Cause:
-- running the backend on a newer JDK than the project baseline
+- running the backend on a newer JDK than the Java 21 project baseline
 
 Recommended fix:
 - use Java 21 for this repo
