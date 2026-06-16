@@ -1,6 +1,6 @@
 /**
  * @fileoverview Tests for the main App component.
- * Verifies navigation between Chat and RAG modes based on backend RAG status.
+ * Verifies navigation between RAG and Agent modes based on backend RAG status.
  */
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -43,10 +43,11 @@ describe('App mode navigation', () => {
 
         render(<App/>);
 
-        const chatTab = await screen.findByRole('tab', {name: /chat/i});
+        const agentTab = await screen.findByRole('tab', {name: /agent/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
-        expect(chatTab).toBeDisabled();
-        expect(chatTab).toHaveAttribute('aria-selected', 'true');
+        expect(ragTab.compareDocumentPosition(agentTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(agentTab).toBeDisabled();
+        expect(agentTab).toHaveAttribute('aria-selected', 'true');
         expect(ragTab).toBeDisabled();
         expect(ragTab).toHaveAttribute('aria-disabled', 'true');
         expect(screen.getByText(/Enable `RAG_ENABLED=true` in the backend to use RAG mode\./i)).toBeInTheDocument();
@@ -84,10 +85,11 @@ describe('App mode navigation', () => {
         render(<App/>);
         const user = userEvent.setup();
 
-        const chatTab = await screen.findByRole('tab', {name: /chat/i});
+        const agentTab = await screen.findByRole('tab', {name: /agent/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
 
-        expect(chatTab).toBeDisabled();
+        expect(ragTab.compareDocumentPosition(agentTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(agentTab).toBeDisabled();
         expect(ragTab).not.toBeDisabled();
 
         await user.click(ragTab);
