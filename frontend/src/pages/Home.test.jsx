@@ -197,7 +197,9 @@ describe('Home', () => {
 
         render(<Home/>);
 
-        expect(await screen.findByRole('combobox', {name: /model/i})).toHaveValue('meta-llama/Llama-3.1-8B-Instruct');
+        await waitFor(() => {
+            expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('meta-llama/Llama-3.1-8B-Instruct');
+        });
         expect(screen.getByText(/provider: Hugging Face/i)).toBeInTheDocument();
         expect(await screen.findByText(/Hugging Face status: ready/i)).toBeInTheDocument();
         expect(await screen.findByText(/Last checked:/i)).toBeInTheDocument();
