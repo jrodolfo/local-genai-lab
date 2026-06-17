@@ -48,11 +48,11 @@ Negative:
 
 ## Primary Implementation
 
-- [FileChatSessionStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/FileChatSessionStore.java)
-- [ChatSessionService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ChatSessionService.java)
-- [ChatSessionImportService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ChatSessionImportService.java)
-- [ChatSessionExportService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ChatSessionExportService.java)
-- [sessionApi.js](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/api/sessionApi.js)
+- [FileChatSessionStore.java](../../backend/src/main/java/net/jrodolfo/llm/service/FileChatSessionStore.java)
+- [ChatSessionService.java](../../backend/src/main/java/net/jrodolfo/llm/service/ChatSessionService.java)
+- [ChatSessionImportService.java](../../backend/src/main/java/net/jrodolfo/llm/service/ChatSessionImportService.java)
+- [ChatSessionExportService.java](../../backend/src/main/java/net/jrodolfo/llm/service/ChatSessionExportService.java)
+- [sessionApi.js](../../frontend/src/api/sessionApi.js)
 
 ## Revisit Triggers
 

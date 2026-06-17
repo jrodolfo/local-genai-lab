@@ -40,9 +40,9 @@ Negative:
 
 ## Primary Implementation
 
-- [AvailableModelsService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/AvailableModelsService.java)
-- [ProviderStatusService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ProviderStatusService.java)
-- [Home.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/Home.jsx)
+- [AvailableModelsService.java](../../backend/src/main/java/net/jrodolfo/llm/service/AvailableModelsService.java)
+- [ProviderStatusService.java](../../backend/src/main/java/net/jrodolfo/llm/service/ProviderStatusService.java)
+- [Home.jsx](../../frontend/src/pages/Home.jsx)
 
 ## Revisit Triggers
 

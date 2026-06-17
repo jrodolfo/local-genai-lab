@@ -287,6 +287,9 @@ If Qdrant is unavailable, the UI shows a clear operational message instead of
 silently falling back to lexical retrieval. Silent fallback would make
 evaluation misleading.
 
+For direct browser and `curl` inspection of the local Qdrant collection, see
+[rag-qdrant-inspection.md](./rag-qdrant-inspection.md).
+
 ## API And UI Expectations
 
 `/api/rag/status` exposes enough state for troubleshooting:

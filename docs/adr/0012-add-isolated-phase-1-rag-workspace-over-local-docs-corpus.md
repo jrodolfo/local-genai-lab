@@ -73,12 +73,12 @@ zero-dependency baseline.
 
 # Primary Implementation
 
-- [RagController.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
-- [RagAnswerService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
-- [RagCorpusService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/service/RagCorpusService.java)
-- [RagRetrievalStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/RagRetrievalStore.java)
-- [InMemoryLexicalRagRetrievalStore.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/rag/store/InMemoryLexicalRagRetrievalStore.java)
-- [RagWorkspace.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/RagWorkspace.jsx)
+- [RagController.java](../../backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
+- [RagAnswerService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
+- [RagCorpusService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagCorpusService.java)
+- [RagRetrievalStore.java](../../backend/src/main/java/net/jrodolfo/llm/rag/store/RagRetrievalStore.java)
+- [InMemoryLexicalRagRetrievalStore.java](../../backend/src/main/java/net/jrodolfo/llm/rag/store/InMemoryLexicalRagRetrievalStore.java)
+- [RagWorkspace.jsx](../../frontend/src/pages/RagWorkspace.jsx)
 
 # Consequences
 

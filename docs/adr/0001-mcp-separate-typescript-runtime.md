@@ -58,9 +58,9 @@ Negative:
 
 ## Primary Implementation
 
-- [McpService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/McpService.java)
-- [mcp/README.md](/Users/jrodolfo/workspace/aws/local-genai-lab/mcp/README.md)
-- [start-backend-helper.sh](/Users/jrodolfo/workspace/aws/local-genai-lab/ops/start-backend-helper.sh)
+- [McpService.java](../../backend/src/main/java/net/jrodolfo/llm/service/McpService.java)
+- [mcp/README.md](../../mcp/README.md)
+- [start-backend-helper.sh](../../ops/start-backend-helper.sh)
 
 ## Revisit Triggers
 

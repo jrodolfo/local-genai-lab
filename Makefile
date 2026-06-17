@@ -44,6 +44,7 @@ test: test-ops test-backend test-frontend
 verify: test build-frontend test-mcp build-mcp test-scripts
 
 test-ops:
+	@bash ./ops/tests/test-doc-privacy.sh
 	@bash ./ops/tests/test-start.sh
 	@bash ./ops/tests/test-start-backend-helper.sh
 	@bash ./ops/tests/test-build.sh

@@ -185,7 +185,8 @@ After Qdrant is reachable, the first RAG question can build the configured
 Qdrant index automatically. You can also click `Rebuild Index` before asking if
 you want to prebuild the collection. In Qdrant mode, rebuild embeds the docs
 corpus, recreates the configured Qdrant collection, and upserts the chunk
-vectors with citation payloads.
+vectors with citation payloads. To inspect the collection directly, see
+[rag-qdrant-inspection.md](./rag-qdrant-inspection.md).
 
 If status reports:
 

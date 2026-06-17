@@ -46,10 +46,10 @@ Negative:
 
 ## Primary Implementation
 
-- [ChatModelProviderRegistry.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/provider/ChatModelProviderRegistry.java)
-- [ChatOrchestratorService.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/service/ChatOrchestratorService.java)
-- [ChatController.java](/Users/jrodolfo/workspace/aws/local-genai-lab/backend/src/main/java/net/jrodolfo/llm/controller/ChatController.java)
-- [Home.jsx](/Users/jrodolfo/workspace/aws/local-genai-lab/frontend/src/pages/Home.jsx)
+- [ChatModelProviderRegistry.java](../../backend/src/main/java/net/jrodolfo/llm/provider/ChatModelProviderRegistry.java)
+- [ChatOrchestratorService.java](../../backend/src/main/java/net/jrodolfo/llm/service/ChatOrchestratorService.java)
+- [ChatController.java](../../backend/src/main/java/net/jrodolfo/llm/controller/ChatController.java)
+- [Home.jsx](../../frontend/src/pages/Home.jsx)
 
 ## Revisit Triggers
 

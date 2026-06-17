@@ -271,7 +271,7 @@ These flows are still worth running manually after meaningful changes:
 
 10. Cross-provider evaluation
    Use:
-   - [provider-evaluation-template.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/provider-evaluation-template.md)
+   - [provider-evaluation-template.md](./provider-evaluation-template.md)
 
    Run the same prompt set against:
    - Ollama

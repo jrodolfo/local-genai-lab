@@ -31,9 +31,9 @@ Negative:
 
 ## Primary Implementation
 
-- [architecture-overview.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture-overview.md)
-- [architecture.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture.md)
-- [architecture-walkthrough.md](/Users/jrodolfo/workspace/aws/local-genai-lab/docs/architecture-walkthrough.md)
+- [architecture-overview.md](../architecture-overview.md)
+- [architecture.md](../architecture.md)
+- [architecture-walkthrough.md](../architecture-walkthrough.md)
 
 ## Revisit Triggers
 
