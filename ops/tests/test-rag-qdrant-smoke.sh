@@ -38,6 +38,10 @@ fail() {
   exit 1
 }
 
+progress() {
+  printf '[rag qdrant smoke] %s\n' "$1" >&2
+}
+
 require_command() {
   local command_name="$1"
   command -v "${command_name}" >/dev/null 2>&1 || fail "missing required command: ${command_name}"
@@ -174,6 +178,7 @@ check_ollama_embedding_model() {
 }
 
 main() {
+  progress 'starting live smoke test'
   require_command curl
   require_command python3
 
@@ -189,7 +194,9 @@ main() {
   query_response="${TMP_DIR}/rag-query-response.json"
   qdrant_file="${TMP_DIR}/qdrant-collection.json"
 
+  progress "checking backend health at ${BACKEND_URL}"
   curl_get_json "${BACKEND_URL}/actuator/health" "${TMP_DIR}/health.json"
+  progress 'checking backend RAG configuration'
   curl_get_json "${BACKEND_URL}/api/rag/status" "${status_file}"
 
   enabled="$(json_get "${status_file}" enabled)"
@@ -209,16 +216,22 @@ main() {
   [ "${qdrant_reachable}" = "true" ] || fail "Qdrant is not reachable at ${qdrant_url}; run docker compose up -d qdrant"
 
   if [ "${embedding_provider}" = "ollama" ]; then
+    progress "checking Ollama embedding model ${embedding_model}"
     check_ollama_embedding_model "${embedding_model}"
   fi
 
+  progress 'indexing RAG documents into Qdrant; this can take a while on the first run'
   curl_post_json "${BACKEND_URL}/api/rag/index" /dev/null "${index_file}"
   documents="$(json_positive_int "${index_file}" documentCount "documentCount")"
   chunks="$(json_positive_int "${index_file}" chunkCount "chunkCount")"
+  progress "indexed ${documents} documents into ${chunks} chunks"
 
+  progress "checking Qdrant collection ${qdrant_collection}"
   curl_get_json "${qdrant_url}/collections/${qdrant_collection}" "${qdrant_file}"
   points="$(json_positive_int "${qdrant_file}" result.points_count "qdrant points_count")"
+  progress "Qdrant collection has ${points} points"
 
+  progress 'selecting provider and model for the answer generation step'
   curl_get_json "${BACKEND_URL}/api/models" "${models_file}"
   select_provider_and_model "${models_file}" >"${provider_model_file}" \
     || fail "could not select provider/model from /api/models; set RAG_SMOKE_PROVIDER and RAG_SMOKE_MODEL"
@@ -228,12 +241,14 @@ main() {
   [ -n "${model}" ] || fail "could not select model from /api/models; set RAG_SMOKE_MODEL"
 
   write_query_payload "${query_payload}" "${provider}" "${model}"
+  progress "asking RAG question with provider=${provider} model=${model}; Ollama may take 1-3 minutes"
   curl_post_json "${BACKEND_URL}/api/rag/query" "${query_payload}" "${query_response}"
 
   answer="$(json_get "${query_response}" answer)"
   source_count="$(json_count "${query_response}" sources)"
   [ -n "${answer}" ] || fail "RAG query returned an empty answer"
   [ "${source_count}" -gt 0 ] || fail "RAG query returned no cited sources"
+  progress "RAG answer returned with ${source_count} cited sources"
 
   printf 'rag qdrant smoke passed\n'
   printf 'backend=%s\n' "${BACKEND_URL}"
