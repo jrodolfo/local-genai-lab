@@ -5,23 +5,23 @@ SHELL := /bin/bash
 help:
 	@printf '%s\n' \
 		'Available targets:' \
-		'  make start         Start backend and frontend in the background' \
-		'  make stop          Stop background backend and frontend processes' \
-		'  make restart       Restart backend and frontend' \
-		'  make status        Show process, URL, and log status' \
-		'  make build         Build backend, frontend, and MCP artifacts' \
-		'  make check-app     Run the local stack smoke check' \
-		'  make clean-ds-store Remove macOS .DS_Store files from the repo tree' \
-		'  make test          Run ops, backend, and frontend tests' \
-		'  make verify        Run broader project verification' \
-		'  make test-ops      Run operational shell helper tests' \
-		'  make test-backend  Run backend tests' \
-		'  make test-frontend Run frontend tests' \
-		'  make test-rag-qdrant-smoke Run optional live RAG + Qdrant smoke test' \
-		'  make build-frontend Build the frontend' \
-		'  make test-mcp      Run MCP tests' \
-		'  make build-mcp     Build MCP server' \
-		'  make test-scripts  Run MCP tool script lint/tests'
+		'  make start                  Start backend and frontend in the background' \
+		'  make stop                   Stop background backend and frontend processes' \
+		'  make restart                Restart backend and frontend' \
+		'  make status                 Show process, URL, and log status' \
+		'  make build                  Build backend, frontend, and MCP artifacts' \
+		'  make check-app              Run the local stack smoke check' \
+		'  make clean-ds-store         Remove macOS .DS_Store files from the repo tree' \
+		'  make test                   Run ops, backend, and frontend tests' \
+		'  make verify                 Run broader project verification' \
+		'  make test-ops               Run operational shell helper tests' \
+		'  make test-backend           Run backend tests' \
+		'  make test-frontend          Run frontend tests' \
+		'  make test-rag-qdrant-smoke  Run optional live RAG + Qdrant smoke test' \
+		'  make build-frontend         Build the frontend' \
+		'  make test-mcp               Run MCP tests' \
+		'  make build-mcp              Build MCP server' \
+		'  make test-scripts           Run MCP tool script lint/tests'
 
 start:
 	@./start.sh

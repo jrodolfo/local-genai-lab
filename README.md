@@ -234,11 +234,15 @@ Use these commands depending on what you need to verify:
 
 | Command | Use when | Requires running app? |
 | --- | --- | --- |
+| `make start` | Start backend and frontend in the background. | No |
+| `make stop` | Stop managed backend/frontend processes. | Useful when running |
+| `make restart` | Stop then start the local app. | No |
+| `make status` / `./status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
+| `make build` | Build backend, frontend, and MCP artifacts without changing the running app. | No |
+| `make check-app` | Smoke-check the live backend/frontend stack after startup. | Yes |
+| `make clean-ds-store` | Remove local macOS `.DS_Store` files from the repo tree. | No |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
 | `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
-| `make build` | Build backend, frontend, and MCP artifacts without changing the running app. | No |
-| `./status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
-| `make check-app` | Smoke-check the live backend/frontend stack after startup. | Yes |
 | `make test-rag-qdrant-smoke` | Verify the live Ollama embeddings plus Qdrant RAG path. | Yes, in Qdrant vector mode |
 
 Use `make test` when you only need normal verification. Use `make verify`

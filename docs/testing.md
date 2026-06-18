@@ -27,12 +27,23 @@ areas.
 
 | Command | Purpose | Prerequisites | CI status |
 | --- | --- | --- | --- |
+| `make start` | Start backend and frontend in the background. | Java, Node, configured local ports. | Not a CI target. |
+| `make stop` | Stop managed backend/frontend processes. | Managed app may be running. | Not a CI target. |
+| `make restart` | Stop then start the local app. | Same as `make start`. | Not a CI target. |
+| `make status` / `./status.sh` | Read-only local runtime inspection. | App may be stopped or running. | Not a CI target. |
+| `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
+| `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
+| `make clean-ds-store` | Remove local macOS `.DS_Store` files. | Local workspace only. | Not a CI target. |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | Java 21, Node dependencies installed as needed. | Covered through separate CI jobs. |
 | `make verify` | Broader CI-aligned local verification. | Same as `make test`, plus MCP dependencies and script tooling. | Mirrors the CI job set locally. |
-| `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
-| `./status.sh` | Read-only local runtime inspection. | App may be stopped or running. | Not a CI target. |
-| `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
+| `make test-ops` | Operational shell helper tests. | Bash and standard shell utilities. | CI `ops` job. |
+| `make test-backend` | Backend test suite. | Java 21 and Maven. | CI `backend` job. |
+| `make test-frontend` | Frontend test suite. | Node 20 dependencies installed. | CI `frontend` job. |
 | `make test-rag-qdrant-smoke` | Live Ollama embeddings plus Qdrant RAG smoke test. | Backend running in Qdrant vector mode, Ollama, `nomic-embed-text`, Docker/Qdrant. | Manual/local only today. |
+| `make build-frontend` | Frontend production build. | Node 20 dependencies installed. | CI `frontend` job. |
+| `make test-mcp` | MCP server test suite. | MCP npm dependencies installed. | CI `mcp` job. |
+| `make build-mcp` | MCP server build. | MCP npm dependencies installed. | CI `mcp` job. |
+| `make test-scripts` | MCP tool script lint/tests. | `jq` and shell tooling. | CI `scripts` job. |
 
 ### CI And Local Mapping
 
