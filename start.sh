@@ -115,17 +115,44 @@ fi
 start_detached_process() {
   local log_file="$1"
   shift
+  local python_cmd=''
+  local command_args=("$@")
+
+  if command -v python3 >/dev/null 2>&1; then
+    python_cmd='python3'
+  elif command -v python >/dev/null 2>&1; then
+    python_cmd='python'
+  fi
+
+  if [ -n "${python_cmd}" ] && [ "${OS:-}" = "Windows_NT" ] && [ "${command_args[0]:-}" = "bash" ]; then
+    local bash_path
+    # Native Windows Python does not resolve Git Bash's POSIX PATH the same way
+    # the shell does. Give it the real executable path so detached children do
+    # not accidentally resolve to WSL's bash launcher.
+    bash_path="$(command -v bash)"
+    if command -v cygpath >/dev/null 2>&1; then
+      bash_path="$(cygpath -w "${bash_path}")"
+    fi
+    command_args[0]="${bash_path}"
+  fi
 
   # Prefer Python when available because it can detach the child into a new
   # process session while sending stdout/stderr directly to the managed log.
-  if command -v python3 >/dev/null 2>&1; then
-    python3 - "${log_file}" "$@" <<'PY'
+  if [ -n "${python_cmd}" ]; then
+    "${python_cmd}" - "${log_file}" "${command_args[@]}" <<'PY'
 import os
 import subprocess
 import sys
 
 log_file = sys.argv[1]
 command = sys.argv[2:]
+creationflags = 0
+
+if os.name == "nt":
+    creationflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+    creationflags |= subprocess.DETACHED_PROCESS
+    if hasattr(subprocess, "CREATE_NO_WINDOW"):
+        creationflags |= subprocess.CREATE_NO_WINDOW
 
 with open(log_file, "ab", buffering=0) as log:
     process = subprocess.Popen(
@@ -135,6 +162,7 @@ with open(log_file, "ab", buffering=0) as log:
         stderr=subprocess.STDOUT,
         close_fds=True,
         start_new_session=True,
+        creationflags=creationflags,
     )
 
 print(process.pid)
@@ -142,7 +170,7 @@ PY
     return 0
   fi
 
-  nohup "$@" >> "${log_file}" 2>&1 &
+  nohup "${command_args[@]}" >> "${log_file}" 2>&1 &
   printf '%s\n' "$!"
 }
 
@@ -194,6 +222,18 @@ if ! wait_for_url "${FRONTEND_URL}" "${WAIT_TIMEOUT_SECONDS}"; then
     "Frontend did not become ready within ${WAIT_TIMEOUT_SECONDS}s." \
     "See ${FRONTEND_LOG_FILE} for details." >&2
   exit 1
+fi
+
+backend_port_pid="$(find_port_process "${SERVER_PORT}")"
+if [ -n "${backend_port_pid}" ]; then
+  backend_pid="${backend_port_pid}"
+  printf '%s' "${backend_pid}" > "${BACKEND_PID_FILE}"
+fi
+
+frontend_port_pid="$(find_port_process "${FRONTEND_PORT}")"
+if [ -n "${frontend_port_pid}" ]; then
+  frontend_pid="${frontend_port_pid}"
+  printf '%s' "${frontend_pid}" > "${FRONTEND_PID_FILE}"
 fi
 
 printf '%s\n' \

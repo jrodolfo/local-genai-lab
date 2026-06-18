@@ -16,7 +16,7 @@
 #
 # Required Tools:
 #   - curl (for wait_for_url)
-#   - lsof (for find_port_process)
+#   - lsof or netstat (for find_port_process)
 #   - docker (only for Qdrant vector-store startup)
 #
 # Expected Output:
@@ -95,12 +95,23 @@ ensure_run_dir() {
 # Exit Behavior: Returns 0 if alive, non-zero otherwise.
 is_process_alive() {
   local pid="$1"
-  local kill_output
+  local kill_output tasklist_output
 
   [ -n "${pid}" ] || return 1
 
   if kill_output="$(kill -0 "${pid}" 2>&1)"; then
     return 0
+  fi
+
+  if [ "${OS:-}" = "Windows_NT" ] && command -v tasklist >/dev/null 2>&1; then
+    if tasklist_output="$(tasklist //FI "PID eq ${pid}" //NH 2>&1)"; then
+      printf '%s\n' "${tasklist_output}" \
+        | awk -v pid="${pid}" '$2 == pid { found = 1 } END { exit !found }'
+      return $?
+    fi
+    if printf '%s' "${tasklist_output}" | grep -qi 'access denied'; then
+      return 0
+    fi
   fi
 
   # In restricted shells, kill -0 may report EPERM even though the process
@@ -170,7 +181,16 @@ wait_for_url() {
 # Exit Behavior: Returns 0.
 find_port_process() {
   local port="$1"
-  lsof -ti "tcp:${port}" 2>/dev/null | head -n 1 || true
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -ti "tcp:${port}" 2>/dev/null | head -n 1 || true
+    return 0
+  fi
+
+  if command -v netstat >/dev/null 2>&1; then
+    netstat -ano -p tcp 2>/dev/null \
+      | awk -v port=":${port}" '$1 == "TCP" && $2 ~ port "$" && $4 == "LISTENING" { print $5; exit }' \
+      | tr -d '\r'
+  fi
 }
 
 # terminate_pid
@@ -201,6 +221,10 @@ terminate_pid() {
 
   if is_process_alive "${pid}"; then
     kill -KILL "${pid}" >/dev/null 2>&1 || true
+  fi
+
+  if is_process_alive "${pid}" && [ "${OS:-}" = "Windows_NT" ] && command -v taskkill >/dev/null 2>&1; then
+    taskkill //PID "${pid}" //T //F >/dev/null 2>&1 || true
   fi
 
   if is_process_alive "${pid}"; then

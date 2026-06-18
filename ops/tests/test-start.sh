@@ -72,10 +72,20 @@ EOF
 link_required_tool() {
   local bin_dir="$1"
   local tool="$2"
-  local tool_path
+  local bash_path tool_path
 
-  tool_path="$(command -v "${tool}")"
-  ln -s "${tool_path}" "${bin_dir}/${tool}"
+  bash_path="$(type -P bash)"
+  tool_path="$(type -P "${tool}" || true)"
+
+  {
+    printf '#!%s\n' "${bash_path}"
+    if [ -n "${tool_path}" ]; then
+      printf 'exec %q "$@"\n' "${tool_path}"
+    else
+      printf '%s "$@"\n' "${tool}"
+    fi
+  } >"${bin_dir}/${tool}"
+  chmod +x "${bin_dir}/${tool}"
 }
 
 run_start() {
