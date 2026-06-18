@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -11,6 +11,7 @@ help:
 		'  make status        Show process, URL, and log status' \
 		'  make build         Build backend, frontend, and MCP artifacts' \
 		'  make check-app     Run the local stack smoke check' \
+		'  make clean-ds-store Remove macOS .DS_Store files from the repo tree' \
 		'  make test          Run ops, backend, and frontend tests' \
 		'  make verify        Run broader project verification' \
 		'  make test-ops      Run operational shell helper tests' \
@@ -39,6 +40,9 @@ build:
 
 check-app:
 	@./ops/check-app.sh
+
+clean-ds-store:
+	@find . -path ./.git -prune -o -name .DS_Store -type f -exec rm -f {} +
 
 test: test-ops test-backend test-frontend
 
