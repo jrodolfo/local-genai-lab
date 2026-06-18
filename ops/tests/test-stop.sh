@@ -68,10 +68,14 @@ write_mock_lsof() {
 set -euo pipefail
 case "${*: -1}" in
   tcp:5173)
-    printf '%s\n' "${MOCK_FRONTEND_PORT_PID:-}"
+    if [ -n "${MOCK_FRONTEND_PORT_PID:-}" ] && kill -0 "${MOCK_FRONTEND_PORT_PID}" >/dev/null 2>&1; then
+      printf '%s\n' "${MOCK_FRONTEND_PORT_PID}"
+    fi
     ;;
   tcp:8080)
-    printf '%s\n' "${MOCK_BACKEND_PORT_PID:-}"
+    if [ -n "${MOCK_BACKEND_PORT_PID:-}" ] && kill -0 "${MOCK_BACKEND_PORT_PID}" >/dev/null 2>&1; then
+      printf '%s\n' "${MOCK_BACKEND_PORT_PID}"
+    fi
     ;;
 esac
 EOF
@@ -123,6 +127,7 @@ test_stop_all_stops_unmanaged_frontend_port_owner() {
 
   output="$(MOCK_FRONTEND_PORT_PID="${port_pid}" run_stop "${tmp_dir}" --all)"
 
+  assert_contains "${output}" "Stopping unmanaged frontend port owner (pid=${port_pid}, port=5173)..."
   assert_contains "${output}" "Stopped unmanaged frontend port owner (pid=${port_pid}, port=5173)."
   assert_process_stopped "${port_pid}"
   wait "${port_pid}" 2>/dev/null || true

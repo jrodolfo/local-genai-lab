@@ -61,6 +61,35 @@ SERVER_PORT="${SERVER_PORT:-8080}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 
 # --- Helpers ---
+wait_for_port_release() {
+  local port="$1"
+  local pid="$2"
+  local name="$3"
+  local waited=0
+  local owner_pid
+  local printed_dots='false'
+
+  while [ "${waited}" -lt 15 ]; do
+    owner_pid="$(find_port_process "${port}")"
+    if [ -z "${owner_pid}" ] || [ "${owner_pid}" != "${pid}" ]; then
+      if [ "${printed_dots}" = 'true' ]; then
+        printf '\n'
+      fi
+      return 0
+    fi
+    sleep 1
+    waited=$((waited + 1))
+    printf '.'
+    printed_dots='true'
+  done
+
+  if [ "${printed_dots}" = 'true' ]; then
+    printf '\n'
+  fi
+  printf '%s\n' "Warning: ${name} port ${port} is still owned by pid ${pid}." >&2
+  return 1
+}
+
 stop_unmanaged_port_owner() {
   local port="$1"
   local name="$2"
@@ -78,7 +107,9 @@ stop_unmanaged_port_owner() {
     return 0
   fi
 
+  printf '%s\n' "Stopping unmanaged ${name} port owner (pid=${owner_pid}, port=${port})..."
   terminate_pid "${owner_pid}" "${name} port ${port}"
+  wait_for_port_release "${port}" "${owner_pid}" "${name}"
   printf '%s\n' "Stopped unmanaged ${name} port owner (pid=${owner_pid}, port=${port})."
   stopped_any=true
 }
@@ -90,14 +121,18 @@ frontend_pid="$(read_pid_file "${FRONTEND_PID_FILE}")"
 stopped_any=false
 
 if [ -n "${frontend_pid}" ]; then
+  printf '%s\n' "Stopping frontend (pid=${frontend_pid})..."
   terminate_pid "${frontend_pid}" "frontend"
+  wait_for_port_release "${FRONTEND_PORT}" "${frontend_pid}" "frontend"
   rm -f "${FRONTEND_PID_FILE}"
   printf '%s\n' "Stopped frontend (pid=${frontend_pid})."
   stopped_any=true
 fi
 
 if [ -n "${backend_pid}" ]; then
+  printf '%s\n' "Stopping backend (pid=${backend_pid})..."
   terminate_pid "${backend_pid}" "backend"
+  wait_for_port_release "${SERVER_PORT}" "${backend_pid}" "backend"
   rm -f "${BACKEND_PID_FILE}"
   printf '%s\n' "Stopped backend (pid=${backend_pid})."
   stopped_any=true

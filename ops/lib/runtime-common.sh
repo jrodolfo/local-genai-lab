@@ -103,6 +103,10 @@ is_process_alive() {
     return 0
   fi
 
+  if printf '%s' "${kill_output}" | grep -qi 'no such process'; then
+    return 1
+  fi
+
   if [ "${OS:-}" = "Windows_NT" ] && command -v tasklist >/dev/null 2>&1; then
     if tasklist_output="$(tasklist //FI "PID eq ${pid}" //NH 2>&1)"; then
       printf '%s\n' "${tasklist_output}" \
@@ -150,6 +154,11 @@ clear_stale_pid_file() {
   fi
 }
 
+curl_probe_url() {
+  local url="$1"
+  curl -fsS --connect-timeout 1 --max-time 2 "${url}" >/dev/null 2>&1
+}
+
 # wait_for_url
 # Purpose: Waits for a URL to return a successful response (HTTP 2xx).
 # Inputs:
@@ -163,7 +172,7 @@ wait_for_url() {
   local waited=0
 
   while [ "${waited}" -lt "${timeout_seconds}" ]; do
-    if curl -fsS "${url}" >/dev/null 2>&1; then
+    if curl_probe_url "${url}"; then
       return 0
     fi
     sleep 1
@@ -178,19 +187,19 @@ wait_for_url() {
 # Inputs:
 #   $1 - URL to check.
 #   $2 - Timeout in seconds.
-#   $3 - Optional dot interval in seconds. Defaults to 5.
+#   $3 - Optional dot interval in seconds. Defaults to 1.
 # Outputs:
 #   Prints progress dots to stdout.
 # Exit Behavior: Returns 0 on success, 1 on timeout.
 wait_for_url_with_dots() {
   local url="$1"
   local timeout_seconds="$2"
-  local dot_interval="${3:-5}"
+  local dot_interval="${3:-1}"
   local waited=0
   local printed_dots='false'
 
   while [ "${waited}" -lt "${timeout_seconds}" ]; do
-    if curl -fsS "${url}" >/dev/null 2>&1; then
+    if curl_probe_url "${url}"; then
       if [ "${printed_dots}" = 'true' ]; then
         printf '\n'
       fi
@@ -261,7 +270,7 @@ terminate_pid() {
     kill -KILL "${pid}" >/dev/null 2>&1 || true
   fi
 
-  if is_process_alive "${pid}" && [ "${OS:-}" = "Windows_NT" ] && command -v taskkill >/dev/null 2>&1; then
+  if [ "${OS:-}" = "Windows_NT" ] && command -v taskkill >/dev/null 2>&1; then
     taskkill //PID "${pid}" //T //F >/dev/null 2>&1 || true
   fi
 

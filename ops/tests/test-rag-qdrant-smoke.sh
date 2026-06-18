@@ -46,8 +46,9 @@ run_with_dots() {
   local label="$1"
   shift
   local status_file="${TMP_DIR}/${label}.status"
-  local pid status printed_dots
+  local pid status printed_dots dot_interval
   printed_dots='false'
+  dot_interval="${RAG_SMOKE_DOT_INTERVAL_SECONDS:-1}"
 
   (
     "$@"
@@ -56,7 +57,7 @@ run_with_dots() {
   pid="$!"
 
   while kill -0 "${pid}" >/dev/null 2>&1; do
-    sleep 5
+    sleep "${dot_interval}"
     if kill -0 "${pid}" >/dev/null 2>&1; then
       printf '.'
       printed_dots='true'
