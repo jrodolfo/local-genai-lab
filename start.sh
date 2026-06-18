@@ -204,7 +204,8 @@ frontend_pid="$(start_detached_process "${FRONTEND_LOG_FILE}" bash -c '
 printf '%s' "${frontend_pid}" > "${FRONTEND_PID_FILE}"
 
 # --- Health Checks ---
-if ! wait_for_url "${BACKEND_URL}/actuator/health" "${WAIT_TIMEOUT_SECONDS}"; then
+printf '%s\n' "Waiting for backend health at ${BACKEND_URL}/actuator/health"
+if ! wait_for_url_with_dots "${BACKEND_URL}/actuator/health" "${WAIT_TIMEOUT_SECONDS}" 5; then
   terminate_pid "${frontend_pid}" "frontend" || true
   terminate_pid "${backend_pid}" "backend" || true
   rm -f "${FRONTEND_PID_FILE}" "${BACKEND_PID_FILE}"
@@ -214,7 +215,8 @@ if ! wait_for_url "${BACKEND_URL}/actuator/health" "${WAIT_TIMEOUT_SECONDS}"; th
   exit 1
 fi
 
-if ! wait_for_url "${FRONTEND_URL}" "${WAIT_TIMEOUT_SECONDS}"; then
+printf '%s\n' "Waiting for frontend at ${FRONTEND_URL}"
+if ! wait_for_url_with_dots "${FRONTEND_URL}" "${WAIT_TIMEOUT_SECONDS}" 5; then
   terminate_pid "${frontend_pid}" "frontend" || true
   terminate_pid "${backend_pid}" "backend" || true
   rm -f "${FRONTEND_PID_FILE}" "${BACKEND_PID_FILE}"

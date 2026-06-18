@@ -172,6 +172,44 @@ wait_for_url() {
   return 1
 }
 
+# wait_for_url_with_dots
+# Purpose: Waits for a URL like wait_for_url, printing a dot every few seconds
+#          while the wait is still active.
+# Inputs:
+#   $1 - URL to check.
+#   $2 - Timeout in seconds.
+#   $3 - Optional dot interval in seconds. Defaults to 5.
+# Outputs:
+#   Prints progress dots to stdout.
+# Exit Behavior: Returns 0 on success, 1 on timeout.
+wait_for_url_with_dots() {
+  local url="$1"
+  local timeout_seconds="$2"
+  local dot_interval="${3:-5}"
+  local waited=0
+  local printed_dots='false'
+
+  while [ "${waited}" -lt "${timeout_seconds}" ]; do
+    if curl -fsS "${url}" >/dev/null 2>&1; then
+      if [ "${printed_dots}" = 'true' ]; then
+        printf '\n'
+      fi
+      return 0
+    fi
+    sleep 1
+    waited=$((waited + 1))
+    if [ "${dot_interval}" -gt 0 ] && [ $((waited % dot_interval)) -eq 0 ]; then
+      printf '.'
+      printed_dots='true'
+    fi
+  done
+
+  if [ "${printed_dots}" = 'true' ]; then
+    printf '\n'
+  fi
+  return 1
+}
+
 # find_port_process
 # Purpose: Finds the PID of the process listening on a given TCP port.
 # Inputs:
