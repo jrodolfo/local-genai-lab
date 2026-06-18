@@ -177,13 +177,14 @@ main() {
   require_command curl
   require_command python3
 
-  local status_file index_file models_file query_payload query_response qdrant_file
+  local status_file index_file models_file provider_model_file query_payload query_response qdrant_file
   local enabled retrieval_mode vector_store qdrant_url qdrant_collection qdrant_reachable embedding_provider embedding_model
   local documents chunks points provider model answer source_count
 
   status_file="${TMP_DIR}/rag-status.json"
   index_file="${TMP_DIR}/rag-index.json"
   models_file="${TMP_DIR}/models.json"
+  provider_model_file="${TMP_DIR}/provider-model.txt"
   query_payload="${TMP_DIR}/rag-query.json"
   query_response="${TMP_DIR}/rag-query-response.json"
   qdrant_file="${TMP_DIR}/qdrant-collection.json"
@@ -219,10 +220,12 @@ main() {
   points="$(json_positive_int "${qdrant_file}" result.points_count "qdrant points_count")"
 
   curl_get_json "${BACKEND_URL}/api/models" "${models_file}"
-  mapfile -t provider_model < <(select_provider_and_model "${models_file}") \
+  select_provider_and_model "${models_file}" >"${provider_model_file}" \
     || fail "could not select provider/model from /api/models; set RAG_SMOKE_PROVIDER and RAG_SMOKE_MODEL"
-  provider="${provider_model[0]}"
-  model="${provider_model[1]}"
+  provider="$(sed -n '1p' "${provider_model_file}")"
+  model="$(sed -n '2p' "${provider_model_file}")"
+  [ -n "${provider}" ] || fail "could not select provider from /api/models; set RAG_SMOKE_PROVIDER"
+  [ -n "${model}" ] || fail "could not select model from /api/models; set RAG_SMOKE_MODEL"
 
   write_query_payload "${query_payload}" "${provider}" "${model}"
   curl_post_json "${BACKEND_URL}/api/rag/query" "${query_payload}" "${query_response}"
