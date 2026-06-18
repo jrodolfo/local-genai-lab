@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app test verify test-ops test-backend test-frontend build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -16,6 +16,7 @@ help:
 		'  make test-ops      Run operational shell helper tests' \
 		'  make test-backend  Run backend tests' \
 		'  make test-frontend Run frontend tests' \
+		'  make test-rag-qdrant-smoke Run optional live RAG + Qdrant smoke test' \
 		'  make build-frontend Build the frontend' \
 		'  make test-mcp      Run MCP tests' \
 		'  make build-mcp     Build MCP server' \
@@ -56,6 +57,9 @@ test-backend:
 
 test-frontend:
 	@cd frontend && npm test -- --run
+
+test-rag-qdrant-smoke:
+	@bash ./ops/tests/test-rag-qdrant-smoke.sh
 
 build-frontend:
 	@cd frontend && npm run build

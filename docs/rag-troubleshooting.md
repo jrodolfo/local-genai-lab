@@ -181,6 +181,17 @@ RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
 
+To verify the full live Qdrant path from the command line, run:
+
+```bash
+make test-rag-qdrant-smoke
+```
+
+This optional smoke test requires the backend to already be running with
+`RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`. It checks backend health,
+RAG status, Qdrant reachability, the Ollama embedding model, index rebuild,
+Qdrant point count, and one `vector:qdrant` RAG query with cited sources.
+
 After Qdrant is reachable, the first RAG question can build the configured
 Qdrant index automatically. You can also click `Rebuild Index` before asking if
 you want to prebuild the collection. In Qdrant mode, rebuild embeds the docs

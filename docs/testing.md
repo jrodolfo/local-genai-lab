@@ -40,6 +40,30 @@ instead of duplicating raw commands.
 If CI fails, first reproduce the failed job locally with the matching target.
 Use `make verify` when you want to rerun the full broad suite.
 
+### Optional Live RAG + Qdrant Smoke Test
+
+The normal test suite does not require Docker, Qdrant, Ollama, or a live local
+backend. When you specifically want to verify the full local Qdrant RAG path,
+start the app in Qdrant vector mode:
+
+```bash
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+```
+
+Then run:
+
+```bash
+make test-rag-qdrant-smoke
+```
+
+This target checks backend health, RAG status, Qdrant reachability, the Ollama
+embedding model, index rebuild, Qdrant point count, and one RAG query using
+`vector:qdrant`. It is intentionally opt-in and local/manual today.
+
+The current GitHub CI workflow does not provision Qdrant, install Ollama, or
+pull the `nomic-embed-text` embedding model. Keep this target out of default CI
+unless the workflow is later updated to provide those runtime dependencies.
+
 ### Backend
 
 The backend targets Java 21. Before running backend tests, confirm the active

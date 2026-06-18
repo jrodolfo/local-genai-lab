@@ -238,6 +238,7 @@ make verify
 make build
 ./status.sh
 make check-app
+make test-rag-qdrant-smoke
 ```
 
 - `make test`: normal local pre-commit suite for operational helpers, backend tests, and frontend tests
@@ -245,6 +246,7 @@ make check-app
 - `make build`: build backend, frontend, and MCP artifacts without changing the running app
 - `./status.sh`: read-only runtime readiness check for local processes, health URLs, RAG mode, and Ollama readiness
 - `make check-app`: live-stack smoke check after the app is running
+- `make test-rag-qdrant-smoke`: optional live RAG smoke test for Ollama embeddings plus Qdrant; requires the app to be running in Qdrant vector mode
 
 Use `make test` when you only need verification. Use `make build` or
 `./build.sh` when you also want fresh generated backend, frontend, and MCP
@@ -336,6 +338,18 @@ To make Qdrant the active backend vector store:
 RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
 ./status.sh
 ```
+
+To verify the full live Qdrant RAG path after startup:
+
+```bash
+make test-rag-qdrant-smoke
+```
+
+This optional smoke test rebuilds the RAG index, confirms the Qdrant collection
+has points, submits one RAG question through `vector:qdrant`, and verifies that
+the answer includes cited sources. It is intentionally separate from `make test`
+and CI because it depends on a running backend, Docker/Qdrant, Ollama, and the
+configured embedding model.
 
 Qdrant readiness and collection point count are visible in status output and
 the RAG UI. The first RAG question can build the configured index automatically.
