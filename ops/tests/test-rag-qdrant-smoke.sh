@@ -39,7 +39,39 @@ fail() {
 }
 
 progress() {
-  printf '[rag qdrant smoke] %s\n' "$1" >&2
+  printf '[rag qdrant smoke] %s\n' "$1"
+}
+
+run_with_dots() {
+  local label="$1"
+  shift
+  local status_file="${TMP_DIR}/${label}.status"
+  local pid status printed_dots
+  printed_dots='false'
+
+  (
+    "$@"
+    printf '%s' "$?" >"${status_file}"
+  ) &
+  pid="$!"
+
+  while kill -0 "${pid}" >/dev/null 2>&1; do
+    sleep 5
+    if kill -0 "${pid}" >/dev/null 2>&1; then
+      printf '.'
+      printed_dots='true'
+    fi
+  done
+  wait "${pid}" || true
+  if [ -f "${status_file}" ]; then
+    status="$(cat "${status_file}")"
+  else
+    status=1
+  fi
+  if [ "${printed_dots}" = 'true' ]; then
+    printf '\n'
+  fi
+  return "${status}"
 }
 
 require_command() {
@@ -221,7 +253,7 @@ main() {
   fi
 
   progress 'indexing RAG documents into Qdrant; this can take a while on the first run'
-  curl_post_json "${BACKEND_URL}/api/rag/index" /dev/null "${index_file}"
+  run_with_dots index curl_post_json "${BACKEND_URL}/api/rag/index" /dev/null "${index_file}"
   documents="$(json_positive_int "${index_file}" documentCount "documentCount")"
   chunks="$(json_positive_int "${index_file}" chunkCount "chunkCount")"
   progress "indexed ${documents} documents into ${chunks} chunks"
@@ -242,7 +274,7 @@ main() {
 
   write_query_payload "${query_payload}" "${provider}" "${model}"
   progress "asking RAG question with provider=${provider} model=${model}; Ollama may take 1-3 minutes"
-  curl_post_json "${BACKEND_URL}/api/rag/query" "${query_payload}" "${query_response}"
+  run_with_dots query curl_post_json "${BACKEND_URL}/api/rag/query" "${query_payload}" "${query_response}"
 
   answer="$(json_get "${query_response}" answer)"
   source_count="$(json_count "${query_response}" sources)"
