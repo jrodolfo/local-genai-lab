@@ -23,6 +23,17 @@ This runs `make test`, frontend build, MCP tests/build, and MCP tool script
 lint/tests. Use it before larger pushes or changes that touch multiple project
 areas.
 
+### Command Selection
+
+| Command | Purpose | Prerequisites | CI status |
+| --- | --- | --- | --- |
+| `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | Java 21, Node dependencies installed as needed. | Covered through separate CI jobs. |
+| `make verify` | Broader CI-aligned local verification. | Same as `make test`, plus MCP dependencies and script tooling. | Mirrors the CI job set locally. |
+| `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
+| `./status.sh` | Read-only local runtime inspection. | App may be stopped or running. | Not a CI target. |
+| `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
+| `make test-rag-qdrant-smoke` | Live Ollama embeddings plus Qdrant RAG smoke test. | Backend running in Qdrant vector mode, Ollama, `nomic-embed-text`, Docker/Qdrant. | Manual/local only today. |
+
 ### CI And Local Mapping
 
 GitHub CI mirrors the broader `make verify` contract, but keeps separate jobs so

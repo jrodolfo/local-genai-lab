@@ -232,25 +232,19 @@ an expected part of the build.
 
 Use these commands depending on what you need to verify:
 
-```bash
-make test
-make verify
-make build
-./status.sh
-make check-app
-make test-rag-qdrant-smoke
-```
+| Command | Use when | Requires running app? |
+| --- | --- | --- |
+| `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
+| `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
+| `make build` | Build backend, frontend, and MCP artifacts without changing the running app. | No |
+| `./status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
+| `make check-app` | Smoke-check the live backend/frontend stack after startup. | Yes |
+| `make test-rag-qdrant-smoke` | Verify the live Ollama embeddings plus Qdrant RAG path. | Yes, in Qdrant vector mode |
 
-- `make test`: normal local pre-commit suite for operational helpers, backend tests, and frontend tests
-- `make verify`: broader project verification aligned with CI coverage, including frontend build, MCP tests/build, and MCP tool script lint/tests
-- `make build`: build backend, frontend, and MCP artifacts without changing the running app
-- `./status.sh`: read-only runtime readiness check for local processes, health URLs, RAG mode, and Ollama readiness
-- `make check-app`: live-stack smoke check after the app is running
-- `make test-rag-qdrant-smoke`: optional live RAG smoke test for Ollama embeddings plus Qdrant; requires the app to be running in Qdrant vector mode
-
-Use `make test` when you only need verification. Use `make build` or
-`./build.sh` when you also want fresh generated backend, frontend, and MCP
-artifacts before restarting the local app.
+Use `make test` when you only need normal verification. Use `make verify`
+before larger pushes or broad changes. Use `make build` or `./build.sh` when
+you also want fresh generated backend, frontend, and MCP artifacts before
+restarting the local app.
 
 For the full testing matrix, see [docs/testing.md](./docs/testing.md).
 

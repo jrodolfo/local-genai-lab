@@ -191,6 +191,7 @@ This optional smoke test requires the backend to already be running with
 `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`. It checks backend health,
 RAG status, Qdrant reachability, the Ollama embedding model, index rebuild,
 Qdrant point count, and one `vector:qdrant` RAG query with cited sources.
+For the broader verification command model, see [testing.md](./testing.md).
 
 After Qdrant is reachable, the first RAG question can build the configured
 Qdrant index automatically. You can also click `Rebuild Index` before asking if
