@@ -55,6 +55,23 @@ RAG_QDRANT_COLLECTION="${RAG_QDRANT_COLLECTION:-local_genai_lab_docs}"
 RAG_EMBEDDING_PROVIDER="${RAG_EMBEDDING_PROVIDER:-ollama}"
 RAG_EMBEDDING_MODEL="${RAG_EMBEDDING_MODEL:-nomic-embed-text}"
 
+next_actions=()
+
+add_next_action() {
+  local message="$1"
+  local existing
+
+  if [ "${#next_actions[@]}" -gt 0 ]; then
+    for existing in "${next_actions[@]}"; do
+      if [ "${existing}" = "${message}" ]; then
+        return 0
+      fi
+    done
+  fi
+
+  next_actions+=("${message}")
+}
+
 normalize_bool() {
   local value
   value="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
@@ -150,12 +167,14 @@ if curl -fsS "${BACKEND_URL}/actuator/health" >/dev/null 2>&1; then
   printf '%s\n' 'backend health: ok'
 else
   printf '%s\n' 'backend health: unavailable'
+  add_next_action "start the app with ./start.sh, or inspect ${BACKEND_LOG_FILE}"
 fi
 
 if curl -fsS "${FRONTEND_URL}" >/dev/null 2>&1; then
   printf '%s\n' 'frontend http: ok'
 else
   printf '%s\n' 'frontend http: unavailable'
+  add_next_action "restart the app with ./restart.sh, or inspect ${FRONTEND_LOG_FILE}"
 fi
 
 # --- RAG and Ollama Readiness ---
@@ -253,12 +272,17 @@ if [ "${backend_rag_status_available}" = 'true' ]; then
     printf '%s\n' \
       'warning: requested RAG config differs from the running backend.' \
       'hint: restart with the same env values to apply it, for example RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh'
+    add_next_action 'restart with the same RAG env values to apply them'
   fi
 else
   printf '%s\n' \
     'backend rag status: unavailable' \
     "requested rag embedding provider: ${RAG_EMBEDDING_PROVIDER}" \
     "requested rag embedding model: ${RAG_EMBEDDING_MODEL}"
+fi
+
+if [ "${effective_rag_enabled}" != 'true' ]; then
+  add_next_action 'enable RAG with RAG_ENABLED=true ./restart.sh'
 fi
 
 if [ "${needs_qdrant_status}" = 'true' ]; then
@@ -281,10 +305,12 @@ if [ "${needs_qdrant_status}" = 'true' ]; then
       fi
     else
       printf '%s\n' "qdrant collection: missing (${effective_rag_qdrant_collection})"
+      add_next_action 'rebuild the RAG index after Qdrant is reachable'
     fi
   else
     printf '%s\n' "qdrant service: unavailable (${effective_rag_qdrant_url})"
     printf '%s\n' 'qdrant collection: not checked'
+    add_next_action 'start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./restart.sh'
   fi
 fi
 
@@ -301,12 +327,14 @@ if [ "${needs_ollama_status}" = 'true' ]; then
         else
           printf '%s\n' "ollama embedding model: missing (${effective_rag_embedding_model})"
           printf '%s\n' "hint: run ollama pull ${effective_rag_embedding_model}"
+          add_next_action "install the embedding model with ollama pull ${effective_rag_embedding_model}"
         fi
       else
         printf '%s\n' 'ollama embedding model: not required for current mode'
       fi
     else
       printf '%s\n' "ollama service: unavailable (${OLLAMA_BASE_URL:-http://localhost:11434})"
+      add_next_action 'start Ollama, then rerun ./status.sh'
       if [ "${needs_embedding_model}" = 'true' ]; then
         printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
       fi
@@ -314,12 +342,20 @@ if [ "${needs_ollama_status}" = 'true' ]; then
   else
     printf '%s\n' 'ollama cli: missing'
     printf '%s\n' 'ollama service: not checked'
+    add_next_action 'install Ollama, then rerun ./status.sh'
     if [ "${needs_embedding_model}" = 'true' ]; then
       printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
     fi
   fi
 else
   printf '%s\n' 'ollama readiness: not required for current configuration'
+fi
+
+if [ "${#next_actions[@]}" -gt 0 ]; then
+  printf '%s\n' 'next actions:'
+  for next_action in "${next_actions[@]}"; do
+    printf '%s\n' "- ${next_action}"
+  done
 fi
 
 # --- Logs ---

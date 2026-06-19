@@ -69,6 +69,15 @@ if [[ "${url}" == "http://localhost:8080/api/rag/status" ]]; then
   exit 0
 fi
 if [[ "${url}" == "http://localhost:8080/actuator/health" ]]; then
+  if [ "${MOCK_BACKEND_HEALTH:-up}" != "up" ]; then
+    exit 1
+  fi
+  exit 0
+fi
+if [[ "${url}" == "http://localhost:5173" ]]; then
+  if [ "${MOCK_FRONTEND_HTTP:-up}" != "up" ]; then
+    exit 1
+  fi
   exit 0
 fi
 if [[ "${url}" == *"localhost:11434/api/tags"* && "${MOCK_OLLAMA_SERVICE:-down}" == "up" ]]; then
@@ -207,6 +216,8 @@ test_vector_mode_reports_missing_embedding_model() {
   assert_contains "${output}" 'backend rag retrieval mode: vector'
   assert_contains "${output}" 'ollama embedding model: missing (nomic-embed-text)'
   assert_contains "${output}" 'hint: run ollama pull nomic-embed-text'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- install the embedding model with ollama pull nomic-embed-text'
   rm -rf "${tmp_dir}"
 }
 
@@ -244,6 +255,8 @@ test_qdrant_vector_mode_reports_missing_collection() {
 
   assert_contains "${output}" 'qdrant service: ok'
   assert_contains "${output}" 'qdrant collection: missing (local_genai_lab_docs)'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- rebuild the RAG index after Qdrant is reachable'
   rm -rf "${tmp_dir}"
 }
 
@@ -262,6 +275,41 @@ test_qdrant_vector_mode_reports_unavailable_service() {
   assert_contains "${output}" 'qdrant service: unavailable (http://localhost:6333)'
   assert_contains "${output}" 'qdrant collection: not checked'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./restart.sh'
+  rm -rf "${tmp_dir}"
+}
+
+# test_backend_unavailable_reports_next_action
+# Purpose: Verifies status output recommends the log/start path when backend health is down.
+test_backend_unavailable_reports_next_action() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" MOCK_BACKEND_HEALTH=down MOCK_BACKEND_RAG_STATUS=down APP_MODEL_PROVIDER=bedrock RAG_QDRANT_AUTO_START=false)"
+
+  assert_contains "${output}" 'backend health: unavailable'
+  assert_contains "${output}" 'backend rag status: unavailable'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- start the app with ./start.sh, or inspect '
+  rm -rf "${tmp_dir}"
+}
+
+# test_rag_disabled_reports_enable_hint
+# Purpose: Verifies status output tells users how to enable RAG when the backend reports it disabled.
+test_rag_disabled_reports_enable_hint() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_commands "${tmp_dir}/bin"
+
+  output="$(run_status "${tmp_dir}" RAG_ENABLED=false MOCK_BACKEND_RAG_ENABLED=false APP_MODEL_PROVIDER=bedrock RAG_QDRANT_AUTO_START=false)"
+
+  assert_contains "${output}" 'backend rag enabled: false'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- enable RAG with RAG_ENABLED=true ./restart.sh'
   rm -rf "${tmp_dir}"
 }
 
@@ -296,6 +344,8 @@ test_requested_config_mismatch_reports_warning() {
   assert_contains "${output}" 'backend rag vector store: in-memory'
   assert_contains "${output}" 'warning: requested RAG config differs from the running backend.'
   assert_contains "${output}" 'hint: restart with the same env values to apply it'
+  assert_contains "${output}" 'next actions:'
+  assert_contains "${output}" '- restart with the same RAG env values to apply them'
   rm -rf "${tmp_dir}"
 }
 
@@ -311,6 +361,8 @@ main() {
   test_qdrant_vector_mode_reports_reachable_service
   test_qdrant_vector_mode_reports_missing_collection
   test_qdrant_vector_mode_reports_unavailable_service
+  test_backend_unavailable_reports_next_action
+  test_rag_disabled_reports_enable_hint
   test_non_ollama_non_vector_config_skips_ollama_readiness
   test_requested_config_mismatch_reports_warning
   printf 'status tests passed\n'
