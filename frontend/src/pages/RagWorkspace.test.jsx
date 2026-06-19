@@ -8,6 +8,41 @@ import {http, HttpResponse, server} from '../test/mswServer';
 import RagWorkspace from './RagWorkspace';
 
 describe('RagWorkspace', () => {
+    it('shows the session header actions in the same order as the agent sidebar', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        const sidebar = await screen.findByRole('complementary');
+        const sessionsHeading = within(sidebar).getByRole('heading', {name: 'Sessions'});
+        const importButton = within(sidebar).getByRole('button', {name: 'Import JSON'});
+        const newSessionButton = within(sidebar).getByRole('button', {name: 'New Session'});
+
+        expect(sessionsHeading.compareDocumentPosition(importButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(importButton.compareDocumentPosition(newSessionButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(within(sidebar).queryByRole('button', {name: 'Import Session'})).not.toBeInTheDocument();
+    });
+
     it('loads status, submits a docs query, and renders cited sources from the saved rag session', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

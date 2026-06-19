@@ -452,11 +452,11 @@ function RagSessionSidebar({
             <div className="rag-session-sidebar__header">
                 <h2>Sessions</h2>
                 <div className="rag-session-sidebar__actions">
+                    <button type="button" className="rag-action-button" onClick={onImportClick}>
+                        Import JSON
+                    </button>
                     <button type="button" className="rag-action-button" onClick={onStartNewSession}>
                         New Session
-                    </button>
-                    <button type="button" className="rag-action-button" onClick={onImportClick}>
-                        Import Session
                     </button>
                     <input
                         ref={importInputRef}
