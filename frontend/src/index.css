@@ -18,6 +18,12 @@
     --yellow-50: #fffbeb;
     --green-700: #166534;
     --green-100: #dcfce7;
+    --button-blue-start: #4f8fdc;
+    --button-blue-end: #2f5fa8;
+    --button-blue-shadow: rgba(47, 95, 168, 0.2);
+    --button-red-start: #e36b75;
+    --button-red-end: #b94755;
+    --button-red-shadow: rgba(185, 71, 85, 0.18);
     --surface: rgba(255, 255, 255, 0.9);
     --surface-blue: rgba(239, 246, 255, 0.86);
     --surface-warm: rgba(255, 251, 235, 0.9);

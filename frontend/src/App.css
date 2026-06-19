@@ -54,16 +54,16 @@
 }
 
 .app-nav__tabs button.app-nav__tab--active {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     border-color: transparent;
-    box-shadow: 0 10px 24px rgba(29, 78, 216, 0.24);
+    box-shadow: 0 10px 24px var(--button-blue-shadow);
     color: #fff;
 }
 
 .app-nav__tabs button.app-nav__tab--active:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
-    filter: brightness(1.04);
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
+    box-shadow: 0 12px 26px var(--button-blue-shadow);
+    filter: brightness(1.02);
 }
 
 .app-nav__tabs button.app-nav__tab--disabled {

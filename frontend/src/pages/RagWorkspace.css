@@ -516,7 +516,7 @@
 }
 
 .rag-action-button {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     border: 1px solid transparent;
     border-radius: 10px;
     color: #ffffff;
@@ -529,9 +529,9 @@
 }
 
 .rag-action-button:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.26);
-    filter: brightness(1.06);
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
+    box-shadow: 0 12px 24px var(--button-blue-shadow);
+    filter: brightness(1.02);
     transform: translateY(-2px);
 }
 
@@ -547,27 +547,27 @@
 }
 
 .rag-primary-button {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     border-color: transparent;
     color: #fff;
 }
 
 .rag-primary-button:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
-    filter: brightness(1.06);
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
+    box-shadow: 0 12px 24px var(--button-blue-shadow);
+    filter: brightness(1.02);
 }
 
 .rag-action-button-danger {
-    background: linear-gradient(135deg, #dc2626, #991b1b);
+    background: linear-gradient(135deg, var(--button-red-start), var(--button-red-end));
     border-color: transparent;
     color: #ffffff;
 }
 
 .rag-action-button-danger:not(:disabled):hover {
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    box-shadow: 0 14px 30px rgba(220, 38, 38, 0.24);
-    filter: brightness(1.05);
+    background: linear-gradient(135deg, var(--button-red-start), var(--button-red-end));
+    box-shadow: 0 12px 24px var(--button-red-shadow);
+    filter: brightness(1.02);
 }
 
 @media (prefers-reduced-motion: reduce) {

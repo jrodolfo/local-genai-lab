@@ -55,7 +55,7 @@
 .page-action-button {
     border: 1px solid transparent;
     border-radius: 8px;
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     color: #ffffff;
     padding: 8px 10px;
     cursor: pointer;
@@ -65,9 +65,9 @@
 }
 
 .page-action-button:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.26);
-    filter: brightness(1.06);
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
+    box-shadow: 0 12px 24px var(--button-blue-shadow);
+    filter: brightness(1.02);
     transform: translateY(-2px);
 }
 
@@ -84,14 +84,14 @@
 
 .page-action-button-danger {
     border-color: transparent;
-    background: linear-gradient(135deg, #dc2626, #991b1b);
+    background: linear-gradient(135deg, var(--button-red-start), var(--button-red-end));
     color: #ffffff;
 }
 
 .page-action-button-danger:not(:disabled):hover {
-    background: linear-gradient(135deg, #dc2626, #991b1b);
-    box-shadow: 0 14px 30px rgba(220, 38, 38, 0.24);
-    filter: brightness(1.05);
+    background: linear-gradient(135deg, var(--button-red-start), var(--button-red-end));
+    box-shadow: 0 12px 24px var(--button-red-shadow);
+    filter: brightness(1.02);
 }
 
 .session-list {
@@ -580,7 +580,7 @@
 .artifact-file-actions button {
     border: 1px solid transparent;
     border-radius: 8px;
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     color: #ffffff;
     padding: 5px 8px;
     font: inherit;
@@ -593,9 +593,9 @@
 .tool-result-actions button:not(:disabled):hover,
 .artifact-panel button:not(:disabled):hover,
 .artifact-file-actions button:not(:disabled):hover {
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    box-shadow: 0 12px 24px rgba(29, 78, 216, 0.22);
-    filter: brightness(1.05);
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
+    box-shadow: 0 10px 20px var(--button-blue-shadow);
+    filter: brightness(1.02);
     transform: translateY(-2px);
 }
 
@@ -770,7 +770,7 @@
     align-self: flex-end;
     border: none;
     border-radius: 8px;
-    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    background: linear-gradient(135deg, var(--button-blue-start), var(--button-blue-end));
     color: #ffffff;
     padding: 10px 16px;
     font-weight: 600;
@@ -779,8 +779,8 @@
 }
 
 .composer-row button:not(:disabled):hover {
-    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
-    filter: brightness(1.06);
+    box-shadow: 0 12px 24px var(--button-blue-shadow);
+    filter: brightness(1.02);
     transform: translateY(-2px);
 }
 
