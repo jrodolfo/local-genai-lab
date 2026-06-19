@@ -68,6 +68,10 @@ write_mock_lsof() {
 set -euo pipefail
 case "${*: -1}" in
   tcp:5173)
+    if [ -n "${MOCK_STUCK_FRONTEND_PORT_PID:-}" ]; then
+      printf '%s\n' "${MOCK_STUCK_FRONTEND_PORT_PID}"
+      exit 0
+    fi
     if [ -n "${MOCK_FRONTEND_PORT_PID:-}" ] && kill -0 "${MOCK_FRONTEND_PORT_PID}" >/dev/null 2>&1; then
       printf '%s\n' "${MOCK_FRONTEND_PORT_PID}"
     fi
@@ -134,11 +138,32 @@ test_stop_all_stops_unmanaged_frontend_port_owner() {
   rm -rf "${tmp_dir}"
 }
 
+test_stop_all_reports_action_for_stuck_frontend_port_owner() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_lsof "${tmp_dir}/bin"
+
+  set +e
+  output="$(MOCK_STUCK_FRONTEND_PORT_PID=12345 run_stop "${tmp_dir}" --all 2>&1)"
+  status=$?
+  set -e
+
+  [ "${status}" -ne 0 ] || {
+    printf 'expected stop to fail for stuck frontend port owner\noutput:\n%s\n' "${output}" >&2
+    exit 1
+  }
+  assert_contains "${output}" 'frontend did not stop: port 5173 is still owned by pid 12345.'
+  assert_contains "${output}" 'next step:'
+  rm -rf "${tmp_dir}"
+}
+
 # --- Main ---
 
 main() {
   test_stop_without_all_leaves_unmanaged_port_owner_running
   test_stop_all_stops_unmanaged_frontend_port_owner
+  test_stop_all_reports_action_for_stuck_frontend_port_owner
   printf 'stop tests passed\n'
 }
 

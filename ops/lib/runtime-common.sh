@@ -240,6 +240,18 @@ find_port_process() {
   fi
 }
 
+kill_command_hint() {
+  local pid="$1"
+  case "$(uname -s 2>/dev/null || printf unknown)" in
+    MINGW* | MSYS* | CYGWIN*)
+      printf 'taskkill //PID %s //T //F' "${pid}"
+      ;;
+    *)
+      printf 'kill -TERM %s' "${pid}"
+      ;;
+  esac
+}
+
 # terminate_pid
 # Purpose: Attempts to stop a process gracefully, then forcefully if it persists.
 # Inputs:
@@ -292,6 +304,19 @@ print_runtime_header() {
     "repo_root=${REPO_ROOT}" \
     "env_file=$([ -f "${ENV_FILE}" ] && printf '%s' "${ENV_FILE}" || printf '%s' 'none')" \
     "run_dir=${RUN_DIR}"
+}
+
+print_runtime_endpoints_and_logs() {
+  local backend_url="${1:-http://localhost:${SERVER_PORT:-8080}}"
+  local frontend_url="${2:-http://localhost:${FRONTEND_PORT:-5173}}"
+
+  printf '%s\n' \
+    'urls:' \
+    "  backend: ${backend_url}" \
+    "  frontend: ${frontend_url}" \
+    'logs:' \
+    "  backend: ${BACKEND_LOG_FILE}" \
+    "  frontend: ${FRONTEND_LOG_FILE}"
 }
 
 # normalize_lower

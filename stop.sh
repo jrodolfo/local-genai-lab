@@ -86,7 +86,9 @@ wait_for_port_release() {
   if [ "${printed_dots}" = 'true' ]; then
     printf '\n'
   fi
-  printf '%s\n' "Warning: ${name} port ${port} is still owned by pid ${pid}." >&2
+  printf '%s\n' \
+    "${name} did not stop: port ${port} is still owned by pid ${pid}." \
+    "next step: $(kill_command_hint "${pid}")" >&2
   return 1
 }
 
