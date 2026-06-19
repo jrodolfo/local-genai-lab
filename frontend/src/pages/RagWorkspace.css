@@ -448,11 +448,20 @@
     gap: 0.75rem;
 }
 
-.rag-session-sidebar__actions,
-.rag-session-item__actions {
+.rag-session-sidebar__actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.rag-session-item__actions {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.rag-session-item__actions .rag-action-button {
+    justify-content: center;
+    width: 100%;
 }
 
 .rag-session-export-help {

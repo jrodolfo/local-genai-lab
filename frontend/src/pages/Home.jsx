@@ -999,18 +999,6 @@ function Home() {
                         onSend={handleSend}
                         onCancel={handleCancelRequest}
                     />
-
-                    <footer className="app-footer">
-                        <span>Software Developer: Rod Oliveira</span>
-                        <a href="https://github.com/jrodolfo/local-genai-lab" target="_blank" rel="noreferrer">
-                            GitHub repo
-                        </a>
-                        <a href="https://jrodolfo.net" target="_blank" rel="noreferrer">
-                            Website
-                        </a>
-                        <span>© 2026 Rod Oliveira</span>
-                        <span>MIT License</span>
-                    </footer>
                 </section>
             </section>
             <ConfirmDialog
