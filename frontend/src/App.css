@@ -4,8 +4,10 @@
 
 .app-nav {
     align-items: center;
-    background: rgba(255, 255, 255, 0.88);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.94), rgba(255, 251, 235, 0.88));
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid var(--border-blue);
+    box-shadow: 0 8px 30px rgba(16, 42, 86, 0.08);
     display: flex;
     gap: 0.75rem;
     justify-content: space-between;
@@ -16,6 +18,7 @@
 }
 
 .app-nav__brand {
+    color: var(--blue-900);
     font-family: "IBM Plex Serif", Georgia, serif;
     font-size: 1rem;
     font-weight: 700;
@@ -27,10 +30,10 @@
 }
 
 .app-nav__tabs button {
-    background: #fff;
-    border: 1px solid #cbd5e1;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid var(--border-blue);
     border-radius: 999px;
-    color: #0f172a;
+    color: var(--blue-900);
     cursor: pointer;
     font: inherit;
     font-weight: 700;
@@ -43,28 +46,29 @@
 }
 
 .app-nav__tabs button.app-nav__tab--active {
-    background: #0f172a;
-    border-color: #0f172a;
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(29, 78, 216, 0.24);
     color: #fff;
 }
 
 .app-nav__tabs button.app-nav__tab--disabled {
-    background: #f8fafc;
+    background: rgba(248, 250, 252, 0.78);
     border-style: dashed;
-    color: #64748b;
+    color: var(--ink-500);
 }
 
 .app-nav__hint {
-    background: rgba(248, 250, 252, 0.95);
-    border-bottom: 1px solid rgba(203, 213, 225, 0.85);
-    color: #64748b;
+    background: var(--surface-warm);
+    border-bottom: 1px solid var(--border-warm);
+    color: var(--yellow-700);
     font-size: 0.9rem;
     margin: 0;
     padding: 0.55rem 1rem 0.7rem;
 }
 
 .app-loading {
-    color: #475569;
+    color: var(--ink-700);
     display: grid;
     min-height: 45vh;
     place-items: center;

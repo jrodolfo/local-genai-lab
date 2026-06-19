@@ -1,8 +1,36 @@
 :root {
     color-scheme: light;
     font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-    background: linear-gradient(180deg, #eef5ff 0%, #f6fbff 100%);
-    color: #0f172a;
+    --ink-900: #102033;
+    --ink-700: #334155;
+    --ink-500: #64748b;
+    --blue-900: #102a56;
+    --blue-700: #1d4ed8;
+    --blue-500: #3b82f6;
+    --blue-100: #dbeafe;
+    --blue-50: #eff6ff;
+    --red-700: #b42336;
+    --red-100: #ffe4e6;
+    --red-50: #fff1f2;
+    --yellow-700: #a16207;
+    --yellow-200: #fde68a;
+    --yellow-100: #fef3c7;
+    --yellow-50: #fffbeb;
+    --green-700: #166534;
+    --green-100: #dcfce7;
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-blue: rgba(239, 246, 255, 0.86);
+    --surface-warm: rgba(255, 251, 235, 0.9);
+    --border-blue: rgba(59, 130, 246, 0.24);
+    --border-warm: rgba(245, 158, 11, 0.24);
+    --border-neutral: rgba(148, 163, 184, 0.32);
+    --shadow-soft: 0 18px 48px rgba(16, 42, 86, 0.12);
+    background:
+        radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.18), transparent 28rem),
+        radial-gradient(circle at 92% 10%, rgba(239, 68, 68, 0.12), transparent 24rem),
+        radial-gradient(circle at 72% 92%, rgba(245, 158, 11, 0.16), transparent 26rem),
+        linear-gradient(180deg, #edf6ff 0%, #fff8eb 100%);
+    color: var(--ink-900);
 }
 
 * {
@@ -12,4 +40,5 @@
 body {
     margin: 0;
     min-height: 100vh;
+    background: transparent;
 }

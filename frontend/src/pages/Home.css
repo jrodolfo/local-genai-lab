@@ -3,6 +3,9 @@
     display: flex;
     justify-content: center;
     padding: 32px 16px;
+    background:
+        linear-gradient(135deg, rgba(219, 234, 254, 0.34), transparent 38%),
+        linear-gradient(315deg, rgba(254, 243, 199, 0.45), transparent 42%);
 }
 
 .chat-layout {
@@ -17,8 +20,8 @@
 }
 
 .session-sidebar {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: linear-gradient(180deg, var(--surface-blue), rgba(255, 255, 255, 0.86));
+    border: 1px solid var(--border-blue);
     border-radius: 16px;
     padding: 16px;
     display: flex;
@@ -50,18 +53,18 @@
 }
 
 .page-action-button {
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-blue);
     border-radius: 8px;
     background: #ffffff;
-    color: #0f172a;
+    color: var(--blue-900);
     padding: 8px 10px;
     cursor: pointer;
     font: inherit;
 }
 
 .page-action-button:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
+    background: var(--blue-50);
+    border-color: rgba(59, 130, 246, 0.45);
 }
 
 .page-action-button:focus-visible {
@@ -88,7 +91,7 @@
 }
 
 .session-search {
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-blue);
     border-radius: 8px;
     padding: 8px 10px;
     font: inherit;
@@ -101,7 +104,7 @@
 }
 
 .session-filters select {
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-blue);
     border-radius: 8px;
     padding: 8px 10px;
     font: inherit;
@@ -126,14 +129,15 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(59, 130, 246, 0.22);
     border-radius: 12px;
     background: #ffffff;
 }
 
 .session-item.active {
-    border-color: #93c5fd;
-    background: #eff6ff;
+    border-color: var(--blue-500);
+    background: linear-gradient(135deg, var(--blue-50), rgba(254, 243, 199, 0.55));
+    box-shadow: inset 4px 0 0 var(--blue-500);
 }
 
 .session-open {
@@ -168,9 +172,10 @@
 
 .chat-card {
     width: min(920px, 100%);
-    background: #ffffff;
+    background: var(--surface);
+    border: 1px solid var(--border-blue);
     border-radius: 16px;
-    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.1);
+    box-shadow: var(--shadow-soft);
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -180,6 +185,7 @@
 .chat-card header h1 {
     margin: 0;
     font-size: 1.5rem;
+    color: var(--blue-900);
 }
 
 .chat-card header {
@@ -219,9 +225,9 @@
 }
 
 .error-banner {
-    background: #fee2e2;
-    color: #991b1b;
-    border: 1px solid #fecaca;
+    background: var(--red-50);
+    color: var(--red-700);
+    border: 1px solid var(--red-100);
     border-radius: 8px;
     padding: 10px;
 }
@@ -234,8 +240,8 @@
     border-radius: 8px;
     padding: 10px;
     font-size: 0.92rem;
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
+    border: 1px solid var(--border-blue);
+    background: linear-gradient(135deg, var(--blue-50), rgba(255, 255, 255, 0.82));
     color: #334155;
 }
 
@@ -290,9 +296,9 @@
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
-    background: #fff7ed;
-    color: #9a3412;
-    border: 1px solid #fdba74;
+    background: var(--yellow-50);
+    color: var(--yellow-700);
+    border: 1px solid var(--yellow-200);
     border-radius: 8px;
     padding: 10px;
     font-size: 0.92rem;
@@ -302,10 +308,10 @@
     min-height: 420px;
     max-height: 55vh;
     overflow-y: auto;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-blue);
     border-radius: 12px;
     padding: 12px;
-    background: #f8fafc;
+    background: linear-gradient(180deg, rgba(239, 246, 255, 0.72), rgba(255, 251, 235, 0.48));
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -332,13 +338,13 @@
     max-width: 80%;
     padding: 10px 12px;
     border-radius: 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.35);
     background: #ffffff;
 }
 
 .message-row.user .message-bubble {
-    background: #dbeafe;
-    border-color: #bfdbfe;
+    background: linear-gradient(135deg, var(--blue-100), var(--blue-50));
+    border-color: rgba(59, 130, 246, 0.34);
 }
 
 .message-markdown {
@@ -443,7 +449,7 @@
     gap: 6px;
     font-size: 0.82rem;
     color: #334155;
-    background: #f8fafc;
+    background: rgba(239, 246, 255, 0.72);
 }
 
 .tool-provenance-header {
@@ -517,8 +523,8 @@
     margin-top: 8px;
     padding: 8px 10px;
     border-radius: 10px;
-    background: #f1f5f9;
-    color: #475569;
+    background: var(--yellow-50);
+    color: var(--yellow-700);
     font-size: 0.8rem;
 }
 
@@ -588,9 +594,9 @@
 }
 
 .artifact-panel {
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-blue);
     border-radius: 12px;
-    background: #f8fafc;
+    background: rgba(239, 246, 255, 0.72);
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -675,7 +681,8 @@
 }
 
 .input-box {
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border-blue);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.78), rgba(255, 251, 235, 0.5));
     border-radius: 12px;
     padding: 12px;
     display: flex;
@@ -732,7 +739,7 @@
     align-self: flex-end;
     border: none;
     border-radius: 8px;
-    background: #0f172a;
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
     color: #ffffff;
     padding: 10px 16px;
     font-weight: 600;
@@ -757,7 +764,7 @@
     padding-top: 4px;
     font-size: 0.82rem;
     color: #64748b;
-    border-top: 1px solid #e2e8f0;
+    border-top: 1px solid var(--border-blue);
 }
 
 .app-footer a {
