@@ -12,6 +12,7 @@ import {deleteSession, exportSession, getSession, importSession, listSessions} f
 import ChatWindow from '../components/ChatWindow';
 import ConfirmDialog from '../components/ConfirmDialog';
 import InputBox from '../components/InputBox';
+import {formatSessionDateTime} from '../utils/dateFormat';
 import './Home.css';
 
 const DEBUG_MODE_STORAGE_KEY = 'local-genai-lab.debug-mode';
@@ -782,7 +783,7 @@ function Home() {
                                         {session.summary ?
                                             <span className="session-summary">{session.summary}</span> : null}
                                         <span
-                                            className="session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                                            className="session-meta">{formatSessionDateTime(session.updatedAt)}</span>
                                     </button>
                                     <button
                                         type="button"

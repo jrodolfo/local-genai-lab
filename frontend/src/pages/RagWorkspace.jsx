@@ -9,6 +9,7 @@ import {retryAsync} from '../api/retry';
 import {deleteSession, exportSession, getSession, importSession, listSessions} from '../api/sessionApi';
 import ConfirmDialog from '../components/ConfirmDialog';
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
+import {formatSessionDateTime} from '../utils/dateFormat';
 import './RagWorkspace.css';
 
 /**
@@ -481,7 +482,7 @@ function RagSessionSidebar({
                                 onClick={() => onOpenSession(session.sessionId)}>
                             <span className="rag-session-title">{session.title}</span>
                             {session.summary ? <span className="rag-session-summary">{session.summary}</span> : null}
-                            <span className="rag-session-meta">{new Date(session.updatedAt).toLocaleString()}</span>
+                            <span className="rag-session-meta">{formatSessionDateTime(session.updatedAt)}</span>
                         </button>
                         <div className="rag-session-item__actions">
                             <button type="button" className="rag-action-button"

@@ -1010,6 +1010,7 @@ describe('Home', () => {
 
         expect(await screen.findByText('run aws audit')).toBeInTheDocument();
         expect(screen.getByText(/Audit completed successfully for us-east-2 sts./i)).toBeInTheDocument();
+        expect(screen.getByText(/2026\/04\/10 \d{2}:\d{2}/)).toBeInTheDocument();
     });
 
     it('searches sessions through the backend query parameter', async () => {

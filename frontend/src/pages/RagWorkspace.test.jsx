@@ -826,6 +826,7 @@ describe('RagWorkspace', () => {
         const user = userEvent.setup();
 
         const sessionTitle = await screen.findByText('How are sessions persisted?');
+        expect(screen.getByText(/2026\/05\/27 \d{2}:\d{2}/)).toBeInTheDocument();
         await user.click(sessionTitle.closest('button'));
 
         expect(await screen.findByRole('heading', {name: 'Answer'})).toBeInTheDocument();
