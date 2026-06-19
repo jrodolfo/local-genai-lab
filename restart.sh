@@ -65,7 +65,10 @@ print_current_status() {
   printf '%s\n' 'current status:'
   service_status_line 'backend' "${SERVER_PORT}" "${BACKEND_URL}" "${BACKEND_URL}/actuator/health"
   service_status_line 'frontend' "${FRONTEND_PORT}" "${FRONTEND_URL}" "${FRONTEND_URL}"
-  printf '%s\n' '  mcp: backend-managed; see backend health and log'
+  printf '%s\n' \
+    '  mcp: backend-managed' \
+    "    health: ${BACKEND_URL}/actuator/health" \
+    "    log: ${BACKEND_LOG_FILE}"
 }
 
 print_log_paths() {

@@ -40,6 +40,7 @@ function Home() {
     const [loadingStartedAt, setLoadingStartedAt] = useState(null);
     const [loadingElapsedSeconds, setLoadingElapsedSeconds] = useState(0);
     const [availableProviders, setAvailableProviders] = useState([]);
+    const [sessionProviderOptions, setSessionProviderOptions] = useState([]);
     const [selectedProvider, setSelectedProvider] = useState('');
     const [availableModels, setAvailableModels] = useState([]);
     const [selectedModel, setSelectedModel] = useState('');
@@ -245,6 +246,9 @@ function Home() {
         try {
             const payload = await retryAsync(() => listSessions(filters), {retries: 4, delayMs: 500});
             setSessions(payload);
+            if (!filters.provider) {
+                setSessionProviderOptions(providerOptionsFromSessions(payload));
+            }
             setError((current) => (current === 'Failed to load sessions. Check if the backend is up and running.' ? '' : current));
         } catch (err) {
             setError(err.message || 'Failed to load sessions. Check if the backend is up and running.');
@@ -674,6 +678,7 @@ function Home() {
     const slowProviderHint = loading && loadingElapsedSeconds >= SLOW_PROVIDER_HINT_THRESHOLD_SECONDS
         ? 'This provider is taking longer than usual.'
         : '';
+    const providerFilterOptions = mergeProviderOptions(availableProviders, sessionProviderOptions);
 
     return (
         <main className="home-page">
@@ -716,7 +721,7 @@ function Home() {
                                     onChange={(event) => setProviderFilter(event.target.value)}
                                 >
                                     <option value="">All providers</option>
-                                    {availableProviders.map((provider) => (
+                                    {providerFilterOptions.map((provider) => (
                                         <option key={`provider-filter-${provider}`} value={provider}>
                                             {formatProviderName(provider)}
                                         </option>
@@ -874,12 +879,14 @@ function Home() {
                                 {!artifactPreview?.relativePath && artifactPanelPath ?
                                     <span>{`Path: ${artifactPanelPath}`}</span> : null}
                             </div>
-                            <button
-                                type="button"
-                                onClick={resetArtifactPanel}
-                            >
-                                Close
-                            </button>
+                            {artifactPanelMode === 'idle' ? null : (
+                                <button
+                                    type="button"
+                                    onClick={resetArtifactPanel}
+                                >
+                                    Close
+                                </button>
+                            )}
                         </div>
                         {artifactPanelMode === 'idle' ? (
                             <div className="artifact-panel-empty">
@@ -997,6 +1004,26 @@ function resetArtifactPanelState() {
         message: '',
         path: ''
     };
+}
+
+function providerOptionsFromSessions(sessions) {
+    return mergeProviderOptions(
+        (sessions || [])
+            .map((session) => session?.provider)
+            .filter((provider) => typeof provider === 'string' && provider.trim())
+    );
+}
+
+function mergeProviderOptions(...providerLists) {
+    const providers = new Set();
+    for (const providerList of providerLists) {
+        for (const provider of providerList || []) {
+            if (typeof provider === 'string' && provider.trim()) {
+                providers.add(provider.trim().toLowerCase());
+            }
+        }
+    }
+    return [...providers].sort((left, right) => formatProviderName(left).localeCompare(formatProviderName(right)));
 }
 
 function formatArtifactPanelTitle(title, mode) {

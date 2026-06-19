@@ -516,20 +516,23 @@
 }
 
 .rag-action-button {
-    background: rgba(255, 255, 255, 0.82);
-    border: 1px solid var(--border-blue);
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    border: 1px solid transparent;
     border-radius: 10px;
-    color: var(--blue-900);
+    color: #ffffff;
     cursor: pointer;
     font: inherit;
     font-size: 0.85rem;
     font-weight: 700;
     padding: 0.48rem 0.78rem;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
-.rag-action-button:hover {
-    background: var(--blue-50);
-    border-color: rgba(59, 130, 246, 0.45);
+.rag-action-button:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.26);
+    filter: brightness(1.06);
+    transform: translateY(-2px);
 }
 
 .rag-action-button:focus-visible {
@@ -538,8 +541,9 @@
 }
 
 .rag-action-button:disabled {
-    cursor: default;
-    opacity: 0.7;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+    opacity: 0.62;
 }
 
 .rag-primary-button {
@@ -548,20 +552,32 @@
     color: #fff;
 }
 
-.rag-primary-button:hover {
+.rag-primary-button:not(:disabled):hover {
     background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
-    filter: brightness(1.03);
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
+    filter: brightness(1.06);
 }
 
 .rag-action-button-danger {
-    background: #fff1f2;
-    border-color: #fecaca;
-    color: #b91c1c;
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    border-color: transparent;
+    color: #ffffff;
 }
 
-.rag-action-button-danger:hover {
-    background: #ffe4e6;
-    border-color: #fda4af;
+.rag-action-button-danger:not(:disabled):hover {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    box-shadow: 0 14px 30px rgba(220, 38, 38, 0.24);
+    filter: brightness(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rag-action-button {
+        transition: none;
+    }
+
+    .rag-action-button:not(:disabled):hover {
+        transform: none;
+    }
 }
 
 .rag-error {

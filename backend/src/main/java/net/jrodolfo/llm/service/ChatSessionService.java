@@ -97,11 +97,29 @@ public class ChatSessionService {
                 chatSessionMetadataService.fallbackTitle(session),
                 chatSessionMetadataService.fallbackSummary(session),
                 session.mode(),
+                latestProvider(session),
                 session.model(),
                 session.createdAt(),
                 session.updatedAt(),
                 session.messages().size()
         );
+    }
+
+    /**
+     * Returns the newest provider metadata value stored in assistant messages.
+     *
+     * @param session the chat session
+     * @return the latest provider id, or null if the session predates provider metadata
+     */
+    private String latestProvider(ChatSession session) {
+        List<ChatSessionMessage> messages = session.messages();
+        for (int index = messages.size() - 1; index >= 0; index--) {
+            ModelProviderMetadata metadata = messages.get(index).metadata();
+            if (metadata != null && metadata.provider() != null && !metadata.provider().isBlank()) {
+                return metadata.provider();
+            }
+        }
+        return null;
     }
 
     /**

@@ -144,6 +144,30 @@ describe('Home', () => {
 
         expect(await screen.findByText('Artifact inspector')).toBeInTheDocument();
         expect(screen.getAllByText(/Select a summary, report, or file list to inspect artifacts\./i).length).toBeGreaterThan(0);
+        expect(screen.queryByRole('button', {name: /close/i})).not.toBeInTheDocument();
+    });
+
+    it('includes historical session providers in the provider filter', async () => {
+        listSessions.mockResolvedValue([
+            {
+                sessionId: 'hf-session',
+                title: 'hugging face chat',
+                summary: 'answered with hugging face',
+                mode: 'chat',
+                provider: 'huggingface',
+                model: 'meta-llama/Llama-3.1-8B-Instruct',
+                createdAt: '2026-04-10T10:00:00Z',
+                updatedAt: '2026-04-10T10:01:00Z',
+                messageCount: 2
+            }
+        ]);
+
+        render(<Home/>);
+
+        const providerFilter = await screen.findByRole('combobox', {name: /provider filter/i});
+        await waitFor(() => {
+            expect(providerFilter).toHaveTextContent('Hugging Face');
+        });
     });
 
     it('shows the active provider in the header for bedrock mode', async () => {

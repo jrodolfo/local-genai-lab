@@ -38,6 +38,14 @@
     font: inherit;
     font-weight: 700;
     padding: 0.55rem 0.9rem;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
+}
+
+.app-nav__tabs button:not(:disabled):hover {
+    background: var(--blue-50);
+    border-color: rgba(59, 130, 246, 0.45);
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.16);
+    transform: translateY(-1px);
 }
 
 .app-nav__tabs button:disabled {
@@ -50,6 +58,12 @@
     border-color: transparent;
     box-shadow: 0 10px 24px rgba(29, 78, 216, 0.24);
     color: #fff;
+}
+
+.app-nav__tabs button.app-nav__tab--active:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
+    filter: brightness(1.04);
 }
 
 .app-nav__tabs button.app-nav__tab--disabled {
@@ -72,4 +86,14 @@
     display: grid;
     min-height: 45vh;
     place-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-nav__tabs button {
+        transition: none;
+    }
+
+    .app-nav__tabs button:not(:disabled):hover {
+        transform: none;
+    }
 }

@@ -53,18 +53,22 @@
 }
 
 .page-action-button {
-    border: 1px solid var(--border-blue);
+    border: 1px solid transparent;
     border-radius: 8px;
-    background: #ffffff;
-    color: var(--blue-900);
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    color: #ffffff;
     padding: 8px 10px;
     cursor: pointer;
     font: inherit;
+    font-weight: 700;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
-.page-action-button:hover {
-    background: var(--blue-50);
-    border-color: rgba(59, 130, 246, 0.45);
+.page-action-button:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.26);
+    filter: brightness(1.06);
+    transform: translateY(-2px);
 }
 
 .page-action-button:focus-visible {
@@ -72,15 +76,22 @@
     outline-offset: 2px;
 }
 
-.page-action-button-danger {
-    border-color: #fecaca;
-    background: #fff1f2;
-    color: #b91c1c;
+.page-action-button:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+    opacity: 0.62;
 }
 
-.page-action-button-danger:hover {
-    background: #ffe4e6;
-    border-color: #fda4af;
+.page-action-button-danger {
+    border-color: transparent;
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #ffffff;
+}
+
+.page-action-button-danger:not(:disabled):hover {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    box-shadow: 0 14px 30px rgba(220, 38, 38, 0.24);
+    filter: brightness(1.05);
 }
 
 .session-list {
@@ -567,13 +578,33 @@
 .tool-result-actions button,
 .artifact-panel button,
 .artifact-file-actions button {
-    border: 1px solid #cbd5e1;
+    border: 1px solid transparent;
     border-radius: 8px;
-    background: #ffffff;
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    color: #ffffff;
     padding: 5px 8px;
     font: inherit;
     font-size: 0.78rem;
+    font-weight: 700;
     cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
+}
+
+.tool-result-actions button:not(:disabled):hover,
+.artifact-panel button:not(:disabled):hover,
+.artifact-file-actions button:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--blue-700), var(--blue-900));
+    box-shadow: 0 12px 24px rgba(29, 78, 216, 0.22);
+    filter: brightness(1.05);
+    transform: translateY(-2px);
+}
+
+.tool-result-actions button:disabled,
+.artifact-panel button:disabled,
+.artifact-file-actions button:disabled {
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+    opacity: 0.62;
 }
 
 .provider-metadata {
@@ -744,6 +775,13 @@
     padding: 10px 16px;
     font-weight: 600;
     cursor: pointer;
+    transition: box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
+}
+
+.composer-row button:not(:disabled):hover {
+    box-shadow: 0 14px 30px rgba(29, 78, 216, 0.28);
+    filter: brightness(1.06);
+    transform: translateY(-2px);
 }
 
 .composer-row button:disabled {
@@ -814,5 +852,23 @@
 
     .message-bubble {
         max-width: 95%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .page-action-button,
+    .tool-result-actions button,
+    .artifact-panel button,
+    .artifact-file-actions button,
+    .composer-row button {
+        transition: none;
+    }
+
+    .page-action-button:not(:disabled):hover,
+    .tool-result-actions button:not(:disabled):hover,
+    .artifact-panel button:not(:disabled):hover,
+    .artifact-file-actions button:not(:disabled):hover,
+    .composer-row button:not(:disabled):hover {
+        transform: none;
     }
 }

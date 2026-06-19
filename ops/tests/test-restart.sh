@@ -105,7 +105,9 @@ test_restart_success_prints_summary() {
   assert_contains "${output}" 'current status:'
   assert_contains "${output}" '  backend: not running at http://localhost:8080'
   assert_contains "${output}" '  frontend: not running at http://localhost:5173'
-  assert_contains "${output}" '  mcp: backend-managed; see backend health and log'
+  assert_contains "${output}" '  mcp: backend-managed'
+  assert_contains "${output}" '    health: http://localhost:8080/actuator/health'
+  assert_contains "${output}" "    log: ${tmp_dir}/run/backend.log"
   assert_contains "${output}" 'logs:'
   assert_contains "${output}" "  backend: ${tmp_dir}/run/backend.log"
   assert_contains "${output}" "  frontend: ${tmp_dir}/run/frontend.log"
@@ -136,7 +138,9 @@ test_restart_stop_failure_prints_actionable_summary() {
   assert_contains "${output}" '  backend: not running at http://localhost:8080'
   assert_contains "${output}" '  frontend: '
   assert_contains "${output}" 'pid=12345'
-  assert_contains "${output}" '  mcp: backend-managed; see backend health and log'
+  assert_contains "${output}" '  mcp: backend-managed'
+  assert_contains "${output}" '    health: http://localhost:8080/actuator/health'
+  assert_contains "${output}" "    log: ${tmp_dir}/run/backend.log"
   assert_contains "${output}" 'next step:'
   assert_contains "${output}" '  stop frontend manually:'
   assert_contains "${output}" '  then retry: ./restart.sh'

@@ -78,6 +78,7 @@ class SessionControllerTest {
                 .andExpect(jsonPath("$[0].sessionId").value("newer-session"))
                 .andExpect(jsonPath("$[0].title").value("newer question"))
                 .andExpect(jsonPath("$[0].summary").value("done"))
+                .andExpect(jsonPath("$[0].provider").value("bedrock"))
                 .andExpect(jsonPath("$[1].sessionId").value("older-session"));
     }
 
@@ -117,6 +118,7 @@ class SessionControllerTest {
         mockMvc.perform(get("/api/sessions").queryParam("provider", "huggingface"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].sessionId").value("hf-session"))
+                .andExpect(jsonPath("$[0].provider").value("huggingface"))
                 .andExpect(jsonPath("$[1]").doesNotExist());
     }
 

@@ -11,6 +11,7 @@ import java.time.Instant;
  * @param title        short display title
  * @param summary      short display summary
  * @param mode         session mode such as {@code chat} or {@code rag}
+ * @param provider     last model provider found in session message metadata
  * @param model        last resolved model stored on the session
  * @param createdAt    session creation timestamp
  * @param updatedAt    timestamp of the latest persisted message
@@ -22,6 +23,7 @@ public record ChatSessionSummaryResponse(
         String title,
         String summary,
         String mode,
+        String provider,
         String model,
         Instant createdAt,
         Instant updatedAt,
