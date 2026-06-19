@@ -199,94 +199,18 @@ Show available targets:
 make help
 ```
 
-Start the backend:
+This `scripts/` directory is for MCP/tool-facing report scripts. App lifecycle
+commands live at the repository root:
 
 ```bash
-make run-backend
+../start.sh
+../stop.sh
+../restart.sh
+../status.sh
 ```
 
-Override the startup default provider when needed:
-
-```bash
-APP_MODEL_PROVIDER=bedrock make run-backend
-```
-
-```bash
-APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx make run-backend
-```
-
-Check whether the local app stack is up:
-
-```bash
-make check-app
-```
-
-Optional overrides:
-
-```bash
-BACKEND_URL=http://localhost:8080 FRONTEND_URL=http://localhost:3000 CHECK_OLLAMA=false ../ops/check-app.sh
-```
-
-The smoke check uses these defaults:
-
-- `BACKEND_URL=http://localhost:8080`
-- `FRONTEND_URL=http://localhost:5173`
-- `OLLAMA_URL=http://localhost:11434`
-- `CHECK_OLLAMA=true`
-- `CHECK_MODELS=true`
-
-`ops/check-app.sh` now checks `/api/models` as well, so it can distinguish “backend process is up” from “the UI can actually load usable models”.
-
-For common local runtime problems, see [../docs/troubleshooting.md](../docs/troubleshooting.md).
-
-The unified backend helper script auto-loads the repo-local `.env` file when present, without overriding variables you already exported in the shell. A good local starting point is:
-
-```bash
-cp .env.example .env
-```
-
-Start the backend with Ollama as the default provider:
-
-```bash
-APP_MODEL_PROVIDER=ollama make run-backend
-```
-
-Start the backend with Bedrock as the default provider:
-
-```bash
-APP_MODEL_PROVIDER=bedrock make run-backend
-```
-
-Bedrock defaults:
-
-- `BEDROCK_REGION=us-east-2`
-- `BEDROCK_MODEL_ID=us.amazon.nova-pro-v1:0`
-- `MCP_ENABLED=true`
-
-Start the backend with Hugging Face as the default provider:
-
-```bash
-APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx make run-backend
-```
-
-Hugging Face defaults:
-
-- `HUGGINGFACE_BASE_URL=https://router.huggingface.co/v1/chat/completions`
-- `HUGGINGFACE_DEFAULT_MODEL=meta-llama/Llama-3.1-8B-Instruct`
-- `HUGGINGFACE_MODELS` defaults to the configured default model
-- `MCP_ENABLED=true`
-
-If the same `.env` file also contains Bedrock config, the backend process can expose both Bedrock and Hugging Face in the runtime selector while still starting with one default provider.
-
-For Nova Pro, use the inference profile id rather than the base model id.
-
-Override them when needed:
-
-```bash
-APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 make run-backend
-```
-
-For the full provider workflow and verification steps, see [../docs/providers.md](../docs/providers.md).
+For provider startup configuration, see [../docs/providers.md](../docs/providers.md).
+For local runtime troubleshooting, see [../docs/troubleshooting.md](../docs/troubleshooting.md).
 
 Run the S3 CloudWatch bucket report:
 

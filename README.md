@@ -14,7 +14,7 @@
 Local-first GenAI lab for building and testing tool-assisted chat workflows.
 Not just a chatbot UI.
 
-This project combines a React frontend, a Spring Boot orchestration backend, local and managed model providers, persistent session memory, MCP-backed AWS tooling, and an experimental RAG workspace over the project documentation in one full-stack repository.
+This project combines a React frontend, a Spring Boot orchestration backend, local and remote model providers, persistent session memory, MCP-backed AWS tooling, and a RAG workspace over the project documentation in one full-stack repository.
 
 ![Local GenAI Lab UI](./docs/images/local-genai-lab.webp)
 
@@ -48,7 +48,7 @@ Most LLM demos stop at chat. This project explores how to connect models to real
 It focuses on:
 
 - tool-assisted chat with backend-side orchestration instead of direct frontend-to-model calls
-- provider abstraction with Ollama by default plus Amazon Bedrock and Hugging Face as optional runtimes
+- provider abstraction with Ollama by default plus Amazon Bedrock and Hugging Face as optional remote provider APIs
 - persistent session memory with resume, search, filter, import, and export flows
 - MCP-backed local tool execution for AWS audits, reports, and artifact generation
 - a separate RAG workspace for asking questions against the local documentation corpus with cited source chunks
@@ -258,7 +258,7 @@ The provider selector only shows providers configured in the running backend pro
 
 For tool-assisted streaming chat, the UI now shows explicit tool lifecycle phases while the request is in flight. Completed assistant replies also show compact tool provenance, and generated summaries, reports, and file lists can be inspected through the artifact inspector panel.
 
-The separate `RAG` workspace is enabled by default. In phase 1, it queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
+The separate `RAG` workspace is enabled by default. It queries a fixed local corpus rooted at `docs/` and returns answers with cited source chunks. If you want to hide it, start the backend with `RAG_ENABLED=false`.
 
 Lexical retrieval remains the default. The RAG question form can select
 `Lexical`, `Vector - In Memory`, or `Vector - Qdrant` per question. Vector
@@ -420,11 +420,12 @@ Observed model behavior:
 
 - enabled by default with `RAG_ENABLED=true`
 - isolated from the normal chat, MCP, and tool-routing flow
-- fixed phase-1 corpus rooted at `docs/`
+- fixed local corpus rooted at `docs/`
 - evaluation-only RAG docs are excluded from indexing by default
 - in-memory lexical retrieval by default behind a replaceable backend abstraction
 - lexical retrieval is intentional as a zero-dependency baseline; see [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md) for the lexical vs vector comparison
-- experimental in-memory vector retrieval is available with `RAG_RETRIEVAL_MODE=vector`
+- in-memory vector retrieval is available with `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory`
+- Qdrant-backed vector retrieval is available with `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant`
 - repeatable lexical vs vector observations can be recorded with [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md)
 - RAG readiness and common vector-mode fixes are documented in [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md)
 - phase-2 vector retrieval design notes, including the implemented opt-in Qdrant path, are documented in [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md)
@@ -467,7 +468,7 @@ make s3-cloudwatch BUCKET=example.com
 ## Documentation Map
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
-- [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the phase-1 RAG workspace
+- [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the RAG workspace
 - [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md): template for recording lexical vs vector retrieval comparisons
 - [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md): RAG operational checks, Ollama readiness, vector-mode fixes, and lexical fallback guidance
 - [docs/rag-phase-2-vector-retrieval-design.md](./docs/rag-phase-2-vector-retrieval-design.md): design and implementation note for lexical, in-memory vector, and opt-in Qdrant-backed retrieval
@@ -482,7 +483,7 @@ make s3-cloudwatch BUCKET=example.com
 - [ops/README.md](./ops/README.md): local runtime helpers and lifecycle support files
 - [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
 - [mcp/README.md](./mcp/README.md): local MCP server details
-- [docs/providers.md](./docs/providers.md): switching between Ollama and Bedrock
+- [docs/providers.md](./docs/providers.md): switching between Ollama, Bedrock, and Hugging Face
 
 ## Current Scope
 

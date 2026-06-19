@@ -184,12 +184,15 @@ Relevant RAG settings:
 - `RAG_CHUNK_OVERLAP` default: `160`
 - `RAG_TOP_K` default: `4`
 - `RAG_RETRIEVAL_MODE` default: `lexical`
+- `RAG_VECTOR_STORE` default: `in-memory`
+- `RAG_QDRANT_URL` default: `http://localhost:6333`
+- `RAG_QDRANT_COLLECTION` default: `local_genai_lab_docs`
 - `RAG_EMBEDDING_PROVIDER` default: `ollama`
 - `RAG_EMBEDDING_MODEL` default: `nomic-embed-text`
 
 Lexical retrieval remains the default. When `RAG_RETRIEVAL_MODE=vector`, the
 backend embeds the same docs corpus with the configured embedding provider/model
-and uses the in-memory vector retrieval store.
+and uses `RAG_VECTOR_STORE` to choose `in-memory` or `qdrant`.
 
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 

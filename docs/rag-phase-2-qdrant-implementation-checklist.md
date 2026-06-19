@@ -198,7 +198,7 @@ Backend tasks:
 - Include Qdrant URL.
 - Include collection name.
 - Keep Qdrant reachability.
-- Add collection presence later when the Qdrant client boundary exists.
+- Include collection presence and point count when Qdrant is reachable.
 - Include configured embedding model and indexed embedding model when available.
 
 Script tasks:
@@ -267,13 +267,13 @@ Backend unit tests:
 - Vector store routing selects in-memory or Qdrant correctly.
 - Qdrant unavailable produces an actionable status/error.
 
-Backend optional integration tests:
+Live optional smoke test:
 
-- run only behind an explicit profile or environment flag
-- verify collection creation
-- verify point upsert
-- verify vector search returns expected chunks
-- verify rebuild replaces stale collection contents
+- run manually with `make test-rag-qdrant-smoke`
+- require a running backend in Qdrant vector mode
+- require Docker/Qdrant, Ollama, and the configured embedding model
+- verify index rebuild, Qdrant point count, one `vector:qdrant` query, and cited sources
+- remain outside default CI because the required local services are not provisioned there
 
 Frontend tests:
 

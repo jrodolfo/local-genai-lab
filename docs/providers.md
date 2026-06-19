@@ -22,10 +22,11 @@ Supported providers:
 
 ## Unified startup
 
+Run these commands from the repository root.
+
 Default local workflow:
 
 ```bash
-cd scripts
 ./ops/start-backend-helper.sh
 ```
 
@@ -37,17 +38,14 @@ The unified startup script uses:
 Examples:
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=ollama ./ops/start-backend-helper.sh
 ```
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./ops/start-backend-helper.sh
 ```
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=huggingface HUGGINGFACE_API_TOKEN=hf_xxx ./ops/start-backend-helper.sh
 ```
 
@@ -92,14 +90,12 @@ Common credential paths:
 Example with an explicit AWS profile:
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=bedrock AWS_PROFILE=personal ./ops/start-backend-helper.sh
 ```
 
 Override the region or model when needed:
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=bedrock BEDROCK_REGION=us-east-1 BEDROCK_MODEL_ID=amazon.nova-lite-v1:0 ./ops/start-backend-helper.sh
 ```
 
@@ -121,7 +117,6 @@ Requirements:
 Override the configured candidate list when needed:
 
 ```bash
-cd scripts
 APP_MODEL_PROVIDER=huggingface \
 HUGGINGFACE_API_TOKEN=hf_xxx \
 HUGGINGFACE_DEFAULT_MODEL=Qwen/Qwen2.5-72B-Instruct \

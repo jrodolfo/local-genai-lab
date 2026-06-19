@@ -2,7 +2,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](../LICENSE)
 
-React + Vite client for the local chat UI.
+React + Vite client for the Agent and RAG workspaces.
 
 ## Run
 
@@ -17,13 +17,15 @@ Default local URL:
 
 ## What It Does
 
-- sends normal and streaming chat requests to the backend
+- sends normal and streaming Agent chat requests to the backend
+- sends RAG questions and retrieval-comparison requests to the backend
 - loads provider and model selectors dynamically from backend-provided available options
 - keeps the active `sessionId` across turns
 - shows a session sidebar with search and filters
 - supports session import, export, delete, and resume
 - renders structured MCP report cards for supported tool results
 - previews local report artifacts in-app through the backend artifact endpoints
+- renders RAG answers with cited source chunks and retrieval metadata
 - shows provider/model provenance on assistant turns by default
 - keeps deeper timing and token details behind the UI debug toggle
 
@@ -37,6 +39,10 @@ It uses:
 
 - `/api/chat`
 - `/api/chat/stream`
+- `/api/rag/status`
+- `/api/rag/query`
+- `/api/rag/compare`
+- `/api/rag/rebuild`
 - `/api/models`
 - `/api/sessions`
 - `/api/artifacts/*`
@@ -57,6 +63,7 @@ Frontend tests are organized into three practical layers:
    Main files:
    - `src/components/*.test.jsx`
    - `src/pages/Home.test.jsx`
+   - `src/pages/RagWorkspace.test.jsx`
 
    Use these for local UI behavior, conditional rendering, and formatting details.
 
@@ -75,6 +82,7 @@ Frontend tests are organized into three practical layers:
    - streaming chat and tool phases
    - session reopen/export
    - artifact preview
+   - RAG status, query, and retrieval comparison flows through `RagWorkspace.test.jsx`
 
 Shared test setup lives in:
 - `src/test/setup.js`
@@ -88,7 +96,9 @@ Practical rule:
 ## Notes
 
 - the UI is session-oriented; reopened sessions restore saved messages and metadata
+- Agent sessions and RAG sessions are separate modes backed by the same session API
 - assistant turns show provider/model provenance by default
+- RAG answers show cited source chunks and can show retrieval timing/details
 - technical details such as timings, stop reasons, and token counts are hidden by default and can be enabled from the UI
 - if no Ollama models are installed locally, the composer shows a pull hint and disables sending
 - provider switching is runtime-driven by the backend `/api/models` response rather than a frontend-only toggle
