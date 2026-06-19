@@ -9,7 +9,8 @@
 ![huggingface](https://img.shields.io/badge/huggingface-remote%20provider%20api-fcc624)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
-Spring Boot API for chat, local sessions, artifact preview, and MCP-backed AWS tooling.
+Spring Boot API for Agent chat, RAG retrieval, provider/model discovery, local
+session persistence, artifact preview, and MCP-backed AWS tooling.
 
 ## Run
 
@@ -105,9 +106,9 @@ Practical rule:
 
 The backend uses a model-provider abstraction.
 
-- default provider: `ollama`
-- optional provider: `bedrock`
-- optional provider: `huggingface`
+- default local runtime: `ollama`
+- optional remote provider API: `bedrock`
+- optional remote provider API: `huggingface`
 
 Relevant settings:
 
@@ -121,6 +122,9 @@ Relevant settings:
 - `HUGGINGFACE_MODELS` default: empty
 
 Bedrock supports both normal chat and streaming chat.
+Hugging Face uses a configured candidate list and validates which candidates
+are usable through the remote provider API before returning model options to the
+frontend.
 
 For local provider switching without memorizing JVM flags, use the unified helper script documented in [../docs/providers.md](../docs/providers.md):
 
@@ -197,6 +201,14 @@ and uses `RAG_VECTOR_STORE` to choose `in-memory` or `qdrant`.
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 
 ## RAG API
+
+`GET /api/rag/status` returns RAG readiness, corpus/index status, default
+retrieval configuration, embedding configuration, and Qdrant reachability when
+Qdrant is relevant.
+
+`POST /api/rag/index` rebuilds the selected/default RAG index. Lexical rebuilds
+the in-memory keyword index. Vector rebuilds embed chunks with the configured
+embedding provider/model and writes them to the selected vector store.
 
 `POST /api/rag/query` asks one RAG question, uses one retrieval target, and saves
 the answer to a RAG session.
