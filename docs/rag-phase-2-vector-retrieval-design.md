@@ -81,7 +81,7 @@ Reasons:
 Alternatives still worth evaluating later:
 
 - Bedrock embeddings for a managed AWS-aligned option
-- Hugging Face embeddings if the hosted provider path becomes important for
+- Hugging Face embeddings if the remote provider API path becomes important for
   retrieval experiments
 
 Ollama embeddings remain the default because they keep phase 2 local and avoid

@@ -17,8 +17,8 @@ The frontend always talks to the Spring Boot backend.
 Supported providers:
 
 - `ollama`: default local provider
-- `bedrock`: optional AWS-managed provider
-- `huggingface`: optional hosted provider with a configured candidate list that the backend validates dynamically
+- `bedrock`: optional remote provider API through AWS Bedrock
+- `huggingface`: optional remote provider API with a configured candidate list that the backend validates dynamically
 
 ## Unified startup
 

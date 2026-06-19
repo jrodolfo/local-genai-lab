@@ -109,7 +109,7 @@ Related ADR:
 Why:
 
 - the Hugging Face public catalog is too broad and inconsistent for a simple model selector
-- not every public model is usable through the same hosted chat endpoint or token
+- not every public model is usable through the same remote chat API endpoint or token
 - a validated configured subset is a better fit for this project’s scope
 
 Tradeoff:

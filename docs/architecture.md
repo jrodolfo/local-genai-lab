@@ -108,7 +108,7 @@ Important distinction:
 
 - Ollama plain chat uses role-based chat messages
 - Bedrock now preserves structured system, user, and assistant messages when that context is available
-- Hugging Face starts from a configured candidate list and validates the usable subset through its hosted chat endpoint
+- Hugging Face starts from a configured candidate list and validates the usable subset through its remote chat API endpoint
 
 Related ADRs:
 

@@ -288,7 +288,7 @@ These flows are still worth running manually after meaningful changes:
    Verify multi-turn context and model switching without restarting the backend.
 
 3. Plain chat with Hugging Face
-   Verify configured candidate validation, status-banner details, and normal hosted chat replies.
+   Verify configured candidate validation, status-banner details, and normal remote provider API replies.
 
 4. Streaming chat
    Verify partial tokens appear before completion and metadata/provenance settle correctly at the end.
@@ -340,7 +340,7 @@ The following still depend primarily on manual or environment-specific validatio
 
 - real Ollama runtime behavior with installed local models
 - real Bedrock credentials, regional access, and inference-profile availability
-- real Hugging Face token, hosted model access, and candidate validation behavior
+- real Hugging Face token, remote provider API access, and candidate validation behavior
 - shell-script execution against a live AWS account
 - model-specific answer quality differences after tool grounding
 - end-to-end startup behavior when local services are down or partially configured

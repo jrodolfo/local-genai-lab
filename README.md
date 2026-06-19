@@ -6,8 +6,8 @@
 ![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
 ![react](https://img.shields.io/badge/react-frontend-61dafb)
 ![ollama](https://img.shields.io/badge/ollama-default%20provider-222222)
-![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
-![huggingface](https://img.shields.io/badge/huggingface-hosted%20provider-fcc624)
+![bedrock](https://img.shields.io/badge/bedrock-remote%20provider%20api-ff9900)
+![huggingface](https://img.shields.io/badge/huggingface-remote%20provider%20api-fcc624)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 ![rag](https://img.shields.io/badge/rag-local%20docs%20corpus-0f766e)
 
@@ -392,8 +392,8 @@ Provider switching details and helper startup scripts live in [docs/providers.md
 
 - normal and streaming chat endpoints
 - Ollama as the default provider
-- Amazon Bedrock as an optional provider
-- Hugging Face as an optional hosted provider with a configured candidate list that the backend validates dynamically
+- Amazon Bedrock as an optional remote provider API
+- Hugging Face as an optional remote provider API with a configured candidate list that the backend validates dynamically
 - provider metadata in responses and saved session history
 - typed JSON SSE events for streaming chat
 - provider-aware model discovery for the frontend selector

@@ -71,9 +71,9 @@ flowchart LR
   VectorQdrant --> OllamaEmbeddings
   VectorQdrant <--> Qdrant
 
-  ProviderHub -->|local| Ollama
-  ProviderHub -->|configured| Bedrock
-  ProviderHub -->|hosted| HF
+  ProviderHub -->|local runtime| Ollama
+  ProviderHub -->|remote provider API| Bedrock
+  ProviderHub -->|remote provider API| HF
   ChatFlow <-->|tool chat| MCP
 
   MCP <--> Scripts
