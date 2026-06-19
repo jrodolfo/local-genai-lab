@@ -137,7 +137,7 @@ test_restart_stop_failure_prints_actionable_summary() {
   assert_contains "${output}" 'current status:'
   assert_contains "${output}" '  backend: not running at http://localhost:8080'
   assert_contains "${output}" '  frontend: '
-  assert_contains "${output}" 'pid=12345'
+  assert_contains "${output}" 'pid 12345'
   assert_contains "${output}" '  mcp: backend-managed'
   assert_contains "${output}" '    health: http://localhost:8080/actuator/health'
   assert_contains "${output}" "    log: ${tmp_dir}/run/backend.log"
