@@ -10,22 +10,12 @@ import {getProviderStatus, listAvailableModels} from '../api/modelApi';
 import {retryAsync} from '../api/retry';
 import {deleteSession, exportSession, getSession, importSession, listSessions} from '../api/sessionApi';
 import ChatWindow from '../components/ChatWindow';
+import ConfirmDialog from '../components/ConfirmDialog';
 import InputBox from '../components/InputBox';
 import './Home.css';
 
 const DEBUG_MODE_STORAGE_KEY = 'local-genai-lab.debug-mode';
 const SLOW_PROVIDER_HINT_THRESHOLD_SECONDS = 10;
-
-/**
- * Confirms a destructive session delete action before calling the backend.
- *
- * @param {string} title - Human-readable session title.
- * @returns {boolean} True when the user confirms deletion.
- */
-function confirmSessionDeletion(title) {
-    const label = title || 'this session';
-    return window.confirm(`Delete "${label}"? This cannot be undone.`);
-}
 
 /**
  * Home page component.
@@ -60,6 +50,7 @@ function Home() {
     const [modelsLoading, setModelsLoading] = useState(true);
     const [modelsLoadFailed, setModelsLoadFailed] = useState(false);
     const [error, setError] = useState('');
+    const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
     const [artifactFiles, setArtifactFiles] = useState([]);
     const [artifactPreview, setArtifactPreview] = useState(null);
     const [artifactPanelMode, setArtifactPanelMode] = useState('idle');
@@ -430,22 +421,35 @@ function Home() {
     };
 
     /**
-     * Deletes a session and resets the view if it was the active session.
+     * Marks a session for deletion and opens the confirmation dialog.
      *
-     * @param {string} targetSessionId - The session ID to delete.
-     * @param {string} title - Human-readable session title.
+     * @param {Object} session - Session summary selected for deletion.
+     * @returns {void}
+     */
+    const requestSessionDeletion = (session) => {
+        setPendingDeleteSession({
+            sessionId: session.sessionId,
+            title: session.title
+        });
+    };
+
+    /**
+     * Deletes the pending session and resets the view if it was active.
+     *
      * @returns {Promise<void>}
      */
-    const removeSession = async (targetSessionId, title) => {
-        if (!confirmSessionDeletion(title)) {
+    const confirmPendingSessionDeletion = async () => {
+        const targetSession = pendingDeleteSession;
+        if (!targetSession) {
             return;
         }
+        setPendingDeleteSession(null);
         setError('');
         setLoading(true);
         try {
-            await deleteSession(targetSessionId);
-            setSessions((current) => current.filter((session) => session.sessionId !== targetSessionId));
-            if (sessionId === targetSessionId) {
+            await deleteSession(targetSession.sessionId);
+            setSessions((current) => current.filter((session) => session.sessionId !== targetSession.sessionId));
+            if (sessionId === targetSession.sessionId) {
                 startNewChat();
             }
         } catch (err) {
@@ -801,7 +805,7 @@ function Home() {
                                     <button
                                         type="button"
                                         className="page-action-button page-action-button-danger"
-                                        onClick={() => removeSession(session.sessionId, session.title)}
+                                        onClick={() => requestSessionDeletion(session)}
                                         disabled={loading}
                                         aria-label={`Delete session ${session.title}`}
                                     >
@@ -1008,6 +1012,18 @@ function Home() {
                     </footer>
                 </section>
             </section>
+            <ConfirmDialog
+                open={Boolean(pendingDeleteSession)}
+                title="Delete session?"
+                message={pendingDeleteSession
+                    ? `This will permanently delete "${pendingDeleteSession.title || 'this session'}". This action cannot be undone.`
+                    : ''}
+                confirmLabel="Delete Session"
+                cancelLabel="Keep Session"
+                danger={true}
+                onConfirm={confirmPendingSessionDeletion}
+                onCancel={() => setPendingDeleteSession(null)}
+            />
         </main>
     );
 }

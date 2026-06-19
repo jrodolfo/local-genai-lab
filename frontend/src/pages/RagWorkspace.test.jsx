@@ -835,7 +835,6 @@ describe('RagWorkspace', () => {
 
     it('confirms before deleting a saved rag session', async () => {
         let deleted = false;
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({
                 enabled: true,
@@ -876,16 +875,17 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByText('How are sessions persisted?')).toBeInTheDocument();
         await user.click(screen.getByRole('button', {name: /Delete session How are sessions persisted/i}));
+        const dialog = screen.getByRole('alertdialog', {name: /Delete RAG session/i});
+        expect(within(dialog).getByText(/This will permanently delete "How are sessions persisted\?"/i)).toBeInTheDocument();
+        await user.click(within(dialog).getByRole('button', {name: /Delete Session/i}));
 
         await waitFor(() => {
             expect(screen.queryByText('How are sessions persisted?')).not.toBeInTheDocument();
         });
-        expect(confirmSpy).toHaveBeenCalledWith('Delete "How are sessions persisted?"? This cannot be undone.');
     });
 
     it('keeps a saved rag session when deletion is canceled', async () => {
         let deleteCalled = false;
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({
                 enabled: true,
@@ -926,8 +926,11 @@ describe('RagWorkspace', () => {
 
         expect(await screen.findByText('How are sessions persisted?')).toBeInTheDocument();
         await user.click(screen.getByRole('button', {name: /Delete session How are sessions persisted/i}));
+        const dialog = screen.getByRole('alertdialog', {name: /Delete RAG session/i});
+        await user.click(within(dialog).getByRole('button', {name: /Keep Session/i}));
 
         expect(deleteCalled).toBe(false);
+        expect(screen.queryByRole('alertdialog', {name: /Delete RAG session/i})).not.toBeInTheDocument();
         expect(screen.getByText('How are sessions persisted?')).toBeInTheDocument();
     });
 

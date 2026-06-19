@@ -2,7 +2,7 @@
  * @fileoverview Unit tests for the Home page component.
  * Mocks API calls to test session management, message sending, and artifact previewing.
  */
-import {act, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {act, fireEvent, render, screen, waitFor, within} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from './Home';
 import {sendMessage, streamMessage} from '../api/chatApi';
@@ -899,7 +899,6 @@ describe('Home', () => {
     });
 
     it('deletes a session from the sidebar', async () => {
-        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         listSessions.mockResolvedValue([
             {
                 sessionId: 'session-1',
@@ -917,16 +916,17 @@ describe('Home', () => {
 
         expect(await screen.findByText('run aws audit')).toBeInTheDocument();
         await user.click(screen.getByRole('button', {name: /Delete session run aws audit/i}));
+        const dialog = screen.getByRole('alertdialog', {name: /Delete session/i});
+        expect(within(dialog).getByText(/This will permanently delete "run aws audit"/i)).toBeInTheDocument();
+        await user.click(within(dialog).getByRole('button', {name: /Delete Session/i}));
 
         await waitFor(() => {
             expect(screen.queryByText('run aws audit')).not.toBeInTheDocument();
         });
-        expect(confirmSpy).toHaveBeenCalledWith('Delete "run aws audit"? This cannot be undone.');
         expect(deleteSession).toHaveBeenCalledWith('session-1');
     });
 
     it('keeps a session when sidebar deletion is canceled', async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
         listSessions.mockResolvedValue([
             {
                 sessionId: 'session-1',
@@ -944,8 +944,11 @@ describe('Home', () => {
 
         expect(await screen.findByText('run aws audit')).toBeInTheDocument();
         await user.click(screen.getByRole('button', {name: /Delete session run aws audit/i}));
+        const dialog = screen.getByRole('alertdialog', {name: /Delete session/i});
+        await user.click(within(dialog).getByRole('button', {name: /Keep Session/i}));
 
         expect(deleteSession).not.toHaveBeenCalled();
+        expect(screen.queryByRole('alertdialog', {name: /Delete session/i})).not.toBeInTheDocument();
         expect(screen.getByText('run aws audit')).toBeInTheDocument();
     });
 

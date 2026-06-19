@@ -7,19 +7,9 @@ import {listAvailableModels} from '../api/modelApi';
 import {compareRagRetrievalTargets, getRagStatus, queryRag, rebuildRagIndex} from '../api/ragApi';
 import {retryAsync} from '../api/retry';
 import {deleteSession, exportSession, getSession, importSession, listSessions} from '../api/sessionApi';
+import ConfirmDialog from '../components/ConfirmDialog';
 import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
-
-/**
- * Confirms a destructive session delete action before calling the backend.
- *
- * @param {string} title - Human-readable session title.
- * @returns {boolean} True when the user confirms deletion.
- */
-function confirmSessionDeletion(title) {
-    const label = title || 'this session';
-    return window.confirm(`Delete "${label}"? This cannot be undone.`);
-}
 
 /**
  * RagWorkspace component.
@@ -46,6 +36,7 @@ function RagWorkspace() {
     const [comparisonResult, setComparisonResult] = useState(null);
     const [rebuilding, setRebuilding] = useState(false);
     const [error, setError] = useState('');
+    const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
 
     useEffect(() => {
         loadWorkspace();
@@ -241,13 +232,22 @@ function RagWorkspace() {
         setError('');
     }
 
-    async function removeSession(targetSessionId, title) {
-        if (!confirmSessionDeletion(title)) {
+    function requestSessionDeletion(targetSession) {
+        setPendingDeleteSession({
+            sessionId: targetSession.sessionId,
+            title: targetSession.title
+        });
+    }
+
+    async function confirmPendingSessionDeletion() {
+        const targetSession = pendingDeleteSession;
+        if (!targetSession) {
             return;
         }
+        setPendingDeleteSession(null);
         try {
-            await deleteSession(targetSessionId);
-            if (sessionId === targetSessionId) {
+            await deleteSession(targetSession.sessionId);
+            if (sessionId === targetSession.sessionId) {
                 startNewSession();
             }
             await loadRagSessions();
@@ -309,7 +309,7 @@ function RagWorkspace() {
                         onImport={handleImport}
                         onOpenSession={openSession}
                         onDownloadSession={downloadSession}
-                        onRemoveSession={removeSession}
+                        onRemoveSession={requestSessionDeletion}
                     />
                 ) : null}
 
@@ -419,6 +419,18 @@ function RagWorkspace() {
                     ) : null}
                 </section>
             </section>
+            <ConfirmDialog
+                open={Boolean(pendingDeleteSession)}
+                title="Delete RAG session?"
+                message={pendingDeleteSession
+                    ? `This will permanently delete "${pendingDeleteSession.title || 'this RAG session'}". This action cannot be undone.`
+                    : ''}
+                confirmLabel="Delete Session"
+                cancelLabel="Keep Session"
+                danger={true}
+                onConfirm={confirmPendingSessionDeletion}
+                onCancel={() => setPendingDeleteSession(null)}
+            />
         </main>
     );
 }
@@ -481,7 +493,7 @@ function RagSessionSidebar({
                                 Export Markdown
                             </button>
                             <button type="button" className="rag-action-button rag-action-button-danger"
-                                    onClick={() => onRemoveSession(session.sessionId, session.title)}
+                                    onClick={() => onRemoveSession(session)}
                                     aria-label={`Delete session ${session.title}`}>
                                 Delete
                             </button>
