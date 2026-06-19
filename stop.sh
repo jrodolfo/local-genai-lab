@@ -110,7 +110,7 @@ stop_unmanaged_port_owner() {
   fi
 
   printf '%s\n' "Stopping unmanaged ${name} port owner (pid=${owner_pid}, port=${port})..."
-  terminate_pid "${owner_pid}" "${name} port ${port}"
+  terminate_port_owner_pid "${owner_pid}" "${name} port ${port}" "${port}"
   wait_for_port_release "${port}" "${owner_pid}" "${name}"
   printf '%s\n' "Stopped unmanaged ${name} port owner (pid=${owner_pid}, port=${port})."
   stopped_any=true
@@ -125,6 +125,7 @@ stopped_any=false
 if [ -n "${frontend_pid}" ]; then
   printf '%s\n' "Stopping frontend (pid=${frontend_pid})..."
   terminate_pid "${frontend_pid}" "frontend"
+  terminate_port_owner_pid "${frontend_pid}" "frontend" "${FRONTEND_PORT}"
   wait_for_port_release "${FRONTEND_PORT}" "${frontend_pid}" "frontend"
   rm -f "${FRONTEND_PID_FILE}"
   printf '%s\n' "Stopped frontend (pid=${frontend_pid})."
@@ -134,6 +135,7 @@ fi
 if [ -n "${backend_pid}" ]; then
   printf '%s\n' "Stopping backend (pid=${backend_pid})..."
   terminate_pid "${backend_pid}" "backend"
+  terminate_port_owner_pid "${backend_pid}" "backend" "${SERVER_PORT}"
   wait_for_port_release "${SERVER_PORT}" "${backend_pid}" "backend"
   rm -f "${BACKEND_PID_FILE}"
   printf '%s\n' "Stopped backend (pid=${backend_pid})."

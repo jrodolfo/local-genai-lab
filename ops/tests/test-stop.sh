@@ -72,6 +72,12 @@ case "${*: -1}" in
       printf '%s\n' "${MOCK_STUCK_FRONTEND_PORT_PID}"
       exit 0
     fi
+    if [ -n "${MOCK_WINDOWS_FRONTEND_PORT_PID:-}" ]; then
+      if [ -z "${MOCK_TASKKILL_LOG:-}" ] || [ ! -f "${MOCK_TASKKILL_LOG}" ]; then
+        printf '%s\n' "${MOCK_WINDOWS_FRONTEND_PORT_PID}"
+      fi
+      exit 0
+    fi
     if [ -n "${MOCK_FRONTEND_PORT_PID:-}" ] && kill -0 "${MOCK_FRONTEND_PORT_PID}" >/dev/null 2>&1; then
       printf '%s\n' "${MOCK_FRONTEND_PORT_PID}"
     fi
@@ -85,6 +91,18 @@ esac
 EOF
 
   chmod +x "${bin_dir}/lsof"
+}
+
+write_mock_taskkill() {
+  local bin_dir="$1"
+
+  cat >"${bin_dir}/taskkill" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"${MOCK_TASKKILL_LOG:?}"
+EOF
+
+  chmod +x "${bin_dir}/taskkill"
 }
 
 run_stop() {
@@ -158,12 +176,35 @@ test_stop_all_reports_action_for_stuck_frontend_port_owner() {
   rm -rf "${tmp_dir}"
 }
 
+test_stop_all_uses_taskkill_for_windows_port_owner() {
+  local tmp_dir output taskkill_log taskkill_output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  write_mock_lsof "${tmp_dir}/bin"
+  write_mock_taskkill "${tmp_dir}/bin"
+  taskkill_log="${tmp_dir}/taskkill.log"
+
+  output="$(
+    LOCAL_GENAI_LAB_PLATFORM_OVERRIDE=MINGW64_NT \
+    MOCK_WINDOWS_FRONTEND_PORT_PID=12345 \
+    MOCK_TASKKILL_LOG="${taskkill_log}" \
+    run_stop "${tmp_dir}" --all
+  )"
+
+  assert_contains "${output}" 'Stopping unmanaged frontend port owner (pid=12345, port=5173)...'
+  assert_contains "${output}" 'Stopped unmanaged frontend port owner (pid=12345, port=5173).'
+  taskkill_output="$(cat "${taskkill_log}")"
+  assert_contains "${taskkill_output}" '//PID 12345 //T //F'
+  rm -rf "${tmp_dir}"
+}
+
 # --- Main ---
 
 main() {
   test_stop_without_all_leaves_unmanaged_port_owner_running
   test_stop_all_stops_unmanaged_frontend_port_owner
   test_stop_all_reports_action_for_stuck_frontend_port_owner
+  test_stop_all_uses_taskkill_for_windows_port_owner
   printf 'stop tests passed\n'
 }
 

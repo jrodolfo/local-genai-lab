@@ -240,16 +240,28 @@ find_port_process() {
   fi
 }
 
-kill_command_hint() {
-  local pid="$1"
-  case "$(uname -s 2>/dev/null || printf unknown)" in
+runtime_platform_name() {
+  printf '%s' "${LOCAL_GENAI_LAB_PLATFORM_OVERRIDE:-$(uname -s 2>/dev/null || printf unknown)}"
+}
+
+is_windows_shell() {
+  case "$(runtime_platform_name)" in
     MINGW* | MSYS* | CYGWIN*)
-      printf 'taskkill //PID %s //T //F' "${pid}"
+      return 0
       ;;
     *)
-      printf 'kill -TERM %s' "${pid}"
+      return 1
       ;;
   esac
+}
+
+kill_command_hint() {
+  local pid="$1"
+  if is_windows_shell; then
+    printf 'taskkill //PID %s //T //F' "${pid}"
+  else
+    printf 'kill -TERM %s' "${pid}"
+  fi
 }
 
 # terminate_pid
@@ -282,15 +294,43 @@ terminate_pid() {
     kill -KILL "${pid}" >/dev/null 2>&1 || true
   fi
 
-  if [ "${OS:-}" = "Windows_NT" ] && command -v taskkill >/dev/null 2>&1; then
-    taskkill //PID "${pid}" //T //F >/dev/null 2>&1 || true
-  fi
+  terminate_windows_pid "${pid}"
 
   if is_process_alive "${pid}"; then
     printf '%s\n' "Warning: ${name} process ${pid} did not stop cleanly." >&2
     return 1
   fi
   return 0
+}
+
+terminate_windows_pid() {
+  local pid="$1"
+
+  if is_windows_shell && command -v taskkill >/dev/null 2>&1; then
+    taskkill //PID "${pid}" //T //F >/dev/null 2>&1 || true
+  fi
+}
+
+terminate_port_owner_pid() {
+  local pid="$1"
+  local name="$2"
+  local port="$3"
+  local owner_pid
+
+  owner_pid="$(find_port_process "${port}")"
+  if [ -z "${owner_pid}" ] || [ "${owner_pid}" != "${pid}" ]; then
+    return 0
+  fi
+
+  if is_windows_shell; then
+    terminate_windows_pid "${pid}"
+    owner_pid="$(find_port_process "${port}")"
+    if [ -z "${owner_pid}" ] || [ "${owner_pid}" != "${pid}" ]; then
+      return 0
+    fi
+  fi
+
+  terminate_pid "${pid}" "${name}"
 }
 
 # print_runtime_header
