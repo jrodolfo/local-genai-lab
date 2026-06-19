@@ -833,6 +833,104 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('sessions.md')).toBeInTheDocument();
     });
 
+    it('confirms before deleting a saved rag session', async () => {
+        let deleted = false;
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json(deleted ? [] : [
+                {
+                    sessionId: 'rag-session-1',
+                    title: 'How are sessions persisted?',
+                    summary: 'Sessions are stored as local JSON files.',
+                    mode: 'rag',
+                    model: 'llama3:8b',
+                    createdAt: '2026-05-27T12:00:00Z',
+                    updatedAt: '2026-05-27T12:00:05Z',
+                    messageCount: 2
+                }
+            ])),
+            http.delete('/api/sessions/rag-session-1', () => {
+                deleted = true;
+                return new HttpResponse(null, {status: 204});
+            })
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        expect(await screen.findByText('How are sessions persisted?')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', {name: /Delete session How are sessions persisted/i}));
+
+        await waitFor(() => {
+            expect(screen.queryByText('How are sessions persisted?')).not.toBeInTheDocument();
+        });
+        expect(confirmSpy).toHaveBeenCalledWith('Delete "How are sessions persisted?"? This cannot be undone.');
+    });
+
+    it('keeps a saved rag session when deletion is canceled', async () => {
+        let deleteCalled = false;
+        vi.spyOn(window, 'confirm').mockReturnValue(false);
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([
+                {
+                    sessionId: 'rag-session-1',
+                    title: 'How are sessions persisted?',
+                    summary: 'Sessions are stored as local JSON files.',
+                    mode: 'rag',
+                    model: 'llama3:8b',
+                    createdAt: '2026-05-27T12:00:00Z',
+                    updatedAt: '2026-05-27T12:00:05Z',
+                    messageCount: 2
+                }
+            ])),
+            http.delete('/api/sessions/rag-session-1', () => {
+                deleteCalled = true;
+                return new HttpResponse(null, {status: 204});
+            })
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        expect(await screen.findByText('How are sessions persisted?')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', {name: /Delete session How are sessions persisted/i}));
+
+        expect(deleteCalled).toBe(false);
+        expect(screen.getByText('How are sessions persisted?')).toBeInTheDocument();
+    });
+
     it('renders rag conversation turns newest first without separating questions from answers', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

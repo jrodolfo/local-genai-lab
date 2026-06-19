@@ -17,6 +17,17 @@ const DEBUG_MODE_STORAGE_KEY = 'local-genai-lab.debug-mode';
 const SLOW_PROVIDER_HINT_THRESHOLD_SECONDS = 10;
 
 /**
+ * Confirms a destructive session delete action before calling the backend.
+ *
+ * @param {string} title - Human-readable session title.
+ * @returns {boolean} True when the user confirms deletion.
+ */
+function confirmSessionDeletion(title) {
+    const label = title || 'this session';
+    return window.confirm(`Delete "${label}"? This cannot be undone.`);
+}
+
+/**
  * Home page component.
  *
  * @returns {React.JSX.Element} The rendered Home page.
@@ -422,9 +433,13 @@ function Home() {
      * Deletes a session and resets the view if it was the active session.
      *
      * @param {string} targetSessionId - The session ID to delete.
+     * @param {string} title - Human-readable session title.
      * @returns {Promise<void>}
      */
-    const removeSession = async (targetSessionId) => {
+    const removeSession = async (targetSessionId, title) => {
+        if (!confirmSessionDeletion(title)) {
+            return;
+        }
         setError('');
         setLoading(true);
         try {
@@ -786,7 +801,7 @@ function Home() {
                                     <button
                                         type="button"
                                         className="page-action-button page-action-button-danger"
-                                        onClick={() => removeSession(session.sessionId)}
+                                        onClick={() => removeSession(session.sessionId, session.title)}
                                         disabled={loading}
                                         aria-label={`Delete session ${session.title}`}
                                     >

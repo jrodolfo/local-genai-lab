@@ -899,6 +899,7 @@ describe('Home', () => {
     });
 
     it('deletes a session from the sidebar', async () => {
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
         listSessions.mockResolvedValue([
             {
                 sessionId: 'session-1',
@@ -920,7 +921,32 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.queryByText('run aws audit')).not.toBeInTheDocument();
         });
+        expect(confirmSpy).toHaveBeenCalledWith('Delete "run aws audit"? This cannot be undone.');
         expect(deleteSession).toHaveBeenCalledWith('session-1');
+    });
+
+    it('keeps a session when sidebar deletion is canceled', async () => {
+        vi.spyOn(window, 'confirm').mockReturnValue(false);
+        listSessions.mockResolvedValue([
+            {
+                sessionId: 'session-1',
+                title: 'run aws audit',
+                summary: 'Audit complete.',
+                model: 'llama3:8b',
+                createdAt: '2026-04-10T10:00:00Z',
+                updatedAt: '2026-04-10T10:01:00Z',
+                messageCount: 2
+            }
+        ]);
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        expect(await screen.findByText('run aws audit')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', {name: /Delete session run aws audit/i}));
+
+        expect(deleteSession).not.toHaveBeenCalled();
+        expect(screen.getByText('run aws audit')).toBeInTheDocument();
     });
 
     it('exports a session as markdown from the sidebar', async () => {

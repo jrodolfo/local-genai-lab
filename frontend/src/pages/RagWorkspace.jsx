@@ -11,6 +11,17 @@ import RagAnswerWithSources from '../components/RagAnswerWithSources';
 import './RagWorkspace.css';
 
 /**
+ * Confirms a destructive session delete action before calling the backend.
+ *
+ * @param {string} title - Human-readable session title.
+ * @returns {boolean} True when the user confirms deletion.
+ */
+function confirmSessionDeletion(title) {
+    const label = title || 'this session';
+    return window.confirm(`Delete "${label}"? This cannot be undone.`);
+}
+
+/**
  * RagWorkspace component.
  *
  * @returns {React.JSX.Element} The rendered RagWorkspace page.
@@ -230,7 +241,10 @@ function RagWorkspace() {
         setError('');
     }
 
-    async function removeSession(targetSessionId) {
+    async function removeSession(targetSessionId, title) {
+        if (!confirmSessionDeletion(title)) {
+            return;
+        }
         try {
             await deleteSession(targetSessionId);
             if (sessionId === targetSessionId) {
@@ -467,7 +481,8 @@ function RagSessionSidebar({
                                 Export Markdown
                             </button>
                             <button type="button" className="rag-action-button rag-action-button-danger"
-                                    onClick={() => onRemoveSession(session.sessionId)}>
+                                    onClick={() => onRemoveSession(session.sessionId, session.title)}
+                                    aria-label={`Delete session ${session.title}`}>
                                 Delete
                             </button>
                         </div>
