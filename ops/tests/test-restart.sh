@@ -102,9 +102,10 @@ test_restart_success_prints_summary() {
   output="$(run_restart "${tmp_dir}")"
 
   assert_contains "${output}" 'restart completed'
-  assert_contains "${output}" 'urls:'
-  assert_contains "${output}" '  backend: http://localhost:8080'
-  assert_contains "${output}" '  frontend: http://localhost:5173'
+  assert_contains "${output}" 'current status:'
+  assert_contains "${output}" '  backend: not running at http://localhost:8080'
+  assert_contains "${output}" '  frontend: not running at http://localhost:5173'
+  assert_contains "${output}" '  mcp: backend-managed; see backend health and log'
   assert_contains "${output}" 'logs:'
   assert_contains "${output}" "  backend: ${tmp_dir}/run/backend.log"
   assert_contains "${output}" "  frontend: ${tmp_dir}/run/frontend.log"
@@ -127,10 +128,18 @@ test_restart_stop_failure_prints_actionable_summary() {
     printf 'expected exit status 7, got %s\noutput:\n%s\n' "${status}" "${output}" >&2
     exit 1
   }
-  assert_contains "${output}" 'restart failed'
+  assert_contains "${output}" 'restart did not start'
+  assert_contains "${output}" 'phase: stopping existing services'
+  assert_contains "${output}" 'blocked by: frontend'
   assert_contains "${output}" 'reason: frontend port 5173 is still owned by pid 12345'
+  assert_contains "${output}" 'current status:'
+  assert_contains "${output}" '  backend: not running at http://localhost:8080'
+  assert_contains "${output}" '  frontend: '
+  assert_contains "${output}" 'pid=12345'
+  assert_contains "${output}" '  mcp: backend-managed; see backend health and log'
   assert_contains "${output}" 'next step:'
-  assert_contains "${output}" 'urls:'
+  assert_contains "${output}" '  stop frontend manually:'
+  assert_contains "${output}" '  then retry: ./restart.sh'
   assert_contains "${output}" 'logs:'
   rm -rf "${tmp_dir}"
 }
