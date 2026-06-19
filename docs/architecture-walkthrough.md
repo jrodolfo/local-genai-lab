@@ -149,24 +149,27 @@ Related ADR:
 
 - [ADR 0007](./adr/0007-restrict-artifact-access-to-configured-reports-root.md)
 
-### 8. Keep phase-1 RAG isolated from the main chat and tool flow
+### 8. Keep RAG isolated from the main chat and tool flow
 
 Why:
 
 - it adds retrieval-augmented generation without destabilizing `/api/chat`
 - it avoids mixing MCP/tool routing and retrieval routing too early
-- it makes the first RAG slice easier to evaluate honestly
+- it makes lexical, in-memory vector, and Qdrant vector retrieval easier to evaluate honestly
 
 Tradeoff:
 
-- phase 1 RAG is a separate workspace instead of a unified conversation mode
+- RAG is a separate workspace instead of a unified Agent conversation mode
 
-Current phase-1 scope:
+Current scope:
 
 - fixed local `docs/` corpus
 - in-memory lexical retrieval
+- in-memory vector retrieval with Ollama embeddings
+- Qdrant-backed vector retrieval with Ollama embeddings
+- retrieval comparison across `Lexical`, `Vector - In Memory`, and `Vector - Qdrant`
 - provider-generated answer with cited source chunks
-- no uploads, external vector database, or automatic chat/tool/RAG routing yet
+- no uploads, report ingestion, or automatic chat/tool/RAG routing yet
 
 Related ADR:
 

@@ -6,12 +6,12 @@ This document gives the system-level view of `Local GenAI Lab`: the main runtime
 
 `Local GenAI Lab` is a local-first GenAI application with four main runtime layers:
 
-- a React frontend for chat, session management, model/provider selection, and artifact inspection
-- a Spring Boot backend for orchestration, provider selection, prompt construction, streaming, persistence, and API exposure
+- a React frontend for the Agent workspace, RAG workspace, session management, model/provider selection, and artifact inspection
+- a Spring Boot backend for Agent orchestration, RAG orchestration, provider selection, prompt construction, streaming, persistence, and API exposure
 - an MCP server that exposes local AWS-oriented tools with typed contracts
 - shell scripts and AWS CLI commands that generate reports and artifacts consumed by the backend and UI
 
-At runtime, the backend is the central coordinator. The frontend never talks directly to Ollama, Bedrock, or the local tools.
+At runtime, the backend is the central coordinator. The frontend never talks directly to Ollama, Bedrock, Qdrant, or the local tools.
 
 ## Core Diagram
 
@@ -49,11 +49,12 @@ Current ADRs:
 
 The frontend is responsible for:
 
-- rendering the chat experience
+- rendering the Agent and RAG workspaces
 - selecting provider and model at runtime
 - showing per-turn provider/model provenance
 - listing, loading, deleting, importing, and exporting sessions
 - rendering structured tool results and artifact previews
+- showing RAG answers with cited source chunks and retrieval metadata
 
 Key boundary:
 
@@ -66,6 +67,7 @@ The Spring Boot backend exposes:
 
 - chat endpoints
 - streaming SSE chat
+- RAG endpoints
 - session APIs
 - model discovery APIs
 - artifact preview/listing APIs
@@ -182,23 +184,32 @@ Related ADRs:
 
 ### RAG Workspace
 
-The repository also includes an experimental phase-1 RAG path that is separate
-from the main chat and MCP orchestration flow.
+The repository includes a RAG workspace that is separate from the Agent chat and
+MCP orchestration flow.
 
 Current responsibilities:
 
 - query a fixed local corpus rooted at `docs/`
 - retrieve relevant chunks through the default in-memory lexical retrieval layer
-- optionally retrieve through the experimental in-memory vector retrieval layer when `RAG_RETRIEVAL_MODE=vector`
+- optionally retrieve through the in-memory vector retrieval layer
+- optionally retrieve through the Qdrant-backed vector retrieval layer
+- compare `Lexical`, `Vector - In Memory`, and `Vector - Qdrant` for the same question
 - send those chunks to the selected provider
 - return the generated answer with cited source chunks
+- persist RAG questions, answers, citations, and retrieval metadata as RAG-mode sessions
+
+Retrieval targets:
+
+- `lexical`: keyword search over in-memory chunks; zero external dependencies
+- `vector:in-memory`: Ollama embeddings with vectors stored in backend memory
+- `vector:qdrant`: Ollama embeddings with vectors stored in the local Qdrant collection
 
 Important boundaries:
 
 - RAG uses separate `/api/rag/*` endpoints
 - RAG does not currently share the main `/api/chat` flow
 - RAG does not invoke MCP tools
-- RAG does not yet support uploads, report ingestion, automatic routing, or an external vector database
+- RAG does not yet support uploads, report ingestion, or automatic routing from Agent prompts
 
 Related ADRs:
 
@@ -209,6 +220,7 @@ Manual evaluation and retrieval tradeoff notes:
 
 - [RAG Evaluation Guide](./rag-evaluation-guide.md)
 - [RAG Phase 2 Vector Retrieval Design](./rag-phase-2-vector-retrieval-design.md)
+- [Qdrant Inspection Guide](./rag-qdrant-inspection.md)
 
 ## Request Flows
 
