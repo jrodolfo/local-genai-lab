@@ -5,8 +5,8 @@
 ![java](https://img.shields.io/badge/java-21+-f89820)
 ![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
 ![ollama](https://img.shields.io/badge/ollama-default%20provider-222222)
-![bedrock](https://img.shields.io/badge/bedrock-optional%20provider-ff9900)
-![huggingface](https://img.shields.io/badge/huggingface-hosted%20provider-fcc624)
+![bedrock](https://img.shields.io/badge/bedrock-remote%20provider%20api-ff9900)
+![huggingface](https://img.shields.io/badge/huggingface-remote%20provider%20api-fcc624)
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 
 Spring Boot API for chat, local sessions, artifact preview, and MCP-backed AWS tooling.
@@ -114,7 +114,7 @@ Relevant settings:
 - `APP_MODEL_PROVIDER` default: `ollama`
 - `OLLAMA_BASE_URL` default: `http://localhost:11434`
 - `OLLAMA_DEFAULT_MODEL` default: `llama3:8b`
-- `BEDROCK_REGION` default: `us-east-1`
+- `BEDROCK_REGION` default: `us-east-2`
 - `BEDROCK_MODEL_ID` default: empty
 - `HUGGINGFACE_BASE_URL` default: `https://router.huggingface.co/v1/chat/completions`
 - `HUGGINGFACE_DEFAULT_MODEL` default: empty
