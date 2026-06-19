@@ -624,7 +624,7 @@ function RagQueryCard({
                         disabled={querying || comparing || !question.trim()}>
                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
                 </button>
-                <button type="button" className="rag-action-button"
+                <button type="button" className="rag-action-button rag-primary-button"
                         disabled={querying || comparing || !question.trim()}
                         onClick={onCompare}>
                     {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
