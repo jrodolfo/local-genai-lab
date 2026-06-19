@@ -62,6 +62,10 @@ Start new records from [template.md](template.md).
 
 ## Current ADRs
 
+ADRs are historical records. Read them in order when a topic evolves over time:
+later ADRs may extend an earlier scope without rewriting the original decision.
+For RAG, read ADR 0012, 0013, and 0014 together.
+
 - [0001-mcp-separate-typescript-runtime.md](0001-mcp-separate-typescript-runtime.md): keep MCP tool execution in a separate TypeScript runtime.
 - [0002-runtime-provider-switching-per-request.md](0002-runtime-provider-switching-per-request.md): allow each chat request to select its provider and model.
 - [0003-show-only-configured-providers-in-selector.md](0003-show-only-configured-providers-in-selector.md): show only backend-configured providers in the UI.
@@ -73,6 +77,6 @@ Start new records from [template.md](template.md).
 - [0009-use-short-lived-provider-status-caching.md](0009-use-short-lived-provider-status-caching.md): cache provider status briefly and expose manual refresh.
 - [0010-use-unified-backend-startup-script.md](0010-use-unified-backend-startup-script.md): use one backend startup helper for provider configuration.
 - [0011-use-mermaid-as-architecture-source-of-truth.md](0011-use-mermaid-as-architecture-source-of-truth.md): keep Mermaid diagrams as the maintained architecture diagram source.
-- [0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md](0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md): add an isolated RAG workspace over the local docs corpus using in-memory lexical retrieval.
-- [0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md](0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md): use Ollama embeddings and Qdrant as the phase-2 vector retrieval direction while keeping lexical retrieval available.
-- [0014-compare-rag-retrieval-targets-without-session-side-effects.md](0014-compare-rag-retrieval-targets-without-session-side-effects.md): compare RAG retrieval targets without saving diagnostic comparison results to sessions.
+- [0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md](0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md): add the original isolated lexical RAG workspace over the local docs corpus.
+- [0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md](0013-use-ollama-embeddings-and-qdrant-for-phase-2-rag-vector-retrieval.md): add the implemented vector retrieval direction with Ollama embeddings and Qdrant while keeping lexical retrieval available.
+- [0014-compare-rag-retrieval-targets-without-session-side-effects.md](0014-compare-rag-retrieval-targets-without-session-side-effects.md): add the implemented retrieval comparison flow without saving diagnostic results to sessions.
