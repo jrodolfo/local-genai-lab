@@ -468,6 +468,7 @@ make s3-cloudwatch BUCKET=example.com
 ## Documentation Map
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
+- [docs/documentation-review-checklist.md](./docs/documentation-review-checklist.md): repeatable checklist for catching documentation drift
 - [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the RAG workspace
 - [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md): template for recording lexical vs vector retrieval comparisons
 - [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md): RAG operational checks, Ollama readiness, vector-mode fixes, and lexical fallback guidance
