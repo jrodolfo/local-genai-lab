@@ -74,7 +74,7 @@ public class QdrantVectorRagIndexingStore {
 
     private List<QdrantPoint> toPoints(RagVectorIndexResult indexResult, Path corpusRoot) {
         String indexedAt = Instant.now(clock).toString();
-        String normalizedCorpusRoot = corpusRoot == null ? "" : corpusRoot.toString();
+        String normalizedCorpusRoot = normalizePath(corpusRoot);
         return indexResult.chunks().stream()
                 .map(chunk -> toPoint(indexResult, chunk, normalizedCorpusRoot, indexedAt))
                 .toList();
@@ -101,6 +101,10 @@ public class QdrantVectorRagIndexingStore {
                         contentHash(chunk)
                 )
         );
+    }
+
+    private static String normalizePath(Path path) {
+        return path == null ? "" : path.toString().replace('\\', '/');
     }
 
     private static String qdrantPointId(String chunkId) {
