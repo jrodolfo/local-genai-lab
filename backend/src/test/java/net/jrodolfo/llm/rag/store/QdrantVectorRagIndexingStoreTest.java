@@ -77,6 +77,16 @@ class QdrantVectorRagIndexingStoreTest {
         assertTrue(exception.getCause() instanceof QdrantClientException);
     }
 
+    @Test
+    void normalizesWindowsCorpusRootInPayload() {
+        RecordingQdrantClient qdrantClient = new RecordingQdrantClient();
+        QdrantVectorRagIndexingStore store = new QdrantVectorRagIndexingStore(properties(), qdrantClient, FIXED_CLOCK);
+
+        store.replaceAllEmbedded(indexResult(), Path.of("\\repo\\docs"));
+
+        assertEquals("/repo/docs", qdrantClient.upsertedPoints.getFirst().payload().corpusRoot());
+    }
+
     private static RagVectorIndexResult indexResult() {
         return new RagVectorIndexResult(
                 "ollama",
