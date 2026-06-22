@@ -352,6 +352,8 @@ port checks, and recovery hints.
 Use `./docker-check.sh` when you want to know whether the Docker app is usable
 enough to trust. It is a read-only smoke check and exits non-zero if backend
 health, frontend, Qdrant, `/api/models`, or `/api/rag/status` is unavailable.
+After `./docker-start.sh` or `./docker-restart.sh`, run `./docker-check.sh`
+before demos or manual testing.
 
 If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
 service table, HTTP readiness checks, expected URLs, service-specific log

@@ -61,6 +61,10 @@ print_docker_runtime_summary() {
   print_docker_urls
   print_docker_status_command
   print_docker_log_commands
+  printf '%s\n' \
+    'Next step:' \
+    '  ./docker-check.sh' \
+    '  verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
 }
 
 print_docker_start_failure_summary() {

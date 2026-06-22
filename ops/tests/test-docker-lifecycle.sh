@@ -131,6 +131,9 @@ test_docker_start_runs_compose_up_build() {
   assert_contains "${output}" 'Logs:'
   assert_contains "${output}" 'all services: docker compose logs -f'
   assert_contains "${output}" 'backend: docker compose logs -f backend'
+  assert_contains "${output}" 'Next step:'
+  assert_contains "${output}" './docker-check.sh'
+  assert_contains "${output}" 'verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
 }
@@ -200,6 +203,8 @@ test_docker_restart_runs_down_then_up() {
 
   assert_contains "${output}" 'Docker stack stopped.'
   assert_contains "${output}" 'Docker stack started.'
+  assert_contains "${output}" 'Next step:'
+  assert_contains "${output}" './docker-check.sh'
   if [ "${actual_log}" != "${expected_log}" ]; then
     printf 'expected docker calls:\n%s\nactual docker calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
     exit 1
