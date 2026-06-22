@@ -67,6 +67,30 @@ EOF
   chmod +x "${bin_dir}/docker"
 }
 
+write_mock_curl() {
+  local bin_dir="$1"
+
+  cat >"${bin_dir}/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+url="${*: -1}"
+case "${url}" in
+  http://localhost:8080/actuator/health)
+    [ "${MOCK_BACKEND_HTTP:-ok}" = "ok" ] && exit 0
+    ;;
+  http://localhost:3000)
+    [ "${MOCK_FRONTEND_HTTP:-ok}" = "ok" ] && exit 0
+    ;;
+  http://localhost:6333)
+    [ "${MOCK_QDRANT_HTTP:-ok}" = "ok" ] && exit 0
+    ;;
+esac
+exit 1
+EOF
+
+  chmod +x "${bin_dir}/curl"
+}
+
 run_script() {
   local tmp_dir="$1"
   local script_name="$2"
@@ -86,6 +110,7 @@ test_docker_start_runs_compose_up_build() {
   mkdir -p "${tmp_dir}/bin"
   : >"${tmp_dir}/docker.log"
   write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
 
   output="$(run_script "${tmp_dir}" docker-start.sh)"
 
@@ -110,6 +135,7 @@ test_docker_start_failure_prints_actionable_summary() {
   mkdir -p "${tmp_dir}/bin"
   : >"${tmp_dir}/docker.log"
   write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
 
   set +e
   output="$(run_script "${tmp_dir}" docker-start.sh MOCK_DOCKER_FAIL_UP=true 2>&1)"
@@ -142,6 +168,7 @@ test_docker_stop_runs_compose_down() {
   mkdir -p "${tmp_dir}/bin"
   : >"${tmp_dir}/docker.log"
   write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
 
   output="$(run_script "${tmp_dir}" docker-stop.sh)"
 
@@ -159,6 +186,7 @@ test_docker_restart_runs_down_then_up() {
   mkdir -p "${tmp_dir}/bin"
   : >"${tmp_dir}/docker.log"
   write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
 
   output="$(run_script "${tmp_dir}" docker-restart.sh)"
   expected_log=$'compose down\ncompose up -d --build'
@@ -179,11 +207,16 @@ test_docker_status_runs_compose_ps() {
   mkdir -p "${tmp_dir}/bin"
   : >"${tmp_dir}/docker.log"
   write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
 
   output="$(run_script "${tmp_dir}" docker-status.sh)"
 
   assert_contains "${output}" 'local-genai-lab Docker Compose status'
   assert_contains "${output}" 'llm-backend'
+  assert_contains "${output}" 'Readiness:'
+  assert_contains "${output}" 'backend health: ok'
+  assert_contains "${output}" 'frontend http: ok'
+  assert_contains "${output}" 'qdrant http: ok'
   assert_contains "${output}" 'URLs:'
   assert_contains "${output}" 'frontend: http://localhost:3000'
   assert_contains "${output}" 'Logs:'
@@ -200,12 +233,33 @@ test_docker_status_runs_compose_ps() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_status_reports_unavailable_services_with_next_actions() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-status.sh MOCK_BACKEND_HTTP=down MOCK_FRONTEND_HTTP=down MOCK_QDRANT_HTTP=down)"
+
+  assert_contains "${output}" 'backend health: unavailable'
+  assert_contains "${output}" 'frontend http: unavailable'
+  assert_contains "${output}" 'qdrant http: unavailable'
+  assert_contains "${output}" 'Next actions:'
+  assert_contains "${output}" 'inspect backend logs with: docker compose logs -f backend'
+  assert_contains "${output}" 'inspect frontend logs with: docker compose logs -f frontend'
+  assert_contains "${output}" 'inspect qdrant logs with: docker compose logs -f qdrant'
+  rm -rf "${tmp_dir}"
+}
+
 main() {
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
   test_docker_stop_runs_compose_down
   test_docker_restart_runs_down_then_up
   test_docker_status_runs_compose_ps
+  test_docker_status_reports_unavailable_services_with_next_actions
   printf 'docker lifecycle tests passed\n'
 }
 
