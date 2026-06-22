@@ -84,6 +84,12 @@ case "${url}" in
   http://localhost:6333)
     [ "${MOCK_QDRANT_HTTP:-ok}" = "ok" ] && exit 0
     ;;
+  http://localhost:8080/api/models)
+    [ "${MOCK_MODELS_API:-ok}" = "ok" ] && exit 0
+    ;;
+  http://localhost:8080/api/rag/status)
+    [ "${MOCK_RAG_STATUS_API:-ok}" = "ok" ] && exit 0
+    ;;
 esac
 exit 1
 EOF
@@ -253,6 +259,53 @@ test_docker_status_reports_unavailable_services_with_next_actions() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_check_passes_when_all_endpoints_respond() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-check.sh)"
+
+  assert_contains "${output}" 'Checking local-genai-lab Docker Compose stack'
+  assert_contains "${output}" 'pass: backend health'
+  assert_contains "${output}" 'pass: frontend http'
+  assert_contains "${output}" 'pass: qdrant http'
+  assert_contains "${output}" 'pass: backend models api'
+  assert_contains "${output}" 'pass: backend rag status api'
+  assert_contains "${output}" 'Docker smoke check passed.'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_check_fails_with_actionable_output() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-check.sh MOCK_BACKEND_HTTP=down MOCK_MODELS_API=down 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-check.sh to fail when required endpoints are unavailable' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'fail: backend health'
+  assert_contains "${output}" 'url: http://localhost:8080/actuator/health'
+  assert_contains "${output}" 'fail: backend models api'
+  assert_contains "${output}" 'url: http://localhost:8080/api/models'
+  assert_contains "${output}" 'logs: docker compose logs -f backend'
+  assert_contains "${output}" 'Docker smoke check failed.'
+  assert_contains "${output}" 'Run ./docker-status.sh for Compose status, readiness, logs, and port diagnostics.'
+  rm -rf "${tmp_dir}"
+}
+
 main() {
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
@@ -260,6 +313,8 @@ main() {
   test_docker_restart_runs_down_then_up
   test_docker_status_runs_compose_ps
   test_docker_status_reports_unavailable_services_with_next_actions
+  test_docker_check_passes_when_all_endpoints_respond
+  test_docker_check_fails_with_actionable_output
   printf 'docker lifecycle tests passed\n'
 }
 

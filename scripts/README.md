@@ -20,6 +20,7 @@ Use the repository root for local app lifecycle commands:
 ./docker-stop.sh
 ./docker-restart.sh
 ./docker-status.sh
+./docker-check.sh
 ```
 
 or:
@@ -34,6 +35,7 @@ make docker-start
 make docker-stop
 make docker-restart
 make docker-status
+make docker-check
 ```
 
 The directory includes:

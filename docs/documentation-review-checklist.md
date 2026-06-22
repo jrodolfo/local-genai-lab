@@ -106,6 +106,7 @@ Root app lifecycle commands are:
 ./docker-stop.sh
 ./docker-restart.sh
 ./docker-status.sh
+./docker-check.sh
 ```
 
 Root Makefile commands are:

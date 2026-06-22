@@ -14,6 +14,7 @@ Use the repository root for the public lifecycle commands:
 ./docker-stop.sh
 ./docker-restart.sh
 ./docker-status.sh
+./docker-check.sh
 ```
 
 `./stop.sh` stops PID-file-managed processes by default. Use `./stop.sh --all`
@@ -25,6 +26,9 @@ or stopping the app.
 The `docker-*` scripts are also root-level public lifecycle commands. They run
 the full Docker Compose stack and intentionally stay separate from the host-run
 `start.sh` / `stop.sh` workflow.
+
+Use `./docker-status.sh` for diagnostics and `./docker-check.sh` for a
+read-only smoke check that fails when the Docker stack is not usable.
 
 `./build.sh` runs tests unless explicitly skipped, so normal output includes
 Maven and npm test/build progress. JVM/native-access warnings from Java
@@ -45,6 +49,7 @@ make docker-start
 make docker-stop
 make docker-restart
 make docker-status
+make docker-check
 make test-ops
 ```
 

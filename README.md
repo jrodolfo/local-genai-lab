@@ -112,6 +112,7 @@ local-genai-lab/
 ├── docker-stop.sh
 ├── docker-restart.sh
 ├── docker-status.sh
+├── docker-check.sh
 ├── Makefile
 ├── ops/
 │   ├── lib/
@@ -316,6 +317,7 @@ Keep Ollama running on the host first, then use the Docker lifecycle wrappers:
 ```bash
 ./docker-start.sh
 ./docker-status.sh
+./docker-check.sh
 ./docker-stop.sh
 ```
 
@@ -324,6 +326,7 @@ Equivalent Make targets are available:
 ```bash
 make docker-start
 make docker-status
+make docker-check
 make docker-stop
 ```
 
@@ -341,6 +344,14 @@ The existing `./start.sh`, `./stop.sh`, `./restart.sh`, and `./status.sh`
 scripts run the backend and frontend directly on the host. The `docker-*`
 scripts run the full Docker Compose stack. Keep those workflows separate to
 avoid accidentally mixing host-run processes with containerized services.
+
+Use `./docker-status.sh` when you want to know what is running and where to
+look. It is diagnostic and prints Compose status, readiness, URLs, log commands,
+port checks, and recovery hints.
+
+Use `./docker-check.sh` when you want to know whether the Docker app is usable
+enough to trust. It is a read-only smoke check and exits non-zero if backend
+health, frontend, Qdrant, `/api/models`, or `/api/rag/status` is unavailable.
 
 If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
 service table, HTTP readiness checks, expected URLs, service-specific log
