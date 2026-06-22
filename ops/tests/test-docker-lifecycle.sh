@@ -126,6 +126,11 @@ test_docker_start_failure_prints_actionable_summary() {
   assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
+  assert_contains "${output}" 'Free ports:'
+  assert_contains "${output}" 'If the PID belongs to this repo host-run app, run: ./stop.sh --all'
+  assert_contains "${output}" 'If needed, stop a specific process with: kill <pid>'
+  assert_contains "${output}" 'Last resort only: kill -9 <pid>'
+  assert_contains "${output}" 'Retry Docker startup with: ./docker-start.sh'
   assert_contains "${output}" 'backend: docker compose logs -f backend'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
@@ -187,6 +192,10 @@ test_docker_status_runs_compose_ps() {
   assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
+  assert_contains "${output}" 'Free ports:'
+  assert_contains "${output}" './stop.sh --all'
+  assert_contains "${output}" 'kill <pid>'
+  assert_contains "${output}" './docker-start.sh'
   assert_file_contains "${tmp_dir}/docker.log" 'compose ps'
   rm -rf "${tmp_dir}"
 }

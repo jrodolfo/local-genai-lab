@@ -40,6 +40,17 @@ print_docker_port_checks() {
     '  qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
 }
 
+print_docker_free_ports_guidance() {
+  printf '%s\n' \
+    'Free ports:' \
+    '  1. Run the port checks above and note the PID using the blocked port.' \
+    '  2. If the PID belongs to this repo host-run app, run: ./stop.sh --all' \
+    '  3. If the PID belongs to another app, stop that app normally.' \
+    '  4. If needed, stop a specific process with: kill <pid>' \
+    '  5. Last resort only: kill -9 <pid>' \
+    '  6. Retry Docker startup with: ./docker-start.sh'
+}
+
 print_docker_status_command() {
   printf '%s\n' \
     'Status:' \
@@ -62,5 +73,6 @@ print_docker_start_failure_summary() {
     ''
   print_docker_status_command
   print_docker_port_checks
+  print_docker_free_ports_guidance
   print_docker_log_commands
 }

@@ -37,3 +37,4 @@ printf '%s\n' 'local-genai-lab Docker Compose status'
 print_docker_urls
 print_docker_log_commands
 print_docker_port_checks
+print_docker_free_ports_guidance

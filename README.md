@@ -344,7 +344,9 @@ avoid accidentally mixing host-run processes with containerized services.
 
 If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
 service table, expected URLs, service-specific log commands, and port-conflict
-checks for `8080`, `3000`, and `6333`.
+checks for `8080`, `3000`, and `6333`. If a port is owned by the host-run app,
+run `./stop.sh --all`; if another app owns the port, stop that app normally or
+use the printed PID with `kill <pid>`.
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
