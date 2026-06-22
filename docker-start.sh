@@ -23,22 +23,21 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=ops/lib/docker-lifecycle-common.sh
+source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
 
-if ! command -v docker >/dev/null 2>&1; then
-  printf '%s\n' 'Error: docker was not found. Install/start Docker, then retry ./docker-start.sh.' >&2
-  exit 1
-fi
+ensure_docker_available 'docker-start.sh'
 
 printf '%s\n' 'Starting local-genai-lab with Docker Compose'
 printf '%s\n' 'note: keep Ollama running on the host for the default Ollama provider.'
 
-(
+if ! (
   cd "${SCRIPT_DIR}"
   docker compose up -d --build
-)
+); then
+  print_docker_start_failure_summary >&2
+  exit 1
+fi
 
-printf '%s\n' \
-  'Docker stack started.' \
-  '  frontend: http://localhost:3000' \
-  '  backend: http://localhost:8080' \
-  '  qdrant: http://localhost:6333'
+printf '%s\n' 'Docker stack started.'
+print_docker_runtime_summary

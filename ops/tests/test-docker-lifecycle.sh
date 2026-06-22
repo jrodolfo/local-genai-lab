@@ -50,6 +50,12 @@ write_mock_docker() {
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "${MOCK_DOCKER_LOG}"
+if [ "${MOCK_DOCKER_FAIL_UP:-false}" = "true" ] \
+  && [ "${1:-}" = "compose" ] \
+  && [ "${2:-}" = "up" ]; then
+  printf '%s\n' 'mock compose up failed' >&2
+  exit 1
+fi
 if [ "${1:-}" = "compose" ] && [ "${2:-}" = "ps" ]; then
   printf '%s\n' 'NAME          STATUS'
   printf '%s\n' 'llm-backend   running'
@@ -85,9 +91,42 @@ test_docker_start_runs_compose_up_build() {
 
   assert_contains "${output}" 'Starting local-genai-lab with Docker Compose'
   assert_contains "${output}" 'Docker stack started.'
+  assert_contains "${output}" 'URLs:'
   assert_contains "${output}" 'frontend: http://localhost:3000'
   assert_contains "${output}" 'backend: http://localhost:8080'
   assert_contains "${output}" 'qdrant: http://localhost:6333'
+  assert_contains "${output}" 'Status:'
+  assert_contains "${output}" './docker-status.sh'
+  assert_contains "${output}" 'Logs:'
+  assert_contains "${output}" 'all services: docker compose logs -f'
+  assert_contains "${output}" 'backend: docker compose logs -f backend'
+  assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_start_failure_prints_actionable_summary() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-start.sh MOCK_DOCKER_FAIL_UP=true 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-start.sh to fail when docker compose up fails' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Docker startup failed.'
+  assert_contains "${output}" 'Common cause: one of the Docker ports is already in use.'
+  assert_contains "${output}" 'The host-run ./start.sh workflow uses backend port 8080 and frontend port 5173.'
+  assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
+  assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
+  assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
+  assert_contains "${output}" 'backend: docker compose logs -f backend'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
 }
@@ -103,6 +142,8 @@ test_docker_stop_runs_compose_down() {
 
   assert_contains "${output}" 'Stopping local-genai-lab Docker Compose stack'
   assert_contains "${output}" 'Docker stack stopped.'
+  assert_contains "${output}" 'Status:'
+  assert_contains "${output}" './docker-status.sh'
   assert_file_contains "${tmp_dir}/docker.log" 'compose down'
   rm -rf "${tmp_dir}"
 }
@@ -138,14 +179,21 @@ test_docker_status_runs_compose_ps() {
 
   assert_contains "${output}" 'local-genai-lab Docker Compose status'
   assert_contains "${output}" 'llm-backend'
-  assert_contains "${output}" 'expected URLs:'
+  assert_contains "${output}" 'URLs:'
   assert_contains "${output}" 'frontend: http://localhost:3000'
+  assert_contains "${output}" 'Logs:'
+  assert_contains "${output}" 'all services: docker compose logs -f'
+  assert_contains "${output}" 'Port checks:'
+  assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
+  assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
+  assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
   assert_file_contains "${tmp_dir}/docker.log" 'compose ps'
   rm -rf "${tmp_dir}"
 }
 
 main() {
   test_docker_start_runs_compose_up_build
+  test_docker_start_failure_prints_actionable_summary
   test_docker_stop_runs_compose_down
   test_docker_restart_runs_down_then_up
   test_docker_status_runs_compose_ps

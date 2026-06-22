@@ -342,6 +342,10 @@ scripts run the backend and frontend directly on the host. The `docker-*`
 scripts run the full Docker Compose stack. Keep those workflows separate to
 avoid accidentally mixing host-run processes with containerized services.
 
+If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
+service table, expected URLs, service-specific log commands, and port-conflict
+checks for `8080`, `3000`, and `6333`.
+
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
 in-memory vector retrieval. Because the RAG UI can compare against

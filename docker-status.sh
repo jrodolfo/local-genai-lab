@@ -22,11 +22,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=ops/lib/docker-lifecycle-common.sh
+source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
 
-if ! command -v docker >/dev/null 2>&1; then
-  printf '%s\n' 'Error: docker was not found. Install/start Docker, then retry ./docker-status.sh.' >&2
-  exit 1
-fi
+ensure_docker_available 'docker-status.sh'
 
 printf '%s\n' 'local-genai-lab Docker Compose status'
 
@@ -35,8 +34,6 @@ printf '%s\n' 'local-genai-lab Docker Compose status'
   docker compose ps
 )
 
-printf '%s\n' \
-  'expected URLs:' \
-  '  frontend: http://localhost:3000' \
-  '  backend: http://localhost:8080' \
-  '  qdrant: http://localhost:6333'
+print_docker_urls
+print_docker_log_commands
+print_docker_port_checks

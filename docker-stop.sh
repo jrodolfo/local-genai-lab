@@ -22,11 +22,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=ops/lib/docker-lifecycle-common.sh
+source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
 
-if ! command -v docker >/dev/null 2>&1; then
-  printf '%s\n' 'Error: docker was not found. Install/start Docker, then retry ./docker-stop.sh.' >&2
-  exit 1
-fi
+ensure_docker_available 'docker-stop.sh'
 
 printf '%s\n' 'Stopping local-genai-lab Docker Compose stack'
 
@@ -36,3 +35,4 @@ printf '%s\n' 'Stopping local-genai-lab Docker Compose stack'
 )
 
 printf '%s\n' 'Docker stack stopped.'
+print_docker_status_command

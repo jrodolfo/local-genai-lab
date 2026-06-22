@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# docker-lifecycle-common.sh
+#
+# Purpose:
+#   Shared output helpers for root Docker lifecycle scripts.
+#
+
+ensure_docker_available() {
+  local script_name="$1"
+
+  if ! command -v docker >/dev/null 2>&1; then
+    printf '%s\n' "Error: docker was not found. Install/start Docker, then retry ./${script_name}." >&2
+    exit 1
+  fi
+}
+
+print_docker_urls() {
+  printf '%s\n' \
+    'URLs:' \
+    '  frontend: http://localhost:3000' \
+    '  backend: http://localhost:8080' \
+    '  qdrant: http://localhost:6333'
+}
+
+print_docker_log_commands() {
+  printf '%s\n' \
+    'Logs:' \
+    '  all services: docker compose logs -f' \
+    '  backend: docker compose logs -f backend' \
+    '  frontend: docker compose logs -f frontend' \
+    '  qdrant: docker compose logs -f qdrant'
+}
+
+print_docker_port_checks() {
+  printf '%s\n' \
+    'Port checks:' \
+    '  backend: lsof -nP -iTCP:8080 -sTCP:LISTEN' \
+    '  frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN' \
+    '  qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
+}
+
+print_docker_status_command() {
+  printf '%s\n' \
+    'Status:' \
+    '  ./docker-status.sh'
+}
+
+print_docker_runtime_summary() {
+  print_docker_urls
+  print_docker_status_command
+  print_docker_log_commands
+}
+
+print_docker_start_failure_summary() {
+  printf '%s\n' \
+    '' \
+    'Docker startup failed.' \
+    'Common cause: one of the Docker ports is already in use.' \
+    'The host-run ./start.sh workflow uses backend port 8080 and frontend port 5173.' \
+    'The full Docker workflow uses backend port 8080, frontend port 3000, and Qdrant port 6333.' \
+    ''
+  print_docker_status_command
+  print_docker_port_checks
+  print_docker_log_commands
+}
