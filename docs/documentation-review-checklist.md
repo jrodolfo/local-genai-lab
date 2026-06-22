@@ -102,6 +102,10 @@ Root app lifecycle commands are:
 ./restart.sh
 ./status.sh
 ./build.sh
+./docker-start.sh
+./docker-stop.sh
+./docker-restart.sh
+./docker-status.sh
 ```
 
 Root Makefile commands are:
@@ -118,6 +122,8 @@ Check that:
 
 - `scripts/README.md` documents MCP/tool shell scripts, not app lifecycle
 - `ops/README.md` documents local runtime helpers
+- Docker lifecycle scripts are documented as root-level public lifecycle
+  commands, not as `ops/` or `scripts/` commands
 - docs do not reference removed app lifecycle commands such as `run-backend.sh`
   or `make run-backend`
 - commands using `./ops/start-backend-helper.sh` are meant to run from the

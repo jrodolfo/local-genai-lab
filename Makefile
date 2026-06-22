@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app docker-start docker-stop docker-restart docker-status clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -11,6 +11,10 @@ help:
 		'  make status                 Show process, URL, and log status' \
 		'  make build                  Build backend, frontend, and MCP artifacts' \
 		'  make check-app              Run the local stack smoke check' \
+		'  make docker-start           Start backend, frontend, and Qdrant with Docker Compose' \
+		'  make docker-stop            Stop the Docker Compose stack' \
+		'  make docker-restart         Restart the Docker Compose stack' \
+		'  make docker-status          Show Docker Compose service status' \
 		'  make clean-ds-store         Remove macOS .DS_Store files from the repo tree' \
 		'  make test                   Run ops, backend, and frontend tests' \
 		'  make verify                 Run broader project verification' \
@@ -41,6 +45,18 @@ build:
 check-app:
 	@./ops/check-app.sh
 
+docker-start:
+	@./docker-start.sh
+
+docker-stop:
+	@./docker-stop.sh
+
+docker-restart:
+	@./docker-restart.sh
+
+docker-status:
+	@./docker-status.sh
+
 clean-ds-store:
 	@find . -path ./.git -prune -o -name .DS_Store -type f -exec rm -f {} +
 
@@ -55,6 +71,7 @@ test-ops:
 	@bash ./ops/tests/test-start-backend-helper.sh
 	@bash ./ops/tests/test-build.sh
 	@bash ./ops/tests/test-status.sh
+	@bash ./ops/tests/test-docker-lifecycle.sh
 	@bash ./ops/tests/test-stop.sh
 
 test-backend:

@@ -108,6 +108,10 @@ local-genai-lab/
 ├── restart.sh
 ├── status.sh
 ├── build.sh
+├── docker-start.sh
+├── docker-stop.sh
+├── docker-restart.sh
+├── docker-status.sh
 ├── Makefile
 ├── ops/
 │   ├── lib/
@@ -136,7 +140,7 @@ local-genai-lab/
 
 Script separation:
 
-- top-level scripts and the root `Makefile` are the public local app lifecycle interface
+- top-level scripts and the root `Makefile` are the public app lifecycle interface, including host-run commands and full Docker Compose commands
 - `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
 - `scripts/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
 
@@ -240,6 +244,10 @@ Use these commands depending on what you need to verify:
 | `make status` / `./status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
 | `make build` | Build backend, frontend, and MCP artifacts without changing the running app. | No |
 | `make check-app` | Smoke-check the live backend/frontend stack after startup. | Yes |
+| `make docker-start` | Start backend, frontend, and Qdrant with Docker Compose. | No |
+| `make docker-stop` | Stop the Docker Compose stack. | Useful when running |
+| `make docker-restart` | Restart the Docker Compose stack. | No |
+| `make docker-status` | Show Docker Compose service status and expected URLs. | Useful when running |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files from the repo tree. | No |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
 | `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
@@ -303,7 +311,23 @@ MCP is enabled by default in the backend. To run without it, set `MCP_ENABLED=fa
 
 ## Docker
 
-Keep Ollama running on the host first, then:
+Keep Ollama running on the host first, then use the Docker lifecycle wrappers:
+
+```bash
+./docker-start.sh
+./docker-status.sh
+./docker-stop.sh
+```
+
+Equivalent Make targets are available:
+
+```bash
+make docker-start
+make docker-status
+make docker-stop
+```
+
+The direct Compose command also works:
 
 ```bash
 docker compose up --build
@@ -311,6 +335,12 @@ docker compose up --build
 
 - frontend: `http://localhost:3000`
 - backend: `http://localhost:8080`
+- qdrant: `http://localhost:6333`
+
+The existing `./start.sh`, `./stop.sh`, `./restart.sh`, and `./status.sh`
+scripts run the backend and frontend directly on the host. The `docker-*`
+scripts run the full Docker Compose stack. Keep those workflows separate to
+avoid accidentally mixing host-run processes with containerized services.
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current

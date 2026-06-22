@@ -16,6 +16,10 @@ Use the repository root for local app lifecycle commands:
 ./stop.sh
 ./restart.sh
 ./status.sh
+./docker-start.sh
+./docker-stop.sh
+./docker-restart.sh
+./docker-status.sh
 ```
 
 or:
@@ -26,6 +30,10 @@ make stop
 make restart
 make status
 make check-app
+make docker-start
+make docker-stop
+make docker-restart
+make docker-status
 ```
 
 The directory includes:
@@ -36,7 +44,7 @@ The directory includes:
 
 Separation of concerns:
 
-- top-level lifecycle scripts are for developers running the app
+- top-level lifecycle scripts are for developers running the app, including full Docker Compose lifecycle commands
 - `ops/` contains backend helpers and local runtime checks
 - this `scripts/` directory contains report generators, MCP-executed tooling, and shell tests
 
