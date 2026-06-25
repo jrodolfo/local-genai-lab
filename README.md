@@ -392,8 +392,19 @@ before demos or manual testing.
 Use `./docker-scan.sh` after Docker images have been built when you want to
 inspect known vulnerabilities in the backend, frontend, and Qdrant images. It
 uses Trivy and runs in advisory mode by default, reporting `HIGH` and
-`CRITICAL` findings without failing the command. To make findings fail the
-command, run:
+`CRITICAL` findings without failing the command.
+
+Docker security posture:
+
+- backend and frontend images are built from this repository and should stay
+  clean for `HIGH` and `CRITICAL` findings
+- Qdrant is an external vendor image used by Docker Compose, so findings in
+  that image are tracked separately from this codebase
+- use the full scan for awareness across the complete local Docker stack
+- use the owned-image scan before declaring this repository's images clean
+- use strict mode only when the selected scan scope is expected to be clean
+
+To make findings fail the command, run:
 
 ```bash
 DOCKER_SCAN_STRICT=true ./docker-scan.sh
