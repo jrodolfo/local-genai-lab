@@ -162,6 +162,37 @@ run_verify_script() {
     bash "${tmp_dir}/repo/docker-verify.sh"
 }
 
+write_mock_full_check_scripts() {
+  local tmp_dir="$1"
+  local bin_dir="${tmp_dir}/repo"
+  local script_name
+
+  mkdir -p "${bin_dir}"
+  cp "${REPO_ROOT}/docker-full-check.sh" "${bin_dir}/docker-full-check.sh"
+
+  for script_name in docker-verify.sh docker-scan.sh; do
+    cat >"${bin_dir}/${script_name}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' '${script_name}' >> "\${MOCK_FULL_CHECK_LOG}"
+printf '%s\n' 'mock ${script_name}'
+EOF
+    chmod +x "${bin_dir}/${script_name}"
+  done
+
+  chmod +x "${bin_dir}/docker-full-check.sh"
+}
+
+run_full_check_script() {
+  local tmp_dir="$1"
+
+  env -i \
+    HOME="${HOME:-}" \
+    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    MOCK_FULL_CHECK_LOG="${tmp_dir}/full-check.log" \
+    bash "${tmp_dir}/repo/docker-full-check.sh"
+}
+
 test_docker_start_runs_compose_up_build() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
@@ -386,6 +417,28 @@ test_docker_verify_runs_full_workflow_in_order() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_full_check_runs_verify_then_scan() {
+  local tmp_dir output expected_log actual_log
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/full-check.log"
+  write_mock_full_check_scripts "${tmp_dir}"
+
+  output="$(run_full_check_script "${tmp_dir}")"
+  expected_log=$'docker-verify.sh\ndocker-scan.sh'
+  actual_log="$(cat "${tmp_dir}/full-check.log")"
+
+  assert_contains "${output}" 'Docker full check will:'
+  assert_contains "${output}" 'run Docker functional verification'
+  assert_contains "${output}" 'run Docker image security scan'
+  assert_contains "${output}" 'Docker full check completed successfully.'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected full check calls:\n%s\nactual full check calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
 main() {
   test_docker_backend_image_includes_mcp_runtime_contract
   test_docker_start_runs_compose_up_build
@@ -397,6 +450,7 @@ main() {
   test_docker_check_passes_when_all_endpoints_respond
   test_docker_check_fails_with_actionable_output
   test_docker_verify_runs_full_workflow_in_order
+  test_docker_full_check_runs_verify_then_scan
   printf 'docker lifecycle tests passed\n'
 }
 

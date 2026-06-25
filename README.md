@@ -115,6 +115,7 @@ local-genai-lab/
 ├── docker-check.sh
 ├── docker-verify.sh
 ├── docker-scan.sh
+├── docker-full-check.sh
 ├── Makefile
 ├── ops/
 │   ├── lib/
@@ -257,6 +258,10 @@ Use these commands depending on what you need to verify:
 | `make docker-stop` | Stop the Docker Compose stack. | Useful when running |
 | `make docker-restart` | Restart the Docker Compose stack. | No |
 | `make docker-status` | Show Docker Compose service status and expected URLs. | Useful when running |
+| `make docker-check` | Smoke-check the running Docker Compose stack. | Yes |
+| `make docker-verify` | Restart, inspect, and smoke-check Docker mode. | No |
+| `make docker-scan` | Scan Docker images for known vulnerabilities. | No, but images should exist |
+| `make docker-full-check` | Run Docker verification and Docker image scan. | No |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files from the repo tree. | No |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
 | `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
@@ -323,14 +328,13 @@ MCP is enabled by default in the backend. To run without it, set `MCP_ENABLED=fa
 Keep Ollama running on the host first, then use the Docker lifecycle wrappers:
 
 ```bash
-./docker-start.sh
+./docker-restart.sh
 ./docker-status.sh
 ./docker-check.sh
-./docker-scan.sh
 ./docker-stop.sh
 ```
 
-For the full Docker verification workflow, use:
+For the functional Docker verification workflow, use:
 
 ```bash
 ./docker-verify.sh
@@ -340,15 +344,24 @@ This script is not read-only. It stops host-run backend/frontend processes,
 restarts the Docker Compose stack, prints Docker status, and runs the Docker
 smoke check.
 
+For the broadest Docker check, including the advisory security scan, use:
+
+```bash
+./docker-full-check.sh
+```
+
+This runs `./docker-verify.sh` first and then `./docker-scan.sh`.
+
 Equivalent Make targets are available:
 
 ```bash
-make docker-start
+make docker-restart
 make docker-status
 make docker-check
-make docker-scan
 make docker-stop
 make docker-verify
+make docker-scan
+make docker-full-check
 ```
 
 The direct Compose command also works:
@@ -391,6 +404,9 @@ Install Trivy first if needed:
 ```bash
 brew install trivy
 ```
+
+Use `./docker-full-check.sh` when you want one command that does both: functional
+Docker verification plus the Docker image vulnerability scan.
 
 If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
 service table, HTTP readiness checks, expected URLs, service-specific log

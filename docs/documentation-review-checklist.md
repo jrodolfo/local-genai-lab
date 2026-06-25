@@ -109,6 +109,7 @@ Root app lifecycle commands are:
 ./docker-check.sh
 ./docker-verify.sh
 ./docker-scan.sh
+./docker-full-check.sh
 ```
 
 Root Makefile commands are:
