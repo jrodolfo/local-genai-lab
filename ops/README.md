@@ -29,6 +29,17 @@ The `docker-*` scripts are also root-level public lifecycle commands. They run
 the full Docker Compose stack and intentionally stay separate from the host-run
 `start.sh` / `stop.sh` workflow.
 
+Docker backend image contract:
+
+- the backend image is built from the repository root so it can include the
+  Spring Boot backend, the built MCP server, and MCP tool scripts
+- the image includes Node 20 because the backend starts the MCP server with
+  `node`
+- the image creates empty `/app/scripts/reports/audit` and
+  `/app/scripts/reports/s3-cloudwatch` directories so MCP and storage health
+  checks pass before any reports have been generated
+- generated local report artifacts are excluded by `.dockerignore`
+
 Use `./docker-status.sh` for diagnostics and `./docker-check.sh` for a
 read-only smoke check that fails when the Docker stack is not usable.
 Use `./docker-verify.sh` for the full non-read-only Docker workflow: stop

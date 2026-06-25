@@ -147,6 +147,12 @@ Script separation:
 - `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
 - `scripts/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
 
+Docker note:
+
+- the backend Docker image intentionally includes the built MCP server, Node 20, the MCP tool scripts, and empty report directories
+- this keeps Docker mode aligned with host-run mode and allows `/actuator/health` to validate MCP and storage paths correctly
+- generated report artifacts are not copied into the image; Docker starts with empty report directories
+
 ## Prerequisites
 
 - Java 21. This project targets Java 21 for the Spring Boot backend; confirm with `java -version` before building or running backend tests.

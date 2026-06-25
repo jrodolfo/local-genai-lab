@@ -43,6 +43,23 @@ assert_file_contains() {
   assert_contains "${contents}" "${needle}"
 }
 
+test_docker_backend_image_includes_mcp_runtime_contract() {
+  assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'context: .'
+  assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'dockerfile: backend/Dockerfile'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'FROM node:20-bookworm-slim AS mcp-build'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN npm ci'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN npm run build && npm prune --omit=dev'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /usr/local/bin/node /usr/local/bin/node'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/dist ./mcp/dist'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/node_modules ./mcp/node_modules'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY scripts ./scripts'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch'
+  assert_file_contains "${REPO_ROOT}/.dockerignore" 'backend/target'
+  assert_file_contains "${REPO_ROOT}/.dockerignore" 'frontend/node_modules'
+  assert_file_contains "${REPO_ROOT}/.dockerignore" 'mcp/node_modules'
+  assert_file_contains "${REPO_ROOT}/.dockerignore" 'scripts/reports'
+}
+
 write_mock_docker() {
   local bin_dir="$1"
 
@@ -370,6 +387,7 @@ test_docker_verify_runs_full_workflow_in_order() {
 }
 
 main() {
+  test_docker_backend_image_includes_mcp_runtime_contract
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
   test_docker_stop_runs_compose_down
