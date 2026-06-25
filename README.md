@@ -396,13 +396,36 @@ uses Trivy and runs in advisory mode by default, reporting `HIGH` and
 
 Docker security posture:
 
-- backend and frontend images are built from this repository and should stay
-  clean for `HIGH` and `CRITICAL` findings
-- Qdrant is an external vendor image used by Docker Compose, so findings in
-  that image are tracked separately from this codebase
-- use the full scan for awareness across the complete local Docker stack
-- use the owned-image scan before declaring this repository's images clean
-- use strict mode only when the selected scan scope is expected to be clean
+| Scope | Command | What It Proves | How To Interpret Findings |
+| --- | --- | --- | --- |
+| Full local Docker stack | `./docker-scan.sh` | Backend, frontend, and Qdrant images were scanned. | Use for awareness across everything Docker Compose runs. Qdrant findings belong to the external vendor image. |
+| Repository-owned images only | `DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh` | Backend and frontend images built from this codebase were scanned. | Use this before declaring this repository's Docker images clean. |
+| Strict selected scope | `DOCKER_SCAN_STRICT=true ./docker-scan.sh` | The selected scan scope has no configured-severity findings. | Use only when the chosen scope is expected to be clean. |
+
+```mermaid
+flowchart TD
+  Start[Need a Docker security check?]
+  Full[Need awareness for the complete local stack?]
+  Owned[Need to validate only this repository's images?]
+  Strict[Should findings fail the command?]
+  RunFull[Run ./docker-scan.sh]
+  RunOwned[Run DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh]
+  RunStrict[Add DOCKER_SCAN_STRICT=true]
+  Qdrant[Qdrant findings are vendor-image findings]
+  App[Backend/frontend findings are repository-owned issues]
+
+  Start --> Full
+  Full -- yes --> RunFull
+  Full -- no --> Owned
+  Owned -- yes --> RunOwned
+  Owned -- no --> RunFull
+  RunFull --> Qdrant
+  RunFull --> App
+  RunOwned --> App
+  App --> Strict
+  Qdrant --> Strict
+  Strict -- yes --> RunStrict
+```
 
 To make findings fail the command, run:
 
