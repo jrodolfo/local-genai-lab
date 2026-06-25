@@ -1,6 +1,7 @@
 # ADR 0003: Show Only Configured Providers In The Selector
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

@@ -1,6 +1,7 @@
 # ADR 0011: Use Mermaid As The Architecture Source Of Truth
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

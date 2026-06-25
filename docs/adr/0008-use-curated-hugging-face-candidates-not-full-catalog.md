@@ -1,6 +1,7 @@
 # ADR 0008: Use Curated Hugging Face Candidates Instead Of Full Catalog Browsing
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

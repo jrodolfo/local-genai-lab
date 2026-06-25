@@ -1,16 +1,9 @@
-# Title
+# ADR 0013: Use Ollama Embeddings And Qdrant For Phase-2 RAG Vector Retrieval
 
-Use Ollama embeddings and Qdrant for phase-2 RAG vector retrieval
+- Status: `accepted`
+- Date: `2026-06-02`
 
-# Status
-
-Accepted
-
-# Date
-
-2026-06-02
-
-# Context
+## Context
 
 `Local GenAI Lab` already has an isolated phase-1 RAG workspace over the local
 `docs/` corpus. That first slice intentionally uses in-memory lexical retrieval
@@ -34,7 +27,7 @@ Important constraints:
 - keep the implementation local-first where practical
 - keep the answer provider independent from the embedding runtime
 
-# Decision
+## Decision
 
 For phase-2 RAG vector retrieval, use this direction:
 
@@ -54,7 +47,7 @@ For phase-2 RAG vector retrieval, use this direction:
 This decision accepts the architectural direction. It does not mean vector
 retrieval is already implemented.
 
-# Rationale
+## Rationale
 
 Ollama embeddings are the best first candidate for this repository because they
 fit the local-first workflow and do not require cloud credentials. The current
@@ -75,13 +68,13 @@ Keeping lexical retrieval available is intentional. It gives the project a
 dependency-free fallback and a clear baseline for deciding whether vector
 retrieval improves real prompts.
 
-# Supporting Design Note
+## Supporting Design Note
 
 The detailed phase-2 proposal lives in:
 
 - [rag-phase-2-vector-retrieval-design.md](../rag-phase-2-vector-retrieval-design.md)
 
-# Consequences
+## Consequences
 
 Positive:
 
@@ -108,7 +101,7 @@ Neutral:
 - the first vector implementation should still use the fixed `docs/` corpus
 - a UI selector should wait until there are two real backend retrieval modes
 
-# Revisit Triggers
+## Revisit Triggers
 
 Revisit this decision if:
 

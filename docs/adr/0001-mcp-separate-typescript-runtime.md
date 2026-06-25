@@ -1,6 +1,7 @@
 # ADR 0001: Keep MCP As A Separate TypeScript Runtime
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

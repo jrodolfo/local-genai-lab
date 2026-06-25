@@ -1,6 +1,7 @@
 # ADR 0004: Keep Tool Execution Behind The MCP Boundary
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

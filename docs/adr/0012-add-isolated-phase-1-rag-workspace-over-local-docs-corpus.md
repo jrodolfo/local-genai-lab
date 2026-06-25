@@ -1,16 +1,9 @@
-# Title
+# ADR 0012: Add Isolated Phase-1 RAG Workspace Over Local Docs Corpus
 
-Add isolated phase-1 RAG workspace over local docs corpus
+- Status: `accepted`
+- Date: `2026-05-27`
 
-# Status
-
-Accepted
-
-# Date
-
-2026-05-27
-
-# Context
+## Context
 
 `Local GenAI Lab` already included:
 
@@ -35,7 +28,7 @@ The first RAG slice needed to be useful, teachable, and low-risk without
 claiming capabilities the project did not yet have, such as uploads, embeddings,
 or an external vector database.
 
-# Decision
+## Decision
 
 Add an isolated phase-1 RAG feature with these boundaries:
 
@@ -57,7 +50,7 @@ Do not add in phase 1:
 - a retrieval-mode selector before a second implementation exists
 - automatic routing between normal chat, tools, and RAG
 
-# Rationale
+## Rationale
 
 This design keeps the first RAG slice:
 
@@ -71,7 +64,7 @@ not to claim production-grade vector search. It is to establish a docs-grounded
 RAG workflow with visible citations while keeping lexical retrieval as a
 zero-dependency baseline.
 
-# Primary Implementation
+## Primary Implementation
 
 - [RagController.java](../../backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
 - [RagAnswerService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
@@ -80,7 +73,7 @@ zero-dependency baseline.
 - [InMemoryLexicalRagRetrievalStore.java](../../backend/src/main/java/net/jrodolfo/llm/rag/store/InMemoryLexicalRagRetrievalStore.java)
 - [RagWorkspace.jsx](../../frontend/src/pages/RagWorkspace.jsx)
 
-# Consequences
+## Consequences
 
 Positive:
 
@@ -102,7 +95,7 @@ Neutral:
   support without rewriting the current chat/tool orchestration path
 - a future UI selector should be added only after multiple retrieval implementations exist
 
-# Revisit Triggers
+## Revisit Triggers
 
 Revisit this decision if:
 

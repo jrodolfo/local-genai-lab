@@ -1,6 +1,7 @@
 # ADR 0009: Use Short-Lived Provider Status Caching
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

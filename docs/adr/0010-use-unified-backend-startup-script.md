@@ -1,6 +1,7 @@
 # ADR 0010: Use A Unified Backend Startup Script
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 

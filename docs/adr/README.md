@@ -60,6 +60,9 @@ Each ADR should focus on one decision.
 
 Start new records from [template.md](template.md).
 
+New ADRs should use an ISO date such as `2026-06-25`. Older records may use
+`unknown` when the original decision date was not captured.
+
 ## Current ADRs
 
 ADRs are historical records. Read them in order when a topic evolves over time:

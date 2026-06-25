@@ -1,6 +1,7 @@
 # ADR 0007: Restrict Artifact Access To The Configured Reports Root
 
-- Status: Accepted
+- Status: `accepted`
+- Date: `unknown`
 
 ## Context
 
