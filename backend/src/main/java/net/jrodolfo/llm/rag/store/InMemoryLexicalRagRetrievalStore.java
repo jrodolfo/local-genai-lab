@@ -38,10 +38,12 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "if", "in",
             "into", "is", "it", "of", "on", "or", "that", "the", "their", "then", "there",
-            "these", "this", "to", "was", "will", "with", "your"
+            "these", "this", "to", "was", "will", "with", "your", "what", "which", "who", "why",
+            "how", "when", "where", "using", "use", "used", "uses", "project", "system"
     );
 
     private volatile List<IndexedChunk> indexedChunks = List.of();
+    private volatile Map<String, Double> inverseDocumentFrequencies = Map.of();
 
     /**
      * Rebuilds the entire index with the provided chunks.
@@ -51,9 +53,11 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
      */
     @Override
     public void replaceAll(List<RagChunk> chunks) {
-        indexedChunks = chunks.stream()
+        List<IndexedChunk> rebuiltChunks = chunks.stream()
                 .map(chunk -> new IndexedChunk(chunk, tokenFrequencies(chunk.text())))
                 .toList();
+        indexedChunks = rebuiltChunks;
+        inverseDocumentFrequencies = inverseDocumentFrequencies(rebuiltChunks);
     }
 
     /**
@@ -79,7 +83,10 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
             return List.of();
         }
         return indexedChunks.stream()
-                .map(indexedChunk -> new RagMatch(indexedChunk.chunk(), cosineSimilarity(queryVector, indexedChunk.termFrequencies())))
+                .map(indexedChunk -> new RagMatch(indexedChunk.chunk(), cosineSimilarity(
+                        weightedVector(queryVector, inverseDocumentFrequencies),
+                        weightedVector(indexedChunk.termFrequencies(), inverseDocumentFrequencies)
+                )))
                 .filter(match -> match.score() > 0.0d)
                 .sorted(Comparator.comparingDouble(RagMatch::score).reversed())
                 .limit(topK)
@@ -140,10 +147,35 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
      * @param right the second vector (e.g., document chunk).
      * @return a similarity score between 0.0 (no match) and 1.0 (perfect match).
      */
-    private static double cosineSimilarity(Map<String, Integer> left, Map<String, Integer> right) {
+    private static Map<String, Double> inverseDocumentFrequencies(List<IndexedChunk> chunks) {
+        Map<String, Integer> documentFrequencies = new LinkedHashMap<>();
+        for (IndexedChunk chunk : chunks) {
+            for (String token : chunk.termFrequencies().keySet()) {
+                documentFrequencies.merge(token, 1, Integer::sum);
+            }
+        }
+        Map<String, Double> weights = new LinkedHashMap<>();
+        int documentCount = chunks.size();
+        for (Map.Entry<String, Integer> entry : documentFrequencies.entrySet()) {
+            double idf = Math.log((documentCount + 1.0d) / (entry.getValue() + 1.0d)) + 1.0d;
+            weights.put(entry.getKey(), idf);
+        }
+        return weights;
+    }
+
+    private static Map<String, Double> weightedVector(Map<String, Integer> frequencies, Map<String, Double> inverseDocumentFrequencies) {
+        Map<String, Double> weighted = new LinkedHashMap<>();
+        for (Map.Entry<String, Integer> entry : frequencies.entrySet()) {
+            double weight = inverseDocumentFrequencies.getOrDefault(entry.getKey(), 1.0d);
+            weighted.put(entry.getKey(), entry.getValue() * weight);
+        }
+        return weighted;
+    }
+
+    private static double cosineSimilarity(Map<String, Double> left, Map<String, Double> right) {
         double dotProduct = 0.0d;
-        for (Map.Entry<String, Integer> entry : left.entrySet()) {
-            dotProduct += entry.getValue() * right.getOrDefault(entry.getKey(), 0);
+        for (Map.Entry<String, Double> entry : left.entrySet()) {
+            dotProduct += entry.getValue() * right.getOrDefault(entry.getKey(), 0.0d);
         }
         if (dotProduct == 0.0d) {
             return 0.0d;
@@ -157,9 +189,9 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
      * @param values The values in the vector.
      * @return The size of the vector.
      */
-    private static double vectorMagnitude(Collection<Integer> values) {
+    private static double vectorMagnitude(Collection<Double> values) {
         double sum = 0.0d;
-        for (Integer value : values) {
+        for (Double value : values) {
             sum += value * value;
         }
         return Math.sqrt(sum);

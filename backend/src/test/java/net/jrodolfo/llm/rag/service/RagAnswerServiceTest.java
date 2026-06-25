@@ -66,6 +66,9 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("Do not add generic caveats that contradict the excerpts."));
         assertTrue(provider.prompt.prompt().contains("Do not say there is no specific mention of something"));
         assertTrue(provider.prompt.prompt().contains("For troubleshooting questions, answer as a concise checklist"));
+        assertTrue(provider.prompt.prompt().contains("Cite evidence using only source numbers such as [1] or [2]."));
+        assertTrue(provider.prompt.prompt().contains("Do not create URLs, Markdown links, repository links, or file links."));
+        assertTrue(provider.prompt.prompt().contains("The source paths below are local corpus paths, not public URLs."));
         assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));
         assertTrue(provider.prompt.prompt().contains("confirm ollama embedding model: present"));
         assertNotNull(response.ragRetrieval());

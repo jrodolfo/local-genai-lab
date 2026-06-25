@@ -64,6 +64,26 @@ class RagRetrievalServiceTest {
     }
 
     @Test
+    void javaVersionQueryRanksJavaSourcesAboveGenericProjectSources() {
+        RagRetrievalService retrievalService = retrievalService(3, List.of(
+                document(
+                        "docs/troubleshooting.md",
+                        "Troubleshooting",
+                        "Java Version Warnings. This project targets Java 21 for the Spring Boot backend. Recommended fix: use Java 21 for this repo. Check java -version."
+                ),
+                document(
+                        "adr/0008-use-curated-hugging-face-candidates-not-full-catalog.md",
+                        "ADR 0008",
+                        "The project uses a curated Hugging Face candidate list. A curated candidate list is simpler, stable, and aligned with the project's local lab goals."
+                )
+        ));
+
+        var matches = retrievalService.retrieve("What is the version of Java that this project is using?");
+
+        assertEquals("docs/troubleshooting.md", matches.getFirst().chunk().sourcePath());
+    }
+
+    @Test
     void irrelevantQueryReturnsNoMatches() {
         RagRetrievalService retrievalService = retrievalService(3, List.of(
                 document("sessions.md", "Sessions", "Sessions are persisted as local JSON files."),
