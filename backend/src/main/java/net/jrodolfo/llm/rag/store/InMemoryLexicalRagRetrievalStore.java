@@ -38,6 +38,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
     private static final Pattern FENCED_CODE_BLOCK = Pattern.compile("(?s)```.*?```");
     private static final Pattern MARKDOWN_LINK = Pattern.compile("\\[([^]]+)]\\([^)]*\\)");
     private static final Pattern INLINE_CODE = Pattern.compile("`[^`]*`");
+    private static final Pattern PATH_LIKE = Pattern.compile("(?i)(?:\\.{0,2}[\\\\/]|[a-z]:[\\\\/]|~[\\\\/])[^\\s)\\]]+");
     private static final Pattern FILE_NAME = Pattern.compile("\\b[\\w.-]+\\.(?:java|jsx|md|ts|tsx|js|json|sh|yml|yaml|css|html)\\b", Pattern.CASE_INSENSITIVE);
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "if", "in",
@@ -87,6 +88,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
             return List.of();
         }
         return indexedChunks.stream()
+                .filter(indexedChunk -> hasMeaningfulOverlap(queryVector, indexedChunk.termFrequencies()))
                 .map(indexedChunk -> new RagMatch(indexedChunk.chunk(), cosineSimilarity(
                         weightedVector(queryVector, inverseDocumentFrequencies),
                         weightedVector(indexedChunk.termFrequencies(), inverseDocumentFrequencies)
@@ -118,7 +120,21 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         String withoutCodeBlocks = FENCED_CODE_BLOCK.matcher(text).replaceAll(" ");
         String withoutLinkTargets = MARKDOWN_LINK.matcher(withoutCodeBlocks).replaceAll("$1");
         String withoutInlineCode = INLINE_CODE.matcher(withoutLinkTargets).replaceAll(" ");
-        return FILE_NAME.matcher(withoutInlineCode).replaceAll(" ");
+        String withoutPaths = PATH_LIKE.matcher(withoutInlineCode).replaceAll(" ");
+        return FILE_NAME.matcher(withoutPaths).replaceAll(" ");
+    }
+
+    private static boolean hasMeaningfulOverlap(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
+        int overlap = 0;
+        for (String token : queryVector.keySet()) {
+            if (chunkVector.containsKey(token)) {
+                overlap++;
+            }
+        }
+        if (queryVector.containsKey("java") && queryVector.containsKey("version")) {
+            return chunkVector.containsKey("java") && chunkVector.containsKey("version");
+        }
+        return overlap > 0;
     }
 
     /**

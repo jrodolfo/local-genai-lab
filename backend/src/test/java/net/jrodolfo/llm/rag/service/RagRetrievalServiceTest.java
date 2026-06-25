@@ -86,6 +86,11 @@ class RagRetrievalServiceTest {
                         - [RagCorpusService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagCorpusService.java)
                         The project adds a RAG workspace over local docs.
                         """
+                ),
+                document(
+                        "docs/implementation-paths.md",
+                        "Implementation Paths",
+                        "Backend sources are located under backend/src/main/java/net/jrodolfo/llm and frontend sources are located under frontend/src/pages."
                 )
         ));
 
@@ -94,6 +99,8 @@ class RagRetrievalServiceTest {
         assertEquals("docs/troubleshooting.md", matches.getFirst().chunk().sourcePath());
         assertTrue(matches.stream()
                 .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
+        assertTrue(matches.stream()
+                .noneMatch(match -> "docs/implementation-paths.md".equals(match.chunk().sourcePath())));
     }
 
     @Test
