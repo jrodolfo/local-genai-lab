@@ -19,6 +19,7 @@ COPY --from=backend-build /app/target/local-genai-lab-backend-0.0.1-SNAPSHOT.jar
 COPY --from=mcp-build /app/mcp/package.json /app/mcp/package-lock.json ./mcp/
 COPY --from=mcp-build /app/mcp/dist ./mcp/dist
 COPY --from=mcp-build /app/mcp/node_modules ./mcp/node_modules
+COPY docs ./docs
 COPY scripts ./scripts
 RUN rm -f /usr/bin/pebble \
     && mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch

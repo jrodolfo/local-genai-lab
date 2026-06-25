@@ -52,6 +52,7 @@ test_docker_backend_image_includes_mcp_runtime_contract() {
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /usr/local/bin/node /usr/local/bin/node'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/dist ./mcp/dist'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/node_modules ./mcp/node_modules'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY docs ./docs'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY scripts ./scripts'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN rm -f /usr/bin/pebble \'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" '&& mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch'
