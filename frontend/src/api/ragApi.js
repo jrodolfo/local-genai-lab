@@ -17,6 +17,18 @@ async function parseJson(response) {
 }
 
 /**
+ * Builds an actionable API error from a backend or proxy response.
+ *
+ * @param {Response} response - The failed fetch response.
+ * @param {Object} payload - Parsed JSON payload, if any.
+ * @param {string} fallbackMessage - Message to use when the backend did not return JSON.
+ * @returns {Error} The error to throw to callers.
+ */
+function responseError(response, payload, fallbackMessage) {
+    return new Error(payload.error || `${fallbackMessage} HTTP ${response.status}.`);
+}
+
+/**
  * Fetches the current RAG status from the backend.
  *
  * @returns {Promise<Object>} A promise that resolves to the RAG status object.
@@ -26,7 +38,7 @@ export async function getRagStatus() {
     const response = await fetch('/api/rag/status');
     if (!response.ok) {
         const payload = await parseJson(response);
-        const error = new Error(payload.error || `Failed to load RAG status. HTTP ${response.status}.`);
+        const error = responseError(response, payload, 'Failed to load RAG status.');
         error.status = response.status;
         throw error;
     }
@@ -43,7 +55,7 @@ export async function rebuildRagIndex() {
     const response = await fetch('/api/rag/index', {method: 'POST'});
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to rebuild the RAG index.');
+        throw responseError(response, payload, 'Failed to rebuild the RAG index.');
     }
     return response.json();
 }
@@ -71,7 +83,7 @@ export async function queryRag({question, provider, model, sessionId, retrievalT
     });
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to query the RAG workspace.');
+        throw responseError(response, payload, 'Failed to query the RAG workspace.');
     }
     return response.json();
 }
@@ -97,7 +109,7 @@ export async function compareRagRetrievalTargets({question, provider, model, ret
     });
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to compare RAG retrieval targets.');
+        throw responseError(response, payload, 'Failed to compare RAG retrieval targets.');
     }
     return response.json();
 }

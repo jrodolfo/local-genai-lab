@@ -1,7 +1,7 @@
 import {listArtifacts, previewArtifact} from './artifactApi';
 import {sendMessage, streamMessage} from './chatApi';
 import {getProviderStatus, listAvailableModels} from './modelApi';
-import {compareRagRetrievalTargets} from './ragApi';
+import {compareRagRetrievalTargets, queryRag} from './ragApi';
 import {exportSession, importSession, listSessions} from './sessionApi';
 import {http, HttpResponse, server, sseResponse} from '../test/mswServer';
 
@@ -191,6 +191,21 @@ describe('frontend api integration', () => {
         expect(result.results[0].retrievalTarget).toBe('lexical');
         expect(result.results[0].success).toBe(true);
         expect(result.results[1].ragRetrieval.embeddingModel).toBe('nomic-embed-text');
+    });
+
+    it('surfaces non-json rag query proxy failures with the http status', async () => {
+        server.use(
+            http.post('/api/rag/query', () => new HttpResponse('<html>gateway timeout</html>', {
+                status: 504,
+                headers: {'Content-Type': 'text/html'}
+            }))
+        );
+
+        await expect(queryRag({
+            question: 'What is Java version?',
+            provider: 'ollama',
+            model: 'llama3:8b'
+        })).rejects.toThrow('Failed to query the RAG workspace. HTTP 504.');
     });
 
     it('keeps partial rag comparison failures in the successful backend response', async () => {

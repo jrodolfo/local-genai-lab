@@ -46,6 +46,9 @@ assert_file_contains() {
 test_docker_backend_image_includes_mcp_runtime_contract() {
   assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'context: .'
   assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'dockerfile: backend/Dockerfile'
+  assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}'
+  assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'OLLAMA_DEFAULT_MODEL: ${OLLAMA_DEFAULT_MODEL:-llama3:8b}'
+  assert_file_contains "${REPO_ROOT}/docker-compose.yml" 'OLLAMA_READ_TIMEOUT_SECONDS: ${OLLAMA_READ_TIMEOUT_SECONDS:-300}'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'FROM node:20-bookworm-slim AS mcp-build'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN npm ci'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN npm run build && npm prune --omit=dev'
@@ -60,6 +63,12 @@ test_docker_backend_image_includes_mcp_runtime_contract() {
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'frontend/node_modules'
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'mcp/node_modules'
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'scripts/reports'
+}
+
+test_docker_frontend_proxy_supports_long_llm_requests() {
+  assert_file_contains "${REPO_ROOT}/frontend/nginx.conf" 'proxy_connect_timeout 10s;'
+  assert_file_contains "${REPO_ROOT}/frontend/nginx.conf" 'proxy_send_timeout 300s;'
+  assert_file_contains "${REPO_ROOT}/frontend/nginx.conf" 'proxy_read_timeout 300s;'
 }
 
 write_mock_docker() {
@@ -443,6 +452,7 @@ test_docker_full_check_runs_verify_then_scan() {
 
 main() {
   test_docker_backend_image_includes_mcp_runtime_contract
+  test_docker_frontend_proxy_supports_long_llm_requests
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
   test_docker_stop_runs_compose_down

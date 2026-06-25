@@ -90,13 +90,42 @@ class ModelProviderHealthIndicatorTest {
         assertEquals(false, health.getDetails().get("tokenConfigured"));
     }
 
+    @Test
+    void ollamaHealthUsesNonNullErrorWhenReachabilityExceptionHasNoMessage() {
+        ModelProviderHealthIndicator indicator = new ModelProviderHealthIndicator(
+                new AppModelProperties("ollama"),
+                new OllamaProperties("http://localhost:11434", "llama3:8b", 1, 1),
+                new BedrockProperties("us-east-1", "amazon.nova-lite-v1:0"),
+                new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", java.util.List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
+                FakeHttpClient.failingWithMessageLessIOException(),
+                new ObjectMapper(),
+                () -> true
+        );
+
+        var health = indicator.health();
+
+        assertEquals(Status.DOWN, health.getStatus());
+        assertEquals("unreachable", health.getDetails().get("status"));
+        assertEquals("IOException", health.getDetails().get("error"));
+    }
+
     private static final class FakeHttpClient extends HttpClient {
         private final int statusCode;
         private final String body;
+        private final boolean failWithMessageLessIOException;
 
         private FakeHttpClient(int statusCode, String body) {
+            this(statusCode, body, false);
+        }
+
+        private FakeHttpClient(int statusCode, String body, boolean failWithMessageLessIOException) {
             this.statusCode = statusCode;
             this.body = body;
+            this.failWithMessageLessIOException = failWithMessageLessIOException;
+        }
+
+        private static FakeHttpClient failingWithMessageLessIOException() {
+            return new FakeHttpClient(0, "", true);
         }
 
         @Override
@@ -146,6 +175,9 @@ class ModelProviderHealthIndicatorTest {
 
         @Override
         public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> responseBodyHandler) throws IOException, InterruptedException {
+            if (failWithMessageLessIOException) {
+                throw new IOException();
+            }
             @SuppressWarnings("unchecked")
             T castBody = (T) body;
             return new FakeHttpResponse<>(statusCode, castBody, request.uri());

@@ -226,7 +226,7 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                     .withDetail("defaultModel", defaultModel)
                     .withDetail("reachable", false)
                     .withDetail("ready", false)
-                    .withDetail("error", ex.getMessage())
+                    .withDetail("error", failureMessage(ex))
                     .build();
         }
     }
@@ -300,5 +300,13 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
             return "ollama";
         }
         return provider.trim().toLowerCase();
+    }
+
+    private String failureMessage(Exception exception) {
+        String message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+        return message;
     }
 }

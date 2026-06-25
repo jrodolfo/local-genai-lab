@@ -785,6 +785,41 @@ describe('RagWorkspace', () => {
         });
     });
 
+    it('shows proxy timeout status for non-json rag query failures', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })),
+            http.get('/api/sessions', () => HttpResponse.json([])),
+            http.post('/api/rag/query', () => new HttpResponse('<html>gateway timeout</html>', {
+                status: 504,
+                headers: {'Content-Type': 'text/html'}
+            }))
+        );
+
+        render(<RagWorkspace/>);
+        const user = userEvent.setup();
+
+        await screen.findByRole('heading', {name: /^rag$/i});
+        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'What is MCP?');
+        await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
+
+        expect(await screen.findByText(/^Failed to query the RAG workspace\. HTTP 504\.$/i)).toBeInTheDocument();
+    });
+
     it('reopens a saved rag session and renders persisted cited sources without re-querying', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

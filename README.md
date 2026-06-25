@@ -374,6 +374,12 @@ docker compose up --build
 - backend: `http://localhost:8080`
 - qdrant: `http://localhost:6333`
 
+Docker backend containers reach host Ollama through
+`http://host.docker.internal:11434` by default. If your Docker runtime needs a
+different address, set `DOCKER_OLLAMA_BASE_URL`; keep host-run
+`OLLAMA_BASE_URL` separate because `localhost` inside a container means the
+container itself.
+
 The existing `./start.sh`, `./stop.sh`, `./restart.sh`, and `./status.sh`
 scripts run the backend and frontend directly on the host. The `docker-*`
 scripts run the full Docker Compose stack. Keep those workflows separate to
