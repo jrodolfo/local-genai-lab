@@ -269,7 +269,11 @@ public class RagAnswerService {
         prompt.append("""
                 You are answering questions about this project using only the provided documentation excerpts.
                 If the excerpts do not contain enough information, say so plainly.
-                Cite evidence using only source numbers such as [1] or [2].
+                """);
+        prompt.append("Only cite source numbers [1] through [").append(matches.size()).append("].\n");
+        prompt.append("""
+                Do not cite a source number that is not listed below.
+                If none of the listed excerpts support a sentence, do not cite it and say the excerpts do not contain enough information.
                 Do not create URLs, Markdown links, repository links, or file links.
                 Do not invent source names. The source paths below are local corpus paths, not public URLs.
                 Do not add generic caveats that contradict the excerpts.

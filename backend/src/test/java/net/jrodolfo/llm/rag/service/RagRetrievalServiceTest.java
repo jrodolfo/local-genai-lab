@@ -75,12 +75,25 @@ class RagRetrievalServiceTest {
                         "adr/0008-use-curated-hugging-face-candidates-not-full-catalog.md",
                         "ADR 0008",
                         "The project uses a curated Hugging Face candidate list. A curated candidate list is simpler, stable, and aligned with the project's local lab goals."
+                ),
+                document(
+                        "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md",
+                        "ADR 0012",
+                        """
+                        Primary implementation:
+                        - [RagController.java](../../backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
+                        - [RagAnswerService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
+                        - [RagCorpusService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagCorpusService.java)
+                        The project adds a RAG workspace over local docs.
+                        """
                 )
         ));
 
         var matches = retrievalService.retrieve("What is the version of Java that this project is using?");
 
         assertEquals("docs/troubleshooting.md", matches.getFirst().chunk().sourcePath());
+        assertTrue(matches.stream()
+                .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
     }
 
     @Test

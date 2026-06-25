@@ -35,6 +35,10 @@ import java.util.regex.Pattern;
 public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
 
     private static final Pattern TOKEN_SPLIT = Pattern.compile("[^a-zA-Z0-9]+");
+    private static final Pattern FENCED_CODE_BLOCK = Pattern.compile("(?s)```.*?```");
+    private static final Pattern MARKDOWN_LINK = Pattern.compile("\\[([^]]+)]\\([^)]*\\)");
+    private static final Pattern INLINE_CODE = Pattern.compile("`[^`]*`");
+    private static final Pattern FILE_NAME = Pattern.compile("\\b[\\w.-]+\\.(?:java|jsx|md|ts|tsx|js|json|sh|yml|yaml|css|html)\\b", Pattern.CASE_INSENSITIVE);
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "if", "in",
             "into", "is", "it", "of", "on", "or", "that", "the", "their", "then", "there",
@@ -101,10 +105,20 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
      */
     private static Map<String, Integer> tokenFrequencies(String text) {
         Map<String, Integer> frequencies = new LinkedHashMap<>();
-        for (String token : tokenize(text)) {
+        for (String token : tokenize(searchableText(text))) {
             frequencies.merge(token, 1, Integer::sum);
         }
         return frequencies;
+    }
+
+    private static String searchableText(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String withoutCodeBlocks = FENCED_CODE_BLOCK.matcher(text).replaceAll(" ");
+        String withoutLinkTargets = MARKDOWN_LINK.matcher(withoutCodeBlocks).replaceAll("$1");
+        String withoutInlineCode = INLINE_CODE.matcher(withoutLinkTargets).replaceAll(" ");
+        return FILE_NAME.matcher(withoutInlineCode).replaceAll(" ");
     }
 
     /**

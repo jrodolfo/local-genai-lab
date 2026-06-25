@@ -49,6 +49,14 @@ class RagAnswerServiceTest {
                                 "When vector RAG is not working, run ./status.sh, confirm rag enabled: true, confirm rag retrieval mode: vector, confirm ollama service: ok, confirm ollama embedding model: present (nomic-embed-text), and click Rebuild Index after changing retrieval mode."
                         ),
                         0.95
+                ), new RagMatch(
+                        new RagChunk(
+                                "docs/testing.md#0",
+                                "docs/testing.md",
+                                "Testing",
+                                "The backend targets Java 21."
+                        ),
+                        0.90
                 ))),
                 new RagSessionService(
                         new FileChatSessionStore(
@@ -66,7 +74,9 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("Do not add generic caveats that contradict the excerpts."));
         assertTrue(provider.prompt.prompt().contains("Do not say there is no specific mention of something"));
         assertTrue(provider.prompt.prompt().contains("For troubleshooting questions, answer as a concise checklist"));
-        assertTrue(provider.prompt.prompt().contains("Cite evidence using only source numbers such as [1] or [2]."));
+        assertTrue(provider.prompt.prompt().contains("Only cite source numbers [1] through [2]."));
+        assertTrue(provider.prompt.prompt().contains("Do not cite a source number that is not listed below."));
+        assertTrue(provider.prompt.prompt().contains("If none of the listed excerpts support a sentence"));
         assertTrue(provider.prompt.prompt().contains("Do not create URLs, Markdown links, repository links, or file links."));
         assertTrue(provider.prompt.prompt().contains("The source paths below are local corpus paths, not public URLs."));
         assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));
