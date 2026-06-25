@@ -46,7 +46,7 @@ DOCKER_SCAN_STRICT="${DOCKER_SCAN_STRICT:-false}"
 DOCKER_SCAN_INCLUDE_QDRANT="${DOCKER_SCAN_INCLUDE_QDRANT:-true}"
 DOCKER_SCAN_BACKEND_IMAGE="${DOCKER_SCAN_BACKEND_IMAGE:-local-genai-lab-backend}"
 DOCKER_SCAN_FRONTEND_IMAGE="${DOCKER_SCAN_FRONTEND_IMAGE:-local-genai-lab-frontend}"
-DOCKER_SCAN_QDRANT_IMAGE="${DOCKER_SCAN_QDRANT_IMAGE:-qdrant/qdrant:v1.14.1}"
+DOCKER_SCAN_QDRANT_IMAGE="${DOCKER_SCAN_QDRANT_IMAGE:-qdrant/qdrant:v1.18.2}"
 
 exit_code='0'
 trivy_exit_code='0'
@@ -84,9 +84,15 @@ else
 fi
 
 if [ "${exit_code}" != '0' ]; then
-  printf '%s\n' \
-    '' \
-    'Docker security scan found configured-severity issues in strict mode.'
+  if [ "${DOCKER_SCAN_STRICT}" = 'true' ]; then
+    printf '%s\n' \
+      '' \
+      'Docker security scan found configured-severity issues in strict mode, or Trivy could not complete a scan.'
+  else
+    printf '%s\n' \
+      '' \
+      'Docker security scan could not complete. Check the Trivy error output above.'
+  fi
 else
   printf '%s\n' \
     '' \

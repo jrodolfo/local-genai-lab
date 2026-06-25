@@ -20,6 +20,7 @@ COPY --from=mcp-build /app/mcp/package.json /app/mcp/package-lock.json ./mcp/
 COPY --from=mcp-build /app/mcp/dist ./mcp/dist
 COPY --from=mcp-build /app/mcp/node_modules ./mcp/node_modules
 COPY scripts ./scripts
-RUN mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch
+RUN rm -f /usr/bin/pebble \
+    && mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

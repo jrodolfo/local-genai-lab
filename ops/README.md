@@ -46,6 +46,10 @@ read-only smoke check that fails when the Docker stack is not usable.
 Use `./docker-verify.sh` for the full non-read-only Docker workflow: stop
 host-run processes, restart Docker Compose, show status, and run smoke checks.
 Use `./docker-scan.sh` for a Trivy-based Docker image vulnerability scan.
+By default, the scan includes the repository-owned backend/frontend images and
+the external Qdrant vendor image. Use
+`DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh` when you want to focus only
+on images built from this codebase.
 Use `./docker-full-check.sh` when you want one command that runs both
 `./docker-verify.sh` and `./docker-scan.sh`.
 

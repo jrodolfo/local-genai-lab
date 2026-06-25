@@ -399,6 +399,14 @@ command, run:
 DOCKER_SCAN_STRICT=true ./docker-scan.sh
 ```
 
+The backend and frontend images are owned by this repository. The Qdrant image
+is an external vendor image used by Docker Compose. If you want to focus only
+on the images built from this codebase, skip the external Qdrant scan:
+
+```bash
+DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh
+```
+
 Install Trivy first if needed:
 
 ```bash

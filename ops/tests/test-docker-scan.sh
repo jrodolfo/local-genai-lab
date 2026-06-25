@@ -105,11 +105,11 @@ test_advisory_mode_scans_expected_images() {
   assert_contains "${output}" 'mode: advisory'
   assert_contains "${output}" 'Scanning Docker image: local-genai-lab-backend'
   assert_contains "${output}" 'Scanning Docker image: local-genai-lab-frontend'
-  assert_contains "${output}" 'Scanning Docker image: qdrant/qdrant:v1.14.1'
+  assert_contains "${output}" 'Scanning Docker image: qdrant/qdrant:v1.18.2'
   assert_contains "${output}" 'Docker security scan completed.'
   assert_file_contains "${tmp_dir}/trivy.log" 'image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 local-genai-lab-backend'
   assert_file_contains "${tmp_dir}/trivy.log" 'image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 local-genai-lab-frontend'
-  assert_file_contains "${tmp_dir}/trivy.log" 'image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 qdrant/qdrant:v1.14.1'
+  assert_file_contains "${tmp_dir}/trivy.log" 'image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 qdrant/qdrant:v1.18.2'
   rm -rf "${tmp_dir}"
 }
 
@@ -130,8 +130,29 @@ test_strict_mode_fails_on_trivy_findings() {
     exit 1
   fi
   assert_contains "${output}" 'mode: strict'
-  assert_contains "${output}" 'Docker security scan found configured-severity issues in strict mode.'
+  assert_contains "${output}" 'Docker security scan found configured-severity issues in strict mode, or Trivy could not complete a scan.'
   assert_file_contains "${tmp_dir}/trivy.log" '--exit-code 1 local-genai-lab-backend'
+  rm -rf "${tmp_dir}"
+}
+
+test_advisory_mode_reports_trivy_runtime_failure() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/trivy.log"
+  write_mock_trivy "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_scan "${tmp_dir}" MOCK_TRIVY_FAIL=true 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected advisory docker scan to fail when Trivy cannot complete scans' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'mode: advisory'
+  assert_contains "${output}" 'Docker security scan could not complete. Check the Trivy error output above.'
   rm -rf "${tmp_dir}"
 }
 
@@ -157,6 +178,7 @@ main() {
   test_missing_trivy_is_actionable
   test_advisory_mode_scans_expected_images
   test_strict_mode_fails_on_trivy_findings
+  test_advisory_mode_reports_trivy_runtime_failure
   test_qdrant_scan_can_be_skipped
   printf 'docker scan tests passed\n'
 }
