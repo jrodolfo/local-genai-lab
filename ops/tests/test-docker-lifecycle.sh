@@ -110,6 +110,41 @@ run_script() {
     bash "${REPO_ROOT}/${script_name}"
 }
 
+write_mock_verify_scripts() {
+  local tmp_dir="$1"
+  local bin_dir="${tmp_dir}/repo"
+  local script_name
+
+  mkdir -p "${bin_dir}"
+  cp "${REPO_ROOT}/docker-verify.sh" "${bin_dir}/docker-verify.sh"
+
+  for script_name in stop.sh docker-restart.sh docker-status.sh docker-check.sh; do
+    cat >"${bin_dir}/${script_name}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s' '${script_name}' >> "\${MOCK_VERIFY_LOG}"
+if [ "\$#" -gt 0 ]; then
+  printf ' %s' "\$@" >> "\${MOCK_VERIFY_LOG}"
+fi
+printf '\n' >> "\${MOCK_VERIFY_LOG}"
+printf '%s\n' 'mock ${script_name}'
+EOF
+    chmod +x "${bin_dir}/${script_name}"
+  done
+
+  chmod +x "${bin_dir}/docker-verify.sh"
+}
+
+run_verify_script() {
+  local tmp_dir="$1"
+
+  env -i \
+    HOME="${HOME:-}" \
+    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    MOCK_VERIFY_LOG="${tmp_dir}/verify.log" \
+    bash "${tmp_dir}/repo/docker-verify.sh"
+}
+
 test_docker_start_runs_compose_up_build() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
@@ -311,6 +346,29 @@ test_docker_check_fails_with_actionable_output() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_verify_runs_full_workflow_in_order() {
+  local tmp_dir output expected_log actual_log
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/verify.log"
+  write_mock_verify_scripts "${tmp_dir}"
+
+  output="$(run_verify_script "${tmp_dir}")"
+  expected_log=$'stop.sh --all\ndocker-restart.sh\ndocker-status.sh\ndocker-check.sh'
+  actual_log="$(cat "${tmp_dir}/verify.log")"
+
+  assert_contains "${output}" 'Docker verification will:'
+  assert_contains "${output}" 'stop host-run backend/frontend processes'
+  assert_contains "${output}" 'restart the Docker Compose stack'
+  assert_contains "${output}" 'run Docker smoke checks'
+  assert_contains "${output}" 'Docker verification completed successfully.'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected verify calls:\n%s\nactual verify calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
 main() {
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
@@ -320,6 +378,7 @@ main() {
   test_docker_status_reports_unavailable_services_with_next_actions
   test_docker_check_passes_when_all_endpoints_respond
   test_docker_check_fails_with_actionable_output
+  test_docker_verify_runs_full_workflow_in_order
   printf 'docker lifecycle tests passed\n'
 }
 

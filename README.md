@@ -113,6 +113,8 @@ local-genai-lab/
 ├── docker-restart.sh
 ├── docker-status.sh
 ├── docker-check.sh
+├── docker-verify.sh
+├── docker-scan.sh
 ├── Makefile
 ├── ops/
 │   ├── lib/
@@ -318,8 +320,19 @@ Keep Ollama running on the host first, then use the Docker lifecycle wrappers:
 ./docker-start.sh
 ./docker-status.sh
 ./docker-check.sh
+./docker-scan.sh
 ./docker-stop.sh
 ```
+
+For the full Docker verification workflow, use:
+
+```bash
+./docker-verify.sh
+```
+
+This script is not read-only. It stops host-run backend/frontend processes,
+restarts the Docker Compose stack, prints Docker status, and runs the Docker
+smoke check.
 
 Equivalent Make targets are available:
 
@@ -327,7 +340,9 @@ Equivalent Make targets are available:
 make docker-start
 make docker-status
 make docker-check
+make docker-scan
 make docker-stop
+make docker-verify
 ```
 
 The direct Compose command also works:
@@ -354,6 +369,22 @@ enough to trust. It is a read-only smoke check and exits non-zero if backend
 health, frontend, Qdrant, `/api/models`, or `/api/rag/status` is unavailable.
 After `./docker-start.sh` or `./docker-restart.sh`, run `./docker-check.sh`
 before demos or manual testing.
+
+Use `./docker-scan.sh` after Docker images have been built when you want to
+inspect known vulnerabilities in the backend, frontend, and Qdrant images. It
+uses Trivy and runs in advisory mode by default, reporting `HIGH` and
+`CRITICAL` findings without failing the command. To make findings fail the
+command, run:
+
+```bash
+DOCKER_SCAN_STRICT=true ./docker-scan.sh
+```
+
+Install Trivy first if needed:
+
+```bash
+brew install trivy
+```
 
 If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
 service table, HTTP readiness checks, expected URLs, service-specific log

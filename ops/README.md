@@ -15,6 +15,8 @@ Use the repository root for the public lifecycle commands:
 ./docker-restart.sh
 ./docker-status.sh
 ./docker-check.sh
+./docker-verify.sh
+./docker-scan.sh
 ```
 
 `./stop.sh` stops PID-file-managed processes by default. Use `./stop.sh --all`
@@ -29,6 +31,9 @@ the full Docker Compose stack and intentionally stay separate from the host-run
 
 Use `./docker-status.sh` for diagnostics and `./docker-check.sh` for a
 read-only smoke check that fails when the Docker stack is not usable.
+Use `./docker-verify.sh` for the full non-read-only Docker workflow: stop
+host-run processes, restart Docker Compose, show status, and run smoke checks.
+Use `./docker-scan.sh` for a Trivy-based Docker image vulnerability scan.
 
 `./build.sh` runs tests unless explicitly skipped, so normal output includes
 Maven and npm test/build progress. JVM/native-access warnings from Java
@@ -50,6 +55,8 @@ make docker-stop
 make docker-restart
 make docker-status
 make docker-check
+make docker-verify
+make docker-scan
 make test-ops
 ```
 

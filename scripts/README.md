@@ -21,6 +21,8 @@ Use the repository root for local app lifecycle commands:
 ./docker-restart.sh
 ./docker-status.sh
 ./docker-check.sh
+./docker-verify.sh
+./docker-scan.sh
 ```
 
 or:
@@ -36,6 +38,8 @@ make docker-stop
 make docker-restart
 make docker-status
 make docker-check
+make docker-verify
+make docker-scan
 ```
 
 The directory includes:

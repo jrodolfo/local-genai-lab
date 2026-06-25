@@ -107,6 +107,8 @@ Root app lifecycle commands are:
 ./docker-restart.sh
 ./docker-status.sh
 ./docker-check.sh
+./docker-verify.sh
+./docker-scan.sh
 ```
 
 Root Makefile commands are:
