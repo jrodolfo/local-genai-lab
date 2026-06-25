@@ -52,7 +52,7 @@ public class RagDocumentLoader {
     private RagDocument toDocument(Path corpusRoot, Path file) {
         try {
             String content = Files.readString(file, StandardCharsets.UTF_8);
-            String title = firstMarkdownHeading(content);
+            String title = markdownTitle(content);
             String relativePath = corpusRoot.relativize(file).toString().replace('\\', '/');
             return new RagDocument(Path.of(relativePath), title != null ? title : relativePath, content);
         } catch (IOException ex) {
@@ -61,17 +61,40 @@ public class RagDocumentLoader {
     }
 
     /**
-     * Extracts the first Markdown heading (starting with #) from the content.
+     * Extracts a useful Markdown title from the content.
+     * <p>Some older ADRs use {@code # Title} as a field label and put the real
+     * title on the next line. In that case, the next non-empty non-heading line
+     * is treated as the document title.
      *
      * @param content The Markdown content.
-     * @return The text of the first heading, or null if none found.
+     * @return The extracted title, or null if none is found.
      */
-    private String firstMarkdownHeading(String content) {
-        for (String line : content.split("\\R")) {
+    private String markdownTitle(String content) {
+        String[] lines = content.split("\\R");
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
             String trimmed = line.trim();
             if (trimmed.startsWith("#")) {
-                return trimmed.replaceFirst("^#+\\s*", "").trim();
+                String heading = trimmed.replaceFirst("^#+\\s*", "").trim();
+                if ("title".equalsIgnoreCase(heading)) {
+                    return nextBodyLine(lines, index + 1);
+                }
+                return heading;
             }
+        }
+        return null;
+    }
+
+    private String nextBodyLine(String[] lines, int startIndex) {
+        for (int index = startIndex; index < lines.length; index++) {
+            String trimmed = lines[index].trim();
+            if (trimmed.isBlank()) {
+                continue;
+            }
+            if (trimmed.startsWith("#")) {
+                return null;
+            }
+            return trimmed;
         }
         return null;
     }
