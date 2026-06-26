@@ -77,6 +77,9 @@ class RagAnswerServiceTest {
         assertTrue(provider.prompt.prompt().contains("Only cite source numbers [1] through [2]."));
         assertTrue(provider.prompt.prompt().contains("Do not cite a source number that is not listed below."));
         assertTrue(provider.prompt.prompt().contains("If none of the listed excerpts support a sentence"));
+        assertTrue(provider.prompt.prompt().contains("Each factual sentence must cite a listed source whose excerpt explicitly supports that fact."));
+        assertTrue(provider.prompt.prompt().contains("Do not combine a weak excerpt with outside knowledge to produce a stronger answer."));
+        assertTrue(provider.prompt.prompt().contains("For version, port, URL, path, command, or configuration questions"));
         assertTrue(provider.prompt.prompt().contains("Do not create URLs, Markdown links, repository links, or file links."));
         assertTrue(provider.prompt.prompt().contains("The source paths below are local corpus paths, not public URLs."));
         assertTrue(provider.prompt.prompt().contains("confirm rag enabled: true"));

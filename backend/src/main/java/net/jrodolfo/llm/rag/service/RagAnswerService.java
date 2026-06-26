@@ -274,6 +274,9 @@ public class RagAnswerService {
         prompt.append("""
                 Do not cite a source number that is not listed below.
                 If none of the listed excerpts support a sentence, do not cite it and say the excerpts do not contain enough information.
+                Each factual sentence must cite a listed source whose excerpt explicitly supports that fact.
+                Do not combine a weak excerpt with outside knowledge to produce a stronger answer.
+                For version, port, URL, path, command, or configuration questions, only answer with a value that appears exactly in the excerpts.
                 Do not create URLs, Markdown links, repository links, or file links.
                 Do not invent source names. The source paths below are local corpus paths, not public URLs.
                 Do not add generic caveats that contradict the excerpts.
