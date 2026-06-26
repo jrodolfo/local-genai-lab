@@ -120,11 +120,15 @@ make verify
 make build
 make check-app
 make test-rag-qdrant-smoke
+make dependency-freshness
 ```
 
 Check that:
 
 - `scripts/README.md` documents MCP/tool shell scripts, not app lifecycle
+- `docs/release-checklist.md` documents when to run dependency freshness checks
+- dependency freshness is documented as a maintenance report, not as an app
+  lifecycle command
 - `ops/README.md` documents local runtime helpers
 - Docker lifecycle scripts are documented as root-level public lifecycle
   commands, not as `ops/` or `scripts/` commands

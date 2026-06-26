@@ -2,6 +2,7 @@ SHELL := /bin/bash
 
 SCRIPT := ./aws-region-audit-report.sh
 S3_CLOUDWATCH_SCRIPT := ./aws-s3-cloudwatch-report.sh
+DEPENDENCY_FRESHNESS_SCRIPT := ./dependency-freshness.sh
 REPORTS_DIR := reports
 REGIONS ?=
 SERVICES ?=
@@ -9,7 +10,7 @@ BUCKET ?=
 REGION ?=
 DAYS ?=
 
-.PHONY: help reports lint test audit s3-cloudwatch
+.PHONY: help reports lint test audit s3-cloudwatch dependency-freshness
 
 help:
 	@printf '%s\n' \
@@ -18,6 +19,8 @@ help:
 		'  make reports  Create the reports directory' \
 		'  make lint     Check Bash syntax for the shell scripts' \
 		'  make test     Run local shell tests without AWS access' \
+		'  make dependency-freshness' \
+		'                Report Maven, npm, and Docker dependency freshness' \
 		'  make audit    Run the AWS regional audit report' \
 		'                Optional: make audit REGIONS="us-east-2"' \
 		'                Optional: make audit SERVICES="sagemaker ec2"' \
@@ -32,10 +35,12 @@ reports:
 lint:
 	@bash -n "$(SCRIPT)"
 	@bash -n "$(S3_CLOUDWATCH_SCRIPT)"
+	@bash -n "$(DEPENDENCY_FRESHNESS_SCRIPT)"
 
 test:
 	@bash ./tests/test.sh
 	@bash ./tests/test-s3-cloudwatch.sh
+	@bash ./tests/test-dependency-freshness.sh
 
 audit: reports lint
 	@"$(SCRIPT)" \
@@ -51,3 +56,6 @@ s3-cloudwatch: reports lint
 		--bucket "$(BUCKET)" \
 		$(if $(strip $(REGION)),--region $(REGION),) \
 		$(if $(strip $(DAYS)),--days $(DAYS),)
+
+dependency-freshness: lint
+	@"$(DEPENDENCY_FRESHNESS_SCRIPT)"

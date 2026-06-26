@@ -46,6 +46,7 @@ The directory includes:
 
 - a regional AWS audit report generator
 - a focused S3 CloudWatch report generator for one bucket
+- a dependency freshness report for Maven, npm, and Docker references
 - local shell tests
 
 Separation of concerns:
@@ -95,10 +96,12 @@ The `reports/` directory is ignored by Git so generated output does not get comm
 │   └── s3-cloudwatch/
 ├── tests/
 │   ├── mock-s3-cloudwatch-aws.sh
+│   ├── test-dependency-freshness.sh
 │   ├── test-s3-cloudwatch.sh
 │   └── test.sh
 ├── aws-region-audit-report.sh
 ├── aws-s3-cloudwatch-report.sh
+├── dependency-freshness.sh
 ├── LICENSE
 ├── Makefile
 └── README.md
@@ -107,6 +110,7 @@ The `reports/` directory is ignored by Git so generated output does not get comm
 Key files:
 - `aws-region-audit-report.sh`: regional AWS audit report generator
 - `aws-s3-cloudwatch-report.sh`: focused S3 CloudWatch report generator for one bucket
+- `dependency-freshness.sh`: report-only Maven, npm, and Docker dependency freshness radar
 - `.env.example`: sample multi-provider environment file for local startup
 - `LICENSE`: MIT license for the repository
 - `tests/`: mock-based shell tests
@@ -195,6 +199,33 @@ Check script syntax:
 
 ```bash
 make lint
+```
+
+From this directory, run the dependency freshness report:
+
+```bash
+make dependency-freshness
+```
+
+From the repository root, use the convenience target:
+
+```bash
+make dependency-freshness
+```
+
+The freshness report is intentionally advisory. It reports:
+
+- Maven parent, dependency, property, and plugin update signals for `backend/`
+- `npm outdated` output for `frontend/` and `mcp/`
+- Docker image references in Dockerfiles and Compose files
+- moving Docker tags such as `latest`
+
+It does not modify `pom.xml`, `package.json`, lock files, Dockerfiles, or
+Compose files. Optional Docker Hub tag metadata is disabled by default; enable
+it explicitly when you want network-backed image context:
+
+```bash
+DEPENDENCY_FRESHNESS_REGISTRY=true ./scripts/dependency-freshness.sh
 ```
 
 ## CI

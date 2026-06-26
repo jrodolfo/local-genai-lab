@@ -132,6 +132,7 @@ local-genai-lab/
 ├── scripts/
 │   ├── reports/
 │   ├── tests/
+│   ├── dependency-freshness.sh
 │   ├── Makefile
 │   └── README.md
 ├── mcp/
@@ -262,6 +263,7 @@ Use these commands depending on what you need to verify:
 | `make docker-verify` | Restart, inspect, and smoke-check Docker mode. | No |
 | `make docker-scan` | Scan Docker images for known vulnerabilities. | No, but images should exist |
 | `make docker-full-check` | Run Docker verification and Docker image scan. | No |
+| `make dependency-freshness` | Report Maven, npm, and Docker dependency freshness without modifying files. | No |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files from the repo tree. | No |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
 | `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
@@ -271,6 +273,11 @@ Use `make test` when you only need normal verification. Use `make verify`
 before larger pushes or broad changes. Use `make build` or `./build.sh` when
 you also want fresh generated backend, frontend, and MCP artifacts before
 restarting the local app.
+
+Use `make dependency-freshness` as a maintenance radar. It reports Maven
+parent/dependency/plugin updates, npm outdated packages for `frontend/` and
+`mcp/`, Docker image references, and moving Docker tags such as `latest`. It is
+report-only and does not upgrade or rewrite dependency files.
 
 For the full testing matrix, see [docs/testing.md](./docs/testing.md).
 
@@ -608,6 +615,7 @@ make help
 make test
 make verify
 make check-app
+make dependency-freshness
 cd scripts
 make help
 make test
@@ -619,6 +627,7 @@ make s3-cloudwatch BUCKET=example.com
 
 - [docs/architecture.md](./docs/architecture.md): system overview, request flows, provider architecture, tool orchestration, storage, and design decisions
 - [docs/documentation-review-checklist.md](./docs/documentation-review-checklist.md): repeatable checklist for catching documentation drift
+- [docs/release-checklist.md](./docs/release-checklist.md): local release and dependency freshness checklist
 - [docs/rag-evaluation-guide.md](./docs/rag-evaluation-guide.md): manual evaluation guide for the RAG workspace
 - [docs/rag-retrieval-evaluation-template.md](./docs/rag-retrieval-evaluation-template.md): template for recording lexical vs vector retrieval comparisons
 - [docs/rag-troubleshooting.md](./docs/rag-troubleshooting.md): RAG operational checks, Ollama readiness, vector-mode fixes, and lexical fallback guidance
