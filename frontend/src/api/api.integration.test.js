@@ -5,6 +5,16 @@ import {compareRagRetrievalTargets, queryRag} from './ragApi';
 import {exportSession, importSession, listSessions} from './sessionApi';
 import {http, HttpResponse, server, sseResponse} from '../test/mswServer';
 
+async function readBlobText(blob) {
+    if (typeof blob?.text === 'function') {
+        return blob.text();
+    }
+    if (typeof blob?.arrayBuffer === 'function') {
+        return new TextDecoder().decode(await blob.arrayBuffer());
+    }
+    return new Response(blob).text();
+}
+
 describe('frontend api integration', () => {
     it('sends a chat request and returns the backend payload', async () => {
         server.use(
@@ -126,7 +136,7 @@ describe('frontend api integration', () => {
 
         const exported = await exportSession('session-1', 'json');
         expect(exported.filename).toBe('session-1.json');
-        await expect(exported.blob.text()).resolves.toBe('{"sessionId":"session-1"}');
+        await expect(readBlobText(exported.blob)).resolves.toBe('{"sessionId":"session-1"}');
 
         const imported = await importSession(new File(['{}'], 'session.json', {type: 'application/json'}));
         expect(imported.sessionId).toBe('imported-session');
