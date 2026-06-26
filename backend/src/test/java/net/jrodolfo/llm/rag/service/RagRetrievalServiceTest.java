@@ -15,6 +15,8 @@ import net.jrodolfo.llm.rag.store.QdrantVectorRagIndexingStore;
 import net.jrodolfo.llm.rag.store.QdrantVectorRagRetrievalStore;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -101,6 +103,32 @@ class RagRetrievalServiceTest {
                 .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
         assertTrue(matches.stream()
                 .noneMatch(match -> "docs/implementation-paths.md".equals(match.chunk().sourcePath())));
+    }
+
+    @Test
+    void javaVersionQueryFindsRealTroubleshootingChunkAfterChunking() throws IOException {
+        String troubleshooting = Files.readString(Path.of("../docs/troubleshooting.md"));
+        RagRetrievalService retrievalService = retrievalService(4, List.of(
+                document("troubleshooting.md", "Troubleshooting", troubleshooting),
+                document(
+                        "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md",
+                        "ADR 0012",
+                        """
+                        Primary implementation:
+                        - [RagController.java](../../backend/src/main/java/net/jrodolfo/llm/rag/controller/RagController.java)
+                        - [RagAnswerService.java](../../backend/src/main/java/net/jrodolfo/llm/rag/service/RagAnswerService.java)
+                        The project adds a RAG workspace over local docs.
+                        """
+                )
+        ));
+
+        var matches = retrievalService.retrieve("What is the Java version used in this project?");
+
+        assertTrue(matches.stream()
+                .anyMatch(match -> "troubleshooting.md".equals(match.chunk().sourcePath())
+                        && match.chunk().text().contains("Java 21")));
+        assertTrue(matches.stream()
+                .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
     }
 
     @Test

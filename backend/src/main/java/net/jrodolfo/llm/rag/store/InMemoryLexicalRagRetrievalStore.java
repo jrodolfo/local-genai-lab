@@ -59,7 +59,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
     @Override
     public void replaceAll(List<RagChunk> chunks) {
         List<IndexedChunk> rebuiltChunks = chunks.stream()
-                .map(chunk -> new IndexedChunk(chunk, tokenFrequencies(chunk.text())))
+                .map(chunk -> new IndexedChunk(chunk, tokenFrequencies(indexableText(chunk))))
                 .toList();
         indexedChunks = rebuiltChunks;
         inverseDocumentFrequencies = inverseDocumentFrequencies(rebuiltChunks);
@@ -89,10 +89,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         }
         return indexedChunks.stream()
                 .filter(indexedChunk -> hasMeaningfulOverlap(queryVector, indexedChunk.termFrequencies()))
-                .map(indexedChunk -> new RagMatch(indexedChunk.chunk(), cosineSimilarity(
-                        weightedVector(queryVector, inverseDocumentFrequencies),
-                        weightedVector(indexedChunk.termFrequencies(), inverseDocumentFrequencies)
-                )))
+                .map(indexedChunk -> toMatch(queryVector, indexedChunk))
                 .filter(match -> match.score() > 0.0d)
                 .sorted(Comparator.comparingDouble(RagMatch::score).reversed())
                 .limit(topK)
@@ -113,6 +110,10 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         return frequencies;
     }
 
+    private static String indexableText(RagChunk chunk) {
+        return String.join("\n", valueOrEmpty(chunk.title()), valueOrEmpty(chunk.text()));
+    }
+
     private static String searchableText(String text) {
         if (text == null || text.isBlank()) {
             return "";
@@ -124,6 +125,18 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         return FILE_NAME.matcher(withoutPaths).replaceAll(" ");
     }
 
+    private RagMatch toMatch(Map<String, Integer> queryVector, IndexedChunk indexedChunk) {
+        double score = cosineSimilarity(
+                weightedVector(queryVector, inverseDocumentFrequencies),
+                weightedVector(indexedChunk.termFrequencies(), inverseDocumentFrequencies)
+        );
+        return new RagMatch(indexedChunk.chunk(), score * relevanceBoost(queryVector, indexedChunk.termFrequencies()));
+    }
+
+    private static String valueOrEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
     private static boolean hasMeaningfulOverlap(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
         int overlap = 0;
         for (String token : queryVector.keySet()) {
@@ -131,10 +144,24 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
                 overlap++;
             }
         }
-        if (queryVector.containsKey("java") && queryVector.containsKey("version")) {
-            return chunkVector.containsKey("java") && chunkVector.containsKey("version");
-        }
         return overlap > 0;
+    }
+
+    private static double relevanceBoost(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
+        if (!queryVector.containsKey("java") || !queryVector.containsKey("version")) {
+            return 1.0d;
+        }
+        double boost = 1.0d;
+        if (chunkVector.containsKey("java") && chunkVector.containsKey("version")) {
+            boost += 0.35d;
+        }
+        if (chunkVector.containsKey("21")) {
+            boost += 0.35d;
+        }
+        if (chunkVector.containsKey("backend") || chunkVector.containsKey("maven") || chunkVector.containsKey("enforcer")) {
+            boost += 0.15d;
+        }
+        return boost;
     }
 
     /**
