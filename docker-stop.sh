@@ -31,8 +31,12 @@ printf '%s\n' 'Stopping local-genai-lab Docker Compose stack'
 
 (
   cd "${SCRIPT_DIR}"
-  docker compose down
+  printf '%s\n' 'Current Docker Compose services:'
+  docker compose ps -a
+  docker compose down --remove-orphans
+  printf '%s\n' 'Remaining Docker Compose services after stop:'
+  docker compose ps -a
 )
 
-printf '%s\n' 'Docker stack stopped.'
+printf '%s\n' 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
 print_docker_status_command

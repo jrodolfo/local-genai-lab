@@ -276,10 +276,13 @@ test_docker_stop_runs_compose_down() {
   output="$(run_script "${tmp_dir}" docker-stop.sh)"
 
   assert_contains "${output}" 'Stopping local-genai-lab Docker Compose stack'
-  assert_contains "${output}" 'Docker stack stopped.'
+  assert_contains "${output}" 'Current Docker Compose services:'
+  assert_contains "${output}" 'Remaining Docker Compose services after stop:'
+  assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
   assert_contains "${output}" 'Status:'
   assert_contains "${output}" './docker-status.sh'
-  assert_file_contains "${tmp_dir}/docker.log" 'compose down'
+  assert_file_contains "${tmp_dir}/docker.log" 'compose ps -a'
+  assert_file_contains "${tmp_dir}/docker.log" 'compose down --remove-orphans'
   rm -rf "${tmp_dir}"
 }
 
@@ -292,10 +295,10 @@ test_docker_restart_runs_down_then_up() {
   write_mock_curl "${tmp_dir}/bin"
 
   output="$(run_script "${tmp_dir}" docker-restart.sh)"
-  expected_log=$'compose down\ncompose up -d --build'
+  expected_log=$'compose ps -a\ncompose down --remove-orphans\ncompose ps -a\ncompose up -d --build'
   actual_log="$(cat "${tmp_dir}/docker.log")"
 
-  assert_contains "${output}" 'Docker stack stopped.'
+  assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
   assert_contains "${output}" 'Docker stack started.'
   assert_contains "${output}" 'Next step:'
   assert_contains "${output}" './docker-check.sh'
