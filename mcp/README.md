@@ -2,7 +2,7 @@
 
 [![ci](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml)
 ![license](https://img.shields.io/badge/license-MIT-blue)
-![node](https://img.shields.io/badge/node-20+-5fa04e)
+![node](https://img.shields.io/badge/node-20.12+-5fa04e)
 ![typescript](https://img.shields.io/badge/typescript-mcp%20server-3178c6)
 ![mcp](https://img.shields.io/badge/mcp-stdio-0a7ea4)
 ![aws](https://img.shields.io/badge/aws-local%20tools-a1662f)
@@ -22,7 +22,7 @@ Formal input/output contracts for these tools are documented in [TOOL_CONTRACTS.
 
 ## Requirements
 
-- Node 20+
+- Node 20.12+
 - AWS CLI v2
 - `jq`
 - valid AWS credentials
