@@ -88,11 +88,13 @@ unless the workflow is later updated to provide those runtime dependencies.
 
 ### Backend
 
-The backend targets Java 21. Before running backend tests, confirm the active
-JDK with:
+The backend targets Java 21 and Maven 3.9+. Maven Enforcer checks this at the
+start of the backend build, so tests fail early when the local toolchain is out
+of range. Before running backend tests, confirm the active tools with:
 
 ```bash
 java -version
+mvn -version
 ```
 
 Run:

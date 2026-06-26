@@ -108,21 +108,26 @@ Fix:
 
 ## Java Version Warnings
 
-This project targets Java 21 for the Spring Boot backend.
+This project targets Java 21 for the Spring Boot backend. The backend Maven
+build enforces Java 21 and Maven 3.9+ before compile/test work starts.
 
 Symptoms:
 - backend startup shows warnings about restricted native access or Tomcat JNI loading
+- `mvn validate` or `mvn test` fails with a Maven Enforcer message
 
 Cause:
 - running the backend on a newer JDK than the Java 21 project baseline
+- running backend Maven commands with Maven older than 3.9
 
 Recommended fix:
 - use Java 21 for this repo
+- use Maven 3.9 or newer
 
 Check:
 
 ```bash
 java -version
+mvn -version
 ```
 
 ## `ops/check-app.sh` Fails on Models

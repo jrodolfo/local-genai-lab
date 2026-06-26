@@ -157,8 +157,8 @@ Docker note:
 
 ## Prerequisites
 
-- Java 21. This project targets Java 21 for the Spring Boot backend; confirm with `java -version` before building or running backend tests.
-- Maven 3.9+
+- Java 21. The backend build enforces Java 21; confirm with `java -version` before building or running backend tests.
+- Maven 3.9+. The backend build enforces this minimum Maven version.
 - Node 20+
 - Ollama installed locally for the default provider
 - Docker + Docker Compose, optional
