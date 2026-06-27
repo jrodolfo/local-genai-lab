@@ -40,6 +40,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
     private static final Pattern INLINE_CODE = Pattern.compile("`[^`]*`");
     private static final Pattern PATH_LIKE = Pattern.compile("(?i)(?:\\.{0,2}[\\\\/]|[a-z]:[\\\\/]|~[\\\\/])[^\\s)\\]]+");
     private static final Pattern FILE_NAME = Pattern.compile("\\b[\\w.-]+\\.(?:java|jsx|md|ts|tsx|js|json|sh|yml|yaml|css|html)\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern JAVA_VERSION_EVIDENCE = Pattern.compile("\\b(?:java|jdk)\\s+(?:version\\s+)?(?:1\\.)?\\d{1,2}\\b", Pattern.CASE_INSENSITIVE);
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "but", "by", "for", "from", "if", "in",
             "into", "is", "it", "of", "on", "or", "that", "the", "their", "then", "there",
@@ -88,7 +89,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
             return List.of();
         }
         return indexedChunks.stream()
-                .filter(indexedChunk -> hasMeaningfulOverlap(queryVector, indexedChunk.termFrequencies()))
+                .filter(indexedChunk -> hasMeaningfulOverlap(queryVector, indexedChunk))
                 .map(indexedChunk -> toMatch(queryVector, indexedChunk))
                 .filter(match -> match.score() > 0.0d)
                 .sorted(Comparator.comparingDouble(RagMatch::score).reversed())
@@ -137,7 +138,11 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         return value == null ? "" : value;
     }
 
-    private static boolean hasMeaningfulOverlap(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
+    private static boolean hasMeaningfulOverlap(Map<String, Integer> queryVector, IndexedChunk indexedChunk) {
+        if (isJavaVersionQuery(queryVector) && !hasJavaVersionEvidence(indexedChunk.chunk())) {
+            return false;
+        }
+        Map<String, Integer> chunkVector = indexedChunk.termFrequencies();
         int overlap = 0;
         for (String token : queryVector.keySet()) {
             if (chunkVector.containsKey(token)) {
@@ -147,8 +152,16 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         return overlap > 0;
     }
 
+    private static boolean isJavaVersionQuery(Map<String, Integer> queryVector) {
+        return queryVector.containsKey("java") && queryVector.containsKey("version");
+    }
+
+    private static boolean hasJavaVersionEvidence(RagChunk chunk) {
+        return JAVA_VERSION_EVIDENCE.matcher(valueOrEmpty(chunk.text())).find();
+    }
+
     private static double relevanceBoost(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
-        if (!queryVector.containsKey("java") || !queryVector.containsKey("version")) {
+        if (!isJavaVersionQuery(queryVector)) {
             return 1.0d;
         }
         double boost = 1.0d;

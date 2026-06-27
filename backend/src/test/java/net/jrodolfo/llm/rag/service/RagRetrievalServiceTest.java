@@ -74,6 +74,11 @@ class RagRetrievalServiceTest {
                         "Java Version Warnings. This project targets Java 21 for the Spring Boot backend. Recommended fix: use Java 21 for this repo. Check java -version."
                 ),
                 document(
+                        "adr/0001-mcp-separate-typescript-runtime.md",
+                        "ADR 0001: Keep MCP As A Separate TypeScript Runtime",
+                        "The backend is implemented in Java, while the MCP server is implemented in TypeScript and runs as a separate local stdio process."
+                ),
+                document(
                         "adr/0008-use-curated-hugging-face-candidates-not-full-catalog.md",
                         "ADR 0008",
                         "The project uses a curated Hugging Face candidate list. A curated candidate list is simpler, stable, and aligned with the project's local lab goals."
@@ -103,6 +108,8 @@ class RagRetrievalServiceTest {
                 .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
         assertTrue(matches.stream()
                 .noneMatch(match -> "docs/implementation-paths.md".equals(match.chunk().sourcePath())));
+        assertTrue(matches.stream()
+                .noneMatch(match -> "adr/0001-mcp-separate-typescript-runtime.md".equals(match.chunk().sourcePath())));
     }
 
     @Test
