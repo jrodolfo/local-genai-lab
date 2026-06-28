@@ -74,6 +74,11 @@ class RagRetrievalServiceTest {
                         "Java Version Warnings. This project targets Java 21 for the Spring Boot backend. Recommended fix: use Java 21 for this repo. Check java -version."
                 ),
                 document(
+                        "docs/java-note.md",
+                        "Java Note",
+                        "Java 21."
+                ),
+                document(
                         "adr/0001-mcp-separate-typescript-runtime.md",
                         "ADR 0001: Keep MCP As A Separate TypeScript Runtime",
                         "The backend is implemented in Java, while the MCP server is implemented in TypeScript and runs as a separate local stdio process."
@@ -104,6 +109,8 @@ class RagRetrievalServiceTest {
         var matches = retrievalService.retrieve("What is the version of Java that this project is using?");
 
         assertEquals("docs/troubleshooting.md", matches.getFirst().chunk().sourcePath());
+        assertTrue(matches.stream()
+                .anyMatch(match -> "docs/java-note.md".equals(match.chunk().sourcePath())));
         assertTrue(matches.stream()
                 .noneMatch(match -> "adr/0012-add-isolated-phase-1-rag-workspace-over-local-docs-corpus.md".equals(match.chunk().sourcePath())));
         assertTrue(matches.stream()

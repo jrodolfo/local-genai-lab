@@ -131,7 +131,7 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
                 weightedVector(queryVector, inverseDocumentFrequencies),
                 weightedVector(indexedChunk.termFrequencies(), inverseDocumentFrequencies)
         );
-        return new RagMatch(indexedChunk.chunk(), score * relevanceBoost(queryVector, indexedChunk.termFrequencies()));
+        return new RagMatch(indexedChunk.chunk(), score * relevanceBoost(queryVector, indexedChunk));
     }
 
     private static String valueOrEmpty(String value) {
@@ -160,21 +160,31 @@ public class InMemoryLexicalRagRetrievalStore implements RagRetrievalStore {
         return JAVA_VERSION_EVIDENCE.matcher(valueOrEmpty(chunk.text())).find();
     }
 
-    private static double relevanceBoost(Map<String, Integer> queryVector, Map<String, Integer> chunkVector) {
+    private static double relevanceBoost(Map<String, Integer> queryVector, IndexedChunk indexedChunk) {
         if (!isJavaVersionQuery(queryVector)) {
             return 1.0d;
         }
+        Map<String, Integer> chunkVector = indexedChunk.termFrequencies();
         double boost = 1.0d;
-        if (chunkVector.containsKey("java") && chunkVector.containsKey("version")) {
-            boost += 0.35d;
+        if (hasJavaVersionEvidence(indexedChunk.chunk())) {
+            boost += 0.75d;
         }
-        if (chunkVector.containsKey("21")) {
-            boost += 0.35d;
+        if (containsAny(chunkVector, "backend", "maven", "build", "enforces", "targets", "baseline")) {
+            boost += 0.50d;
         }
-        if (chunkVector.containsKey("backend") || chunkVector.containsKey("maven") || chunkVector.containsKey("enforcer")) {
-            boost += 0.15d;
+        if (containsAny(chunkVector, "version", "warnings", "recommended", "repo")) {
+            boost += 0.20d;
         }
         return boost;
+    }
+
+    private static boolean containsAny(Map<String, Integer> vector, String... tokens) {
+        for (String token : tokens) {
+            if (vector.containsKey(token)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
