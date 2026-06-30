@@ -123,6 +123,7 @@ make check-app
 make test-rag-qdrant-smoke
 make dependency-freshness
 make release-check
+make release-check-docker
 ```
 
 Check that:

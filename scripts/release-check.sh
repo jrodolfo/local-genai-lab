@@ -61,6 +61,21 @@ run_step() {
   "$@"
 }
 
+run_preflight() {
+  local title="$1"
+  shift
+
+  printf 'preflight: %s... ' "${title}"
+  if "$@" >/dev/null 2>&1; then
+    printf '%s\n' 'ok'
+  else
+    printf '%s\n' 'failed'
+    printf 'Error: Docker-inclusive release check requested, but preflight failed: %s\n' "$*" >&2
+    printf '%s\n' 'Start or restart Docker Desktop, confirm the command works, then rerun the release check.' >&2
+    exit 1
+  fi
+}
+
 require_command make
 require_command git
 
@@ -77,6 +92,14 @@ printf '%s\n' \
   'Local GenAI Lab release check' \
   'scope: tests, builds, dependency freshness, whitespace checks' \
   "docker full check: ${release_check_docker_normalized}"
+
+if [ "${release_check_docker_normalized}" = 'true' ]; then
+  printf '\n'
+  printf '%s\n' '==================== Docker preflight ===================='
+  run_preflight 'Docker daemon' docker version
+  run_preflight 'Docker Compose plugin' docker compose version
+  run_preflight 'Trivy' trivy --version
+fi
 
 run_step 'normal test suite' make test
 run_step 'broader verification suite' make verify

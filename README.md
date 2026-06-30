@@ -267,6 +267,7 @@ Use these commands depending on what you need to verify:
 | `make docker-full-check` | Run Docker verification and Docker image scan. | No |
 | `make dependency-freshness` | Report Maven, npm, and Docker dependency freshness without modifying files. | No |
 | `make release-check` | Run the local pre-release validation gate. | No |
+| `make release-check-docker` | Run release check with early Docker preflight and Docker verification/scan. | No |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files from the repo tree. | No |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | No |
 | `make verify` | Broader CI-aligned verification, including frontend build, MCP tests/build, and MCP tool script lint/tests. | No |
@@ -284,10 +285,12 @@ report-only and does not upgrade or rewrite dependency files.
 
 Use `make release-check` when you want one local gate before wrapping a larger
 batch of work. It runs tests, broader verification, dependency freshness, and
-`git diff --check`. Docker verification and image scanning are opt-in:
+`git diff --check`. Use `make release-check-docker` when you also want Docker
+verification and image scanning. The Docker-inclusive target preflights Docker,
+Docker Compose, and Trivy before running expensive tests:
 
 ```bash
-RELEASE_CHECK_DOCKER=true make release-check
+make release-check-docker
 ```
 
 For the full testing matrix, see [docs/testing.md](./docs/testing.md).
@@ -381,6 +384,7 @@ make docker-verify
 make docker-scan
 make docker-full-check
 make release-check
+make release-check-docker
 ```
 
 The direct Compose command also works:

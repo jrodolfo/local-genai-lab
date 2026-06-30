@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app docker-start docker-stop docker-restart docker-status docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app docker-start docker-stop docker-restart docker-status docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,7 @@ help:
 		'  make docker-full-check      Run Docker verification and Docker image scan' \
 		'  make dependency-freshness   Report Maven, npm, and Docker dependency freshness' \
 		'  make release-check          Run the local pre-release validation gate' \
+		'  make release-check-docker   Run release check with Docker verification/scan' \
 		'  make clean-ds-store         Remove macOS .DS_Store files from the repo tree' \
 		'  make test                   Run ops, backend, and frontend tests' \
 		'  make verify                 Run broader project verification' \
@@ -80,6 +81,9 @@ dependency-freshness:
 
 release-check:
 	@./scripts/release-check.sh
+
+release-check-docker:
+	@RELEASE_CHECK_DOCKER=true ./scripts/release-check.sh
 
 clean-ds-store:
 	@find . -path ./.git -prune -o -name .DS_Store -type f -exec rm -f {} +

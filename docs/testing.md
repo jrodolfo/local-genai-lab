@@ -45,6 +45,7 @@ areas.
 | `make build-mcp` | MCP server build. | MCP npm dependencies installed. | CI `mcp` job. |
 | `make test-scripts` | MCP tool script lint/tests. | `jq` and shell tooling. | CI `scripts` job. |
 | `make release-check` | Local pre-release validation gate. | Same as `make verify`; Docker/Trivy only when `RELEASE_CHECK_DOCKER=true`. | Not a CI target. |
+| `make release-check-docker` | Docker-inclusive local pre-release validation gate. | Docker Desktop, Docker Compose, Trivy, and all `make release-check` prerequisites. | Not a CI target. |
 
 ### CI And Local Mapping
 
@@ -78,8 +79,12 @@ default so the command remains useful without Docker Desktop or Trivy.
 To include Docker verification and the Docker image scan:
 
 ```bash
-RELEASE_CHECK_DOCKER=true make release-check
+make release-check-docker
 ```
+
+The Docker-inclusive target checks Docker daemon access, Docker Compose support,
+and Trivy before running expensive tests. If Docker Desktop is stopped or
+unreachable, it fails immediately with an actionable preflight message.
 
 ### Optional Live RAG + Qdrant Smoke Test
 
