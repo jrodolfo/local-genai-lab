@@ -231,7 +231,7 @@ make help
 ```
 
 This `agents/` directory is for MCP/tool-facing report scripts. App lifecycle
-commands live at the repository root:
+commands live under the repository `scripts/` directory:
 
 ```bash
 ../scripts/start.sh

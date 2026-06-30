@@ -474,7 +474,7 @@ stop that app normally or use the printed PID with `kill <pid>`.
 Qdrant is available as an optional local service for the phase-2 RAG vector
 database path. It is not required for default startup, lexical RAG, or current
 in-memory vector retrieval. Because the RAG UI can compare against
-`Vector - Qdrant`, `start.sh` and `restart.sh` try to start the `qdrant` Docker
+`Vector - Qdrant`, `./scripts/start.sh` and `./scripts/restart.sh` try to start the `qdrant` Docker
 Compose service by default when RAG is enabled.
 
 If Docker is unavailable during normal lexical startup, the app still starts and

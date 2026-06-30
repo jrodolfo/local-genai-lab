@@ -349,12 +349,12 @@ Frontend tests:
 
 Script tests:
 
-- `start.sh` tries to start Qdrant for the optional comparison target
-- `start.sh` fails strictly when explicit Qdrant backend mode cannot start
-- `status.sh` reports Qdrant readiness for optional comparison and explicit
+- `./scripts/start.sh` tries to start Qdrant for the optional comparison target
+- `./scripts/start.sh` fails strictly when explicit Qdrant backend mode cannot start
+- `./scripts/status.sh` reports Qdrant readiness for optional comparison and explicit
   Qdrant backend mode
-- `status.sh` does not require Docker/Qdrant for lexical mode
-- `restart.sh` preserves explicit `RAG_VECTOR_STORE=qdrant`
+- `./scripts/status.sh` does not require Docker/Qdrant for lexical mode
+- `./scripts/restart.sh` preserves explicit `RAG_VECTOR_STORE=qdrant`
 
 ## Implemented Migration Path
 
@@ -368,7 +368,7 @@ Completed sequence:
 6. add a vector indexing service for the existing `docs/` corpus
 7. expose vector store, Qdrant URL, collection, and readiness through
    `/api/rag/status`
-8. update `status.sh` to report Qdrant readiness for optional comparison and
+8. update `./scripts/status.sh` to report Qdrant readiness for optional comparison and
    explicit Qdrant backend mode
 9. add backend tests for Qdrant payload mapping, indexing, and retrieval
 10. add frontend tests for Qdrant status and failure messages

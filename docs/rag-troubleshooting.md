@@ -146,7 +146,7 @@ ollama embedding model: present (nomic-embed-text)
 `./scripts/build.sh` does not start runtime services. Use `./scripts/start.sh` or
 `./scripts/restart.sh` to start backend, frontend, and the optional local Qdrant service.
 
-By default, `start.sh` and `restart.sh` try to start Qdrant when RAG is enabled
+By default, `./scripts/start.sh` and `./scripts/restart.sh` try to start Qdrant when RAG is enabled
 because the RAG UI can run the `Vector - Qdrant` comparison target even when the
 default retrieval mode is lexical. This best-effort startup does not make
 Qdrant mandatory for lexical mode. To opt out:

@@ -272,7 +272,7 @@ make lint
 Covers:
 - shell behavior for the AWS audit and S3 CloudWatch report scripts
 - unified backend startup script linting and `.env` precedence behavior
-- app lifecycle helper behavior, including `status.sh` RAG/Ollama readiness output
+- app lifecycle helper behavior, including `./scripts/status.sh` RAG/Ollama readiness output
 
 Use this suite when changing:
 - `scripts/` lifecycle commands

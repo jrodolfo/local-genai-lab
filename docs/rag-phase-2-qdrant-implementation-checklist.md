@@ -35,9 +35,9 @@ Already implemented:
 - Qdrant service in Docker Compose
 - Qdrant configuration fields in `/api/rag/status`
 - live Qdrant reachability in `/api/rag/status`
-- `status.sh` RAG/Ollama readiness checks
-- `status.sh` Qdrant configuration output when Qdrant mode is selected
-- `status.sh` live Qdrant reachability when Qdrant mode is selected
+- `./scripts/status.sh` RAG/Ollama readiness checks
+- `./scripts/status.sh` Qdrant configuration output when Qdrant mode is selected
+- `./scripts/status.sh` live Qdrant reachability when Qdrant mode is selected
 - RAG UI status for retrieval mode and store
 - RAG UI Qdrant reachability messages when Qdrant mode is selected
 - Qdrant client boundary with collection, upsert, and search operations
