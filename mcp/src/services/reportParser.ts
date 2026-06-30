@@ -6,19 +6,19 @@ import {ensureWithinReports, type ReportType} from "./reportLocator.js";
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 /**
- * Resolves a path relative to the scripts directory to an absolute path.
+ * Resolves a path relative to the agents directory to an absolute path.
  *
  * @param value - The relative path to resolve.
  * @returns The absolute path.
  */
 function resolveRepoRelativePath(value: string): string {
-    return path.resolve(config.scriptsDir, value);
+    return path.resolve(config.agentsDir, value);
 }
 
 /**
  * Recursively converts report summary paths into absolute repository paths.
  *
- * Shell scripts often write paths relative to `scripts/`. The backend and UI
+ * Shell scripts often write paths relative to `agents/`. The backend and UI
  * artifact endpoints need absolute paths, so summary keys ending in `_path` and
  * `output_directory` are normalized while preserving all other JSON values.
  *

@@ -56,13 +56,13 @@ test_docker_backend_image_includes_mcp_runtime_contract() {
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/dist ./mcp/dist'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY --from=mcp-build /app/mcp/node_modules ./mcp/node_modules'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY docs ./docs'
-  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY scripts ./scripts'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'COPY agents ./agents'
   assert_file_contains "${REPO_ROOT}/backend/Dockerfile" 'RUN rm -f /usr/bin/pebble \'
-  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" '&& mkdir -p /app/data/sessions /app/scripts/reports/audit /app/scripts/reports/s3-cloudwatch'
+  assert_file_contains "${REPO_ROOT}/backend/Dockerfile" '&& mkdir -p /app/data/sessions /app/agents/reports/audit /app/agents/reports/s3-cloudwatch'
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'backend/target'
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'frontend/node_modules'
   assert_file_contains "${REPO_ROOT}/.dockerignore" 'mcp/node_modules'
-  assert_file_contains "${REPO_ROOT}/.dockerignore" 'scripts/reports'
+  assert_file_contains "${REPO_ROOT}/.dockerignore" 'agents/reports'
 }
 
 test_docker_frontend_proxy_supports_long_llm_requests() {

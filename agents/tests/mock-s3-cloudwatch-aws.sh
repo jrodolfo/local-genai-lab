@@ -7,7 +7,7 @@
 #   Parses common AWS CLI arguments to return context-specific mock data.
 #
 # Usage:
-#   ./scripts/tests/mock-s3-cloudwatch-aws.sh <service> <command> [args...]
+#   ./agents/tests/mock-s3-cloudwatch-aws.sh <service> <command> [args...]
 #
 # Required Tools:
 #   - bash

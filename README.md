@@ -129,7 +129,7 @@ local-genai-lab/
 │   ├── src/
 │   ├── package.json
 │   └── README.md
-├── scripts/
+├── agents/
 │   ├── reports/
 │   ├── tests/
 │   ├── dependency-freshness.sh
@@ -147,7 +147,7 @@ Script separation:
 
 - top-level scripts and the root `Makefile` are the public app lifecycle interface, including host-run commands and full Docker Compose commands
 - `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
-- `scripts/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
+- `agents/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
 
 Docker note:
 
@@ -537,7 +537,7 @@ The most important backend settings are:
 - `RAG_EXCLUDED_SOURCE_PATHS` default: `rag-evaluation-guide.md,rag-retrieval-evaluation-template.md`
 - `APP_TOOLS_ROUTING_MODE` default: `hybrid`
 - `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
-- `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
+- `APP_STORAGE_REPORTS_DIRECTORY` default: `agents/reports`
 
 The storage defaults are resolved from the project root so they stay stable whether the backend starts from `backend/` or the repository root.
 You can also point `APP_STORAGE_REPORTS_DIRECTORY` to an absolute path outside the repository if you want report artifacts stored elsewhere.
@@ -598,7 +598,7 @@ Observed model behavior:
 - LLM-assisted tool routing with fallback
 - multi-turn clarification for missing tool inputs
 - structured report cards in the UI
-- read-only artifact preview and file listing under `scripts/reports/`
+- read-only artifact preview and file listing under `agents/reports/`
 
 Artifact API note:
 
@@ -608,7 +608,7 @@ Artifact API note:
 
 ## Shell Scripts
 
-The shell tooling lives under [`scripts/`](./scripts). Useful entrypoints:
+The agent/tool shell tooling lives under [`agents/`](./agents). Useful entrypoints:
 
 ```bash
 make help
@@ -616,7 +616,7 @@ make test
 make verify
 make check-app
 make dependency-freshness
-cd scripts
+cd agents
 make help
 make test
 make audit
@@ -641,7 +641,7 @@ make s3-cloudwatch BUCKET=example.com
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
 - [frontend/README.md](./frontend/README.md): frontend-specific details
 - [ops/README.md](./ops/README.md): local runtime helpers and lifecycle support files
-- [scripts/README.md](./scripts/README.md): shell tooling, report formats, smoke checks
+- [agents/README.md](./agents/README.md): shell tooling, report formats, smoke checks
 - [mcp/README.md](./mcp/README.md): local MCP server details
 - [docs/providers.md](./docs/providers.md): switching between Ollama, Bedrock, and Hugging Face
 

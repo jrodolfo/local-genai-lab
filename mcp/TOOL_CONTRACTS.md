@@ -52,7 +52,7 @@ Output:
   "ok": true,
   "tool": "aws_region_audit",
   "report_type": "audit",
-  "run_dir": "/abs/path/to/scripts/reports/audit/aws-audit-...",
+  "run_dir": "/abs/path/to/agents/reports/audit/aws-audit-...",
   "execution": {
     "command": "./aws-region-audit-report.sh",
     "args": ["--regions", "us-east-1", "us-east-2"],
@@ -101,7 +101,7 @@ Output:
   "ok": true,
   "tool": "s3_cloudwatch_report",
   "report_type": "s3_cloudwatch",
-  "run_dir": "/abs/path/to/scripts/reports/s3-cloudwatch/s3-cloudwatch-...",
+  "run_dir": "/abs/path/to/agents/reports/s3-cloudwatch/s3-cloudwatch-...",
   "execution": {
     "command": "./aws-s3-cloudwatch-report.sh",
     "args": ["--bucket", "example.com"],
@@ -130,7 +130,7 @@ Invariants:
 
 Purpose:
 
-- List the most recent report directories already present under `scripts/reports`.
+- List the most recent report directories already present under `agents/reports`.
 
 Input:
 
@@ -151,11 +151,11 @@ Output:
   "reports": [
     {
       "report_type": "audit",
-      "run_dir": "/abs/path/to/scripts/reports/audit/aws-audit-...",
+      "run_dir": "/abs/path/to/agents/reports/audit/aws-audit-...",
       "directory_name": "aws-audit-...",
       "created_at": "2026-04-17T10:00:00.000Z",
-      "report_txt": "/abs/path/to/scripts/reports/audit/aws-audit-.../report.txt",
-      "summary_json": "/abs/path/to/scripts/reports/audit/aws-audit-.../summary.json"
+      "report_txt": "/abs/path/to/agents/reports/audit/aws-audit-.../report.txt",
+      "summary_json": "/abs/path/to/agents/reports/audit/aws-audit-.../summary.json"
     }
   ]
 }
@@ -164,7 +164,7 @@ Output:
 Invariants:
 
 - `report_type` is one of `audit`, `s3_cloudwatch`, or `all`
-- each report entry points to an existing run directory under `scripts/reports`
+- each report entry points to an existing run directory under `agents/reports`
 
 ## `read_report_summary`
 
@@ -176,7 +176,7 @@ Input:
 
 ```json
 {
-  "run_dir": "/abs/path/to/scripts/reports/audit/aws-audit-...",
+  "run_dir": "/abs/path/to/agents/reports/audit/aws-audit-...",
   "preview_lines": 20
 }
 ```
@@ -188,7 +188,7 @@ Output:
   "ok": true,
   "tool": "read_report_summary",
   "report_type": "audit",
-  "run_dir": "/abs/path/to/scripts/reports/audit/aws-audit-...",
+  "run_dir": "/abs/path/to/agents/reports/audit/aws-audit-...",
   "summary": {
     "success_count": 37,
     "failure_count": 0
@@ -199,6 +199,6 @@ Output:
 
 Invariants:
 
-- `run_dir` must resolve under `scripts/reports`
+- `run_dir` must resolve under `agents/reports`
 - `report_type` is inferred from the run directory
 - `summary` is arbitrary JSON from `summary.json`

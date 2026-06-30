@@ -62,7 +62,7 @@ export const listRecentReportsSchema = z.object({
 /**
  * Input contract for `read_report_summary`.
  *
- * `run_dir` must resolve under `scripts/reports`; that containment check is
+ * `run_dir` must resolve under `agents/reports`; that containment check is
  * performed by the report parser before file reads.
  */
 export const readReportSummarySchema = z.object({

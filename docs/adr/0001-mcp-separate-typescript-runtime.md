@@ -9,7 +9,7 @@
 
 - the Spring Boot backend for chat orchestration and application APIs
 - the MCP server for local tool contracts and tool invocation
-- the shell scripts under `scripts/` that perform the operational AWS/report work
+- the shell scripts under `agents/` that perform the operational AWS/report work
 
 The backend is implemented in Java, while the MCP server is implemented in TypeScript and runs as a separate local `stdio` process.
 

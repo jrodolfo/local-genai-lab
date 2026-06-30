@@ -252,7 +252,7 @@ returns the other target results.
 Sessions are stored locally as JSON files.
 
 - `APP_STORAGE_SESSIONS_DIRECTORY` default: `data/sessions`
-- `APP_STORAGE_REPORTS_DIRECTORY` default: `scripts/reports`
+- `APP_STORAGE_REPORTS_DIRECTORY` default: `agents/reports`
 
 Those defaults are resolved from the repository root, so the backend reports the correct local paths even when started from different working directories.
 `APP_STORAGE_REPORTS_DIRECTORY` may also be set to an absolute path outside the repository.

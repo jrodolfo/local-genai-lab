@@ -36,8 +36,8 @@ Docker backend image contract:
   Spring Boot backend, the built MCP server, and MCP tool scripts
 - the image includes Node 20 because the backend starts the MCP server with
   `node`
-- the image creates empty `/app/scripts/reports/audit` and
-  `/app/scripts/reports/s3-cloudwatch` directories so MCP and storage health
+- the image creates empty `/app/agents/reports/audit` and
+  `/app/agents/reports/s3-cloudwatch` directories so MCP and storage health
   checks pass before any reports have been generated
 - generated local report artifacts are excluded by `.dockerignore`
 
@@ -102,4 +102,4 @@ What does not belong in `ops/`:
 - AWS audit/report generators
 - MCP-facing report artifacts
 
-Those stay under [`scripts/`](../scripts/README.md).
+Those stay under [`agents/`](../agents/README.md).

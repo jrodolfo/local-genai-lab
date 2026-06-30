@@ -8,7 +8,7 @@
 #   output directory uniqueness, and error handling.
 #
 # Usage:
-#   ./scripts/tests/test.sh
+#   ./agents/tests/test.sh
 #
 # Required Tools:
 #   - bash

@@ -143,7 +143,7 @@ class ChatControllerTest {
         private String lastRequestId;
 
         private TestOrchestrator() {
-            super(new ChatModelProviderRegistry(new net.jrodolfo.llm.config.AppModelProperties("ollama"), java.util.Map.of("ollama", new SynchronousStreamingProvider())), null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
+            super(new ChatModelProviderRegistry(new net.jrodolfo.llm.config.AppModelProperties("ollama"), java.util.Map.of("ollama", new SynchronousStreamingProvider())), null, null, null, null, null, new AppStorageProperties("data/sessions", "agents/reports"));
             ChatSession session = ChatSession.create("session-1", "llama3:8b", Instant.parse("2026-04-12T00:00:00Z"));
             this.preparedChat = new PreparedChat(provider, ProviderPrompt.forPrompt("prompt"), "llama3:8b", null, null, null, session, null);
         }

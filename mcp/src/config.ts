@@ -6,8 +6,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const repoRoot = path.resolve(__dirname, "..", "..");
-const scriptsDir = path.join(repoRoot, "scripts");
-const reportsDir = path.join(scriptsDir, "reports");
+const agentsDir = path.join(repoRoot, "agents");
+const reportsDir = path.join(agentsDir, "reports");
 const auditReportsDir = path.join(reportsDir, "audit");
 const s3ReportsDir = path.join(reportsDir, "s3-cloudwatch");
 
@@ -44,7 +44,7 @@ function assertDirectoryExists(directoryPath: string): void {
     }
 }
 
-assertDirectoryExists(scriptsDir);
+assertDirectoryExists(agentsDir);
 assertDirectoryExists(reportsDir);
 assertDirectoryExists(auditReportsDir);
 assertDirectoryExists(s3ReportsDir);
@@ -52,14 +52,14 @@ assertDirectoryExists(s3ReportsDir);
 /**
  * Runtime configuration for the local MCP server.
  *
- * <p>The MCP tools execute shell scripts from {@link config.scriptsDir} and
+ * <p>The MCP tools execute shell scripts from {@link config.agentsDir} and
  * discover generated report bundles under {@link config.reportsDir}. Timeout
  * values are intentionally environment-driven so long-running local AWS audits
  * can be tuned without changing tool code.
  */
 export const config = {
     repoRoot,
-    scriptsDir,
+    agentsDir,
     reportsDir,
     auditReportsDir,
     s3ReportsDir,

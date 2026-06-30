@@ -45,7 +45,7 @@ export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
     const execution = await runCommand({
         command: "./aws-region-audit-report.sh",
         args: buildArgs(input),
-        cwd: config.scriptsDir,
+        cwd: config.agentsDir,
         timeoutMs: config.auditTimeoutMs,
     });
 

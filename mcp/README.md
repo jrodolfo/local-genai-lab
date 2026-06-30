@@ -9,7 +9,7 @@
 
 Local Model Context Protocol server for the `local-genai-lab` repository.
 
-It wraps the sibling shell tools in [`../scripts`](../scripts) and exposes a small allowlist of explicit tools instead of arbitrary shell access.
+It wraps the sibling shell tools in [`../agents`](../agents) and exposes a small allowlist of explicit tools instead of arbitrary shell access.
 
 ## Tools
 
@@ -27,7 +27,7 @@ Formal input/output contracts for these tools are documented in [TOOL_CONTRACTS.
 - `jq`
 - valid AWS credentials
 
-The server also depends on the existing sibling [`../scripts`](../scripts) directory.
+The server also depends on the existing sibling [`../agents`](../agents) directory.
 
 ## Install
 
@@ -64,11 +64,11 @@ The Spring backend can also launch this server automatically. In the default loc
 ## Notes
 
 - Transport is local `stdio`.
-- The server reads and writes only under the repository's `scripts/` subtree.
-- Report-reading tools are restricted to [`../scripts/reports`](../scripts/reports).
+- The server reads and writes only under the repository's `agents/` subtree.
+- Report-reading tools are restricted to [`../agents/reports`](../agents/reports).
 - Script execution is restricted to the documented entrypoints:
-  - [`../scripts/aws-region-audit-report.sh`](../scripts/aws-region-audit-report.sh)
-  - [`../scripts/aws-s3-cloudwatch-report.sh`](../scripts/aws-s3-cloudwatch-report.sh)
+  - [`../agents/aws-region-audit-report.sh`](../agents/aws-region-audit-report.sh)
+  - [`../agents/aws-s3-cloudwatch-report.sh`](../agents/aws-s3-cloudwatch-report.sh)
 
 ## Environment
 

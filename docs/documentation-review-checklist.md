@@ -12,7 +12,7 @@ Review current-state documentation first:
 - `backend/README.md`
 - `frontend/README.md`
 - `ops/README.md`
-- `scripts/README.md`
+- `agents/README.md`
 - `docs/architecture.md`
 - `docs/architecture-overview.md`
 - `docs/architecture-walkthrough.md`
@@ -125,13 +125,13 @@ make dependency-freshness
 
 Check that:
 
-- `scripts/README.md` documents MCP/tool shell scripts, not app lifecycle
+- `agents/README.md` documents MCP/tool shell scripts, not app lifecycle
 - `docs/release-checklist.md` documents when to run dependency freshness checks
 - dependency freshness is documented as a maintenance report, not as an app
   lifecycle command
 - `ops/README.md` documents local runtime helpers
 - Docker lifecycle scripts are documented as root-level public lifecycle
-  commands, not as `ops/` or `scripts/` commands
+  commands, not as `ops/` or `agents/` commands
 - docs do not reference removed app lifecycle commands such as `run-backend.sh`
   or `make run-backend`
 - commands using `./ops/start-backend-helper.sh` are meant to run from the
@@ -140,7 +140,7 @@ Check that:
 Useful checks:
 
 ```bash
-rg -n 'run-backend.sh|make run-backend|cd scripts.*ops/start-backend-helper|start-backend-helper.sh' README.md docs backend/README.md frontend/README.md ops/README.md scripts/README.md -g '*.md'
+rg -n 'run-backend.sh|make run-backend|cd agents.*ops/start-backend-helper|start-backend-helper.sh' README.md docs backend/README.md frontend/README.md ops/README.md agents/README.md -g '*.md'
 ```
 
 ## Frontend And Backend README Alignment

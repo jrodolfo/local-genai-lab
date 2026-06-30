@@ -7,8 +7,8 @@
 #   and TSV status) under reports/audit.
 #
 # Usage:
-#   ./scripts/aws-region-audit-report.sh [--regions us-east-1,us-east-2] [--services sagemaker,ec2]
-#   ./scripts/aws-region-audit-report.sh [--regions us-east-1 us-east-2] [--services sagemaker ec2]
+#   ./agents/aws-region-audit-report.sh [--regions us-east-1,us-east-2] [--services sagemaker,ec2]
+#   ./agents/aws-region-audit-report.sh [--regions us-east-1 us-east-2] [--services sagemaker ec2]
 #
 # Important Environment:
 #   AWS_BIN overrides the AWS CLI executable, mainly for tests.

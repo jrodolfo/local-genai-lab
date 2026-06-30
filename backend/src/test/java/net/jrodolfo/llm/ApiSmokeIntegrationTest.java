@@ -299,7 +299,7 @@ class ApiSmokeIntegrationTest {
         private ChatToolMetadata streamingToolMetadata;
 
         FakeChatOrchestratorService() {
-            super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "scripts/reports"));
+            super(null, null, null, null, null, null, new AppStorageProperties("data/sessions", "agents/reports"));
         }
 
         @Override

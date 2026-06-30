@@ -110,11 +110,11 @@ test("read report summary returns a structured bundle with truncated preview lin
         assert.equal(summary.account_id, "123456789012");
         assert.equal(
             summary.report_path,
-            path.join(config.scriptsDir, "reports/audit/aws-audit-valid/report.txt"),
+            path.join(config.agentsDir, "reports/audit/aws-audit-valid/report.txt"),
         );
         assert.equal(
             summary.output_directory,
-            path.join(config.scriptsDir, "reports/audit/aws-audit-valid"),
+            path.join(config.agentsDir, "reports/audit/aws-audit-valid"),
         );
     } finally {
         await fs.rm(tempRoot, {recursive: true, force: true});

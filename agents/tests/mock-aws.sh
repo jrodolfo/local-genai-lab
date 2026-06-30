@@ -7,7 +7,7 @@
 #   responses based on the service and command provided.
 #
 # Usage:
-#   ./scripts/tests/mock-aws.sh <service> <command> [args...]
+#   ./agents/tests/mock-aws.sh <service> <command> [args...]
 #
 # Required Tools:
 #   - bash

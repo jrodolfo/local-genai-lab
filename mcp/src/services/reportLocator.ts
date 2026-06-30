@@ -8,7 +8,7 @@ import {config} from "../config.js";
 export type ReportType = "audit" | "s3_cloudwatch";
 
 /**
- * Valid report bundle discovered under `scripts/reports`.
+ * Valid report bundle discovered under `agents/reports`.
  *
  * A directory is considered valid only when it contains both `summary.json`
  * and `report.txt`; incomplete script output is ignored by listing and lookup

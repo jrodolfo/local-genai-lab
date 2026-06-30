@@ -1,4 +1,4 @@
-# Scripts
+# Agents
 
 [![ci](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml)
 ![shell](https://img.shields.io/badge/shell-bash-89e051)
@@ -7,7 +7,7 @@
 
 Shell-based AWS audit and S3 CloudWatch helpers used by the main application and the MCP server.
 
-This directory is no longer the main human-facing app lifecycle entry point.
+This directory is for agent/tool-facing scripts, generated report artifacts, and their shell tests.
 
 Use the repository root for local app lifecycle commands:
 
@@ -53,7 +53,7 @@ Separation of concerns:
 
 - top-level lifecycle scripts are for developers running the app, including full Docker Compose lifecycle commands
 - `ops/` contains backend helpers and local runtime checks
-- this `scripts/` directory contains report generators, MCP-executed tooling, and shell tests
+- this `agents/` directory contains report generators, MCP-executed tooling, and shell tests
 
 It is designed for a practical cleanup workflow:
 - compare resources across one or more regions
@@ -225,7 +225,7 @@ Compose files. Optional Docker Hub tag metadata is disabled by default; enable
 it explicitly when you want network-backed image context:
 
 ```bash
-DEPENDENCY_FRESHNESS_REGISTRY=true ./scripts/dependency-freshness.sh
+DEPENDENCY_FRESHNESS_REGISTRY=true ./agents/dependency-freshness.sh
 ```
 
 ## CI
@@ -244,7 +244,7 @@ Show available targets:
 make help
 ```
 
-This `scripts/` directory is for MCP/tool-facing report scripts. App lifecycle
+This `agents/` directory is for MCP/tool-facing report scripts. App lifecycle
 commands live at the repository root:
 
 ```bash

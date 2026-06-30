@@ -13,4 +13,4 @@ frontend/playwright-report
 mcp/node_modules
 mcp/dist
 
-scripts/reports
+agents/reports

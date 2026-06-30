@@ -28,13 +28,13 @@ data/sessions/**
 !data/sessions/
 !data/sessions/.gitkeep
 
-# Scripts
-scripts/reports/**
-!scripts/reports/
-!scripts/reports/.gitkeep
-!scripts/reports/audit/
-!scripts/reports/audit/.gitkeep
-!scripts/reports/s3-cloudwatch/
-!scripts/reports/s3-cloudwatch/.gitkeep
+# Agent reports
+agents/reports/**
+!agents/reports/
+!agents/reports/.gitkeep
+!agents/reports/audit/
+!agents/reports/audit/.gitkeep
+!agents/reports/s3-cloudwatch/
+!agents/reports/s3-cloudwatch/.gitkeep
 
 notes.txt

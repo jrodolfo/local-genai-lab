@@ -38,7 +38,7 @@ The script is report-only and does not modify dependency files. Optional Docker
 Hub metadata is disabled by default to keep the normal command local-friendly:
 
 ```bash
-DEPENDENCY_FRESHNESS_REGISTRY=true ./scripts/dependency-freshness.sh
+DEPENDENCY_FRESHNESS_REGISTRY=true ./agents/dependency-freshness.sh
 ```
 
 Use the output to choose small, targeted dependency upgrades instead of waiting

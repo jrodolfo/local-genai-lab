@@ -44,7 +44,7 @@ export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
     const execution = await runCommand({
         command: "./aws-s3-cloudwatch-report.sh",
         args: buildArgs(input),
-        cwd: config.scriptsDir,
+        cwd: config.agentsDir,
         timeoutMs: config.s3TimeoutMs,
     });
 

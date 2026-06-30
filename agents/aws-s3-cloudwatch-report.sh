@@ -8,7 +8,7 @@
 #   It collects storage metrics and request metrics if configured.
 #
 # Usage:
-#   ./scripts/aws-s3-cloudwatch-report.sh --bucket example.com [--region us-east-2] [--days 14]
+#   ./agents/aws-s3-cloudwatch-report.sh --bucket example.com [--region us-east-2] [--days 14]
 #
 # Important Environment:
 #   AWS_BIN overrides the AWS CLI executable, mainly for tests.

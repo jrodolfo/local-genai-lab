@@ -75,7 +75,7 @@ docker-full-check:
 	@./docker-full-check.sh
 
 dependency-freshness:
-	@./scripts/dependency-freshness.sh
+	@./agents/dependency-freshness.sh
 
 clean-ds-store:
 	@find . -path ./.git -prune -o -name .DS_Store -type f -exec rm -f {} +
@@ -114,4 +114,4 @@ build-mcp:
 	@cd mcp && npm run build
 
 test-scripts:
-	@cd scripts && make lint && make test
+	@cd agents && make lint && make test

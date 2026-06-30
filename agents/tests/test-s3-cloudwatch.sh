@@ -8,7 +8,7 @@
 #   CloudWatch metric retrieval, and error handling.
 #
 # Usage:
-#   ./scripts/tests/test-s3-cloudwatch.sh
+#   ./agents/tests/test-s3-cloudwatch.sh
 #
 # Required Tools:
 #   - bash

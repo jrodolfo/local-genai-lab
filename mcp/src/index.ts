@@ -120,7 +120,7 @@ server.registerTool(
     "list_recent_reports",
     {
         title: "List Recent Reports",
-        description: "List recent audit and S3 CloudWatch report directories that already exist under scripts/reports.",
+        description: "List recent audit and S3 CloudWatch report directories that already exist under agents/reports.",
         inputSchema: {
             report_type: z.enum(REPORT_TYPES).default("all"),
             limit: z.number().int().positive().max(20).default(10),
@@ -140,7 +140,7 @@ server.registerTool(
     "read_report_summary",
     {
         title: "Read Report Summary",
-        description: "Read summary.json and a short report.txt preview for an existing report directory under scripts/reports.",
+        description: "Read summary.json and a short report.txt preview for an existing report directory under agents/reports.",
         inputSchema: {
             run_dir: z.string().trim().min(1),
             preview_lines: z.number().int().positive().max(80).default(20),

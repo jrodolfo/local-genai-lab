@@ -263,7 +263,7 @@ Run:
 
 ```bash
 make test-ops
-cd scripts
+cd agents
 make lint
 ./tests/test.sh
 ./tests/test-s3-cloudwatch.sh
