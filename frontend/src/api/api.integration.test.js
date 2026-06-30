@@ -1,9 +1,33 @@
+// @vitest-environment node
+
 import {listArtifacts, previewArtifact} from './artifactApi';
 import {sendMessage, streamMessage} from './chatApi';
 import {getProviderStatus, listAvailableModels} from './modelApi';
 import {compareRagRetrievalTargets, queryRag} from './ragApi';
 import {exportSession, importSession, listSessions} from './sessionApi';
 import {http, HttpResponse, server, sseResponse} from '../test/mswServer';
+
+const API_BASE_URL = 'http://localhost';
+
+function apiPath(path) {
+    return `${API_BASE_URL}${path}`;
+}
+
+let interceptedFetch;
+
+beforeAll(() => {
+    interceptedFetch = globalThis.fetch;
+    globalThis.fetch = (input, init) => {
+        if (typeof input === 'string' && input.startsWith('/')) {
+            return interceptedFetch(new URL(input, API_BASE_URL).toString(), init);
+        }
+        return interceptedFetch(input, init);
+    };
+});
+
+afterAll(() => {
+    globalThis.fetch = interceptedFetch;
+});
 
 async function readBlobText(blob) {
     if (typeof blob?.text === 'function') {
@@ -18,7 +42,7 @@ async function readBlobText(blob) {
 describe('frontend api integration', () => {
     it('sends a chat request and returns the backend payload', async () => {
         server.use(
-            http.post('/api/chat', async ({request}) => {
+            http.post(apiPath('/api/chat'), async ({request}) => {
                 const body = await request.json();
                 expect(body).toMatchObject({
                     message: 'run aws audit',
@@ -44,7 +68,7 @@ describe('frontend api integration', () => {
 
     it('surfaces backend chat errors', async () => {
         server.use(
-            http.post('/api/chat', () => HttpResponse.json({error: 'Backend unavailable.'}, {status: 503}))
+            http.post(apiPath('/api/chat'), () => HttpResponse.json({error: 'Backend unavailable.'}, {status: 503}))
         );
 
         await expect(sendMessage({message: 'hello', provider: 'ollama', model: 'llama3:8b'}))
@@ -53,7 +77,7 @@ describe('frontend api integration', () => {
 
     it('streams typed SSE chat events through the chat api', async () => {
         server.use(
-            http.post('/api/chat/stream', () => sseResponse([
+            http.post(apiPath('/api/chat/stream'), () => sseResponse([
                 {type: 'start', sessionId: 'session-123'},
                 {type: 'tool-execution-started', toolName: 'aws_region_audit'},
                 {type: 'delta', text: 'Hello'},
@@ -80,7 +104,7 @@ describe('frontend api integration', () => {
 
     it('loads provider models and status through backend-shaped endpoints', async () => {
         server.use(
-            http.get('/api/models', ({request}) => {
+            http.get(apiPath('/api/models'), ({request}) => {
                 expect(new URL(request.url).searchParams.get('provider')).toBe('ollama');
                 return HttpResponse.json({
                     provider: 'ollama',
@@ -90,7 +114,7 @@ describe('frontend api integration', () => {
                     models: ['llama3:8b', 'mistral:7b']
                 });
             }),
-            http.get('/api/models/status', ({request}) => {
+            http.get(apiPath('/api/models/status'), ({request}) => {
                 expect(new URL(request.url).searchParams.get('provider')).toBe('ollama');
                 return HttpResponse.json({
                     provider: 'ollama',
@@ -111,18 +135,21 @@ describe('frontend api integration', () => {
 
     it('handles session export and import over HTTP', async () => {
         server.use(
-            http.get('/api/sessions/session-1/export', () => new HttpResponse('{"sessionId":"session-1"}', {
-                status: 200,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Disposition': 'attachment; filename="session-1.json"'
+            http.get(apiPath('/api/sessions/session-1/export'), () => new HttpResponse(
+                new TextEncoder().encode('{"sessionId":"session-1"}'),
+                {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Disposition': 'attachment; filename="session-1.json"'
+                    }
                 }
-            })),
-            http.post('/api/sessions/import', async ({request}) => {
+            )),
+            http.post(apiPath('/api/sessions/import'), async ({request}) => {
                 const formData = await request.formData();
                 const file = formData.get('file');
                 expect(file).toBeTruthy();
-                expect(file?.name).toBe('blob');
+                expect(file?.name).toBe('session.json');
                 expect(file?.type).toBe('application/json');
                 return HttpResponse.json({
                     sessionId: 'imported-session',
@@ -144,7 +171,7 @@ describe('frontend api integration', () => {
 
     it('compares rag retrieval targets through the backend endpoint', async () => {
         server.use(
-            http.post('/api/rag/compare', async ({request}) => {
+            http.post(apiPath('/api/rag/compare'), async ({request}) => {
                 const body = await request.json();
                 expect(body).toEqual({
                     question: 'How are sessions persisted?',
@@ -205,7 +232,7 @@ describe('frontend api integration', () => {
 
     it('surfaces non-json rag query proxy failures with the http status', async () => {
         server.use(
-            http.post('/api/rag/query', () => new HttpResponse('<html>gateway timeout</html>', {
+            http.post(apiPath('/api/rag/query'), () => new HttpResponse('<html>gateway timeout</html>', {
                 status: 504,
                 headers: {'Content-Type': 'text/html'}
             }))
@@ -220,7 +247,7 @@ describe('frontend api integration', () => {
 
     it('keeps partial rag comparison failures in the successful backend response', async () => {
         server.use(
-            http.post('/api/rag/compare', () => HttpResponse.json({
+            http.post(apiPath('/api/rag/compare'), () => HttpResponse.json({
                 question: 'How are sessions persisted?',
                 results: [
                     {
@@ -262,7 +289,7 @@ describe('frontend api integration', () => {
 
     it('surfaces backend rag comparison errors', async () => {
         server.use(
-            http.post('/api/rag/compare', () => HttpResponse.json({
+            http.post(apiPath('/api/rag/compare'), () => HttpResponse.json({
                 error: 'Unsupported RAG retrieval target: semantic.'
             }, {status: 400}))
         );
@@ -277,9 +304,9 @@ describe('frontend api integration', () => {
 
     it('surfaces artifact and session loading failures', async () => {
         server.use(
-            http.get('/api/sessions', () => HttpResponse.json({error: 'Failed to load sessions.'}, {status: 500})),
-            http.get('/api/artifacts/files', () => HttpResponse.json({error: 'Failed to list artifact files.'}, {status: 500})),
-            http.get('/api/artifacts/preview', () => HttpResponse.json({error: 'Failed to preview artifact.'}, {status: 404}))
+            http.get(apiPath('/api/sessions'), () => HttpResponse.json({error: 'Failed to load sessions.'}, {status: 500})),
+            http.get(apiPath('/api/artifacts/files'), () => HttpResponse.json({error: 'Failed to list artifact files.'}, {status: 500})),
+            http.get(apiPath('/api/artifacts/preview'), () => HttpResponse.json({error: 'Failed to preview artifact.'}, {status: 404}))
         );
 
         await expect(listSessions()).rejects.toThrow('Failed to load sessions.');

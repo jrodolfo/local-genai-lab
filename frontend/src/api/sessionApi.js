@@ -120,8 +120,11 @@ export async function exportSession(sessionId, format = 'json') {
         throw new Error(payload.error || 'Failed to export session.');
     }
 
+    const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
+    const body = await response.text();
+
     return {
-        blob: await response.blob(),
+        blob: new Blob([body], {type: contentType}),
         filename: filenameFromDisposition(response.headers.get('Content-Disposition'), sessionId, format)
     };
 }
