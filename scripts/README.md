@@ -30,7 +30,20 @@ Docker lifecycle:
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh
+./scripts/release-check.sh
 ```
+
+Release validation:
+
+```bash
+./scripts/release-check.sh
+RELEASE_CHECK_DOCKER=true ./scripts/release-check.sh
+```
+
+The default release check runs tests, broader verification, dependency freshness
+reporting, and whitespace checks. Docker verification and image scanning are
+opt-in with `RELEASE_CHECK_DOCKER=true` so the release gate can still run when
+Docker Desktop or Trivy is unavailable.
 
 ## Folder Boundaries
 

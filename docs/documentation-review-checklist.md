@@ -110,6 +110,7 @@ App lifecycle commands run from the repository root are:
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh
+./scripts/release-check.sh
 ```
 
 Makefile commands run from the repository root are:
@@ -121,6 +122,7 @@ make build
 make check-app
 make test-rag-qdrant-smoke
 make dependency-freshness
+make release-check
 ```
 
 Check that:
