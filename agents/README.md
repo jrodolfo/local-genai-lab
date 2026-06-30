@@ -12,17 +12,17 @@ This directory is for agent/tool-facing scripts, generated report artifacts, and
 Use the repository root for local app lifecycle commands:
 
 ```bash
-./start.sh
-./stop.sh
-./restart.sh
-./status.sh
-./docker-start.sh
-./docker-stop.sh
-./docker-restart.sh
-./docker-status.sh
-./docker-check.sh
-./docker-verify.sh
-./docker-scan.sh
+./scripts/start.sh
+./scripts/stop.sh
+./scripts/restart.sh
+./scripts/status.sh
+./scripts/docker-start.sh
+./scripts/docker-stop.sh
+./scripts/docker-restart.sh
+./scripts/docker-status.sh
+./scripts/docker-check.sh
+./scripts/docker-verify.sh
+./scripts/docker-scan.sh
 ```
 
 or:
@@ -51,7 +51,7 @@ The directory includes:
 
 Separation of concerns:
 
-- top-level lifecycle scripts are for developers running the app, including full Docker Compose lifecycle commands
+- `scripts/` lifecycle commands are for developers running the app, including full Docker Compose lifecycle commands
 - `ops/` contains backend helpers and local runtime checks
 - this `agents/` directory contains report generators, MCP-executed tooling, and shell tests
 
@@ -248,10 +248,10 @@ This `agents/` directory is for MCP/tool-facing report scripts. App lifecycle
 commands live at the repository root:
 
 ```bash
-../start.sh
-../stop.sh
-../restart.sh
-../status.sh
+../scripts/start.sh
+../scripts/stop.sh
+../scripts/restart.sh
+../scripts/status.sh
 ```
 
 For provider startup configuration, see [../docs/providers.md](../docs/providers.md).

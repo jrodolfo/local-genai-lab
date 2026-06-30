@@ -65,12 +65,12 @@ Acceptance criteria:
 
 - Normal startup still works without Docker and without Qdrant, but warns that
   the optional `Vector - Qdrant` comparison target is unavailable.
-- `RAG_RETRIEVAL_MODE=lexical ./restart.sh` does not require Qdrant, but tries
+- `RAG_RETRIEVAL_MODE=lexical ./scripts/restart.sh` does not require Qdrant, but tries
   to start the local Compose service when `RAG_QDRANT_AUTO_START=true`.
-- `RAG_QDRANT_AUTO_START=false ./restart.sh` skips best-effort Qdrant startup.
-- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh`
+- `RAG_QDRANT_AUTO_START=false ./scripts/restart.sh` skips best-effort Qdrant startup.
+- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./scripts/restart.sh`
   preserves the current vector behavior.
-- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` selects the
+- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh` selects the
   Qdrant path explicitly.
 
 ## Phase 2 Slice 2: Docker Compose
@@ -85,15 +85,15 @@ Docker tasks:
 Expected local command:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 ```
 
 Acceptance criteria:
 
 - `docker compose up -d qdrant` starts Qdrant without starting the whole app.
-- `./restart.sh` tries to start the Qdrant Compose service automatically for
+- `./scripts/restart.sh` tries to start the Qdrant Compose service automatically for
   the optional `Vector - Qdrant` comparison target.
-- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh` starts the
+- `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh` starts the
   Qdrant Compose service as a hard dependency before backend/frontend startup.
 - Existing `docker compose up --build` still works.
 - Documentation states that Qdrant is optional for normal lexical and in-memory
@@ -203,13 +203,13 @@ Backend tasks:
 
 Script tasks:
 
-- Keep `./status.sh` printing `rag vector store`.
+- Keep `./scripts/status.sh` printing `rag vector store`.
 - Keep checking Qdrant only when `RAG_RETRIEVAL_MODE=vector` and
   `RAG_VECTOR_STORE=qdrant`.
 - Keep lexical status fast and independent from Qdrant.
 - Keep in-memory vector status focused on Ollama and the embedding model.
 
-`./status.sh` example:
+`./scripts/status.sh` example:
 
 ```text
 rag enabled: true
@@ -224,8 +224,8 @@ qdrant collection: present (points=123)
 
 Acceptance criteria:
 
-- `./status.sh` does not fail if Qdrant is not installed.
-- `./status.sh` tells the user exactly what is missing in Qdrant mode.
+- `./scripts/status.sh` does not fail if Qdrant is not installed.
+- `./scripts/status.sh` tells the user exactly what is missing in Qdrant mode.
 - `/api/rag/status` gives the frontend enough information for actionable UI
   messages.
 
@@ -308,22 +308,22 @@ Do not include:
 Baseline lexical:
 
 ```bash
-RAG_RETRIEVAL_MODE=lexical ./restart.sh
-./status.sh
+RAG_RETRIEVAL_MODE=lexical ./scripts/restart.sh
+./scripts/status.sh
 ```
 
 Baseline in-memory vector:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh
-./status.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./scripts/restart.sh
+./scripts/status.sh
 ```
 
 Qdrant vector:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
-./status.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
+./scripts/status.sh
 ```
 
 Use the same prompts from [rag-evaluation-guide.md](./rag-evaluation-guide.md)
@@ -338,7 +338,7 @@ The Qdrant slice is complete when:
 - in-memory vector retrieval still works
 - Qdrant vector retrieval works when explicitly selected
 - Qdrant status is visible in `/api/rag/status`
-- Qdrant status is visible in `./status.sh`
+- Qdrant status is visible in `./scripts/status.sh`
 - the UI gives actionable Qdrant errors
 - default CI remains independent from Docker/Qdrant
 - optional Qdrant integration tests are documented and runnable

@@ -24,7 +24,7 @@ If you want the shortest path to a running local setup:
 
 ```bash
 cp .env.example .env
-./start.sh
+./scripts/start.sh
 ```
 
 Then open:
@@ -39,7 +39,7 @@ Notes:
 - For the default Ollama path, make sure `llama3:8b` is installed locally.
 - The `RAG` workspace is enabled by default and uses the local `docs/` corpus.
 - The lifecycle scripts store PID files and logs under `.run/`.
-- Use `./status.sh` or `make status` to inspect the local runtime.
+- Use `./scripts/status.sh` or `make status` to inspect the local runtime.
 
 ## Why This Matters
 
@@ -103,20 +103,21 @@ React Frontend -> Spring Boot Backend -> clarification or tool-failure response
 
 ```text
 local-genai-lab/
-├── start.sh
-├── stop.sh
-├── restart.sh
-├── status.sh
-├── build.sh
-├── docker-start.sh
-├── docker-stop.sh
-├── docker-restart.sh
-├── docker-status.sh
-├── docker-check.sh
-├── docker-verify.sh
-├── docker-scan.sh
-├── docker-full-check.sh
 ├── Makefile
+├── scripts/
+│   ├── start.sh
+│   ├── stop.sh
+│   ├── restart.sh
+│   ├── status.sh
+│   ├── build.sh
+│   ├── docker-start.sh
+│   ├── docker-stop.sh
+│   ├── docker-restart.sh
+│   ├── docker-status.sh
+│   ├── docker-check.sh
+│   ├── docker-verify.sh
+│   ├── docker-scan.sh
+│   └── docker-full-check.sh
 ├── ops/
 │   ├── lib/
 │   ├── tests/
@@ -145,7 +146,7 @@ local-genai-lab/
 
 Script separation:
 
-- top-level scripts and the root `Makefile` are the public app lifecycle interface, including host-run commands and full Docker Compose commands
+- `scripts/` contains human-facing app lifecycle commands, including host-run commands and full Docker Compose commands
 - `ops/` contains internal local runtime helpers such as backend-only startup and stack smoke checks
 - `agents/` contains MCP/tool-facing shell scripts, report generators, and their shell tests
 
@@ -186,7 +187,7 @@ Fill in only the providers you want available in the running backend process. Th
 ### 3. Start the app
 
 ```bash
-./start.sh
+./scripts/start.sh
 ```
 
 This starts both:
@@ -199,7 +200,7 @@ If you want Bedrock or Hugging Face as the default backend provider instead of O
 If port `8080` is already in use, choose another backend port explicitly:
 
 ```bash
-SERVER_PORT=8081 ./start.sh
+SERVER_PORT=8081 ./scripts/start.sh
 ```
 
 The frontend dev proxy follows that override automatically when you start the app this way.
@@ -217,24 +218,24 @@ Backend URLs:
 ### 4. Stop, restart, or inspect the app
 
 ```bash
-./stop.sh
-./restart.sh
-./status.sh
+./scripts/stop.sh
+./scripts/restart.sh
+./scripts/status.sh
 ```
 
-`./stop.sh` stops processes managed by this repo's PID files. `./restart.sh`
-uses `./stop.sh --all`, so it also clears processes occupying the configured
+`./scripts/stop.sh` stops processes managed by this repo's PID files. `./scripts/restart.sh`
+uses `./scripts/stop.sh --all`, so it also clears processes occupying the configured
 backend and frontend ports before starting the app again.
 
 If you want to build generated artifacts before restarting, run:
 
 ```bash
-./build.sh
-./restart.sh
+./scripts/build.sh
+./scripts/restart.sh
 ```
 
-`./build.sh` builds the backend package, frontend production build, and MCP
-server build without starting or stopping the app. Use `./build.sh --skip-tests`
+`./scripts/build.sh` builds the backend package, frontend production build, and MCP
+server build without starting or stopping the app. Use `./scripts/build.sh --skip-tests`
 for a faster local build when you have already run tests.
 
 Expected build output includes Maven and npm progress plus any JVM/native-access
@@ -252,7 +253,7 @@ Use these commands depending on what you need to verify:
 | `make start` | Start backend and frontend in the background. | No |
 | `make stop` | Stop managed backend/frontend processes. | Useful when running |
 | `make restart` | Stop then start the local app. | No |
-| `make status` / `./status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
+| `make status` / `./scripts/status.sh` | Inspect local processes, health URLs, RAG mode, Ollama readiness, and Qdrant readiness. | Useful when running |
 | `make build` | Build backend, frontend, and MCP artifacts without changing the running app. | No |
 | `make check-app` | Smoke-check the live backend/frontend stack after startup. | Yes |
 | `make docker-start` | Start backend, frontend, and Qdrant with Docker Compose. | No |
@@ -270,7 +271,7 @@ Use these commands depending on what you need to verify:
 | `make test-rag-qdrant-smoke` | Verify the live Ollama embeddings plus Qdrant RAG path. | Yes, in Qdrant vector mode |
 
 Use `make test` when you only need normal verification. Use `make verify`
-before larger pushes or broad changes. Use `make build` or `./build.sh` when
+before larger pushes or broad changes. Use `make build` or `./scripts/build.sh` when
 you also want fresh generated backend, frontend, and MCP artifacts before
 restarting the local app.
 
@@ -306,7 +307,7 @@ For a plain-language explanation of RAG page terms such as `Index`, `Rebuild
 Index`, `Sources`, and `Technical Details`, see
 [docs/rag-troubleshooting.md#rag-page-mental-model](./docs/rag-troubleshooting.md#rag-page-mental-model).
 
-If RAG or vector retrieval does not behave as expected, run `./status.sh` first.
+If RAG or vector retrieval does not behave as expected, run `./scripts/status.sh` first.
 It reports RAG mode, Ollama readiness, whether the configured embedding model is
 installed, and Qdrant reachability plus collection point count when the
 `Vector - Qdrant` comparison target is available. Common fixes and the RAG
@@ -335,16 +336,16 @@ MCP is enabled by default in the backend. To run without it, set `MCP_ENABLED=fa
 Keep Ollama running on the host first, then use the Docker lifecycle wrappers:
 
 ```bash
-./docker-restart.sh
-./docker-status.sh
-./docker-check.sh
-./docker-stop.sh
+./scripts/docker-restart.sh
+./scripts/docker-status.sh
+./scripts/docker-check.sh
+./scripts/docker-stop.sh
 ```
 
 For the functional Docker verification workflow, use:
 
 ```bash
-./docker-verify.sh
+./scripts/docker-verify.sh
 ```
 
 This script is not read-only. It stops host-run backend/frontend processes,
@@ -354,10 +355,10 @@ smoke check.
 For the broadest Docker check, including the advisory security scan, use:
 
 ```bash
-./docker-full-check.sh
+./scripts/docker-full-check.sh
 ```
 
-This runs `./docker-verify.sh` first and then `./docker-scan.sh`.
+This runs `./scripts/docker-verify.sh` first and then `./scripts/docker-scan.sh`.
 
 Equivalent Make targets are available:
 
@@ -387,22 +388,22 @@ different address, set `DOCKER_OLLAMA_BASE_URL`; keep host-run
 `OLLAMA_BASE_URL` separate because `localhost` inside a container means the
 container itself.
 
-The existing `./start.sh`, `./stop.sh`, `./restart.sh`, and `./status.sh`
+The existing `./scripts/start.sh`, `./scripts/stop.sh`, `./scripts/restart.sh`, and `./scripts/status.sh`
 scripts run the backend and frontend directly on the host. The `docker-*`
 scripts run the full Docker Compose stack. Keep those workflows separate to
 avoid accidentally mixing host-run processes with containerized services.
 
-Use `./docker-status.sh` when you want to know what is running and where to
+Use `./scripts/docker-status.sh` when you want to know what is running and where to
 look. It is diagnostic and prints Compose status, readiness, URLs, log commands,
 port checks, and recovery hints.
 
-Use `./docker-check.sh` when you want to know whether the Docker app is usable
+Use `./scripts/docker-check.sh` when you want to know whether the Docker app is usable
 enough to trust. It is a read-only smoke check and exits non-zero if backend
 health, frontend, Qdrant, `/api/models`, or `/api/rag/status` is unavailable.
-After `./docker-start.sh` or `./docker-restart.sh`, run `./docker-check.sh`
+After `./scripts/docker-start.sh` or `./scripts/docker-restart.sh`, run `./scripts/docker-check.sh`
 before demos or manual testing.
 
-Use `./docker-scan.sh` after Docker images have been built when you want to
+Use `./scripts/docker-scan.sh` after Docker images have been built when you want to
 inspect known vulnerabilities in the backend, frontend, and Qdrant images. It
 uses Trivy and runs in advisory mode by default, reporting `HIGH` and
 `CRITICAL` findings without failing the command.
@@ -411,9 +412,9 @@ Docker security posture:
 
 | Scope | Command | What It Proves | How To Interpret Findings |
 | --- | --- | --- | --- |
-| Full local Docker stack | `./docker-scan.sh` | Backend, frontend, and Qdrant images were scanned. | Use for awareness across everything Docker Compose runs. Qdrant findings belong to the external vendor image. |
-| Repository-owned images only | `DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh` | Backend and frontend images built from this codebase were scanned. | Use this before declaring this repository's Docker images clean. |
-| Strict selected scope | `DOCKER_SCAN_STRICT=true ./docker-scan.sh` | The selected scan scope has no configured-severity findings. | Use only when the chosen scope is expected to be clean. |
+| Full local Docker stack | `./scripts/docker-scan.sh` | Backend, frontend, and Qdrant images were scanned. | Use for awareness across everything Docker Compose runs. Qdrant findings belong to the external vendor image. |
+| Repository-owned images only | `DOCKER_SCAN_INCLUDE_QDRANT=false ./scripts/docker-scan.sh` | Backend and frontend images built from this codebase were scanned. | Use this before declaring this repository's Docker images clean. |
+| Strict selected scope | `DOCKER_SCAN_STRICT=true ./scripts/docker-scan.sh` | The selected scan scope has no configured-severity findings. | Use only when the chosen scope is expected to be clean. |
 
 ```mermaid
 flowchart TD
@@ -421,8 +422,8 @@ flowchart TD
   Full[Need awareness for the complete local stack?]
   Owned[Need to validate only this repository's images?]
   Strict[Should findings fail the command?]
-  RunFull[Run ./docker-scan.sh]
-  RunOwned[Run DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh]
+  RunFull[Run ./scripts/docker-scan.sh]
+  RunOwned[Run DOCKER_SCAN_INCLUDE_QDRANT=false ./scripts/docker-scan.sh]
   RunStrict[Add DOCKER_SCAN_STRICT=true]
   Qdrant[Qdrant findings are vendor-image findings]
   App[Backend/frontend findings are repository-owned issues]
@@ -443,7 +444,7 @@ flowchart TD
 To make findings fail the command, run:
 
 ```bash
-DOCKER_SCAN_STRICT=true ./docker-scan.sh
+DOCKER_SCAN_STRICT=true ./scripts/docker-scan.sh
 ```
 
 The backend and frontend images are owned by this repository. The Qdrant image
@@ -451,7 +452,7 @@ is an external vendor image used by Docker Compose. If you want to focus only
 on the images built from this codebase, skip the external Qdrant scan:
 
 ```bash
-DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh
+DOCKER_SCAN_INCLUDE_QDRANT=false ./scripts/docker-scan.sh
 ```
 
 Install Trivy first if needed:
@@ -460,13 +461,13 @@ Install Trivy first if needed:
 brew install trivy
 ```
 
-Use `./docker-full-check.sh` when you want one command that does both: functional
+Use `./scripts/docker-full-check.sh` when you want one command that does both: functional
 Docker verification plus the Docker image vulnerability scan.
 
-If Docker startup fails, run `./docker-status.sh` first. It prints the Compose
+If Docker startup fails, run `./scripts/docker-status.sh` first. It prints the Compose
 service table, HTTP readiness checks, expected URLs, service-specific log
 commands, and port-conflict checks for `8080`, `3000`, and `6333`. If a port is
-owned by the host-run app, run `./stop.sh --all`; if another app owns the port,
+owned by the host-run app, run `./scripts/stop.sh --all`; if another app owns the port,
 stop that app normally or use the printed PID with `kill <pid>`.
 
 Qdrant is available as an optional local service for the phase-2 RAG vector
@@ -484,14 +485,14 @@ startup dependency.
 To disable best-effort Qdrant startup:
 
 ```bash
-RAG_QDRANT_AUTO_START=false ./start.sh
+RAG_QDRANT_AUTO_START=false ./scripts/start.sh
 ```
 
 To make Qdrant the active backend vector store:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
-./status.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
+./scripts/status.sh
 ```
 
 To verify the full live Qdrant RAG path after startup:

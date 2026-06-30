@@ -3,7 +3,7 @@
 # test-start.sh
 #
 # Purpose:
-#   Unit tests for the root start.sh preflight behavior. Verifies strict Qdrant
+#   Unit tests for scripts/start.sh preflight behavior. Verifies strict Qdrant
 #   startup for explicit Qdrant mode and best-effort startup for RAG comparison.
 #
 # Usage:
@@ -25,7 +25,7 @@ set -euo pipefail
 
 # --- Path Definitions ---
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/start.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/start.sh"
 
 # --- Test Helpers ---
 

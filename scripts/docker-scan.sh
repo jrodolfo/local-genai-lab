@@ -7,8 +7,8 @@
 #   local-genai-lab Docker Compose workflow.
 #
 # Usage:
-#   ./docker-scan.sh
-#   DOCKER_SCAN_STRICT=true ./docker-scan.sh
+#   ./scripts/docker-scan.sh
+#   DOCKER_SCAN_STRICT=true ./scripts/docker-scan.sh
 #
 # Important Environment:
 #   DOCKER_SCAN_SEVERITY sets the reported severities. Default: HIGH,CRITICAL.
@@ -35,7 +35,7 @@ set -euo pipefail
 if ! command -v trivy >/dev/null 2>&1; then
   printf '%s\n' \
     'Error: trivy was not found.' \
-    'Install Trivy, then retry ./docker-scan.sh.' \
+    'Install Trivy, then retry ./scripts/docker-scan.sh.' \
     'macOS: brew install trivy' \
     'Docs: https://aquasecurity.github.io/trivy/' >&2
   exit 1

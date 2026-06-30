@@ -33,46 +33,46 @@ help:
 		'  make test-scripts           Run MCP tool script lint/tests'
 
 start:
-	@./start.sh
+	@./scripts/start.sh
 
 stop:
-	@./stop.sh
+	@./scripts/stop.sh
 
 restart:
-	@./restart.sh
+	@./scripts/restart.sh
 
 status:
-	@./status.sh
+	@./scripts/status.sh
 
 build:
-	@./build.sh
+	@./scripts/build.sh
 
 check-app:
 	@./ops/check-app.sh
 
 docker-start:
-	@./docker-start.sh
+	@./scripts/docker-start.sh
 
 docker-stop:
-	@./docker-stop.sh
+	@./scripts/docker-stop.sh
 
 docker-restart:
-	@./docker-restart.sh
+	@./scripts/docker-restart.sh
 
 docker-status:
-	@./docker-status.sh
+	@./scripts/docker-status.sh
 
 docker-check:
-	@./docker-check.sh
+	@./scripts/docker-check.sh
 
 docker-verify:
-	@./docker-verify.sh
+	@./scripts/docker-verify.sh
 
 docker-scan:
-	@./docker-scan.sh
+	@./scripts/docker-scan.sh
 
 docker-full-check:
-	@./docker-full-check.sh
+	@./scripts/docker-full-check.sh
 
 dependency-freshness:
 	@./agents/dependency-freshness.sh
@@ -85,6 +85,7 @@ test: test-ops test-backend test-frontend
 verify: test build-frontend test-mcp build-mcp test-scripts
 
 test-ops:
+	@bash ./ops/tests/test-root-layout.sh
 	@bash ./ops/tests/test-doc-privacy.sh
 	@bash ./ops/tests/test-start.sh
 	@bash ./ops/tests/test-restart.sh

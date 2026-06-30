@@ -9,7 +9,7 @@
 # Design Notes:
 #   Functions are intentionally POSIX-ish Bash helpers used by root scripts.
 #   load_env_defaults never overwrites variables already set in the caller's
-#   shell, so one-off commands such as SERVER_PORT=8090 ./start.sh work.
+#   shell, so one-off commands such as SERVER_PORT=8090 ./scripts/start.sh work.
 #
 # Usage:
 #   source ops/lib/runtime-common.sh

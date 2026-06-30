@@ -8,7 +8,7 @@
 #   or manual testing.
 #
 # Usage:
-#   ./docker-check.sh
+#   ./scripts/docker-check.sh
 #
 # Required Tools:
 #   - bash
@@ -24,11 +24,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/docker-lifecycle-common.sh
-source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
+source "${REPO_ROOT}/ops/lib/docker-lifecycle-common.sh"
 
 if ! command -v curl >/dev/null 2>&1; then
-  printf '%s\n' 'Error: curl was not found. Install curl, then retry ./docker-check.sh.' >&2
+  printf '%s\n' 'Error: curl was not found. Install curl, then retry ./scripts/docker-check.sh.' >&2
   exit 1
 fi
 
@@ -61,7 +62,7 @@ if [ "${failed}" = 'true' ]; then
   printf '%s\n' \
     '' \
     'Docker smoke check failed.' \
-    'Run ./docker-status.sh for Compose status, readiness, logs, and port diagnostics.'
+    'Run ./scripts/docker-status.sh for Compose status, readiness, logs, and port diagnostics.'
   exit 1
 fi
 

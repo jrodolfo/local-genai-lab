@@ -22,7 +22,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/restart.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/restart.sh"
 
 assert_contains() {
   local haystack="$1"
@@ -35,8 +35,11 @@ assert_contains() {
 
 write_mock_scripts() {
   local bin_dir="$1"
-  mkdir -p "${bin_dir}/ops/lib"
-  cp "${REPO_ROOT}/ops/lib/runtime-common.sh" "${bin_dir}/ops/lib/runtime-common.sh"
+  local fixture_root
+
+  fixture_root="$(cd "${bin_dir}/.." && pwd)"
+  mkdir -p "${fixture_root}/ops/lib"
+  cp "${REPO_ROOT}/ops/lib/runtime-common.sh" "${fixture_root}/ops/lib/runtime-common.sh"
   cp "${SCRIPT_PATH}" "${bin_dir}/restart.sh"
   chmod +x "${bin_dir}/restart.sh"
 
@@ -143,7 +146,7 @@ test_restart_stop_failure_prints_actionable_summary() {
   assert_contains "${output}" "    log: ${tmp_dir}/run/backend.log"
   assert_contains "${output}" 'next step:'
   assert_contains "${output}" '  stop frontend manually:'
-  assert_contains "${output}" '  then retry: ./restart.sh'
+  assert_contains "${output}" '  then retry: ./scripts/restart.sh'
   assert_contains "${output}" 'logs:'
   rm -rf "${tmp_dir}"
 }

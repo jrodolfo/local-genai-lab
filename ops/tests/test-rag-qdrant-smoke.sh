@@ -8,7 +8,7 @@
 #   a running backend, Ollama, the embedding model, and the Qdrant service.
 #
 # Usage:
-#   RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+#   RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 #   make test-rag-qdrant-smoke
 #
 # Optional Environment:

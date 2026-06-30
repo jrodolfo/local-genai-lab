@@ -97,19 +97,19 @@ The Mermaid diagram should include:
 Root app lifecycle commands are:
 
 ```bash
-./start.sh
-./stop.sh
-./restart.sh
-./status.sh
-./build.sh
-./docker-start.sh
-./docker-stop.sh
-./docker-restart.sh
-./docker-status.sh
-./docker-check.sh
-./docker-verify.sh
-./docker-scan.sh
-./docker-full-check.sh
+./scripts/start.sh
+./scripts/stop.sh
+./scripts/restart.sh
+./scripts/status.sh
+./scripts/build.sh
+./scripts/docker-start.sh
+./scripts/docker-stop.sh
+./scripts/docker-restart.sh
+./scripts/docker-status.sh
+./scripts/docker-check.sh
+./scripts/docker-verify.sh
+./scripts/docker-scan.sh
+./scripts/docker-full-check.sh
 ```
 
 Root Makefile commands are:
@@ -130,7 +130,7 @@ Check that:
 - dependency freshness is documented as a maintenance report, not as an app
   lifecycle command
 - `ops/README.md` documents local runtime helpers
-- Docker lifecycle scripts are documented as root-level public lifecycle
+- Docker lifecycle scripts are documented as `scripts/` public lifecycle
   commands, not as `ops/` or `agents/` commands
 - docs do not reference removed app lifecycle commands such as `run-backend.sh`
   or `make run-backend`

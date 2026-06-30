@@ -3,7 +3,7 @@
 # test-build.sh
 #
 # Purpose:
-#   Unit tests for the root build.sh command. Verifies dry-run output and
+#   Unit tests for scripts/build.sh. Verifies dry-run output and
 #   option handling without running Maven or npm.
 #
 # Usage:
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/build.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/build.sh"
 
 assert_contains() {
   local haystack="$1"
@@ -49,7 +49,7 @@ test_help_prints_usage() {
 
   assert_contains "${output}" 'build.sh'
   assert_contains "${output}" 'Builds local-genai-lab artifacts without starting or stopping the app.'
-  assert_contains "${output}" './build.sh [--skip-tests] [--clean-frontend]'
+  assert_contains "${output}" './scripts/build.sh [--skip-tests] [--clean-frontend]'
   assert_contains "${output}" '--skip-tests'
   assert_contains "${output}" 'By default, backend tests run during the Maven package.'
   assert_contains "${output}" '--clean-frontend'

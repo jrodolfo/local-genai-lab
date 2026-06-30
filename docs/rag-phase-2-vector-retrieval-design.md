@@ -246,7 +246,7 @@ reason to split lexical and vector limits.
 Explicit Qdrant backend run:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 ```
 
 `RAG_VECTOR_STORE=in-memory` remains the low-friction vector-store default for
@@ -262,10 +262,10 @@ The first local Qdrant setup is Docker-based.
 Explicit Qdrant backend flow:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 ```
 
-The normal `./start.sh` and `./restart.sh` scripts also try to start the local
+The normal `./scripts/start.sh` and `./scripts/restart.sh` scripts also try to start the local
 Qdrant Compose service by default when RAG is enabled, because the UI exposes
 `Vector - Qdrant` as a comparison target. If Docker is unavailable during normal
 lexical startup, the app can still run and the Qdrant target remains
@@ -273,7 +273,7 @@ unavailable until Qdrant is started.
 
 The application status makes Qdrant reachability visible for the optional
 `Vector - Qdrant` comparison target and for explicit Qdrant backend mode.
-Example `./status.sh` lines:
+Example `./scripts/status.sh` lines:
 
 ```text
 backend rag retrieval mode: vector

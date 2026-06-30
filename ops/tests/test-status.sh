@@ -3,7 +3,7 @@
 # test-status.sh
 #
 # Purpose:
-#   Unit tests for the root status.sh script. Verifies RAG/Ollama readiness
+#   Unit tests for scripts/status.sh. Verifies RAG/Ollama readiness
 #   output with mocked external commands so tests do not require live services.
 #
 # Usage:
@@ -25,7 +25,7 @@ set -euo pipefail
 
 # --- Path Definitions ---
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/status.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/status.sh"
 
 # --- Test Helpers ---
 
@@ -276,7 +276,7 @@ test_qdrant_vector_mode_reports_unavailable_service() {
   assert_contains "${output}" 'qdrant collection: not checked'
   assert_contains "${output}" 'ollama embedding model: present (nomic-embed-text)'
   assert_contains "${output}" 'next actions:'
-  assert_contains "${output}" '- start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./restart.sh'
+  assert_contains "${output}" '- start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./scripts/restart.sh'
   rm -rf "${tmp_dir}"
 }
 
@@ -293,7 +293,7 @@ test_backend_unavailable_reports_next_action() {
   assert_contains "${output}" 'backend health: unavailable'
   assert_contains "${output}" 'backend rag status: unavailable'
   assert_contains "${output}" 'next actions:'
-  assert_contains "${output}" '- start the app with ./start.sh, or inspect '
+  assert_contains "${output}" '- start the app with ./scripts/start.sh, or inspect '
   rm -rf "${tmp_dir}"
 }
 
@@ -309,7 +309,7 @@ test_rag_disabled_reports_enable_hint() {
 
   assert_contains "${output}" 'backend rag enabled: false'
   assert_contains "${output}" 'next actions:'
-  assert_contains "${output}" '- enable RAG with RAG_ENABLED=true ./restart.sh'
+  assert_contains "${output}" '- enable RAG with RAG_ENABLED=true ./scripts/restart.sh'
   rm -rf "${tmp_dir}"
 }
 

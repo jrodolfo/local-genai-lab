@@ -6,7 +6,7 @@
 #   Restarts the full local-genai-lab Docker Compose stack.
 #
 # Usage:
-#   ./docker-restart.sh
+#   ./scripts/docker-restart.sh
 #
 # Required Tools:
 #   - bash

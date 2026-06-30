@@ -5,30 +5,30 @@ This directory contains local app runtime helpers.
 Use the repository root for the public lifecycle commands:
 
 ```bash
-./start.sh
-./stop.sh
-./restart.sh
-./status.sh
-./build.sh
-./docker-start.sh
-./docker-stop.sh
-./docker-restart.sh
-./docker-status.sh
-./docker-check.sh
-./docker-verify.sh
-./docker-scan.sh
-./docker-full-check.sh
+./scripts/start.sh
+./scripts/stop.sh
+./scripts/restart.sh
+./scripts/status.sh
+./scripts/build.sh
+./scripts/docker-start.sh
+./scripts/docker-stop.sh
+./scripts/docker-restart.sh
+./scripts/docker-status.sh
+./scripts/docker-check.sh
+./scripts/docker-verify.sh
+./scripts/docker-scan.sh
+./scripts/docker-full-check.sh
 ```
 
-`./stop.sh` stops PID-file-managed processes by default. Use `./stop.sh --all`
+`./scripts/stop.sh` stops PID-file-managed processes by default. Use `./scripts/stop.sh --all`
 to also stop processes currently listening on the configured backend/frontend
-ports. `./restart.sh` uses that broader stop behavior before starting the app.
-`./build.sh` builds backend, frontend, and MCP artifacts without starting
+ports. `./scripts/restart.sh` uses that broader stop behavior before starting the app.
+`./scripts/build.sh` builds backend, frontend, and MCP artifacts without starting
 or stopping the app.
 
-The `docker-*` scripts are also root-level public lifecycle commands. They run
+The `docker-*` scripts are also public lifecycle commands under `scripts/`. They run
 the full Docker Compose stack and intentionally stay separate from the host-run
-`start.sh` / `stop.sh` workflow.
+`scripts/start.sh` / `scripts/stop.sh` workflow.
 
 Docker backend image contract:
 
@@ -41,23 +41,23 @@ Docker backend image contract:
   checks pass before any reports have been generated
 - generated local report artifacts are excluded by `.dockerignore`
 
-Use `./docker-status.sh` for diagnostics and `./docker-check.sh` for a
+Use `./scripts/docker-status.sh` for diagnostics and `./scripts/docker-check.sh` for a
 read-only smoke check that fails when the Docker stack is not usable.
-Use `./docker-verify.sh` for the full non-read-only Docker workflow: stop
+Use `./scripts/docker-verify.sh` for the full non-read-only Docker workflow: stop
 host-run processes, restart Docker Compose, show status, and run smoke checks.
-Use `./docker-scan.sh` for a Trivy-based Docker image vulnerability scan.
+Use `./scripts/docker-scan.sh` for a Trivy-based Docker image vulnerability scan.
 By default, the scan includes the repository-owned backend/frontend images and
 the external Qdrant vendor image. Use
-`DOCKER_SCAN_INCLUDE_QDRANT=false ./docker-scan.sh` when you want to focus only
+`DOCKER_SCAN_INCLUDE_QDRANT=false ./scripts/docker-scan.sh` when you want to focus only
 on images built from this codebase.
 Treat the full scan as local-stack awareness and the owned-image-only scan as
 the repository cleanliness check. Do not fork or patch Qdrant locally just to
 clear vendor-image scan output; prefer upgrading to a newer vendor tag when one
 is available.
-Use `./docker-full-check.sh` when you want one command that runs both
-`./docker-verify.sh` and `./docker-scan.sh`.
+Use `./scripts/docker-full-check.sh` when you want one command that runs both
+`./scripts/docker-verify.sh` and `./scripts/docker-scan.sh`.
 
-`./build.sh` runs tests unless explicitly skipped, so normal output includes
+`./scripts/build.sh` runs tests unless explicitly skipped, so normal output includes
 Maven and npm test/build progress. JVM/native-access warnings from Java
 dependencies may still appear during backend tests. Application/controller stack
 traces from expected negative-path tests should not be treated as normal build
@@ -87,7 +87,7 @@ What belongs in `ops/`:
 
 - backend-only startup helpers
 - local stack smoke checks
-- shared shell runtime helpers used by the top-level lifecycle scripts
+- shared shell runtime helpers used by the `scripts/` lifecycle commands
 - tests for those operational helpers
 
 Run operational helper tests from the repository root:

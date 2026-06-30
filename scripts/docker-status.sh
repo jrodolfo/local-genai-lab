@@ -6,7 +6,7 @@
 #   Shows the Docker Compose service status for local-genai-lab.
 #
 # Usage:
-#   ./docker-status.sh
+#   ./scripts/docker-status.sh
 #
 # Required Tools:
 #   - bash
@@ -22,8 +22,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/docker-lifecycle-common.sh
-source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
+source "${REPO_ROOT}/ops/lib/docker-lifecycle-common.sh"
 
 ensure_docker_available 'docker-status.sh'
 
@@ -60,7 +61,7 @@ check_http_endpoint() {
 printf '%s\n' 'local-genai-lab Docker Compose status'
 
 (
-  cd "${SCRIPT_DIR}"
+  cd "${REPO_ROOT}"
   docker compose ps
 )
 

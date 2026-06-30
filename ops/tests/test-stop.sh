@@ -3,7 +3,7 @@
 # test-stop.sh
 #
 # Purpose:
-#   Unit tests for the root stop.sh script. Verifies managed-only behavior and
+#   Unit tests for scripts/stop.sh. Verifies managed-only behavior and
 #   --all behavior for configured port owners with mocked lsof output.
 #
 # Usage:
@@ -26,7 +26,7 @@ set -euo pipefail
 
 # --- Path Definitions ---
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/stop.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/stop.sh"
 
 # --- Test Helpers ---
 

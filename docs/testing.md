@@ -30,7 +30,7 @@ areas.
 | `make start` | Start backend and frontend in the background. | Java, Node, configured local ports. | Not a CI target. |
 | `make stop` | Stop managed backend/frontend processes. | Managed app may be running. | Not a CI target. |
 | `make restart` | Stop then start the local app. | Same as `make start`. | Not a CI target. |
-| `make status` / `./status.sh` | Read-only local runtime inspection. | App may be stopped or running. | Not a CI target. |
+| `make status` / `./scripts/status.sh` | Read-only local runtime inspection. | App may be stopped or running. | Not a CI target. |
 | `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
 | `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files. | Local workspace only. | Not a CI target. |
@@ -69,7 +69,7 @@ backend. When you specifically want to verify the full local Qdrant RAG path,
 start the app in Qdrant vector mode:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 ```
 
 Then run:

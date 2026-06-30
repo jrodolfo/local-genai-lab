@@ -37,17 +37,17 @@ Related references:
 By default, the backend exposes the `RAG` workspace. To hide it explicitly:
 
 ```bash
-RAG_ENABLED=false ./restart.sh
+RAG_ENABLED=false ./scripts/restart.sh
 ```
 
 To use it:
 
-1. start the app with `./start.sh` or `./restart.sh`
+1. start the app with `./scripts/start.sh` or `./scripts/restart.sh`
 2. open the frontend
 3. use the `RAG` tab in the top navigation
 4. confirm the status card shows the docs corpus, retrieval mode, and retrieval store
 
-If the workspace is disabled or vector mode does not index, run `./status.sh`
+If the workspace is disabled or vector mode does not index, run `./scripts/status.sh`
 and follow [rag-troubleshooting.md](./rag-troubleshooting.md).
 
 The RAG index is built automatically on the first question. You do not need to
@@ -264,7 +264,7 @@ retrieval is enabled locally.
 The UI exposes a retrieval selector for one saved answer at a time and
 `Compare Retrieval Targets` for diagnostic side-by-side checks. If
 `Vector - Qdrant` reports that Qdrant is not running or the index is missing,
-run `./status.sh`, restart with `./restart.sh`, or click `Rebuild Index` as
+run `./scripts/status.sh`, restart with `./scripts/restart.sh`, or click `Rebuild Index` as
 directed by the UI readiness hint.
 
 For the phase-2 vector retrieval direction, including Qdrant as the first

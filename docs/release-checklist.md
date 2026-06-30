@@ -15,7 +15,7 @@ make verify
 For Docker-specific changes, also run:
 
 ```bash
-./docker-full-check.sh
+./scripts/docker-full-check.sh
 ```
 
 ## Dependency Freshness

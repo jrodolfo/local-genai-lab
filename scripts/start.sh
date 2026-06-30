@@ -8,7 +8,7 @@
 #   and health checks to ensure the application starts correctly.
 #
 # Usage:
-#   ./start.sh
+#   ./scripts/start.sh
 #
 # Important Environment:
 #   SERVER_PORT / FRONTEND_PORT override the backend and frontend ports.
@@ -40,8 +40,9 @@ set -euo pipefail
 
 # --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
-source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
+source "${REPO_ROOT}/ops/lib/runtime-common.sh"
 
 load_env_defaults "${ENV_FILE}"
 ensure_run_dir
@@ -90,7 +91,7 @@ backend_port_owner="$(find_port_process "${SERVER_PORT}")"
 if [ -n "${backend_port_owner}" ]; then
   printf '%s\n' \
     "Error: backend port ${SERVER_PORT} is already in use by pid ${backend_port_owner}." \
-    "Use SERVER_PORT=<port> ./start.sh or stop the existing process first." >&2
+    "Use SERVER_PORT=<port> ./scripts/start.sh or stop the existing process first." >&2
   exit 1
 fi
 
@@ -98,7 +99,7 @@ frontend_port_owner="$(find_port_process "${FRONTEND_PORT}")"
 if [ -n "${frontend_port_owner}" ]; then
   printf '%s\n' \
     "Error: frontend port ${FRONTEND_PORT} is already in use by pid ${frontend_port_owner}." \
-    "Use FRONTEND_PORT=<port> ./start.sh or stop the existing process first." >&2
+    "Use FRONTEND_PORT=<port> ./scripts/start.sh or stop the existing process first." >&2
   exit 1
 fi
 

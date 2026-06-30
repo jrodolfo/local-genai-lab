@@ -27,11 +27,11 @@ Local defaults:
 Start the local runtime first:
 
 ```bash
-./restart.sh
-./status.sh
+./scripts/restart.sh
+./scripts/status.sh
 ```
 
-If Qdrant is not running, `./restart.sh` tries to start the local Docker Compose
+If Qdrant is not running, `./scripts/restart.sh` tries to start the local Docker Compose
 service when RAG is enabled.
 
 ## Browser-Friendly Checks
@@ -221,6 +221,6 @@ or debug collection readiness.
 
 Qdrant is unreachable:
 
-- Run `./status.sh`.
-- Restart with `./restart.sh`.
+- Run `./scripts/status.sh`.
+- Restart with `./scripts/restart.sh`.
 - Confirm Docker Desktop shows the `llm-qdrant` container running.

@@ -7,11 +7,11 @@
 #   configured port owners, then starting it again.
 #
 # Usage:
-#   ./restart.sh
+#   ./scripts/restart.sh
 #
 # Important Environment:
 #   Pass the same variables accepted by start.sh, for example:
-#   RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+#   RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 #
 # Required Tools:
 #   - bash
@@ -27,8 +27,9 @@ set -euo pipefail
 
 # --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
-source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
+source "${REPO_ROOT}/ops/lib/runtime-common.sh"
 
 load_env_defaults "${ENV_FILE}"
 ensure_run_dir
@@ -94,7 +95,7 @@ print_restart_stop_failure() {
     '' \
     'next step:' \
     "  stop ${component} manually: $(kill_command_hint "${pid}")" \
-    '  then retry: ./restart.sh' \
+    '  then retry: ./scripts/restart.sh' \
     ''
   print_log_paths
 }

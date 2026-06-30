@@ -6,7 +6,7 @@ vector retrieval does not behave as expected.
 Start with the local status script:
 
 ```bash
-./status.sh
+./scripts/status.sh
 ```
 
 The status output reports whether RAG is enabled, which retrieval mode is active,
@@ -41,19 +41,19 @@ is not required before normal first use.
 RAG is enabled by default:
 
 ```bash
-RAG_ENABLED=true ./restart.sh
+RAG_ENABLED=true ./scripts/restart.sh
 ```
 
 Lexical retrieval is the default and does not need Ollama embeddings:
 
 ```bash
-RAG_RETRIEVAL_MODE=lexical ./restart.sh
+RAG_RETRIEVAL_MODE=lexical ./scripts/restart.sh
 ```
 
 Vector retrieval uses Ollama embeddings by default:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector ./restart.sh
+RAG_RETRIEVAL_MODE=vector ./scripts/restart.sh
 ```
 
 If vector mode is enabled, the default embedding model must be available:
@@ -65,7 +65,7 @@ ollama pull nomic-embed-text
 
 When vector RAG is not working, check these items first:
 
-- run `./status.sh`
+- run `./scripts/status.sh`
 - confirm `rag enabled: true`
 - confirm `rag retrieval mode: vector`
 - confirm `rag vector store: in-memory` or `rag vector store: qdrant`
@@ -103,7 +103,7 @@ refreshes status and shows the real document and chunk counts.
 Check whether the backend is running with RAG enabled:
 
 ```bash
-./status.sh
+./scripts/status.sh
 ```
 
 Expected status:
@@ -115,7 +115,7 @@ rag enabled: true
 If RAG is disabled, restart with:
 
 ```bash
-RAG_ENABLED=true ./restart.sh
+RAG_ENABLED=true ./scripts/restart.sh
 ```
 
 The `RAG` workspace is intentionally separate from normal chat and MCP tool
@@ -127,7 +127,7 @@ disabled instead of showing a partially working workspace.
 Vector retrieval needs Ollama and the configured embedding model. Check:
 
 ```bash
-./status.sh
+./scripts/status.sh
 ```
 
 Expected vector readiness:
@@ -143,8 +143,8 @@ ollama service: ok
 ollama embedding model: present (nomic-embed-text)
 ```
 
-`./build.sh` does not start runtime services. Use `./start.sh` or
-`./restart.sh` to start backend, frontend, and the optional local Qdrant service.
+`./scripts/build.sh` does not start runtime services. Use `./scripts/start.sh` or
+`./scripts/restart.sh` to start backend, frontend, and the optional local Qdrant service.
 
 By default, `start.sh` and `restart.sh` try to start Qdrant when RAG is enabled
 because the RAG UI can run the `Vector - Qdrant` comparison target even when the
@@ -152,7 +152,7 @@ default retrieval mode is lexical. This best-effort startup does not make
 Qdrant mandatory for lexical mode. To opt out:
 
 ```bash
-RAG_QDRANT_AUTO_START=false ./start.sh
+RAG_QDRANT_AUTO_START=false ./scripts/start.sh
 ```
 
 If `RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant` is selected, Qdrant is a
@@ -170,15 +170,15 @@ If Qdrant is unavailable, restart normally first. The startup script will try to
 start the `qdrant` Docker Compose service:
 
 ```bash
-./restart.sh
-./status.sh
+./scripts/restart.sh
+./scripts/status.sh
 ```
 
 If you want Qdrant as the active backend vector store, restart in Qdrant mode:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
-./status.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
+./scripts/status.sh
 ```
 
 To verify the full live Qdrant path from the command line, run:
@@ -220,10 +220,10 @@ queryable. Confirm Qdrant is running and click `Rebuild Index` again. If you
 want to keep testing without Qdrant, use the in-memory vector path:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=in-memory ./scripts/restart.sh
 ```
 
-If the service is unavailable, start Ollama and rerun `./status.sh`.
+If the service is unavailable, start Ollama and rerun `./scripts/status.sh`.
 
 If the embedding model is missing, install it:
 
@@ -234,7 +234,7 @@ ollama pull nomic-embed-text
 Then restart the app in vector mode:
 
 ```bash
-RAG_RETRIEVAL_MODE=vector ./restart.sh
+RAG_RETRIEVAL_MODE=vector ./scripts/restart.sh
 ```
 
 ## Empty Or Stale Index
@@ -270,9 +270,9 @@ If the local Qdrant volume is corrupted or you intentionally want to delete all
 local Qdrant data for this project, stop the app and remove the Compose volume:
 
 ```bash
-./stop.sh
+./scripts/stop.sh
 docker compose down -v
-RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh
+RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh
 ```
 
 Then open the RAG page and click `Rebuild Index`. Use `docker compose down -v`

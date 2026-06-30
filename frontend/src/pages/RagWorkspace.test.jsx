@@ -679,7 +679,7 @@ describe('RagWorkspace', () => {
         expect(screen.getByText('Not checked')).toBeInTheDocument();
         expect(screen.getByText(/Qdrant is not reachable at http:\/\/localhost:6333\. Start it and rebuild the index\./i)).toBeInTheDocument();
         expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Qdrant: not running.');
-        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Run ./restart.sh, then use Rebuild Index or Compare Retrieval Targets again.');
+        expect(screen.getByLabelText('Qdrant readiness')).toHaveTextContent('Run ./scripts/restart.sh, then use Rebuild Index or Compare Retrieval Targets again.');
     });
 
     it('shows optional qdrant readiness when lexical mode can still use qdrant comparison', async () => {

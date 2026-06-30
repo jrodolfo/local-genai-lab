@@ -46,7 +46,7 @@ class RagAnswerServiceTest {
                                 "rag-troubleshooting.md#0",
                                 "rag-troubleshooting.md",
                                 "RAG Troubleshooting",
-                                "When vector RAG is not working, run ./status.sh, confirm rag enabled: true, confirm rag retrieval mode: vector, confirm ollama service: ok, confirm ollama embedding model: present (nomic-embed-text), and click Rebuild Index after changing retrieval mode."
+                                "When vector RAG is not working, run ./scripts/status.sh, confirm rag enabled: true, confirm rag retrieval mode: vector, confirm ollama service: ok, confirm ollama embedding model: present (nomic-embed-text), and click Rebuild Index after changing retrieval mode."
                         ),
                         0.95
                 ), new RagMatch(

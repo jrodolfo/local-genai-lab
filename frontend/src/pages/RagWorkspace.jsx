@@ -817,7 +817,7 @@ function qdrantReadiness(status) {
     if (status.qdrantReachable === false) {
         return {
             label: 'Qdrant: not running.',
-            detail: 'Run ./restart.sh, then use Rebuild Index or Compare Retrieval Targets again.',
+            detail: 'Run ./scripts/restart.sh, then use Rebuild Index or Compare Retrieval Targets again.',
             className: 'rag-query-card__readiness-warning'
         };
     }

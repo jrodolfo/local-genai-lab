@@ -8,7 +8,7 @@
 #   prints Docker status, and runs the Docker smoke check.
 #
 # Usage:
-#   ./docker-verify.sh
+#   ./scripts/docker-verify.sh
 #
 # Required Tools:
 #   - bash

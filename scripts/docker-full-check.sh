@@ -7,8 +7,8 @@
 #   verification followed by an advisory Docker image security scan.
 #
 # Usage:
-#   ./docker-full-check.sh
-#   DOCKER_SCAN_STRICT=true ./docker-full-check.sh
+#   ./scripts/docker-full-check.sh
+#   DOCKER_SCAN_STRICT=true ./scripts/docker-full-check.sh
 #
 # Required Tools:
 #   - bash

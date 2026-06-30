@@ -10,7 +10,7 @@ ensure_docker_available() {
   local script_name="$1"
 
   if ! command -v docker >/dev/null 2>&1; then
-    printf '%s\n' "Error: docker was not found. Install/start Docker, then retry ./${script_name}." >&2
+    printf '%s\n' "Error: docker was not found. Install/start Docker, then retry ./scripts/${script_name}." >&2
     exit 1
   fi
 }
@@ -44,17 +44,17 @@ print_docker_free_ports_guidance() {
   printf '%s\n' \
     'Free ports:' \
     '  1. Run the port checks above and note the PID using the blocked port.' \
-    '  2. If the PID belongs to this repo host-run app, run: ./stop.sh --all' \
+    '  2. If the PID belongs to this repo host-run app, run: ./scripts/stop.sh --all' \
     '  3. If the PID belongs to another app, stop that app normally.' \
     '  4. If needed, stop a specific process with: kill <pid>' \
     '  5. Last resort only: kill -9 <pid>' \
-    '  6. Retry Docker startup with: ./docker-start.sh'
+    '  6. Retry Docker startup with: ./scripts/docker-start.sh'
 }
 
 print_docker_status_command() {
   printf '%s\n' \
     'Status:' \
-    '  ./docker-status.sh'
+    '  ./scripts/docker-status.sh'
 }
 
 print_docker_runtime_summary() {
@@ -63,7 +63,7 @@ print_docker_runtime_summary() {
   print_docker_log_commands
   printf '%s\n' \
     'Next step:' \
-    '  ./docker-check.sh' \
+    '  ./scripts/docker-check.sh' \
     '  verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
 }
 
@@ -72,7 +72,7 @@ print_docker_start_failure_summary() {
     '' \
     'Docker startup failed.' \
     'Common cause: one of the Docker ports is already in use.' \
-    'The host-run ./start.sh workflow uses backend port 8080 and frontend port 5173.' \
+    'The host-run ./scripts/start.sh workflow uses backend port 8080 and frontend port 5173.' \
     'The full Docker workflow uses backend port 8080, frontend port 3000, and Qdrant port 6333.' \
     ''
   print_docker_status_command

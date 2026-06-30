@@ -23,7 +23,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-SCRIPT_PATH="${REPO_ROOT}/docker-scan.sh"
+SCRIPT_PATH="${REPO_ROOT}/scripts/docker-scan.sh"
 
 assert_contains() {
   local haystack="$1"

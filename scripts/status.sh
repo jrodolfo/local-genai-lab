@@ -7,7 +7,7 @@
 #   process PIDs, URLs, health check results, and log file locations.
 #
 # Usage:
-#   ./status.sh
+#   ./scripts/status.sh
 #
 # Important Environment:
 #   SERVER_PORT / FRONTEND_PORT select the local URLs to inspect.
@@ -32,8 +32,9 @@ set -euo pipefail
 
 # --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
-source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
+source "${REPO_ROOT}/ops/lib/runtime-common.sh"
 
 load_env_defaults "${ENV_FILE}"
 ensure_run_dir
@@ -167,14 +168,14 @@ if curl -fsS "${BACKEND_URL}/actuator/health" >/dev/null 2>&1; then
   printf '%s\n' 'backend health: ok'
 else
   printf '%s\n' 'backend health: unavailable'
-  add_next_action "start the app with ./start.sh, or inspect ${BACKEND_LOG_FILE}"
+  add_next_action "start the app with ./scripts/start.sh, or inspect ${BACKEND_LOG_FILE}"
 fi
 
 if curl -fsS "${FRONTEND_URL}" >/dev/null 2>&1; then
   printf '%s\n' 'frontend http: ok'
 else
   printf '%s\n' 'frontend http: unavailable'
-  add_next_action "restart the app with ./restart.sh, or inspect ${FRONTEND_LOG_FILE}"
+  add_next_action "restart the app with ./scripts/restart.sh, or inspect ${FRONTEND_LOG_FILE}"
 fi
 
 # --- RAG and Ollama Readiness ---
@@ -271,7 +272,7 @@ if [ "${backend_rag_status_available}" = 'true' ]; then
     || [ "${rag_vector_store_normalized}" != "${effective_rag_vector_store}" ]; then
     printf '%s\n' \
       'warning: requested RAG config differs from the running backend.' \
-      'hint: restart with the same env values to apply it, for example RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./restart.sh'
+      'hint: restart with the same env values to apply it, for example RAG_RETRIEVAL_MODE=vector RAG_VECTOR_STORE=qdrant ./scripts/restart.sh'
     add_next_action 'restart with the same RAG env values to apply them'
   fi
 else
@@ -282,7 +283,7 @@ else
 fi
 
 if [ "${effective_rag_enabled}" != 'true' ]; then
-  add_next_action 'enable RAG with RAG_ENABLED=true ./restart.sh'
+  add_next_action 'enable RAG with RAG_ENABLED=true ./scripts/restart.sh'
 fi
 
 if [ "${needs_qdrant_status}" = 'true' ]; then
@@ -310,7 +311,7 @@ if [ "${needs_qdrant_status}" = 'true' ]; then
   else
     printf '%s\n' "qdrant service: unavailable (${effective_rag_qdrant_url})"
     printf '%s\n' 'qdrant collection: not checked'
-    add_next_action 'start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./restart.sh'
+    add_next_action 'start Qdrant with docker compose up -d qdrant, or use RAG_VECTOR_STORE=in-memory ./scripts/restart.sh'
   fi
 fi
 
@@ -334,7 +335,7 @@ if [ "${needs_ollama_status}" = 'true' ]; then
       fi
     else
       printf '%s\n' "ollama service: unavailable (${OLLAMA_BASE_URL:-http://localhost:11434})"
-      add_next_action 'start Ollama, then rerun ./status.sh'
+      add_next_action 'start Ollama, then rerun ./scripts/status.sh'
       if [ "${needs_embedding_model}" = 'true' ]; then
         printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
       fi
@@ -342,7 +343,7 @@ if [ "${needs_ollama_status}" = 'true' ]; then
   else
     printf '%s\n' 'ollama cli: missing'
     printf '%s\n' 'ollama service: not checked'
-    add_next_action 'install Ollama, then rerun ./status.sh'
+    add_next_action 'install Ollama, then rerun ./scripts/status.sh'
     if [ "${needs_embedding_model}" = 'true' ]; then
       printf '%s\n' "ollama embedding model: not checked (${effective_rag_embedding_model})"
     fi

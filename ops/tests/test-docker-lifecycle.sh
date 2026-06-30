@@ -135,7 +135,7 @@ run_script() {
     PATH="${tmp_dir}/bin:/usr/bin:/bin" \
     MOCK_DOCKER_LOG="${tmp_dir}/docker.log" \
     "$@" \
-    bash "${REPO_ROOT}/${script_name}"
+    bash "${REPO_ROOT}/scripts/${script_name}"
 }
 
 write_mock_verify_scripts() {
@@ -144,7 +144,7 @@ write_mock_verify_scripts() {
   local script_name
 
   mkdir -p "${bin_dir}"
-  cp "${REPO_ROOT}/docker-verify.sh" "${bin_dir}/docker-verify.sh"
+  cp "${REPO_ROOT}/scripts/docker-verify.sh" "${bin_dir}/docker-verify.sh"
 
   for script_name in stop.sh docker-restart.sh docker-status.sh docker-check.sh; do
     cat >"${bin_dir}/${script_name}" <<EOF
@@ -179,7 +179,7 @@ write_mock_full_check_scripts() {
   local script_name
 
   mkdir -p "${bin_dir}"
-  cp "${REPO_ROOT}/docker-full-check.sh" "${bin_dir}/docker-full-check.sh"
+  cp "${REPO_ROOT}/scripts/docker-full-check.sh" "${bin_dir}/docker-full-check.sh"
 
   for script_name in docker-verify.sh docker-scan.sh; do
     cat >"${bin_dir}/${script_name}" <<EOF
@@ -221,12 +221,12 @@ test_docker_start_runs_compose_up_build() {
   assert_contains "${output}" 'backend: http://localhost:8080'
   assert_contains "${output}" 'qdrant: http://localhost:6333'
   assert_contains "${output}" 'Status:'
-  assert_contains "${output}" './docker-status.sh'
+  assert_contains "${output}" './scripts/docker-status.sh'
   assert_contains "${output}" 'Logs:'
   assert_contains "${output}" 'all services: docker compose logs -f'
   assert_contains "${output}" 'backend: docker compose logs -f backend'
   assert_contains "${output}" 'Next step:'
-  assert_contains "${output}" './docker-check.sh'
+  assert_contains "${output}" './scripts/docker-check.sh'
   assert_contains "${output}" 'verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
@@ -251,15 +251,15 @@ test_docker_start_failure_prints_actionable_summary() {
   fi
   assert_contains "${output}" 'Docker startup failed.'
   assert_contains "${output}" 'Common cause: one of the Docker ports is already in use.'
-  assert_contains "${output}" 'The host-run ./start.sh workflow uses backend port 8080 and frontend port 5173.'
+  assert_contains "${output}" 'The host-run ./scripts/start.sh workflow uses backend port 8080 and frontend port 5173.'
   assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
   assert_contains "${output}" 'Free ports:'
-  assert_contains "${output}" 'If the PID belongs to this repo host-run app, run: ./stop.sh --all'
+  assert_contains "${output}" 'If the PID belongs to this repo host-run app, run: ./scripts/stop.sh --all'
   assert_contains "${output}" 'If needed, stop a specific process with: kill <pid>'
   assert_contains "${output}" 'Last resort only: kill -9 <pid>'
-  assert_contains "${output}" 'Retry Docker startup with: ./docker-start.sh'
+  assert_contains "${output}" 'Retry Docker startup with: ./scripts/docker-start.sh'
   assert_contains "${output}" 'backend: docker compose logs -f backend'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
@@ -280,7 +280,7 @@ test_docker_stop_runs_compose_down() {
   assert_contains "${output}" 'Remaining Docker Compose services after stop:'
   assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
   assert_contains "${output}" 'Status:'
-  assert_contains "${output}" './docker-status.sh'
+  assert_contains "${output}" './scripts/docker-status.sh'
   assert_file_contains "${tmp_dir}/docker.log" 'compose ps -a'
   assert_file_contains "${tmp_dir}/docker.log" 'compose down --remove-orphans'
   rm -rf "${tmp_dir}"
@@ -301,7 +301,7 @@ test_docker_restart_runs_down_then_up() {
   assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
   assert_contains "${output}" 'Docker stack started.'
   assert_contains "${output}" 'Next step:'
-  assert_contains "${output}" './docker-check.sh'
+  assert_contains "${output}" './scripts/docker-check.sh'
   if [ "${actual_log}" != "${expected_log}" ]; then
     printf 'expected docker calls:\n%s\nactual docker calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
     exit 1
@@ -334,9 +334,9 @@ test_docker_status_runs_compose_ps() {
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
   assert_contains "${output}" 'Free ports:'
-  assert_contains "${output}" './stop.sh --all'
+  assert_contains "${output}" './scripts/stop.sh --all'
   assert_contains "${output}" 'kill <pid>'
-  assert_contains "${output}" './docker-start.sh'
+  assert_contains "${output}" './scripts/docker-start.sh'
   assert_file_contains "${tmp_dir}/docker.log" 'compose ps'
   rm -rf "${tmp_dir}"
 }
@@ -404,7 +404,7 @@ test_docker_check_fails_with_actionable_output() {
   assert_contains "${output}" 'url: http://localhost:8080/api/models'
   assert_contains "${output}" 'logs: docker compose logs -f backend'
   assert_contains "${output}" 'Docker smoke check failed.'
-  assert_contains "${output}" 'Run ./docker-status.sh for Compose status, readiness, logs, and port diagnostics.'
+  assert_contains "${output}" 'Run ./scripts/docker-status.sh for Compose status, readiness, logs, and port diagnostics.'
   rm -rf "${tmp_dir}"
 }
 

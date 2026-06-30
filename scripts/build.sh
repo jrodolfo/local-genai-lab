@@ -4,11 +4,11 @@
 #
 # Purpose:
 #   Builds local-genai-lab artifacts without starting or stopping the app.
-#   Run this before ./restart.sh when you want a fresh backend/frontend/MCP
+#   Run this before ./scripts/restart.sh when you want a fresh backend/frontend/MCP
 #   build from the current source tree.
 #
 # Usage:
-#   ./build.sh [--skip-tests] [--clean-frontend]
+#   ./scripts/build.sh [--skip-tests] [--clean-frontend]
 #
 # Options:
 #   --skip-tests       Build the backend package without running backend tests.
@@ -32,7 +32,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="${SCRIPT_DIR}"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 SKIP_TESTS=false
 CLEAN_FRONTEND=false

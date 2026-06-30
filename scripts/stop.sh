@@ -8,8 +8,8 @@
 #   processes currently listening on the configured backend/frontend ports.
 #
 # Usage:
-#   ./stop.sh
-#   ./stop.sh --all
+#   ./scripts/stop.sh
+#   ./scripts/stop.sh --all
 #
 # Important Environment:
 #   SERVER_PORT / FRONTEND_PORT select which unmanaged port owners --all may stop.
@@ -31,8 +31,9 @@ set -euo pipefail
 
 # --- Initialization ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/runtime-common.sh
-source "${SCRIPT_DIR}/ops/lib/runtime-common.sh"
+source "${REPO_ROOT}/ops/lib/runtime-common.sh"
 
 load_env_defaults "${ENV_FILE}"
 ensure_run_dir
@@ -49,7 +50,7 @@ while [ "$#" -gt 0 ]; do
       ;;
     *)
       printf '%s\n' "Unknown option: $1" >&2
-      printf '%s\n' 'Usage: ./stop.sh [--all]' >&2
+      printf '%s\n' 'Usage: ./scripts/stop.sh [--all]' >&2
       exit 1
       ;;
   esac

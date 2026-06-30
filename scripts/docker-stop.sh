@@ -6,7 +6,7 @@
 #   Stops the full local-genai-lab Docker Compose stack.
 #
 # Usage:
-#   ./docker-stop.sh
+#   ./scripts/docker-stop.sh
 #
 # Required Tools:
 #   - bash
@@ -22,15 +22,16 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # shellcheck source=ops/lib/docker-lifecycle-common.sh
-source "${SCRIPT_DIR}/ops/lib/docker-lifecycle-common.sh"
+source "${REPO_ROOT}/ops/lib/docker-lifecycle-common.sh"
 
 ensure_docker_available 'docker-stop.sh'
 
 printf '%s\n' 'Stopping local-genai-lab Docker Compose stack'
 
 (
-  cd "${SCRIPT_DIR}"
+  cd "${REPO_ROOT}"
   printf '%s\n' 'Current Docker Compose services:'
   docker compose ps -a
   docker compose down --remove-orphans
