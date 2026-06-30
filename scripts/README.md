@@ -22,6 +22,7 @@ Host-run app lifecycle:
 Docker lifecycle:
 
 ```bash
+./scripts/docker-sanity-check.sh
 ./scripts/docker-start.sh
 ./scripts/docker-stop.sh
 ./scripts/docker-restart.sh
@@ -31,6 +32,15 @@ Docker lifecycle:
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh
 ./scripts/release-check.sh
+```
+
+`docker-sanity-check.sh` is the fastest Docker preflight. It verifies that the
+Docker daemon and Compose plugin are reachable before you spend time on image
+builds, Compose startup, or Trivy scans. To also prove Docker can run a
+container, use:
+
+```bash
+DOCKER_SANITY_RUN_HELLO_WORLD=true ./scripts/docker-sanity-check.sh
 ```
 
 Release validation:

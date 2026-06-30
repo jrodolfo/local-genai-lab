@@ -90,6 +90,21 @@ if [ "${1:-}" = "compose" ] && [ "${2:-}" = "ps" ]; then
   printf '%s\n' 'llm-frontend  running'
   printf '%s\n' 'llm-qdrant    running'
 fi
+if [ "${MOCK_DOCKER_FAIL_VERSION:-false}" = "true" ] && [ "${1:-}" = "version" ]; then
+  printf '%s\n' 'mock docker version failed' >&2
+  exit 1
+fi
+if [ "${MOCK_DOCKER_FAIL_COMPOSE_VERSION:-false}" = "true" ] \
+  && [ "${1:-}" = "compose" ] \
+  && [ "${2:-}" = "version" ]; then
+  printf '%s\n' 'mock docker compose version failed' >&2
+  exit 1
+fi
+if [ "${MOCK_DOCKER_FAIL_RUN:-false}" = "true" ] \
+  && [ "${1:-}" = "run" ]; then
+  printf '%s\n' 'mock docker run failed' >&2
+  exit 1
+fi
 EOF
 
   chmod +x "${bin_dir}/docker"
@@ -274,6 +289,76 @@ test_docker_start_failure_prints_actionable_summary() {
   assert_contains "${output}" 'Retry Docker startup with: ./scripts/docker-start.sh'
   assert_contains "${output}" 'backend: docker compose logs -f backend'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_sanity_check_passes_without_running_container_by_default() {
+  local tmp_dir output actual_log expected_log
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-sanity-check.sh)"
+  expected_log=$'version\ncompose version'
+  actual_log="$(cat "${tmp_dir}/docker.log")"
+
+  assert_contains "${output}" 'Docker sanity check'
+  assert_contains "${output}" 'checking: Docker daemon... ok'
+  assert_contains "${output}" 'checking: Docker Compose plugin... ok'
+  assert_contains "${output}" 'skipped: hello-world container check'
+  assert_contains "${output}" 'Docker sanity check passed.'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected docker calls:\n%s\nactual docker calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_sanity_check_can_run_hello_world() {
+  local tmp_dir output actual_log expected_log
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-sanity-check.sh DOCKER_SANITY_RUN_HELLO_WORLD=true)"
+  expected_log=$'version\ncompose version\nrun --rm hello-world'
+  actual_log="$(cat "${tmp_dir}/docker.log")"
+
+  assert_contains "${output}" 'checking: hello-world container... ok'
+  assert_contains "${output}" 'Docker sanity check passed.'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected docker calls:\n%s\nactual docker calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_sanity_check_fails_with_actionable_guidance() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-sanity-check.sh MOCK_DOCKER_FAIL_VERSION=true 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-sanity-check.sh to fail when docker version fails' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'checking: Docker daemon... failed'
+  assert_contains "${output}" 'Docker sanity check failed at: Docker daemon'
+  assert_contains "${output}" 'Start or restart Docker Desktop.'
+  assert_contains "${output}" 'docker context ls'
+  assert_contains "${output}" 'docker context use desktop-linux'
   rm -rf "${tmp_dir}"
 }
 
@@ -495,6 +580,9 @@ main() {
   test_docker_frontend_proxy_supports_long_llm_requests
   test_docker_start_runs_compose_up_build
   test_docker_start_failure_prints_actionable_summary
+  test_docker_sanity_check_passes_without_running_container_by_default
+  test_docker_sanity_check_can_run_hello_world
+  test_docker_sanity_check_fails_with_actionable_guidance
   test_docker_stop_runs_compose_down
   test_docker_restart_runs_down_then_up
   test_docker_status_runs_compose_ps
