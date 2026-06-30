@@ -104,12 +104,23 @@ set -euo pipefail
 url="${*: -1}"
 case "${url}" in
   http://localhost:8080/actuator/health)
+    if [ -n "${MOCK_BACKEND_HEALTH_FAILS_BEFORE_OK:-}" ]; then
+      count_file="${MOCK_CURL_STATE_DIR}/backend-health-count"
+      count=0
+      if [ -f "${count_file}" ]; then
+        count="$(cat "${count_file}")"
+      fi
+      count="$((count + 1))"
+      printf '%s\n' "${count}" >"${count_file}"
+      [ "${count}" -le "${MOCK_BACKEND_HEALTH_FAILS_BEFORE_OK}" ] && exit 1
+      exit 0
+    fi
     [ "${MOCK_BACKEND_HTTP:-ok}" = "ok" ] && exit 0
     ;;
   http://localhost:3000)
     [ "${MOCK_FRONTEND_HTTP:-ok}" = "ok" ] && exit 0
     ;;
-  http://localhost:6333)
+  http://localhost:6333/healthz)
     [ "${MOCK_QDRANT_HTTP:-ok}" = "ok" ] && exit 0
     ;;
   http://localhost:8080/api/models)
@@ -134,6 +145,7 @@ run_script() {
     HOME="${HOME:-}" \
     PATH="${tmp_dir}/bin:/usr/bin:/bin" \
     MOCK_DOCKER_LOG="${tmp_dir}/docker.log" \
+    MOCK_CURL_STATE_DIR="${tmp_dir}" \
     "$@" \
     bash "${REPO_ROOT}/scripts/${script_name}"
 }
@@ -372,11 +384,31 @@ test_docker_check_passes_when_all_endpoints_respond() {
   output="$(run_script "${tmp_dir}" docker-check.sh)"
 
   assert_contains "${output}" 'Checking local-genai-lab Docker Compose stack'
+  assert_contains "${output}" 'checking: backend health'
   assert_contains "${output}" 'pass: backend health'
   assert_contains "${output}" 'pass: frontend http'
   assert_contains "${output}" 'pass: qdrant http'
   assert_contains "${output}" 'pass: backend models api'
   assert_contains "${output}" 'pass: backend rag status api'
+  assert_contains "${output}" 'Docker smoke check passed.'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_check_retries_until_backend_health_is_ready() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-check.sh \
+    DOCKER_CHECK_TIMEOUT_SECONDS=5 \
+    DOCKER_CHECK_INTERVAL_SECONDS=1 \
+    MOCK_BACKEND_HEALTH_FAILS_BEFORE_OK=1)"
+
+  assert_contains "${output}" 'checking: backend health .'
+  assert_contains "${output}" 'pass: backend health'
   assert_contains "${output}" 'Docker smoke check passed.'
   rm -rf "${tmp_dir}"
 }
@@ -390,7 +422,12 @@ test_docker_check_fails_with_actionable_output() {
   write_mock_curl "${tmp_dir}/bin"
 
   set +e
-  output="$(run_script "${tmp_dir}" docker-check.sh MOCK_BACKEND_HTTP=down MOCK_MODELS_API=down 2>&1)"
+  output="$(run_script "${tmp_dir}" docker-check.sh \
+    DOCKER_CHECK_TIMEOUT_SECONDS=1 \
+    DOCKER_CHECK_INTERVAL_SECONDS=1 \
+    MOCK_BACKEND_HTTP=down \
+    MOCK_MODELS_API=down \
+    2>&1)"
   status=$?
   set -e
 
@@ -463,6 +500,7 @@ main() {
   test_docker_status_runs_compose_ps
   test_docker_status_reports_unavailable_services_with_next_actions
   test_docker_check_passes_when_all_endpoints_respond
+  test_docker_check_retries_until_backend_health_is_ready
   test_docker_check_fails_with_actionable_output
   test_docker_verify_runs_full_workflow_in_order
   test_docker_full_check_runs_verify_then_scan

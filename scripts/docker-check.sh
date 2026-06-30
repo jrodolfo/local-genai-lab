@@ -16,6 +16,8 @@
 #
 # Expected Output:
 #   Pass/fail lines for backend, frontend, Qdrant, models API, and RAG status.
+#   Endpoints are retried briefly so this can run immediately after Docker
+#   startup without failing on transient backend readiness delay.
 #
 # Exit Behavior:
 #   Exits with 0 when all checks pass, 1 when any check fails.
@@ -34,15 +36,61 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 failed=false
+DOCKER_CHECK_TIMEOUT_SECONDS="${DOCKER_CHECK_TIMEOUT_SECONDS:-90}"
+DOCKER_CHECK_INTERVAL_SECONDS="${DOCKER_CHECK_INTERVAL_SECONDS:-3}"
+
+is_positive_integer() {
+  case "$1" in
+    ''|*[!0-9]*)
+      return 1
+      ;;
+    *)
+      [ "$1" -gt 0 ]
+      ;;
+  esac
+}
+
+if ! is_positive_integer "${DOCKER_CHECK_TIMEOUT_SECONDS}"; then
+  printf 'Error: DOCKER_CHECK_TIMEOUT_SECONDS must be a positive integer, got: %s\n' "${DOCKER_CHECK_TIMEOUT_SECONDS}" >&2
+  exit 1
+fi
+
+if ! is_positive_integer "${DOCKER_CHECK_INTERVAL_SECONDS}"; then
+  printf 'Error: DOCKER_CHECK_INTERVAL_SECONDS must be a positive integer, got: %s\n' "${DOCKER_CHECK_INTERVAL_SECONDS}" >&2
+  exit 1
+fi
+
+wait_for_url() {
+  local url="$1"
+  local start_time elapsed
+
+  start_time="$(date +%s)"
+  while true; do
+    if curl -fsS --connect-timeout 2 --max-time 8 "${url}" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    elapsed="$(( $(date +%s) - start_time ))"
+    if [ "${elapsed}" -ge "${DOCKER_CHECK_TIMEOUT_SECONDS}" ]; then
+      return 1
+    fi
+
+    printf '.'
+    sleep "${DOCKER_CHECK_INTERVAL_SECONDS}"
+  done
+}
 
 run_check() {
   local name="$1"
   local url="$2"
   local log_command="$3"
 
-  if curl -fsS --connect-timeout 2 --max-time 8 "${url}" >/dev/null 2>&1; then
+  printf 'checking: %s ' "${name}"
+  if wait_for_url "${url}"; then
+    printf '\n'
     printf '%s\n' "pass: ${name}"
   else
+    printf '\n'
     printf '%s\n' "fail: ${name}"
     printf '%s\n' "  url: ${url}"
     printf '%s\n' "  logs: ${log_command}"
@@ -54,7 +102,7 @@ printf '%s\n' 'Checking local-genai-lab Docker Compose stack'
 
 run_check 'backend health' 'http://localhost:8080/actuator/health' 'docker compose logs -f backend'
 run_check 'frontend http' 'http://localhost:3000' 'docker compose logs -f frontend'
-run_check 'qdrant http' 'http://localhost:6333' 'docker compose logs -f qdrant'
+run_check 'qdrant http' 'http://localhost:6333/healthz' 'docker compose logs -f qdrant'
 run_check 'backend models api' 'http://localhost:8080/api/models' 'docker compose logs -f backend'
 run_check 'backend rag status api' 'http://localhost:8080/api/rag/status' 'docker compose logs -f backend'
 
