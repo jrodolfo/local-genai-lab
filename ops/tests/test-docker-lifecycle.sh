@@ -3,8 +3,8 @@
 # test-docker-lifecycle.sh
 #
 # Purpose:
-#   Unit tests for root Docker lifecycle scripts. Uses a mocked docker command
-#   so tests verify script behavior without starting real containers.
+#   Unit tests for scripts/ Docker lifecycle commands. Uses a mocked docker
+#   command so tests verify script behavior without starting real containers.
 #
 # Usage:
 #   ./ops/tests/test-docker-lifecycle.sh

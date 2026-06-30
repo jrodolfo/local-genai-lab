@@ -94,7 +94,7 @@ The Mermaid diagram should include:
 
 ## Lifecycle And Script Commands
 
-Root app lifecycle commands are:
+App lifecycle commands run from the repository root are:
 
 ```bash
 ./scripts/start.sh
@@ -112,7 +112,7 @@ Root app lifecycle commands are:
 ./scripts/docker-full-check.sh
 ```
 
-Root Makefile commands are:
+Makefile commands run from the repository root are:
 
 ```bash
 make test
@@ -126,6 +126,7 @@ make dependency-freshness
 Check that:
 
 - `agents/README.md` documents MCP/tool shell scripts, not app lifecycle
+- `scripts/README.md` documents human-facing lifecycle and Docker commands
 - `docs/release-checklist.md` documents when to run dependency freshness checks
 - dependency freshness is documented as a maintenance report, not as an app
   lifecycle command

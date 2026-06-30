@@ -2,7 +2,7 @@
 
 This directory contains local app runtime helpers.
 
-Use the repository root for the public lifecycle commands:
+Run the public lifecycle commands from the repository root:
 
 ```bash
 ./scripts/start.sh
@@ -98,8 +98,10 @@ make test-ops
 
 What does not belong in `ops/`:
 
+- human-facing lifecycle commands
 - MCP tool scripts
 - AWS audit/report generators
 - MCP-facing report artifacts
 
-Those stay under [`agents/`](../agents/README.md).
+Human-facing lifecycle commands stay under [`scripts/`](../scripts/README.md).
+MCP/tool report scripts and artifacts stay under [`agents/`](../agents/README.md).

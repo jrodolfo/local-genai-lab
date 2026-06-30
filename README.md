@@ -117,7 +117,8 @@ local-genai-lab/
 │   ├── docker-check.sh
 │   ├── docker-verify.sh
 │   ├── docker-scan.sh
-│   └── docker-full-check.sh
+│   ├── docker-full-check.sh
+│   └── README.md
 ├── ops/
 │   ├── lib/
 │   ├── tests/
@@ -607,9 +608,10 @@ Artifact API note:
 - artifact endpoints accept only paths relative to that configured reports directory
 - absolute artifact paths are rejected intentionally so the backend keeps a strict read-only boundary
 
-## Shell Scripts
+## Command Folders
 
-The agent/tool shell tooling lives under [`agents/`](./agents). Useful entrypoints:
+Human-facing lifecycle commands live under [`scripts/`](./scripts). The root
+`Makefile` calls those scripts, so either style is valid:
 
 ```bash
 make help
@@ -617,6 +619,13 @@ make test
 make verify
 make check-app
 make dependency-freshness
+./scripts/status.sh
+./scripts/docker-check.sh
+```
+
+Agent/tool shell tooling lives under [`agents/`](./agents):
+
+```bash
 cd agents
 make help
 make test
@@ -639,6 +648,7 @@ make s3-cloudwatch BUCKET=example.com
 - [docs/adr/](./docs/adr/): accepted architecture decision records, including the phase-2 RAG vector retrieval direction
 - [docs/testing.md](./docs/testing.md): automated suites, manual smoke tests, and current non-automated areas
 - [docs/troubleshooting.md](./docs/troubleshooting.md): common local runtime problems and practical fixes
+- [scripts/README.md](./scripts/README.md): human-facing lifecycle, build, and Docker commands
 - [backend/README.md](./backend/README.md): backend API, provider config, MCP integration, Actuator, sessions, Bedrock notes
 - [frontend/README.md](./frontend/README.md): frontend-specific details
 - [ops/README.md](./ops/README.md): local runtime helpers and lifecycle support files

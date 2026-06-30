@@ -7,7 +7,7 @@
 #   runtime management (backend/frontend).
 #
 # Design Notes:
-#   Functions are intentionally POSIX-ish Bash helpers used by root scripts.
+#   Functions are intentionally POSIX-ish Bash helpers used by scripts/ commands.
 #   load_env_defaults never overwrites variables already set in the caller's
 #   shell, so one-off commands such as SERVER_PORT=8090 ./scripts/start.sh work.
 #

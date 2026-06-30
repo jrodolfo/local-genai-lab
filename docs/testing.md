@@ -275,6 +275,7 @@ Covers:
 - app lifecycle helper behavior, including `status.sh` RAG/Ollama readiness output
 
 Use this suite when changing:
+- `scripts/` lifecycle commands
 - `aws-region-audit-report.sh`
 - `aws-s3-cloudwatch-report.sh`
 - helper startup/check scripts

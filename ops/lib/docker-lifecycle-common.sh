@@ -3,7 +3,7 @@
 # docker-lifecycle-common.sh
 #
 # Purpose:
-#   Shared output helpers for root Docker lifecycle scripts.
+#   Shared output helpers for scripts/ Docker lifecycle commands.
 #
 
 ensure_docker_available() {

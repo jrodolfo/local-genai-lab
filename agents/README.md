@@ -9,23 +9,9 @@ Shell-based AWS audit and S3 CloudWatch helpers used by the main application and
 
 This directory is for agent/tool-facing scripts, generated report artifacts, and their shell tests.
 
-Use the repository root for local app lifecycle commands:
-
-```bash
-./scripts/start.sh
-./scripts/stop.sh
-./scripts/restart.sh
-./scripts/status.sh
-./scripts/docker-start.sh
-./scripts/docker-stop.sh
-./scripts/docker-restart.sh
-./scripts/docker-status.sh
-./scripts/docker-check.sh
-./scripts/docker-verify.sh
-./scripts/docker-scan.sh
-```
-
-or:
+Use the repository root for local app lifecycle commands. Those commands live
+under [`../scripts`](../scripts/README.md) and are also exposed through the root
+`Makefile`:
 
 ```bash
 make start

@@ -27,7 +27,7 @@ help:
 		'  make s3-cloudwatch BUCKET=example.com' \
 		'                Optional: make s3-cloudwatch BUCKET=example.com REGION=us-east-2' \
 		'                Optional: make s3-cloudwatch BUCKET=example.com DAYS=30' \
-		'  See the repository root Makefile for app lifecycle and local runtime checks.'
+		'  See ../Makefile and ../scripts/README.md for app lifecycle and local runtime checks.'
 
 reports:
 	@mkdir -p "$(REPORTS_DIR)"
