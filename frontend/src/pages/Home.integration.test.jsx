@@ -4,6 +4,14 @@ import Home from './Home';
 import {http, HttpResponse, server, sseEventChunk, sseStreamResponse} from '../test/mswServer';
 import {defaultRuntimeHandlers} from '../test/mswHandlers';
 
+async function waitForSelectValue(roleOptions, value) {
+    const select = await screen.findByRole('combobox', roleOptions);
+    await waitFor(() => {
+        expect(select).toHaveValue(value);
+    });
+    return select;
+}
+
 describe('Home integration', () => {
     beforeEach(() => {
         window.localStorage.clear();
@@ -52,7 +60,7 @@ describe('Home integration', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        expect(await screen.findByRole('combobox', {name: /model/i})).toHaveValue('llama3:8b');
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.click(screen.getByLabelText(/Streaming/i));
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
         await user.click(screen.getByRole('button', {name: /send/i}));
@@ -76,7 +84,7 @@ describe('Home integration', () => {
 
         render(<Home/>);
 
-        expect(await screen.findByRole('combobox', {name: /chat provider/i})).toHaveValue('ollama');
+        await waitForSelectValue({name: /chat provider/i}, 'ollama');
         expect(screen.getByText(/provider: Ollama/i)).toBeInTheDocument();
         expect(await screen.findByText(/Ollama status: ready/i)).toBeInTheDocument();
         expect(screen.getByText(/Last checked:/i)).toBeInTheDocument();
@@ -141,7 +149,7 @@ describe('Home integration', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        expect(await screen.findByRole('combobox', {name: /model/i})).toHaveValue('llama3:8b');
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'stream hello');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
@@ -221,7 +229,7 @@ describe('Home integration', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        await screen.findByRole('combobox', {name: /model/i});
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run aws audit');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
@@ -244,7 +252,7 @@ describe('Home integration', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        await screen.findByRole('combobox', {name: /model/i});
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'stream fail');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
@@ -279,7 +287,7 @@ describe('Home integration', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        await screen.findByRole('combobox', {name: /model/i});
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'cancel this stream');
         await user.click(screen.getByRole('button', {name: /send/i}));
 

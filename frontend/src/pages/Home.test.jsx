@@ -33,6 +33,14 @@ vi.mock('../api/sessionApi', () => ({
     importSession: vi.fn()
 }));
 
+async function waitForSelectValue(roleOptions, value) {
+    const select = await screen.findByRole('combobox', roleOptions);
+    await waitFor(() => {
+        expect(select).toHaveValue(value);
+    });
+    return select;
+}
+
 describe('Home', () => {
     let scrollToSpy;
 
@@ -329,7 +337,7 @@ describe('Home', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        expect(await screen.findByRole('combobox', {name: /chat provider/i})).toHaveValue('ollama');
+        await waitForSelectValue({name: /chat provider/i}, 'ollama');
         await user.selectOptions(screen.getByRole('combobox', {name: /chat provider/i}), 'bedrock');
 
         await waitFor(() => {
@@ -649,7 +657,7 @@ describe('Home', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        expect(await screen.findByRole('combobox', {name: /chat provider/i})).toHaveValue('ollama');
+        await waitForSelectValue({name: /chat provider/i}, 'ollama');
         await user.selectOptions(screen.getByRole('combobox', {name: /chat provider/i}), 'bedrock');
 
         expect(await screen.findByText(/No models are configured for the active provider/i)).toBeInTheDocument();
@@ -702,7 +710,7 @@ describe('Home', () => {
         render(<Home/>);
         const user = userEvent.setup();
 
-        await screen.findByRole('combobox', {name: /model/i});
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'read the latest audit report');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
