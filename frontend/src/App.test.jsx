@@ -46,12 +46,16 @@ describe('App mode navigation', () => {
         const agentTab = await screen.findByRole('tab', {name: /agent/i});
         const ragTab = await screen.findByRole('tab', {name: /^rag$/i});
         expect(ragTab.compareDocumentPosition(agentTab) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-        expect(screen.getByLabelText(/project attribution/i)).toHaveTextContent(/Software Developer: Rod Oliveira/i);
-        expect(screen.getByRole('link', {name: /GitHub repo/i})).toHaveAttribute(
+        expect(screen.getByLabelText(/project attribution/i)).toHaveTextContent(/© 2026 Rod Oliveira \| MIT License \| GitHub Repo/i);
+        expect(screen.getByRole('link', {name: /Rod Oliveira/i})).toHaveAttribute('href', 'https://jrodolfo.net/');
+        expect(screen.getByRole('link', {name: /MIT License/i})).toHaveAttribute(
+            'href',
+            'https://github.com/jrodolfo/local-genai-lab/blob/main/LICENSE'
+        );
+        expect(screen.getByRole('link', {name: /GitHub Repo/i})).toHaveAttribute(
             'href',
             'https://github.com/jrodolfo/local-genai-lab'
         );
-        expect(screen.getByRole('link', {name: /Website/i})).toHaveAttribute('href', 'https://jrodolfo.net');
         expect(agentTab).toBeDisabled();
         expect(agentTab).toHaveAttribute('aria-selected', 'true');
         expect(ragTab).toBeDisabled();

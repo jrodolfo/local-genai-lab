@@ -48,20 +48,19 @@ function App() {
     return (
         <div className="app-shell">
             <header className="app-nav">
-                <div className="app-nav__identity">
-                    <div className="app-nav__brand">Local GenAI Lab</div>
-                    <div className="app-nav__meta" aria-label="Project attribution">
-                        <span>Software Developer: Rod Oliveira</span>
-                        <a href="https://github.com/jrodolfo/local-genai-lab" target="_blank" rel="noreferrer">
-                            GitHub repo
-                        </a>
-                        <a href="https://jrodolfo.net" target="_blank" rel="noreferrer">
-                            Website
-                        </a>
-                        <span>© 2026 Rod Oliveira</span>
-                        <span>MIT License</span>
-                    </div>
+                <div className="app-nav__credits" aria-label="Project attribution">
+                    <span>© 2026 </span>
+                    <a href="https://jrodolfo.net/" target="_blank" rel="noreferrer">Rod Oliveira</a>
+                    <span aria-hidden="true"> | </span>
+                    <a href="https://github.com/jrodolfo/local-genai-lab/blob/main/LICENSE" target="_blank" rel="noreferrer">
+                        MIT License
+                    </a>
+                    <span aria-hidden="true"> | </span>
+                    <a href="https://github.com/jrodolfo/local-genai-lab" target="_blank" rel="noreferrer">
+                        GitHub Repo
+                    </a>
                 </div>
+                <div className="app-nav__brand">Local GenAI Lab</div>
                 <div className="app-nav__tabs" role="tablist" aria-label="Application modes">
                     <button
                         type="button"
