@@ -18,12 +18,16 @@
 }
 
 .app-nav__brand {
-    color: var(--blue-900);
+    background: linear-gradient(135deg, #0f3f7f 12%, #d97706 88%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
     font-family: "IBM Plex Serif", Georgia, serif;
-    font-size: clamp(1.15rem, 2.1vw, 1.65rem);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: clamp(1.55rem, 3vw, 2.25rem);
+    font-weight: 800;
+    letter-spacing: -0.045em;
     text-align: center;
+    text-shadow: 0 8px 22px rgba(16, 42, 86, 0.12);
     white-space: nowrap;
 }
 
@@ -62,8 +66,9 @@
     color: var(--blue-900);
     cursor: pointer;
     font: inherit;
+    font-size: 0.9rem;
     font-weight: 700;
-    padding: 0.55rem 0.9rem;
+    padding: 0.45rem 0.78rem;
     transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease, transform 160ms ease;
 }
 
@@ -141,6 +146,7 @@
 
     .app-nav__brand {
         order: 1;
+        white-space: normal;
     }
 
     .app-nav__tabs {
