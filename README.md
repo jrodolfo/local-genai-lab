@@ -153,7 +153,7 @@ Script separation:
 
 Docker note:
 
-- the backend Docker image intentionally includes the built MCP server, Node 20.12+, the MCP tool scripts, and empty report directories
+- the backend Docker image intentionally includes the built MCP server, Node 20.19+, the MCP tool scripts, and empty report directories
 - this keeps Docker mode aligned with host-run mode and allows `/actuator/health` to validate MCP and storage paths correctly
 - generated report artifacts are not copied into the image; Docker starts with empty report directories
 
@@ -161,7 +161,7 @@ Docker note:
 
 - Java 21. The backend build enforces Java 21; confirm with `java -version` before building or running backend tests.
 - Maven 3.9+. The backend build enforces this minimum Maven version.
-- Node 20.12+
+- Node 20.19+
 - Ollama installed locally for the default provider
 - Docker + Docker Compose, optional
 - AWS CLI v2 + `jq` + valid AWS credentials, only for AWS shell tools and local MCP-backed report flows
