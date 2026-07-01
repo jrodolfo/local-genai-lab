@@ -13,6 +13,8 @@ MVN_BIN="${MVN_BIN:-mvn}"
 NPM_BIN="${NPM_BIN:-npm}"
 CURL_BIN="${CURL_BIN:-curl}"
 DEPENDENCY_FRESHNESS_REGISTRY="${DEPENDENCY_FRESHNESS_REGISTRY:-false}"
+DEPENDENCY_FRESHNESS_SUMMARY_FILE=""
+DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE=""
 
 section() {
   printf '\n%s\n' "$1"
@@ -36,6 +38,61 @@ run_report_command() {
     printf 'warning: command exited with status %s; continuing because this report is advisory\n' "$status"
   fi
   return 0
+}
+
+add_summary() {
+  local message="$1"
+
+  if [ -n "$DEPENDENCY_FRESHNESS_SUMMARY_FILE" ]; then
+    printf '%s\n' "$message" >>"$DEPENDENCY_FRESHNESS_SUMMARY_FILE"
+  fi
+}
+
+add_suggestion() {
+  local branch_name="$1"
+  local reason="$2"
+  local line="${branch_name} - ${reason}"
+
+  if [ -z "$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE" ]; then
+    return 0
+  fi
+  if ! grep -Fxq "$line" "$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE" 2>/dev/null; then
+    printf '%s\n' "$line" >>"$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE"
+  fi
+}
+
+package_reported() {
+  local output_file="$1"
+  local package_name="$2"
+
+  awk -v package_name="$package_name" '$1 == package_name { found=1 } END { exit found ? 0 : 1 }' "$output_file"
+}
+
+record_npm_triage() {
+  local project_name="$1"
+  local output_file="$2"
+
+  case "$project_name" in
+    frontend)
+      if package_reported "$output_file" "jsdom"; then
+        add_suggestion "frontend-jsdom-readiness" "jsdom test-environment modernization"
+      fi
+      if package_reported "$output_file" "vite" || package_reported "$output_file" "@vitejs/plugin-react"; then
+        add_suggestion "frontend-vite-readiness" "Vite build-tooling modernization"
+      fi
+      if package_reported "$output_file" "react" || package_reported "$output_file" "react-dom"; then
+        add_suggestion "frontend-react-19-readiness" "React runtime modernization"
+      fi
+      ;;
+    mcp)
+      if package_reported "$output_file" "typescript"; then
+        add_suggestion "mcp-typescript-6-readiness" "MCP TypeScript modernization"
+      fi
+      if package_reported "$output_file" "zod"; then
+        add_suggestion "mcp-zod-4-readiness" "MCP Zod modernization"
+      fi
+      ;;
+  esac
 }
 
 report_maven() {
@@ -92,12 +149,16 @@ report_npm_project() {
       1)
         if grep -Eiq '(^npm error|^npm ERR!|ENOTFOUND|EAI_AGAIN|network request|network connectivity)' "$output_file" 2>/dev/null; then
           printf 'warning: npm outdated could not complete; continuing because this report is advisory\n'
+          add_summary "${project_name} npm: could not complete npm outdated"
         else
           printf 'note: npm reports outdated packages above\n'
+          add_summary "${project_name} npm: outdated packages reported"
+          record_npm_triage "$project_name" "$output_file"
         fi
         ;;
       *)
         printf 'warning: npm outdated exited with status %s; continuing because this report is advisory\n' "$status"
+        add_summary "${project_name} npm: npm outdated exited with status ${status}"
         ;;
     esac
     rm -f "$output_file"
@@ -221,7 +282,14 @@ report_docker() {
       printf '  tag: %s\n' "$tag"
       if is_moving_tag "$tag"; then
         printf '  warning: moving tag detected; prefer a pinned version tag for reproducibility\n'
+        add_summary "Docker: moving tag detected (${ref})"
+        add_suggestion "docker-image-freshness-triage" "replace moving Docker tags with pinned version tags"
       fi
+      case "$image" in
+        qdrant/qdrant)
+          add_suggestion "qdrant-image-freshness-triage" "review Qdrant image freshness and scan findings"
+          ;;
+      esac
       report_registry_metadata "$image"
     done < <(docker_refs_from_file "$file")
   done < <(docker_files)
@@ -234,7 +302,32 @@ report_docker() {
   fi
 }
 
+print_triage_summary() {
+  section "Triage summary"
+
+  printf '%s\n' \
+    'This summary is advisory. It helps choose small follow-up branches; it does not mean upgrade everything.'
+
+  printf '\n%s\n' 'Signals:'
+  if [ -s "$DEPENDENCY_FRESHNESS_SUMMARY_FILE" ]; then
+    sed 's/^/  - /' "$DEPENDENCY_FRESHNESS_SUMMARY_FILE"
+  else
+    printf '%s\n' '  - no actionable freshness signals were detected by this report'
+  fi
+
+  printf '\n%s\n' 'Suggested next branches:'
+  if [ -s "$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE" ]; then
+    sed 's/^/  - /' "$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE"
+  else
+    printf '%s\n' '  - none; keep the current dependency baseline'
+  fi
+}
+
 main() {
+  DEPENDENCY_FRESHNESS_SUMMARY_FILE="$(mktemp)"
+  DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE="$(mktemp)"
+  trap 'rm -f "$DEPENDENCY_FRESHNESS_SUMMARY_FILE" "$DEPENDENCY_FRESHNESS_SUGGESTIONS_FILE"' EXIT
+
   printf '%s\n' "Dependency freshness report"
   printf 'repo: %s\n' "$REPO_ROOT"
   printf '%s\n' "mode: report-only"
@@ -243,6 +336,7 @@ main() {
   report_maven
   report_npm
   report_docker
+  print_triage_summary
 
   printf '\n%s\n' "Dependency freshness report completed."
 }

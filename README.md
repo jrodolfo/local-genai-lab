@@ -281,7 +281,9 @@ restarting the local app.
 Use `make dependency-freshness` as a maintenance radar. It reports Maven
 parent/dependency/plugin updates, npm outdated packages for `frontend/` and
 `mcp/`, Docker image references, and moving Docker tags such as `latest`. It is
-report-only and does not upgrade or rewrite dependency files.
+report-only and does not upgrade or rewrite dependency files. The final triage
+summary suggests possible follow-up branch names; treat those as planning hints,
+not as automatic upgrade instructions.
 
 Use `make release-check` when you want one local gate before wrapping a larger
 batch of work. It runs tests, broader verification, dependency freshness, and

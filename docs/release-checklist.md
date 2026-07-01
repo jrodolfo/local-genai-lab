@@ -33,9 +33,12 @@ The report surfaces:
 - npm outdated packages for `frontend/` and `mcp/`
 - Docker image references from Dockerfiles and Compose files
 - moving Docker tags such as `latest`
+- suggested follow-up branch names for small modernization slices
 
-The script is report-only and does not modify dependency files. Optional Docker
-Hub metadata is disabled by default to keep the normal command local-friendly:
+The script is report-only and does not modify dependency files. Treat suggested
+branch names as triage hints, not as automatic upgrade instructions. Optional
+Docker Hub metadata is disabled by default to keep the normal command
+local-friendly:
 
 ```bash
 DEPENDENCY_FRESHNESS_REGISTRY=true ./agents/dependency-freshness.sh

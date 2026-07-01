@@ -205,10 +205,13 @@ The freshness report is intentionally advisory. It reports:
 - `npm outdated` output for `frontend/` and `mcp/`
 - Docker image references in Dockerfiles and Compose files
 - moving Docker tags such as `latest`
+- a final triage summary with suggested follow-up branch names
 
 It does not modify `pom.xml`, `package.json`, lock files, Dockerfiles, or
-Compose files. Optional Docker Hub tag metadata is disabled by default; enable
-it explicitly when you want network-backed image context:
+Compose files. Suggested branch names are planning hints for small modernization
+slices, not instructions to upgrade everything. Optional Docker Hub tag metadata
+is disabled by default; enable it explicitly when you want network-backed image
+context:
 
 ```bash
 DEPENDENCY_FRESHNESS_REGISTRY=true ./agents/dependency-freshness.sh
