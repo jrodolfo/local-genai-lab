@@ -352,16 +352,21 @@ describe('Home', () => {
         const user = userEvent.setup();
 
         expect(await screen.findByRole('button', {name: /hide sessions/i})).toBeInTheDocument();
+        const chatLayout = screen.getByRole('main').querySelector('.chat-layout');
+        expect(chatLayout).not.toHaveClass('sidebar-hidden');
         expect(screen.getByRole('heading', {name: /sessions/i})).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', {name: /hide sessions/i}));
 
+        expect(chatLayout).toHaveClass('sidebar-hidden');
         expect(screen.queryByRole('heading', {name: /sessions/i})).not.toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /^agent$/i}).closest('.chat-card')).toBeInTheDocument();
         expect(screen.getByRole('button', {name: /show sessions/i})).toBeInTheDocument();
         expect(screen.getByPlaceholderText(/type your prompt/i)).toBeInTheDocument();
 
         await user.click(screen.getByRole('button', {name: /show sessions/i}));
 
+        expect(chatLayout).not.toHaveClass('sidebar-hidden');
         expect(screen.getByRole('heading', {name: /sessions/i})).toBeInTheDocument();
         expect(screen.getByRole('button', {name: /hide sessions/i})).toBeInTheDocument();
     });
