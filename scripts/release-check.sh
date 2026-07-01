@@ -37,6 +37,16 @@ require_command() {
   fi
 }
 
+require_trivy() {
+  if ! command -v trivy >/dev/null 2>&1; then
+    printf '%s\n' 'Error: required command not found: trivy' >&2
+    printf '%s\n' 'Install Trivy for your operating system and confirm trivy is on PATH.' >&2
+    printf '%s\n' 'Installation guide: https://trivy.dev/latest/getting-started/installation/' >&2
+    printf '%s\n' 'Then rerun: make release-check-docker' >&2
+    exit 1
+  fi
+}
+
 normalize_bool() {
   case "${1}" in
     true|TRUE|True|1|yes|YES|Yes|y|Y)
@@ -83,7 +93,7 @@ release_check_docker_normalized="$(normalize_bool "${RELEASE_CHECK_DOCKER}")"
 
 if [ "${release_check_docker_normalized}" = 'true' ]; then
   require_command docker
-  require_command trivy
+  require_trivy
 fi
 
 cd "${REPO_ROOT}"
