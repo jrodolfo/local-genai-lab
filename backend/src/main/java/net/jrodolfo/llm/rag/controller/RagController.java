@@ -1,5 +1,9 @@
 package net.jrodolfo.llm.rag.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import net.jrodolfo.llm.rag.config.RagProperties;
 import net.jrodolfo.llm.rag.config.RagRetrievalMode;
@@ -28,12 +32,16 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * REST controller for RAG (Retrieval-Augmented Generation) operations.
- * Provides endpoints for checking status, rebuilding the index, and querying the RAG system.
+ * HTTP API for the isolated RAG workspace.
+ *
+ * <p>RAG endpoints are separate from Agent chat endpoints. They query the local
+ * documentation corpus with lexical, in-memory vector, or Qdrant-backed vector
+ * retrieval and never invoke MCP tools.
  */
 @RestController
 @RequestMapping("/api/rag")
 @Validated
+@Tag(name = "rag", description = "Local documentation RAG status, indexing, querying, and retrieval comparison.")
 public class RagController {
 
     private final RagProperties ragProperties;
@@ -68,6 +76,7 @@ public class RagController {
      * if an index is loaded, and the number of documents/chunks.
      */
     @GetMapping("/status")
+    @Operation(summary = "Get RAG status", description = "Returns RAG readiness, corpus/index counts, configured retrieval defaults, embedding settings, and Qdrant readiness when applicable.")
     public RagStatusResponse status() {
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.snapshot();
         RagRetrievalMode mode = retrievalMode();
@@ -101,6 +110,12 @@ public class RagController {
      * @throws IllegalStateException if RAG is disabled.
      */
     @PostMapping("/index")
+    @Operation(summary = "Rebuild the RAG index", description = "Reloads the configured local documentation corpus and rebuilds the backend default retrieval index.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "RAG index rebuilt."),
+            @ApiResponse(responseCode = "400", description = "The configured retrieval backend could not build the index."),
+            @ApiResponse(responseCode = "503", description = "RAG is disabled.")
+    })
     public ResponseEntity<RagIndexResponse> index() {
         ensureEnabled();
         RagCorpusService.CorpusSnapshot snapshot = ragCorpusService.rebuildIndex();
@@ -120,6 +135,12 @@ public class RagController {
      * @throws IllegalStateException if RAG is disabled.
      */
     @PostMapping("/query")
+    @Operation(summary = "Ask one RAG question", description = "Retrieves local source chunks, generates one grounded answer, and persists the turn to a RAG session.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "RAG answer returned."),
+            @ApiResponse(responseCode = "400", description = "Request, retrieval target, retrieval, or indexing error."),
+            @ApiResponse(responseCode = "503", description = "RAG is disabled.")
+    })
     public ResponseEntity<RagQueryResponse> query(@Valid @RequestBody RagQueryRequest request) {
         ensureEnabled();
         return ResponseEntity.ok(ragAnswerService.answer(
@@ -140,6 +161,12 @@ public class RagController {
      * @throws IllegalStateException if RAG is disabled.
      */
     @PostMapping("/compare")
+    @Operation(summary = "Compare RAG retrieval targets", description = "Runs one question across requested retrieval targets without saving diagnostic answers to a session.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Comparison results returned. Individual targets may contain errors."),
+            @ApiResponse(responseCode = "400", description = "Request or retrieval target error."),
+            @ApiResponse(responseCode = "503", description = "RAG is disabled.")
+    })
     public ResponseEntity<RagComparisonResponse> compare(@Valid @RequestBody RagComparisonRequest request) {
         ensureEnabled();
         return ResponseEntity.ok(ragAnswerService.compare(
@@ -157,22 +184,26 @@ public class RagController {
      * @return A response entity containing the error message.
      */
     @ExceptionHandler(IllegalStateException.class)
+    @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         HttpStatus status = "RAG is disabled.".equals(ex.getMessage()) ? HttpStatus.SERVICE_UNAVAILABLE : HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
+    @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RagVectorRetrievalException.class)
+    @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleVectorRetrieval(RagVectorRetrievalException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(RagVectorIndexingException.class)
+    @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleVectorIndexing(RagVectorIndexingException ex) {
         return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
     }
