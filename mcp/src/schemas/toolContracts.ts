@@ -14,7 +14,7 @@ const jsonPrimitiveSchema = z.union([z.string(), z.number(), z.boolean(), z.null
  * Supports primitives, arrays, and objects (records).
  */
 export const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
-    z.union([jsonPrimitiveSchema, z.array(jsonValueSchema), z.record(jsonValueSchema)]),
+    z.union([jsonPrimitiveSchema, z.array(jsonValueSchema), z.record(z.string(), jsonValueSchema)]),
 );
 
 /**
@@ -37,7 +37,7 @@ export const processRunResultSchema = z.object({
 /**
  * Zod schema for a report summary, which is a key-value record of JSON values.
  */
-export const reportSummarySchema = z.record(jsonValueSchema);
+export const reportSummarySchema = z.record(z.string(), jsonValueSchema);
 
 /**
  * Contract for a discoverable report bundle.
