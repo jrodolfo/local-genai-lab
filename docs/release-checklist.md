@@ -46,3 +46,16 @@ DEPENDENCY_FRESHNESS_REGISTRY=true ./agents/dependency-freshness.sh
 
 Use the output to choose small, targeted dependency upgrades instead of waiting
 until CI, build compatibility, or security scanning forces urgent work.
+
+Qdrant image triage:
+
+- The Compose stack uses the pinned external image `qdrant/qdrant:v1.18.2`.
+- On 2026-07-01, Docker Hub metadata showed `v1.18.2` as the current stable
+  release tag, with `latest`, `v1`, and `v1.18` as moving aliases and `dev` as
+  an unstable development tag.
+- Keep Qdrant pinned to a stable release tag. Do not switch this project to
+  `latest`, broad version aliases, or `dev` only to make the freshness report
+  look quieter.
+- Treat Qdrant scan findings as external vendor-image findings unless the
+  repository starts building its own Qdrant image or changes Qdrant runtime
+  configuration.

@@ -108,6 +108,7 @@ test_dependency_freshness_report() {
   assert_file_contains "$output" "Docker image freshness"
   assert_file_contains "$output" "nginx:latest"
   assert_file_contains "$output" "mysql:latest"
+  assert_file_contains "$output" "external Qdrant image; keep pinned to a stable release tag"
   assert_file_contains "$output" "warning: moving tag detected"
   assert_file_contains "$output" "registry: https://registry.hub.docker.com/v2/repositories/library/nginx/tags?page_size=5"
   assert_file_contains "$output" "Triage summary"
@@ -121,7 +122,6 @@ test_dependency_freshness_report() {
   assert_file_contains "$output" "mcp-typescript-6-readiness - MCP TypeScript modernization"
   assert_file_contains "$output" "mcp-zod-4-readiness - MCP Zod modernization"
   assert_file_contains "$output" "docker-image-freshness-triage - replace moving Docker tags with pinned version tags"
-  assert_file_contains "$output" "qdrant-image-freshness-triage - review Qdrant image freshness and scan findings"
   assert_file_contains "$output" "Dependency freshness report completed."
 
   rm -rf "$tmp_dir"
