@@ -204,6 +204,9 @@ test_release_check_fails_when_trivy_requested_but_missing() {
     exit 1
   fi
   assert_contains "${output}" 'Error: required command not found: trivy'
+  assert_contains "${output}" 'Install Trivy for your operating system and confirm trivy is on PATH.'
+  assert_contains "${output}" 'Installation guide: https://trivy.dev/latest/getting-started/installation/'
+  assert_contains "${output}" 'Then rerun: make release-check-docker'
   rm -rf "${tmp_dir}"
 }
 
