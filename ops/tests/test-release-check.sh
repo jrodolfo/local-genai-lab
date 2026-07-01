@@ -94,9 +94,12 @@ EOF
 setup_release_check_fixture() {
   local tmp_dir="$1"
 
-  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/repo/scripts"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/system-bin" "${tmp_dir}/repo/scripts"
   cp "${REPO_ROOT}/scripts/release-check.sh" "${tmp_dir}/repo/scripts/release-check.sh"
   chmod +x "${tmp_dir}/repo/scripts/release-check.sh"
+  ln -s "$(command -v bash)" "${tmp_dir}/system-bin/bash"
+  ln -s "$(command -v dirname)" "${tmp_dir}/system-bin/dirname"
+  ln -s "$(command -v pwd)" "${tmp_dir}/system-bin/pwd"
   : >"${tmp_dir}/release-check.log"
 }
 
@@ -106,7 +109,7 @@ run_release_check() {
 
   env -i \
     HOME="${HOME:-}" \
-    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    PATH="${tmp_dir}/bin:${tmp_dir}/system-bin" \
     MOCK_RELEASE_CHECK_LOG="${tmp_dir}/release-check.log" \
     "$@" \
     bash "${tmp_dir}/repo/scripts/release-check.sh"
