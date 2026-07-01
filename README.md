@@ -472,6 +472,14 @@ on the images built from this codebase, skip the external Qdrant scan:
 DOCKER_SCAN_INCLUDE_QDRANT=false ./scripts/docker-scan.sh
 ```
 
+Qdrant image triage on 2026-07-01 confirmed that the pinned
+`qdrant/qdrant:v1.18.2` tag is the current stable release tag. Docker Hub also
+publishes moving aliases such as `latest`, `v1`, and `v1.18`, plus a newer
+`dev` tag. Keep this project on a pinned stable tag instead of moving to those
+aliases. Qdrant scan findings should continue to be treated as external
+vendor-image findings unless this project changes how it builds or configures
+the Qdrant service.
+
 Install Trivy first if needed:
 
 ```bash

@@ -287,7 +287,7 @@ report_docker() {
       fi
       case "$image" in
         qdrant/qdrant)
-          add_suggestion "qdrant-image-freshness-triage" "review Qdrant image freshness and scan findings"
+          printf '  note: external Qdrant image; keep pinned to a stable release tag and treat scan findings as vendor-image findings\n'
           ;;
       esac
       report_registry_metadata "$image"
