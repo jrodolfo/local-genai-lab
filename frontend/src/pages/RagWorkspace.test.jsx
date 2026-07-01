@@ -817,8 +817,8 @@ describe('RagWorkspace', () => {
         render(<RagWorkspace/>);
         const user = userEvent.setup();
 
-        await screen.findByRole('heading', {name: /^rag$/i});
-        await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'What is MCP?');
+        const questionInput = await screen.findByPlaceholderText(/Ask a question about the project docs/i);
+        await user.type(questionInput, 'What is MCP?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
         expect(await screen.findByText(/^Failed to query the RAG workspace\. HTTP 504\.$/i)).toBeInTheDocument();
