@@ -779,7 +779,10 @@ describe('RagWorkspace', () => {
         const user = userEvent.setup();
 
         await screen.findByRole('heading', {name: /^rag$/i});
-        expect(screen.getByText('ready')).toBeInTheDocument();
+        const statusRegion = screen.getByRole('region', {name: /rag index status/i});
+        await waitFor(() => {
+            expect(within(statusRegion).getByText('ready')).toBeInTheDocument();
+        });
         await user.type(screen.getByPlaceholderText(/Ask a question about the project docs/i), 'What is MCP?');
         await user.click(screen.getByRole('button', {name: /Ask docs corpus/i}));
 
