@@ -78,7 +78,7 @@ describe('Home integration', () => {
 
         expect(await screen.findByRole('combobox', {name: /chat provider/i})).toHaveValue('ollama');
         expect(screen.getByText(/provider: Ollama/i)).toBeInTheDocument();
-        expect(screen.getByText(/Ollama status: ready/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Ollama status: ready/i)).toBeInTheDocument();
         expect(screen.getByText(/Last checked:/i)).toBeInTheDocument();
     });
 
