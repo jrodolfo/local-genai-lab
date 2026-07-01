@@ -1,7 +1,7 @@
 # Local GenAI Lab
 
 [![ci](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jrodolfo/local-genai-lab/actions/workflows/ci.yml)
-![license](https://img.shields.io/badge/license-MIT-blue)
+[![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/jrodolfo/local-genai-lab/blob/main/LICENSE)
 ![java](https://img.shields.io/badge/java-21+-f89820)
 ![spring boot](https://img.shields.io/badge/spring%20boot-3.4-6db33f)
 ![react](https://img.shields.io/badge/react-frontend-61dafb)
