@@ -12,10 +12,18 @@ make test
 make verify
 ```
 
-For Docker-specific changes, also run:
+Before opening a release PR or merging a larger release-preparation branch, run
+the local release gate:
 
 ```bash
-./scripts/docker-full-check.sh
+make release-check
+```
+
+For Docker-specific changes or final local release confidence, also run the
+Docker-inclusive release gate:
+
+```bash
+make release-check-docker
 ```
 
 ## Dependency Freshness

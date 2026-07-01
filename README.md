@@ -480,11 +480,10 @@ aliases. Qdrant scan findings should continue to be treated as external
 vendor-image findings unless this project changes how it builds or configures
 the Qdrant service.
 
-Install Trivy first if needed:
+Install Trivy first if needed. Follow the official installation guide for your
+operating system, then confirm `trivy` is available on `PATH`:
 
-```bash
-brew install trivy
-```
+<https://trivy.dev/latest/getting-started/installation/>
 
 Use `./scripts/docker-full-check.sh` when you want one command that does both: functional
 Docker verification plus the Docker image vulnerability scan.
