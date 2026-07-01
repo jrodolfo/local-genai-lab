@@ -53,7 +53,8 @@ RELEASE_CHECK_DOCKER=true ./scripts/release-check.sh
 The default release check runs tests, broader verification, dependency freshness
 reporting, and whitespace checks. Docker verification and image scanning are
 opt-in with `RELEASE_CHECK_DOCKER=true` or `make release-check-docker` so the
-default release gate can still run when Docker Desktop or Trivy is unavailable.
+default release gate can still run when Docker Desktop, Docker Engine, or Trivy
+is unavailable.
 When Docker is requested, the script preflights Docker, Docker Compose, and
 Trivy before running expensive tests.
 
