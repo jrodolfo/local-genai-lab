@@ -74,6 +74,7 @@ export async function streamMessage({message, provider, model, sessionId, onEven
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let completed = false;
 
     while (true) {
         const {done, value} = await reader.read();
@@ -98,9 +99,14 @@ export async function streamMessage({message, provider, model, sessionId, onEven
             }
 
             if (event.type === 'complete') {
+                completed = true;
                 return;
             }
         }
+    }
+
+    if (!completed) {
+        throw new Error('Stream ended before the backend sent a completion event.');
     }
 }
 
