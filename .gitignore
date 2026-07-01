@@ -23,6 +23,10 @@ mcp/dist/
 .env
 .run/
 
+# Local Codex context
+.codex/
+.local-codex/
+
 # Local chat memory
 data/sessions/**
 !data/sessions/
