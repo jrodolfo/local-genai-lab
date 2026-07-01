@@ -198,7 +198,7 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
         });
-        expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /^agent$/i})).toBeInTheDocument();
         expect(await screen.findByText(/Bedrock status: misconfigured/i)).toBeInTheDocument();
     });
 
@@ -232,7 +232,7 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('meta-llama/Llama-3.1-8B-Instruct');
         });
-        expect(screen.getByText(/provider: Hugging Face/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /^agent$/i})).toBeInTheDocument();
         expect(await screen.findByText(/Hugging Face status: ready/i)).toBeInTheDocument();
         expect(await screen.findByText(/Last checked:/i)).toBeInTheDocument();
         expect(screen.getByText(/Configured: meta-llama\/Llama-3\.1-8B-Instruct, Qwen\/Qwen2\.5-72B-Instruct, mistralai\/Mistral-7B-Instruct-v0\.3/i)).toBeInTheDocument();
@@ -343,7 +343,7 @@ describe('Home', () => {
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
         });
-        expect(screen.getByText(/provider: Bedrock/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /^agent$/i})).toBeInTheDocument();
         expect(screen.getByText(/Bedrock status: misconfigured/i)).toBeInTheDocument();
     });
 

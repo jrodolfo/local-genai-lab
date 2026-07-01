@@ -85,7 +85,7 @@ describe('Home integration', () => {
         render(<Home/>);
 
         await waitForSelectValue({name: /chat provider/i}, 'ollama');
-        expect(screen.getByText(/provider: Ollama/i)).toBeInTheDocument();
+        expect(screen.getByRole('heading', {name: /^agent$/i})).toBeInTheDocument();
         expect(await screen.findByText(/Ollama status: ready/i)).toBeInTheDocument();
         expect(screen.getByText(/Last checked:/i)).toBeInTheDocument();
     });

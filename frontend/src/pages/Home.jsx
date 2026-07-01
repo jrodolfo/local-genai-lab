@@ -821,8 +821,7 @@ function Home() {
                 <section className="chat-card">
                     <header>
                         <div>
-                            <h1>Local GenAI Lab</h1>
-                            <p>{`React + Spring Boot + provider: ${formatProviderName(selectedProvider)}`}</p>
+                            <h1>Agent</h1>
                         </div>
                         <div className="header-controls">
                             <label className="debug-toggle">
