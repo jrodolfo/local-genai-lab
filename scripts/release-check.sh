@@ -81,7 +81,7 @@ run_preflight() {
   else
     printf '%s\n' 'failed'
     printf 'Error: Docker-inclusive release check requested, but preflight failed: %s\n' "$*" >&2
-    printf '%s\n' 'Start or restart Docker Desktop, confirm the command works, then rerun the release check.' >&2
+    printf '%s\n' 'Start or restart Docker Desktop or Docker Engine, confirm the command works, then rerun the release check.' >&2
     exit 1
   fi
 }

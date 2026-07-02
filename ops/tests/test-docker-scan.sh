@@ -87,7 +87,9 @@ test_missing_trivy_is_actionable() {
     exit 1
   fi
   assert_contains "${output}" 'Error: trivy was not found.'
-  assert_contains "${output}" 'macOS: brew install trivy'
+  assert_contains "${output}" 'Install Trivy for your operating system and confirm trivy is on PATH.'
+  assert_contains "${output}" 'Installation guide: https://trivy.dev/latest/getting-started/installation/'
+  assert_contains "${output}" 'Then retry: ./scripts/docker-scan.sh'
   rm -rf "${tmp_dir}"
 }
 
