@@ -223,4 +223,5 @@ Qdrant is unreachable:
 
 - Run `./scripts/status.sh`.
 - Restart with `./scripts/restart.sh`.
-- Confirm Docker Desktop shows the `llm-qdrant` container running.
+- Confirm your Docker UI or `docker compose ps qdrant` shows the `llm-qdrant`
+  container running.

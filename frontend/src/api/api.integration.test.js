@@ -102,6 +102,23 @@ describe('frontend api integration', () => {
         ]);
     });
 
+    it('rejects streams that close before the backend completion event', async () => {
+        server.use(
+            http.post(apiPath('/api/chat/stream'), () => sseResponse([
+                {type: 'start', sessionId: 'session-123'},
+                {type: 'delta', text: 'Partial answer'}
+            ]))
+        );
+
+        await expect(streamMessage({
+            message: 'run aws audit',
+            provider: 'ollama',
+            model: 'llama3:8b',
+            onEvent: () => {
+            }
+        })).rejects.toThrow('Stream ended before the backend sent a completion event.');
+    });
+
     it('loads provider models and status through backend-shaped endpoints', async () => {
         server.use(
             http.get(apiPath('/api/models'), ({request}) => {

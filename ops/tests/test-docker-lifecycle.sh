@@ -356,7 +356,7 @@ test_docker_sanity_check_fails_with_actionable_guidance() {
   fi
   assert_contains "${output}" 'checking: Docker daemon... failed'
   assert_contains "${output}" 'Docker sanity check failed at: Docker daemon'
-  assert_contains "${output}" 'Start or restart Docker Desktop.'
+  assert_contains "${output}" 'Start or restart Docker Desktop or Docker Engine.'
   assert_contains "${output}" 'docker context ls'
   assert_contains "${output}" 'docker context use desktop-linux'
   rm -rf "${tmp_dir}"

@@ -186,6 +186,30 @@ test_release_check_fails_when_docker_requested_but_missing() {
   rm -rf "${tmp_dir}"
 }
 
+test_release_check_fails_when_trivy_requested_but_missing() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  setup_release_check_fixture "${tmp_dir}"
+  write_mock_make "${tmp_dir}/bin"
+  write_mock_git "${tmp_dir}/bin"
+  write_mock_docker "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_release_check "${tmp_dir}" RELEASE_CHECK_DOCKER=true 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected release-check.sh to fail when Trivy is requested but unavailable' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Error: required command not found: trivy'
+  assert_contains "${output}" 'Install Trivy for your operating system and confirm trivy is on PATH.'
+  assert_contains "${output}" 'Installation guide: https://trivy.dev/latest/getting-started/installation/'
+  assert_contains "${output}" 'Then rerun: make release-check-docker'
+  rm -rf "${tmp_dir}"
+}
+
 test_release_check_fails_fast_when_docker_daemon_is_unavailable() {
   local tmp_dir output status log
   tmp_dir="$(mktemp -d)"
@@ -207,7 +231,7 @@ test_release_check_fails_fast_when_docker_daemon_is_unavailable() {
   fi
   assert_contains "${output}" 'preflight: Docker daemon... failed'
   assert_contains "${output}" 'Docker-inclusive release check requested, but preflight failed: docker version'
-  assert_contains "${output}" 'Start or restart Docker Desktop'
+  assert_contains "${output}" 'Start or restart Docker Desktop or Docker Engine'
   if grep -Fq 'make test' "${tmp_dir}/release-check.log"; then
     printf 'expected release-check to fail before running make targets\nactual log:\n%s\n' "${log}" >&2
     exit 1
@@ -248,6 +272,7 @@ main() {
   test_release_check_skips_docker_by_default
   test_release_check_runs_docker_when_requested
   test_release_check_fails_when_docker_requested_but_missing
+  test_release_check_fails_when_trivy_requested_but_missing
   test_release_check_fails_fast_when_docker_daemon_is_unavailable
   test_release_check_fails_fast_when_docker_compose_is_unavailable
   printf '%s\n' 'release check tests passed'
