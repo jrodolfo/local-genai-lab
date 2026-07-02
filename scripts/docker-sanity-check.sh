@@ -53,7 +53,7 @@ run_check() {
     printf '\n' >&2
     printf '%s\n' \
       'Next steps:' \
-      '  1. Start or restart Docker Desktop.' \
+      '  1. Start or restart Docker Desktop or Docker Engine.' \
       '  2. Confirm the active context with: docker context ls' \
       '  3. On Docker Desktop, use the desktop-linux context if needed: docker context use desktop-linux' \
       '  4. Retry: ./scripts/docker-sanity-check.sh' >&2
@@ -67,7 +67,7 @@ printf '%s\n' 'Docker sanity check'
 
 if ! command -v docker >/dev/null 2>&1; then
   printf '%s\n' 'Error: docker command was not found.' >&2
-  printf '%s\n' 'Install Docker Desktop, start it, then retry ./scripts/docker-sanity-check.sh.' >&2
+  printf '%s\n' 'Install Docker Desktop or Docker Engine, start it, then retry ./scripts/docker-sanity-check.sh.' >&2
   exit 1
 fi
 

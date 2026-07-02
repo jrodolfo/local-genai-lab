@@ -231,7 +231,7 @@ test_release_check_fails_fast_when_docker_daemon_is_unavailable() {
   fi
   assert_contains "${output}" 'preflight: Docker daemon... failed'
   assert_contains "${output}" 'Docker-inclusive release check requested, but preflight failed: docker version'
-  assert_contains "${output}" 'Start or restart Docker Desktop'
+  assert_contains "${output}" 'Start or restart Docker Desktop or Docker Engine'
   if grep -Fq 'make test' "${tmp_dir}/release-check.log"; then
     printf 'expected release-check to fail before running make targets\nactual log:\n%s\n' "${log}" >&2
     exit 1

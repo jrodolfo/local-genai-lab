@@ -35,9 +35,9 @@ set -euo pipefail
 if ! command -v trivy >/dev/null 2>&1; then
   printf '%s\n' \
     'Error: trivy was not found.' \
-    'Install Trivy, then retry ./scripts/docker-scan.sh.' \
-    'macOS: brew install trivy' \
-    'Docs: https://aquasecurity.github.io/trivy/' >&2
+    'Install Trivy for your operating system and confirm trivy is on PATH.' \
+    'Installation guide: https://trivy.dev/latest/getting-started/installation/' \
+    'Then retry: ./scripts/docker-scan.sh' >&2
   exit 1
 fi
 
