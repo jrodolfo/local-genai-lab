@@ -90,16 +90,24 @@ cat <<EOF
 
 Release preparation passed.
 
-Inspect:
-  ${RELEASE_CHECK_OUTPUT}
-  ${RELEASE_CHECK_DOCKER_OUTPUT}
+Here are the files you need to check to see if the tests are OK:
+
+  git diff --check
+  git status
+
+Then inspect the two /tmp files:
+
+  vi ${RELEASE_CHECK_OUTPUT}
+  vi ${RELEASE_CHECK_DOCKER_OUTPUT}
 
 If clean, publish GitHub Release:
-  tag: ${VERSION}
-  target: main
-  title: local genai lab ${VERSION}
+
+  - tag: ${VERSION}
+  - target: main
+  - title: local genai lab ${VERSION}
 
 After publishing:
+
   git fetch --tags
   git tag --list --sort=-creatordate | head
   git status

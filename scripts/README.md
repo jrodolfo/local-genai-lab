@@ -75,7 +75,10 @@ Trivy before running expensive tests.
 `prepare-release.sh` is a guided release-preparation wrapper. It prints and runs
 the local release commands, writes long output to versioned files under `/tmp`,
 and then prints the GitHub Release fields and post-publish tag sync commands.
-It does not create tags or publish a GitHub Release.
+It requires a version argument because that version is used in the `/tmp` file
+names and release reminder text. It does not create tags or publish a GitHub
+Release. `make release-check-docker` is a lower-level validation target and does
+not require a version.
 
 ## Folder Boundaries
 

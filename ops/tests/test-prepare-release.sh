@@ -135,6 +135,10 @@ test_prepare_release_runs_expected_commands() {
   assert_contains "${output}" '/tmp/local-genai-lab-release-check-v0.2.0.txt'
   assert_contains "${output}" '/tmp/local-genai-lab-release-check-docker-v0.2.0.txt'
   assert_contains "${output}" 'Release preparation passed.'
+  assert_contains "${output}" 'Here are the files you need to check to see if the tests are OK:'
+  assert_contains "${output}" 'Then inspect the two /tmp files:'
+  assert_contains "${output}" 'vi /tmp/local-genai-lab-release-check-v0.2.0.txt'
+  assert_contains "${output}" 'vi /tmp/local-genai-lab-release-check-docker-v0.2.0.txt'
   assert_contains "${output}" 'tag: v0.2.0'
   assert_contains "${output}" 'title: local genai lab v0.2.0'
   if [ "${log}" != "${expected_log}" ]; then

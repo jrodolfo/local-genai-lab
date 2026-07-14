@@ -21,7 +21,9 @@ make prepare-release VERSION=v0.2.0
 This runs `git status`, `git pull`, the local and Docker-inclusive release
 checks with output written to versioned files under `/tmp`, `git diff --check`,
 and a final `git status`. It then prints the GitHub Release fields and
-post-publish tag sync commands. It does not create tags or publish the release.
+post-publish tag sync commands. The version argument is required because it is
+used in the `/tmp` file names and release reminder text. It does not create tags
+or publish the release.
 
 Before opening a release PR or merging a larger release-preparation branch, run
 the local release gate:
@@ -36,6 +38,9 @@ Docker-inclusive release gate:
 ```bash
 make release-check-docker
 ```
+
+`make release-check-docker` is the lower-level Docker-inclusive gate. It does
+not need a version and does not print release-publishing reminders.
 
 ## Dependency Freshness
 
