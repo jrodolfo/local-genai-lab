@@ -99,6 +99,21 @@ see [docs/architecture.md](./docs/architecture.md) and
 - RAG workspace for asking questions against the repository documentation with
   cited source chunks and saved RAG sessions.
 
+## Try These Agent Prompts
+
+The Agent workspace can route natural-language AWS questions to local MCP-backed
+tools when AWS credentials and tool prerequisites are available.
+
+Examples:
+
+- `Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.`
+- `Analyze my AWS account and generate a summary report of the resources and services currently in use.`
+- `List my S3 buckets.`
+- `Run an S3 report for <bucket-name> for the last month.`
+
+For the scripts behind these prompts and more examples, see
+[agents/README.md](./agents/README.md).
+
 ## RAG Workspace
 
 The RAG workspace is isolated from the normal Agent flow. It does not invoke MCP
