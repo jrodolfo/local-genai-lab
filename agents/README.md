@@ -115,6 +115,29 @@ Docker backend image includes AWS CLI and `jq`, but host AWS credentials are
 mounted only when `.env.docker-aws-tools` enables the read-only AWS
 configuration override.
 
+## Agent Prompt Examples
+
+The Agent page can route natural-language prompts to these scripts through the
+backend and MCP server. The selected model still writes the final answer, but
+the backend grounds that answer in the structured tool result.
+
+Prompts that can trigger the regional AWS audit:
+
+- `Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.`
+- `Analyze my AWS account and generate a summary report of the resources and services currently in use.`
+- `Please audit my AWS account.`
+- `List my S3 buckets.`
+
+Prompts that can trigger the S3 CloudWatch report:
+
+- `Run an S3 report for example-bucket for the last month.`
+- `Check S3 CloudWatch metrics for example-bucket for the last 7 days.`
+- `Generate an S3 usage report for example-bucket.`
+
+Some S3 prompts require a follow-up. For example, if the user asks for an S3
+report without a bucket name, the Agent asks which bucket to inspect before
+running `aws-s3-cloudwatch-report.sh`.
+
 ## Usage
 
 Run the audit:
