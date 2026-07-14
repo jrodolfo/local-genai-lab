@@ -154,6 +154,7 @@ Script separation:
 Docker note:
 
 - the backend Docker image intentionally includes the built MCP server, Node 20.19+, the MCP tool scripts, and empty report directories
+- the backend Docker image includes AWS CLI and `jq`; host AWS credentials are mounted only when you opt in with `.env.docker-aws-tools`
 - this keeps Docker mode aligned with host-run mode and allows `/actuator/health` to validate MCP and storage paths correctly
 - generated report artifacts are not copied into the image; Docker starts with empty report directories
 
@@ -165,6 +166,10 @@ Docker note:
 - Ollama installed locally for the default provider
 - Docker + Docker Compose, optional
 - AWS CLI v2 + `jq` + valid AWS credentials, only for AWS shell tools and local MCP-backed report flows
+
+For Docker-based AWS Agent tools, copy `.env.docker-aws-tools.example` to
+`.env.docker-aws-tools`. The file is ignored by Git and lets the normal Docker
+scripts mount your local AWS configuration read-only into the backend container.
 
 ## Quick Start
 

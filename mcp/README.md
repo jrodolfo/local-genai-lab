@@ -31,9 +31,9 @@ The server also depends on the existing sibling [`../agents`](../agents) directo
 
 AWS report tools require `aws` and `jq` in the same runtime that launches the
 MCP server. In the default host-run workflow, that means the developer machine.
-In the default Docker workflow, the backend container does not include AWS CLI,
-does not mount host AWS credentials, and is not intended to run AWS account
-audit tools unless Docker AWS tooling is explicitly added and configured.
+In the Docker workflow, the backend image includes AWS CLI and `jq`, but host
+AWS credentials are mounted only when `.env.docker-aws-tools` enables the
+read-only AWS configuration override.
 
 ## Install
 

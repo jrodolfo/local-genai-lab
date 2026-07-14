@@ -201,10 +201,10 @@ and uses `RAG_VECTOR_STORE` to choose `in-memory` or `qdrant`.
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 
 MCP-backed AWS tools run in the backend runtime. In host-run mode, they use the
-host `aws`, `jq`, and AWS credential configuration. In the default Docker mode,
-the backend container does not include AWS CLI or host AWS credentials, so AWS
-audit and S3 CloudWatch tools fail with a prerequisite message unless Docker
-AWS tooling is explicitly added and configured.
+host `aws`, `jq`, and AWS credential configuration. In Docker mode, the backend
+image includes AWS CLI and `jq`, but host AWS credentials are not mounted by
+default. Copy `.env.docker-aws-tools.example` to `.env.docker-aws-tools` to let
+the Docker lifecycle scripts mount your local AWS configuration read-only.
 
 ## RAG API
 

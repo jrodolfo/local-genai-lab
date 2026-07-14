@@ -1,0 +1,12 @@
+services:
+  backend:
+    environment:
+      AWS_PROFILE: ${AWS_PROFILE:-default}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-2}
+      AWS_SDK_LOAD_CONFIG: ${AWS_SDK_LOAD_CONFIG:-1}
+    volumes:
+      - type: bind
+        source: ${LOCAL_GENAI_LAB_AWS_DIR}
+        target: /root/.aws
+        read_only: true

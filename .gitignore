@@ -21,6 +21,7 @@ mcp/dist/
 
 # Env
 .env
+.env.docker-aws-tools
 .run/
 
 # Local Codex context
