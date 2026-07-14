@@ -60,6 +60,8 @@ Release validation:
 ```bash
 ./scripts/release-check.sh
 RELEASE_CHECK_DOCKER=true ./scripts/release-check.sh
+./scripts/prepare-release.sh v0.2.0
+make prepare-release VERSION=v0.2.0
 ```
 
 The default release check runs tests, broader verification, dependency freshness
@@ -69,6 +71,11 @@ default release gate can still run when Docker Desktop, Docker Engine, or Trivy
 is unavailable.
 When Docker is requested, the script preflights Docker, Docker Compose, and
 Trivy before running expensive tests.
+
+`prepare-release.sh` is a guided release-preparation wrapper. It prints and runs
+the local release commands, writes long output to versioned files under `/tmp`,
+and then prints the GitHub Release fields and post-publish tag sync commands.
+It does not create tags or publish a GitHub Release.
 
 ## Folder Boundaries
 

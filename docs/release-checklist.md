@@ -12,6 +12,17 @@ make test
 make verify
 ```
 
+For final release preparation, prefer the guided wrapper:
+
+```bash
+make prepare-release VERSION=v0.2.0
+```
+
+This runs `git status`, `git pull`, the local and Docker-inclusive release
+checks with output written to versioned files under `/tmp`, `git diff --check`,
+and a final `git status`. It then prints the GitHub Release fields and
+post-publish tag sync commands. It does not create tags or publish the release.
+
 Before opening a release PR or merging a larger release-preparation branch, run
 the local release gate:
 

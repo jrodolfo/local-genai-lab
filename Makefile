@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app docker-sanity-check docker-start docker-stop docker-restart docker-status docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app docker-sanity-check docker-start docker-stop docker-restart docker-status docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -23,6 +23,7 @@ help:
 		'  make dependency-freshness   Report Maven, npm, and Docker dependency freshness' \
 		'  make release-check          Run the local pre-release validation gate' \
 		'  make release-check-docker   Run release check with Docker verification/scan' \
+		'  make prepare-release VERSION=vX.Y.Z  Run guided release preparation' \
 		'  make clean-ds-store         Remove macOS .DS_Store files from the repo tree' \
 		'  make test                   Run ops, backend, and frontend tests' \
 		'  make verify                 Run broader project verification' \
@@ -89,6 +90,10 @@ release-check:
 release-check-docker:
 	@RELEASE_CHECK_DOCKER=true ./scripts/release-check.sh
 
+prepare-release:
+	@test -n "$(VERSION)" || (echo "usage: make prepare-release VERSION=v0.2.0" >&2 && exit 1)
+	@./scripts/prepare-release.sh "$(VERSION)"
+
 clean-ds-store:
 	@find . -path ./.git -prune -o -name .DS_Store -type f -exec rm -f {} +
 
@@ -107,6 +112,7 @@ test-ops:
 	@bash ./ops/tests/test-docker-lifecycle.sh
 	@bash ./ops/tests/test-docker-scan.sh
 	@bash ./ops/tests/test-release-check.sh
+	@bash ./ops/tests/test-prepare-release.sh
 	@bash ./ops/tests/test-stop.sh
 
 test-backend:
