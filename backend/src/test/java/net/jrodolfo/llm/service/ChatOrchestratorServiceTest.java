@@ -103,6 +103,30 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void awsAccountAnalysisRequestUsesAuditToolWithoutClarification() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertNotNull(response.tool());
+        assertEquals("aws_region_audit", response.tool().name());
+        assertEquals("success", response.tool().status());
+        assertNotNull(mcpService.lastAuditRequest);
+        assertNull(mcpService.lastAuditRequest.services());
+        assertTrue(chatModelProvider.lastPrompt.contains("<tool_context>"));
+        assertTrue(chatModelProvider.lastPrompt.contains("tool_name: aws_region_audit"));
+        assertFalse(response.response().toLowerCase().contains("account id"));
+    }
+
+    @Test
     void toolFailureReturnsExplicitFailureResponseAndPersistsIt() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -536,6 +560,7 @@ class ChatOrchestratorServiceTest {
     }
 
     private static class FakeMcpService extends McpService {
+        private AwsRegionAuditToolRequest lastAuditRequest;
         private S3CloudwatchReportToolRequest lastS3Request;
         private ListReportsRequest lastListReportsRequest;
         private ReadReportSummaryToolRequest lastReadReportSummaryRequest;
@@ -552,6 +577,7 @@ class ChatOrchestratorServiceTest {
 
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            this.lastAuditRequest = request;
             Map<String, Object> result = new java.util.LinkedHashMap<>();
             result.put("ok", true);
             result.put("summary", Map.of(

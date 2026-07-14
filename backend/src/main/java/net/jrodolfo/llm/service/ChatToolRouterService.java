@@ -235,6 +235,7 @@ public class ChatToolRouterService {
                 || normalized.contains("audit aws")
                 || normalized.contains("region audit")
                 || normalized.contains("audit my aws")
+                || mentionsAwsAccountAnalysis(normalized)
                 || (normalized.contains("audit") && !normalized.contains("report") && (extractRegion(normalized) != null || !extractServices(normalized).isEmpty()));
 
         if (!mentionsAudit) {
@@ -250,6 +251,32 @@ public class ChatToolRouterService {
                 "aws audit request",
                 extractServices(normalized)
         );
+    }
+
+    /**
+     * Matches broad requests to inspect the caller's AWS account or active AWS
+     * services. These are audit intents even when the user does not use the word
+     * "audit".
+     *
+     * @param normalized the normalized message
+     * @return true if the message asks for AWS account/service analysis
+     */
+    private boolean mentionsAwsAccountAnalysis(String normalized) {
+        boolean mentionsAws = normalized.contains("aws");
+        boolean mentionsAccountOrInventory = normalized.contains("account")
+                || normalized.contains("services")
+                || normalized.contains("resources")
+                || normalized.contains("using");
+        boolean mentionsAnalysisIntent = normalized.contains("analyze")
+                || normalized.contains("analyse")
+                || normalized.contains("review")
+                || normalized.contains("summarize")
+                || normalized.contains("summary")
+                || normalized.contains("highlight")
+                || normalized.contains("unusual")
+                || normalized.contains("worth reviewing");
+
+        return mentionsAws && mentionsAccountOrInventory && mentionsAnalysisIntent;
     }
 
     /**

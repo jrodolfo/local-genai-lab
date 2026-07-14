@@ -12,6 +12,16 @@
     "expectedServices": ["sts"]
   },
   {
+    "name": "broad aws account analysis falls back to deterministic audit",
+    "mode": "hybrid",
+    "message": "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+    "plannerResponse": "{\"action\":\"clarification_needed\",\"toolName\":\"aws_region_audit\",\"arguments\":{},\"missingFields\":[\"accountId\",\"region\"],\"reason\":\"Need account and region details.\"}",
+    "expectedType": "AWS_REGION_AUDIT",
+    "expectedUseTool": true,
+    "expectedClarification": false,
+    "expectedFallbackUsed": true
+  },
+  {
     "name": "planner asks for bucket clarification",
     "mode": "hybrid",
     "message": "check s3 cloudwatch metrics for the last 7 days",
