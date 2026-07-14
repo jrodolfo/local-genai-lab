@@ -51,7 +51,7 @@ EOF
 setup_prepare_release_fixture() {
   local tmp_dir="$1"
 
-  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/system-bin" "${tmp_dir}/repo/scripts"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/system-bin" "${tmp_dir}/out" "${tmp_dir}/repo/scripts"
   cp "${REPO_ROOT}/scripts/prepare-release.sh" "${tmp_dir}/repo/scripts/prepare-release.sh"
   chmod +x "${tmp_dir}/repo/scripts/prepare-release.sh"
   ln -s "$(command -v bash)" "${tmp_dir}/system-bin/bash"
@@ -68,6 +68,7 @@ run_prepare_release() {
     HOME="${HOME:-}" \
     PATH="${tmp_dir}/bin:${tmp_dir}/system-bin" \
     MOCK_PREPARE_RELEASE_LOG="${tmp_dir}/prepare-release.log" \
+    PREPARE_RELEASE_OUTPUT_DIR="${tmp_dir}/out" \
     bash "${tmp_dir}/repo/scripts/prepare-release.sh" "$@"
 }
 
@@ -132,19 +133,21 @@ test_prepare_release_runs_expected_commands() {
 
   assert_contains "${output}" 'Local GenAI Lab release preparation'
   assert_contains "${output}" 'version: v0.2.0'
-  assert_contains "${output}" '/tmp/local-genai-lab-release-check-v0.2.0.txt'
-  assert_contains "${output}" '/tmp/local-genai-lab-release-check-docker-v0.2.0.txt'
+  assert_contains "${output}" "${tmp_dir}/out/local-genai-lab-release-check-v0.2.0.txt"
+  assert_contains "${output}" "${tmp_dir}/out/local-genai-lab-release-check-docker-v0.2.0.txt"
   assert_contains "${output}" 'Release preparation passed.'
   assert_contains "${output}" 'Here are the files you need to check to see if the tests are OK:'
-  assert_contains "${output}" 'Then inspect the two /tmp files:'
-  assert_contains "${output}" 'vi /tmp/local-genai-lab-release-check-v0.2.0.txt'
-  assert_contains "${output}" 'vi /tmp/local-genai-lab-release-check-docker-v0.2.0.txt'
+  assert_contains "${output}" 'Then inspect the two output files:'
+  assert_contains "${output}" "vi ${tmp_dir}/out/local-genai-lab-release-check-v0.2.0.txt"
+  assert_contains "${output}" "vi ${tmp_dir}/out/local-genai-lab-release-check-docker-v0.2.0.txt"
   assert_contains "${output}" 'tag: v0.2.0'
   assert_contains "${output}" 'title: local genai lab v0.2.0'
   if [ "${log}" != "${expected_log}" ]; then
     printf 'expected prepare-release calls:\n%s\nactual prepare-release calls:\n%s\n' "${expected_log}" "${log}" >&2
     exit 1
   fi
+  assert_contains "$(cat "${tmp_dir}/out/local-genai-lab-release-check-v0.2.0.txt")" 'mock make release-check'
+  assert_contains "$(cat "${tmp_dir}/out/local-genai-lab-release-check-docker-v0.2.0.txt")" 'mock make release-check-docker'
   rm -rf "${tmp_dir}"
 }
 

@@ -26,6 +26,8 @@ Runs release checks and writes long output to:
   /tmp/local-genai-lab-release-check-vX.Y.Z.txt
   /tmp/local-genai-lab-release-check-docker-vX.Y.Z.txt
 
+Set PREPARE_RELEASE_OUTPUT_DIR to override the output directory.
+
 This script does not create tags or publish GitHub Releases.
 EOF
 }
@@ -71,8 +73,15 @@ if [[ ! "${VERSION}" =~ ^v[0-9]+[.][0-9]+[.][0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; the
   die "version must look like v0.2.0"
 fi
 
-RELEASE_CHECK_OUTPUT="/tmp/local-genai-lab-release-check-${VERSION}.txt"
-RELEASE_CHECK_DOCKER_OUTPUT="/tmp/local-genai-lab-release-check-docker-${VERSION}.txt"
+OUTPUT_DIR="${PREPARE_RELEASE_OUTPUT_DIR:-/tmp}"
+OUTPUT_DIR="${OUTPUT_DIR%/}"
+
+if [ ! -d "${OUTPUT_DIR}" ]; then
+  die "output directory does not exist: ${OUTPUT_DIR}"
+fi
+
+RELEASE_CHECK_OUTPUT="${OUTPUT_DIR}/local-genai-lab-release-check-${VERSION}.txt"
+RELEASE_CHECK_DOCKER_OUTPUT="${OUTPUT_DIR}/local-genai-lab-release-check-docker-${VERSION}.txt"
 
 printf 'Local GenAI Lab release preparation\n'
 printf 'version: %s\n' "${VERSION}"
@@ -95,7 +104,7 @@ Here are the files you need to check to see if the tests are OK:
   git diff --check
   git status
 
-Then inspect the two /tmp files:
+Then inspect the two output files:
 
   vi ${RELEASE_CHECK_OUTPUT}
   vi ${RELEASE_CHECK_DOCKER_OUTPUT}
