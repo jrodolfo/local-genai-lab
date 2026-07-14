@@ -35,6 +35,7 @@ public class ChatToolRouterService {
             + "If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
     private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
             + "Please provide one bucket name. If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
+    private static final String S3_BUCKET_OPTIONS_CLARIFICATION_PREFIX = "I can proceed with the S3 CloudWatch report, but I need one bucket name. Available buckets: ";
     private static final List<String> AUDIT_SERVICES = List.of(
             "sts", "aws-config", "s3", "ec2", "elbv2", "rds", "lambda",
             "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "logs", "tagging"
@@ -312,6 +313,17 @@ public class ChatToolRouterService {
             if (looksLikeTopicChange(normalized)) {
                 return ToolDecision.none();
             }
+            if (isAffirmativeProceed(normalized) && pendingToolCall.bucketOptions().size() == 1) {
+                return new ToolDecision(
+                        DecisionType.S3_CLOUDWATCH_REPORT,
+                        null,
+                        pendingToolCall.bucketOptions().get(0),
+                        extractRegion(normalized) != null ? extractRegion(normalized) : pendingToolCall.region(),
+                        extractDays(normalized) != null ? extractDays(normalized) : pendingToolCall.days(),
+                        pendingToolCall.reason() != null ? pendingToolCall.reason() : "s3 cloudwatch metrics request",
+                        pendingToolCall.services()
+                );
+            }
             if (wantsAllBuckets(normalized)) {
                 return ToolDecision.clarification(
                         DecisionType.S3_CLOUDWATCH_REPORT,
@@ -321,6 +333,18 @@ public class ChatToolRouterService {
                         pendingToolCall.days(),
                         pendingToolCall.reason() != null ? pendingToolCall.reason() : "s3 report request",
                         S3_ALL_BUCKETS_NOT_IMPLEMENTED
+                );
+            }
+            if (isAffirmativeProceed(normalized) && pendingToolCall.bucketOptions().size() > 1) {
+                return ToolDecision.clarification(
+                        DecisionType.S3_CLOUDWATCH_REPORT,
+                        null,
+                        null,
+                        pendingToolCall.region(),
+                        pendingToolCall.days(),
+                        pendingToolCall.reason() != null ? pendingToolCall.reason() : "s3 report request",
+                        pendingToolCall.bucketOptions(),
+                        S3_BUCKET_OPTIONS_CLARIFICATION_PREFIX + String.join(", ", pendingToolCall.bucketOptions()) + "."
                 );
             }
             return ToolDecision.clarification(
@@ -474,6 +498,23 @@ public class ChatToolRouterService {
     }
 
     /**
+     * Checks if a follow-up confirms the previous recommendation.
+     *
+     * @param normalized the normalized message
+     * @return true if the user accepted the pending recommendation
+     */
+    private boolean isAffirmativeProceed(String normalized) {
+        return normalized.equals("yes")
+                || normalized.equals("yes.")
+                || normalized.contains("please proceed")
+                || normalized.contains("proceed with")
+                || normalized.contains("go ahead")
+                || normalized.contains("run it")
+                || normalized.contains("do it")
+                || normalized.contains("continue");
+    }
+
+    /**
      * Extracts AWS services from the message.
      *
      * @param normalized the normalized message
@@ -547,6 +588,7 @@ public class ChatToolRouterService {
      * @param days          the number of days, if applicable
      * @param reason        the reason for the decision
      * @param services      the list of AWS services, if applicable
+     * @param bucketOptions known S3 bucket options that can complete this decision
      * @param clarification clarification text if needed
      */
     public record ToolDecision(
@@ -557,8 +599,14 @@ public class ChatToolRouterService {
             Integer days,
             String reason,
             List<String> services,
+            List<String> bucketOptions,
             String clarification
     ) {
+        public ToolDecision {
+            services = services == null ? List.of() : List.copyOf(services);
+            bucketOptions = bucketOptions == null ? List.of() : List.copyOf(bucketOptions);
+        }
+
         /**
          * Constructor for a tool decision without services and clarification.
          *
@@ -577,7 +625,7 @@ public class ChatToolRouterService {
                 Integer days,
                 String reason
         ) {
-            this(type, reportType, bucket, region, days, reason, List.of(), null);
+            this(type, reportType, bucket, region, days, reason, List.of(), List.of(), null);
         }
 
         /**
@@ -600,7 +648,32 @@ public class ChatToolRouterService {
                 String reason,
                 List<String> services
         ) {
-            this(type, reportType, bucket, region, days, reason, services, null);
+            this(type, reportType, bucket, region, days, reason, services, List.of(), null);
+        }
+
+        /**
+         * Constructor for a tool decision with services and clarification.
+         *
+         * @param type          the type of decision
+         * @param reportType    the report type
+         * @param bucket        the bucket name
+         * @param region        the AWS region
+         * @param days          the number of days
+         * @param reason        the reason for the decision
+         * @param services      the list of AWS services
+         * @param clarification the clarification text
+         */
+        public ToolDecision(
+                DecisionType type,
+                String reportType,
+                String bucket,
+                String region,
+                Integer days,
+                String reason,
+                List<String> services,
+                String clarification
+        ) {
+            this(type, reportType, bucket, region, days, reason, services, List.of(), clarification);
         }
 
         /**
@@ -609,7 +682,7 @@ public class ChatToolRouterService {
          * @return a NONE tool decision
          */
         public static ToolDecision none() {
-            return new ToolDecision(DecisionType.NONE, null, null, null, null, "no tool matched", List.of(), null);
+            return new ToolDecision(DecisionType.NONE, null, null, null, null, "no tool matched", List.of(), List.of(), null);
         }
 
         /**
@@ -620,7 +693,7 @@ public class ChatToolRouterService {
          * @return a tool decision with clarification
          */
         public static ToolDecision clarification(DecisionType type, String clarification) {
-            return new ToolDecision(type, null, null, null, null, "clarification required", List.of(), clarification);
+            return new ToolDecision(type, null, null, null, null, "clarification required", List.of(), List.of(), clarification);
         }
 
         /**
@@ -644,7 +717,33 @@ public class ChatToolRouterService {
                 String reason,
                 String clarification
         ) {
-            return new ToolDecision(type, reportType, bucket, region, days, reason, List.of(), clarification);
+            return new ToolDecision(type, reportType, bucket, region, days, reason, List.of(), List.of(), clarification);
+        }
+
+        /**
+         * Creates a clarification decision while preserving bucket options.
+         *
+         * @param type          the type of decision
+         * @param reportType    the report type
+         * @param bucket        the bucket name
+         * @param region        the AWS region
+         * @param days          the number of days
+         * @param reason        the reason for the decision
+         * @param bucketOptions known S3 bucket options
+         * @param clarification the clarification text
+         * @return a tool decision with clarification, partial arguments, and bucket options
+         */
+        public static ToolDecision clarification(
+                DecisionType type,
+                String reportType,
+                String bucket,
+                String region,
+                Integer days,
+                String reason,
+                List<String> bucketOptions,
+                String clarification
+        ) {
+            return new ToolDecision(type, reportType, bucket, region, days, reason, List.of(), bucketOptions, clarification);
         }
 
         /**

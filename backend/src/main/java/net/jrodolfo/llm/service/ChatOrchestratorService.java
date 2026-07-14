@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -118,15 +119,24 @@ public class ChatOrchestratorService {
                 preparedChat.session().sessionId(),
                 preparedChat.pendingTool()
         );
+        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(response.response(), preparedChat);
         chatMemoryService.finishTurn(
                 preparedChat.session(),
                 response.response(),
                 response.tool(),
                 response.toolResult(),
                 response.metadata(),
-                preparedChat.session().pendingToolCall()
+                pendingToolCall
         );
-        return response;
+        return new ChatResponse(
+                response.response(),
+                response.model(),
+                response.tool(),
+                response.toolResult(),
+                response.sessionId(),
+                toPendingToolResponse(pendingToolCall),
+                response.metadata()
+        );
     }
 
     /**
@@ -338,13 +348,14 @@ public class ChatOrchestratorService {
                 providerMetadata != null ? providerMetadata.provider() : null,
                 preparedChat.model()
         );
+        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(assistantResponse, preparedChat);
         return chatMemoryService.finishTurn(
                 preparedChat.session(),
                 assistantResponse,
                 preparedChat.toolMetadata(),
                 preparedChat.toolResult(),
                 providerMetadata,
-                preparedChat.session().pendingToolCall()
+                pendingToolCall
         );
     }
 
@@ -398,6 +409,7 @@ public class ChatOrchestratorService {
                     decision.days(),
                     decision.reason(),
                     decision.services(),
+                    decision.bucketOptions(),
                     List.of("bucket")
             );
             case READ_LATEST_REPORT -> new PendingToolCall(
@@ -408,6 +420,7 @@ public class ChatOrchestratorService {
                     null,
                     decision.reason(),
                     decision.services(),
+                    decision.bucketOptions(),
                     List.of("reportType")
             );
             default -> null;
@@ -422,6 +435,75 @@ public class ChatOrchestratorService {
      */
     private PendingToolCallResponse toPendingToolResponse(PendingToolCall pendingToolCall) {
         return chatSessionService.toPendingToolResponse(pendingToolCall);
+    }
+
+    /**
+     * Creates structured pending state when a tool-assisted answer recommends a
+     * supported next tool action and asks the user whether to proceed.
+     *
+     * @param assistantResponse final provider response text
+     * @param preparedChat      prepared chat state containing tool metadata/result
+     * @return pending tool call state, or null when no supported next action was recommended
+     */
+    private PendingToolCall inferPendingToolCallFromAssistantResponse(String assistantResponse, PreparedChat preparedChat) {
+        if (assistantResponse == null || preparedChat == null || preparedChat.toolMetadata() == null || preparedChat.toolResult() == null) {
+            return null;
+        }
+        if (!"aws_region_audit".equals(preparedChat.toolMetadata().name()) || !"success".equals(preparedChat.toolMetadata().status())) {
+            return null;
+        }
+
+        String normalized = assistantResponse.toLowerCase(Locale.ROOT);
+        boolean recommendsS3Report = normalized.contains("s3")
+                && normalized.contains("report")
+                && (normalized.contains("recommend") || normalized.contains("next step") || normalized.contains("proceed"));
+        if (!recommendsS3Report) {
+            return null;
+        }
+
+        List<String> bucketOptions = extractBucketOptions(preparedChat.toolResult());
+        return new PendingToolCall(
+                ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT,
+                null,
+                null,
+                null,
+                inferRecommendedDays(normalized),
+                "assistant recommended s3 cloudwatch report",
+                List.of(),
+                bucketOptions,
+                bucketOptions.size() == 1 ? List.of("confirmation") : List.of("bucket")
+        );
+    }
+
+    /**
+     * Extracts bucket options from a structured audit tool result.
+     *
+     * @param toolResult structured tool result
+     * @return bucket names in artifact order
+     */
+    private List<String> extractBucketOptions(Map<String, Object> toolResult) {
+        Object value = toolResult.get("bucketNames");
+        if (!(value instanceof List<?> buckets)) {
+            return List.of();
+        }
+        return buckets.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .filter(bucket -> !bucket.isBlank())
+                .toList();
+    }
+
+    /**
+     * Infers the recommended S3 report lookback window from model wording.
+     *
+     * @param normalizedResponse lowercase assistant response
+     * @return the lookback window in days
+     */
+    private Integer inferRecommendedDays(String normalizedResponse) {
+        if (normalizedResponse.contains("last month") || normalizedResponse.contains("past month") || normalizedResponse.contains("previous month")) {
+            return 30;
+        }
+        return null;
     }
 
     /**
@@ -567,11 +649,12 @@ public class ChatOrchestratorService {
         List<String> bucketNames = result.get("bucketNames") instanceof List<?> buckets
                 ? buckets.stream().filter(String.class::isInstance).map(String.class::cast).toList()
                 : List.of();
-        if (!bucketNames.isEmpty()) {
+        Map<String, Object> summary = nestedMap(result, "summary");
+        List<String> selectedServices = stringList(summary.getOrDefault("selected_services", result.get("selected_services")));
+        if (!bucketNames.isEmpty() && selectedServices.size() == 1 && selectedServices.contains("s3")) {
             return "S3 bucket discovery completed with bucket_count=%s.".formatted(bucketNames.size());
         }
 
-        Map<String, Object> summary = nestedMap(result, "summary");
         return "AWS audit completed with success_count=%s, failure_count=%s, skipped_count=%s.".formatted(
                 valueOrUnknown(summary, "success_count"),
                 valueOrUnknown(summary, "failure_count"),
@@ -587,11 +670,10 @@ public class ChatOrchestratorService {
      * @return enriched result for the model prompt and UI
      */
     private Map<String, Object> enrichAuditResult(Map<String, Object> result, List<String> services) {
-        if (services == null || !services.contains("s3")) {
-            return result;
-        }
-
         Map<String, Object> enriched = new LinkedHashMap<>(result);
+        if (services != null && !services.isEmpty()) {
+            enriched.put("selected_services", services);
+        }
         List<String> bucketNames = readS3BucketNames(result.get("run_dir"));
         if (!bucketNames.isEmpty()) {
             enriched.put("bucketNames", bucketNames);
@@ -661,6 +743,22 @@ public class ChatOrchestratorService {
             }
         }
         return null;
+    }
+
+    /**
+     * Converts a list-like value into strings.
+     *
+     * @param value raw value
+     * @return string list
+     */
+    private List<String> stringList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .toList();
     }
 
     /**
