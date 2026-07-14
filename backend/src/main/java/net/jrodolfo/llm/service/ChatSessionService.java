@@ -286,7 +286,8 @@ public class ChatSessionService {
                 pendingToolCall.bucket(),
                 pendingToolCall.region(),
                 pendingToolCall.days(),
-                pendingToolCall.services()
+                pendingToolCall.services(),
+                pendingToolCall.bucketOptions()
         );
     }
 

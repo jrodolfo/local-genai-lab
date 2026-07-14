@@ -82,16 +82,27 @@ Symptoms:
 - Bedrock requests fail
 - MCP-backed AWS audit scripts fail
 - backend or script output shows AWS auth/permission errors
+- Docker backend returns an Agent tool failure about missing `aws` or `jq`
+- Docker backend returns an Agent tool failure about a missing complete report bundle
 
 Check:
 
 ```bash
 aws sts get-caller-identity
+jq --version
 ```
 
 Fix:
 - verify your AWS credentials or `AWS_PROFILE`
 - confirm the selected Bedrock region and model/profile are enabled for your account
+- for Docker-based MCP AWS tools, copy `.env.docker-aws-tools.example` to
+  `.env.docker-aws-tools`, set `LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true`, and
+  confirm `LOCAL_GENAI_LAB_AWS_DIR` points to your local AWS config directory
+- the Docker backend image includes AWS CLI and `jq`, but it does not mount host
+  AWS credentials unless the local AWS tools override is enabled
+- if an audit created `report.txt` but not `summary.json`, the MCP server treats
+  the report as incomplete; common causes are missing `jq`, missing `aws`, or an
+  interrupted script run
 
 ## Slow Local Models
 

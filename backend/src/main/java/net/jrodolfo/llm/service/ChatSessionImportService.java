@@ -194,6 +194,7 @@ public class ChatSessionImportService {
                 pendingTool.days(),
                 pendingTool.reason(),
                 pendingTool.services() == null ? List.of() : pendingTool.services(),
+                pendingTool.bucketOptions() == null ? List.of() : pendingTool.bucketOptions(),
                 pendingTool.missingFields() == null ? List.of() : pendingTool.missingFields()
         );
     }

@@ -153,6 +153,10 @@ installed:
 make release-check-docker
 ```
 
+For Docker-based AWS Agent tools, copy `.env.docker-aws-tools.example` to
+`.env.docker-aws-tools`. The file is ignored by Git and lets the normal Docker
+scripts mount your local AWS configuration read-only into the backend container.
+
 Provider setup details are in [docs/providers.md](./docs/providers.md).
 Testing and release validation details are in [docs/testing.md](./docs/testing.md)
 and [docs/release-checklist.md](./docs/release-checklist.md).
@@ -242,6 +246,4 @@ Project governance and release references:
 
 ## License
 
-- MIT License
-- Copyright (c) 2026 Rod Oliveira
-- See [LICENSE](./LICENSE)
+This project is licensed under the [MIT License](./LICENSE).

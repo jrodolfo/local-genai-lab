@@ -23,6 +23,23 @@ class ChatToolRouterServiceTest {
     }
 
     @Test
+    void routesAwsAccountAnalysisRequestsToAuditTool() {
+        var decision = router.route("Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertTrue(decision.shouldUseTool());
+        assertEquals("aws audit request", decision.reason());
+    }
+
+    @Test
+    void routesAwsAccountReviewRequestsToAuditTool() {
+        var decision = router.route("Review my AWS account and tell me what services are active.");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertTrue(decision.shouldUseTool());
+    }
+
+    @Test
     void routesS3CloudwatchRequests() {
         var decision = router.route("check bucket jrodolfo.net metrics in us-east-2 for 7 days");
 
@@ -110,6 +127,7 @@ class ChatToolRouterServiceTest {
                         clarification.days(),
                         clarification.reason(),
                         clarification.services(),
+                        List.of(),
                         List.of("bucket")
                 ),
                 "all buckets"
@@ -133,6 +151,22 @@ class ChatToolRouterServiceTest {
     @Test
     void leavesNormalChatRequestsAlone() {
         var decision = router.route("explain recursion using a simple example");
+
+        assertEquals(ChatToolRouterService.DecisionType.NONE, decision.type());
+        assertFalse(decision.shouldUseTool());
+    }
+
+    @Test
+    void leavesAwsConceptRequestsAlone() {
+        var decision = router.route("explain AWS services");
+
+        assertEquals(ChatToolRouterService.DecisionType.NONE, decision.type());
+        assertFalse(decision.shouldUseTool());
+    }
+
+    @Test
+    void leavesAwsAccountConceptRequestsAlone() {
+        var decision = router.route("how does an AWS account work?");
 
         assertEquals(ChatToolRouterService.DecisionType.NONE, decision.type());
         assertFalse(decision.shouldUseTool());

@@ -5,6 +5,7 @@ import path from "node:path";
 import test, {afterEach} from "node:test";
 import {config} from "../config.js";
 import {listRecentReportsResultSchema, readReportSummaryResultSchema} from "../schemas/toolContracts.js";
+import {listReportDirectories, requireNewRunDirectory} from "../services/reportLocator.js";
 import {handleListRecentReports} from "./listReports.js";
 import {handleReadReportSummary} from "./readReportSummary.js";
 
@@ -54,6 +55,27 @@ test("list recent reports returns newest valid runs first and ignores incomplete
             ["s3-cloudwatch-valid", "aws-audit-valid", "aws-audit-malformed-summary"],
         );
         assert.equal(parsed.reports.some((report) => report.directory_name === "aws-audit-missing-summary"), false);
+    } finally {
+        await fs.rm(tempRoot, {recursive: true, force: true});
+    }
+});
+
+test("new incomplete report bundle fails with missing summary diagnostic", async () => {
+    const tempRoot = await setupFixtureReports();
+
+    try {
+        const existingCompleteRuns = new Set(
+            (await listReportDirectories("audit")).map((directory) => directory.runDir),
+        );
+
+        await assert.rejects(
+            () => requireNewRunDirectory(
+                "audit",
+                existingCompleteRuns,
+                "Audit script finished but no complete report directory could be located.",
+            ),
+            /Incomplete report bundle found at .*aws-audit-missing-summary.*missing summary\.json/,
+        );
     } finally {
         await fs.rm(tempRoot, {recursive: true, force: true});
     }

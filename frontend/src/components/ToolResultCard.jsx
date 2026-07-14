@@ -101,9 +101,9 @@ function ToolResultCard({toolResult, onPreviewArtifact, onListArtifacts, onCopyP
                 <span className="tool-result-title">AWS audit result</span>
                 {toolResult.accountId ? <span>Account: {toolResult.accountId}</span> : null}
                 {toolResult.runDir ? <span>Run directory: {toolResult.runDir}</span> : null}
-                <span>Success: {toolResult.successCount ?? 0}</span>
-                <span>Failures: {toolResult.failureCount ?? 0}</span>
-                <span>Skipped: {toolResult.skippedCount ?? 0}</span>
+                {toolResult.successCount != null ? <span>Success: {toolResult.successCount}</span> : null}
+                {toolResult.failureCount != null ? <span>Failures: {toolResult.failureCount}</span> : null}
+                {toolResult.skippedCount != null ? <span>Skipped: {toolResult.skippedCount}</span> : null}
                 {Array.isArray(toolResult.selectedRegions) && toolResult.selectedRegions.length > 0 ? (
                     <span>Regions: {toolResult.selectedRegions.join(', ')}</span>
                 ) : null}

@@ -18,6 +18,7 @@ import java.util.List;
  * @param region        AWS region for pending AWS flows, when known
  * @param days          requested lookback window for pending S3 report flows, when known
  * @param services      AWS service filters for pending audit flows, when known
+ * @param bucketOptions known S3 buckets that can complete this pending call
  */
 @Schema(description = "Pending tool clarification state exposed to the frontend.")
 public record PendingToolCallResponse(
@@ -28,6 +29,7 @@ public record PendingToolCallResponse(
         String bucket,
         String region,
         Integer days,
-        List<String> services
+        List<String> services,
+        List<String> bucketOptions
 ) {
 }

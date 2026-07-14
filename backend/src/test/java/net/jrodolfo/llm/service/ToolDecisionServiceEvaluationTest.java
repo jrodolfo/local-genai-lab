@@ -81,6 +81,7 @@ class ToolDecisionServiceEvaluationTest {
                 pendingToolFixture.days(),
                 pendingToolFixture.reason(),
                 pendingToolFixture.services() == null ? List.of() : pendingToolFixture.services(),
+                List.of(),
                 pendingToolFixture.missingFields() == null ? List.of() : pendingToolFixture.missingFields()
         );
     }

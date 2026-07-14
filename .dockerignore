@@ -1,5 +1,7 @@
 .git
 .run
+.env
+.env.docker-aws-tools
 .DS_Store
 **/.DS_Store
 

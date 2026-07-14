@@ -26,7 +26,8 @@ public class ToolDecisionService {
             "recent reports", "read report", "list reports", "show report",
             "aws-config", "aws config", "sts", "ec2", "elbv2", "rds", "lambda",
             "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "secrets manager",
-            "log groups", "tagging"
+            "log groups", "tagging", "aws account", "analyze", "analyse", "review",
+            "summarize", "summary", "unusual", "services"
     );
 
     private final AppToolsProperties appToolsProperties;

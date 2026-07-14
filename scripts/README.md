@@ -34,6 +34,18 @@ Docker lifecycle:
 ./scripts/release-check.sh
 ```
 
+Docker-based AWS Agent tools are opt-in because they mount host AWS
+configuration into the backend container. To enable them for your machine
+without passing flags to every Docker command:
+
+```bash
+cp .env.docker-aws-tools.example .env.docker-aws-tools
+```
+
+Then edit `AWS_PROFILE`, `AWS_REGION`, and `LOCAL_GENAI_LAB_AWS_DIR` if needed.
+The file is ignored by Git. When enabled, `docker-start.sh` and
+`docker-restart.sh` use the AWS compose override automatically during startup.
+
 `docker-sanity-check.sh` is the fastest Docker preflight. It verifies that the
 Docker daemon and Compose plugin are reachable before you spend time on image
 builds, Compose startup, or Trivy scans. To also prove Docker can run a
