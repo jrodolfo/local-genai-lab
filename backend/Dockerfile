@@ -14,6 +14,9 @@ RUN npm run build && npm prune --omit=dev
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends awscli jq \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=mcp-build /usr/local/bin/node /usr/local/bin/node
 COPY --from=backend-build /app/target/local-genai-lab-backend-0.0.1-SNAPSHOT.jar app.jar
 COPY --from=mcp-build /app/mcp/package.json /app/mcp/package-lock.json ./mcp/

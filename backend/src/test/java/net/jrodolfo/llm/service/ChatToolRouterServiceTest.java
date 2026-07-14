@@ -127,6 +127,7 @@ class ChatToolRouterServiceTest {
                         clarification.days(),
                         clarification.reason(),
                         clarification.services(),
+                        List.of(),
                         List.of("bucket")
                 ),
                 "all buckets"

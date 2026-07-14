@@ -95,11 +95,11 @@ jq --version
 Fix:
 - verify your AWS credentials or `AWS_PROFILE`
 - confirm the selected Bedrock region and model/profile are enabled for your account
-- for MCP-backed AWS tools, prefer host-run mode unless Docker AWS tooling has
-  been explicitly configured
-- the default Docker backend image is not intended to run AWS account audit tools
-  because it does not mount host AWS credentials and does not provide AWS CLI
-  access by default
+- for Docker-based MCP AWS tools, copy `.env.docker-aws-tools.example` to
+  `.env.docker-aws-tools`, set `LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true`, and
+  confirm `LOCAL_GENAI_LAB_AWS_DIR` points to your local AWS config directory
+- the Docker backend image includes AWS CLI and `jq`, but it does not mount host
+  AWS credentials unless the local AWS tools override is enabled
 - if an audit created `report.txt` but not `summary.json`, the MCP server treats
   the report as incomplete; common causes are missing `jq`, missing `aws`, or an
   interrupted script run

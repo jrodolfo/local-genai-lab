@@ -143,6 +143,7 @@ class SessionControllerTest {
                 7,
                 "s3 cloudwatch metrics request",
                 List.of(),
+                List.of(),
                 List.of("bucket")
         ));
         saveSession("complete-session", "run aws audit", Instant.parse("2026-04-11T10:00:00Z"));
@@ -175,6 +176,7 @@ class SessionControllerTest {
                 7,
                 "s3 cloudwatch metrics request",
                 List.of(),
+                List.of(),
                 List.of("bucket")
         ));
         saveSession("bedrock-complete", "check bucket metrics", Instant.parse("2026-04-11T10:00:00Z"));
@@ -185,6 +187,7 @@ class SessionControllerTest {
                 null,
                 7,
                 "s3 cloudwatch metrics request",
+                List.of(),
                 List.of(),
                 List.of("bucket")
         ), "ollama", false);
@@ -225,6 +228,7 @@ class SessionControllerTest {
                         null,
                         7,
                         "s3 cloudwatch metrics request",
+                        List.of(),
                         List.of(),
                         List.of("bucket")
                 )
@@ -282,6 +286,7 @@ class SessionControllerTest {
                         null,
                         7,
                         "s3 cloudwatch metrics request",
+                        List.of(),
                         List.of(),
                         List.of("bucket")
                 )
@@ -508,6 +513,7 @@ class SessionControllerTest {
                         14,
                         "s3 cloudwatch metrics request",
                         List.of("cloudwatch"),
+                        List.of(),
                         List.of("bucket")
                 )
         );

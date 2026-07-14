@@ -90,6 +90,34 @@ class ChatPromptBuilderTest {
     }
 
     @Test
+    void s3ToolPromptRequiresCompletedReportWording() {
+        String prompt = promptBuilder.buildToolAssistedPrompt(
+                "Yes, please, run an S3 report for jrodolfo.net for the last month.",
+                List.of(),
+                new ChatPromptBuilder.ToolContext(
+                        "s3_cloudwatch_report",
+                        "s3 cloudwatch metrics request",
+                        "S3 CloudWatch report for bucket jrodolfo.net completed with success_count=20 and failure_count=0.",
+                        Map.of(
+                                "type", "s3_report_summary",
+                                "bucket", "jrodolfo.net",
+                                "successCount", 20,
+                                "failureCount", 0,
+                                "runDir", "s3-cloudwatch/s3-cloudwatch-2026-07-14_17-22-52",
+                                "summaryPath", "s3-cloudwatch/s3-cloudwatch-2026-07-14_17-22-52/summary.json",
+                                "reportPath", "s3-cloudwatch/s3-cloudwatch-2026-07-14_17-22-52/report.txt"
+                        )
+                )
+        );
+
+        assertTrue(prompt.contains("If tool_name is s3_cloudwatch_report and tool_result_json is present, say the report completed"));
+        assertTrue(prompt.contains("do not say you will run it, will proceed, or should run it next"));
+        assertTrue(prompt.contains("Do not recommend running the same s3_cloudwatch_report again after the tool has already completed"));
+        assertTrue(prompt.contains("\"bucket\" : \"jrodolfo.net\""));
+        assertTrue(prompt.contains("\"reportPath\" : \"s3-cloudwatch/s3-cloudwatch-2026-07-14_17-22-52/report.txt\""));
+    }
+
+    @Test
     void buildDispatchesToPlainPromptWhenToolContextIsMissing() {
         String prompt = promptBuilder.build(new ChatPromptBuilder.PromptContext(
                 "now explain it using fibonacci and java",

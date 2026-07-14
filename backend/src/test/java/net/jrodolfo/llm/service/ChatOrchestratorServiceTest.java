@@ -240,6 +240,60 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void completedS3ReportReplacesContradictoryFutureTenseResponse() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = """
+                Based on the S3 CloudWatch report for your bucket `jrodolfo.net` with success, here's a summary.
+
+                As you've requested, I will proceed with running an S3 report for `jrodolfo.net` for the last month.
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Yes, please, run an S3 report for jrodolfo.net for the last month.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertEquals("jrodolfo.net", mcpService.lastS3Request.bucket());
+        assertEquals(30, mcpService.lastS3Request.days());
+        assertTrue(response.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(response.response().contains("success_count=5"));
+        assertTrue(response.response().contains("failure_count=0"));
+        assertTrue(response.response().contains("s3-cloudwatch/fake-run/report.txt"));
+        assertFalse(response.response().contains("will proceed"));
+
+        var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
+        assertEquals(response.response(), storedSession.messages().get(1).content());
+    }
+
+    @Test
+    void streamedCompletedS3ReportPersistsCorrectedResponse() {
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = newOrchestrator(new FakeChatModelProvider(), new FakeMcpService(), sessionStore, "rules");
+
+        ChatOrchestratorService.PreparedChat preparedChat = orchestrator.prepareChat(
+                "run an S3 report for jrodolfo.net for the last month",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+        var persistedSession = orchestrator.completePreparedChat(
+                preparedChat,
+                "As you've requested, I will proceed with running an S3 report for `jrodolfo.net` for the last month.",
+                new ModelProviderMetadata("ollama", "llama3:8b", null, null, null, null, null, null, null, null)
+        );
+
+        String persistedResponse = persistedSession.messages().get(1).content();
+        assertTrue(persistedResponse.contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(persistedResponse.contains("s3-cloudwatch/fake-run/summary.json"));
+        assertFalse(persistedResponse.contains("will proceed"));
+    }
+
+    @Test
     void allBucketsFollowUpReturnsCurrentBoundaryWithoutCallingProvider() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -281,6 +335,86 @@ class ChatOrchestratorServiceTest {
         assertTrue(chatModelProvider.lastPrompt.contains("\"bucketNames\""));
         assertTrue(chatModelProvider.lastPrompt.contains("first-bucket"));
         assertTrue(chatModelProvider.lastPrompt.contains("run an S3 report for <bucket-name> for the last month"));
+    }
+
+    @Test
+    void auditResponseRecommendationCreatesPendingS3FollowUpState() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = """
+                Given that you already have a comprehensive analysis of your AWS account, I recommend taking the next step by running an S3 report for one of your bucket names for the last month.
+                Please let me know if you'd like to proceed with this recommendation.
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        Path runDir = auditRunDirWithBuckets("first-bucket", "second-bucket");
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new FakeMcpService(runDir.toString()), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertNotNull(response.pendingTool());
+        assertEquals("s3_cloudwatch_report", response.pendingTool().toolName());
+        assertEquals(30, response.pendingTool().days());
+        assertEquals(List.of("first-bucket", "second-bucket"), response.pendingTool().bucketOptions());
+        PendingToolCall pendingToolCall = sessionStore.findById(response.sessionId()).orElseThrow().pendingToolCall();
+        assertNotNull(pendingToolCall);
+        assertEquals(ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT, pendingToolCall.type());
+        assertEquals(List.of("first-bucket", "second-bucket"), pendingToolCall.bucketOptions());
+    }
+
+    @Test
+    void affirmativeFollowUpToRecommendedS3ReportWithMultipleBucketsAsksForBucketSelection() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = "I recommend taking the next step by running an S3 report for one of your bucket names for the last month. Please let me know if you'd like to proceed.";
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService(auditRunDirWithBuckets("first-bucket", "second-bucket").toString());
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse firstResponse = orchestrator.chat("Analyze my AWS account and summarize the services I am using.", "ollama", "llama3:8b", null);
+        ChatResponse followUp = orchestrator.chat("Yes, please proceed with the recommendation.", "ollama", "llama3:8b", firstResponse.sessionId());
+
+        assertTrue(followUp.response().contains("I can proceed with the S3 CloudWatch report"));
+        assertTrue(followUp.response().contains("first-bucket, second-bucket"));
+        assertEquals("clarification-needed", followUp.tool().status());
+        assertNull(mcpService.lastS3Request);
+        assertEquals(List.of("first-bucket", "second-bucket"), sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall().bucketOptions());
+    }
+
+    @Test
+    void affirmativeFollowUpToRecommendedS3ReportWithOneBucketRunsReport() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = "I recommend taking the next step by running an S3 report for one of your bucket names for the last month. Please let me know if you'd like to proceed.";
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService(auditRunDirWithBuckets("only-bucket").toString());
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse firstResponse = orchestrator.chat("Analyze my AWS account and summarize the services I am using.", "ollama", "llama3:8b", null);
+        ChatResponse followUp = orchestrator.chat("Yes, please proceed with the recommendation.", "ollama", "llama3:8b", firstResponse.sessionId());
+
+        assertEquals("only-bucket", mcpService.lastS3Request.bucket());
+        assertEquals(30, mcpService.lastS3Request.days());
+        assertEquals("success", followUp.tool().status());
+        assertNull(sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall());
+    }
+
+    @Test
+    void topicChangeAfterRecommendedS3ReportFallsBackToRegularChat() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = "I recommend taking the next step by running an S3 report for one of your bucket names for the last month. Please let me know if you'd like to proceed.";
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService(auditRunDirWithBuckets("first-bucket", "second-bucket").toString());
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse firstResponse = orchestrator.chat("Analyze my AWS account and summarize the services I am using.", "ollama", "llama3:8b", null);
+        ChatResponse followUp = orchestrator.chat("explain recursion", "ollama", "llama3:8b", firstResponse.sessionId());
+
+        assertEquals("plain response", followUp.response());
+        assertNull(followUp.tool());
+        assertNull(mcpService.lastS3Request);
+        assertNull(sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall());
     }
 
     @Test
@@ -503,6 +637,21 @@ class ChatOrchestratorServiceTest {
         return new FileChatSessionStore(objectMapper, new AppStorageProperties(tempDir.resolve("sessions").toString(), tempDir.resolve("reports").toString()), new SessionIdPolicy());
     }
 
+    private Path auditRunDirWithBuckets(String... bucketNames) throws Exception {
+        Path runDir = tempDir.resolve("reports").resolve("audit").resolve("aws-audit-test-" + System.nanoTime());
+        Files.createDirectories(runDir.resolve("json"));
+        StringBuilder bucketsJson = new StringBuilder("[\n");
+        for (int index = 0; index < bucketNames.length; index++) {
+            if (index > 0) {
+                bucketsJson.append(",\n");
+            }
+            bucketsJson.append("  {\"Name\": \"").append(bucketNames[index]).append("\", \"CreationDate\": \"2026-01-01T00:00:00Z\"}");
+        }
+        bucketsJson.append("\n]\n");
+        Files.writeString(runDir.resolve("json").resolve("s3_list_buckets.json"), bucketsJson.toString());
+        return runDir;
+    }
+
     private ChatOrchestratorService newOrchestrator(
             ChatModelProvider chatModelProvider,
             McpService mcpService,
@@ -533,6 +682,7 @@ class ChatOrchestratorServiceTest {
         private String lastPrompt;
         private java.util.List<net.jrodolfo.llm.provider.ProviderPromptMessage> lastMessages = java.util.List.of();
         private boolean generateCalled;
+        private String nextAssistantResponse;
         private String nextPlannerResponse;
         private int plannerCalls;
         private final java.util.ArrayDeque<String> plannerResponses = new java.util.ArrayDeque<>();
@@ -562,7 +712,9 @@ class ChatOrchestratorServiceTest {
             this.lastPrompt = message.prompt();
             this.lastMessages = message.messages();
             this.generateCalled = true;
-            return new ChatResponse("plain response", resolveModel(model), toolMetadata, toolResult, sessionId, pendingTool, null);
+            String response = nextAssistantResponse != null ? nextAssistantResponse : "plain response";
+            nextAssistantResponse = null;
+            return new ChatResponse(response, resolveModel(model), toolMetadata, toolResult, sessionId, pendingTool, null);
         }
 
         @Override
@@ -617,6 +769,7 @@ class ChatOrchestratorServiceTest {
             this.lastS3Request = request;
             return new McpToolInvocationResponse("s3_cloudwatch_report", Map.of(
                     "ok", true,
+                    "run_dir", "s3-cloudwatch/fake-run",
                     "summary", Map.of(
                             "bucket", request.bucket(),
                             "success_count", 5,

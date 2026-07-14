@@ -35,8 +35,7 @@ function MessageBubble({
     const showTool = !isUser && tool?.used;
     const showProviderSummary = !isUser && metadata && (metadata.provider || metadata.modelId);
     const showMetadata = !isUser && showTechnicalDetails && metadata && (metadata.provider || metadata.modelId);
-    const showToolResult = !isUser && toolResult?.type;
-    const showToolVarianceHint = !isUser && showTechnicalDetails && tool?.used && tool?.status === 'success';
+    const showToolResult = !isUser && showTechnicalDetails && toolResult?.type;
     const toolStatusClass = showTool ? `tool-provenance-${normalizeToolStatus(tool.status)}` : '';
 
     return (
@@ -64,11 +63,6 @@ function MessageBubble({
                         {tool.summary ? <span className="tool-provenance-summary">{tool.summary}</span> : null}
                         {showToolResult ?
                             <span className="tool-provenance-result">structured result available below</span> : null}
-                    </div>
-                ) : null}
-                {showToolVarianceHint ? (
-                    <div className="tool-variance-hint">
-                        <span>tool completed successfully; final wording still depends on the selected model</span>
                     </div>
                 ) : null}
                 {showToolResult ? (

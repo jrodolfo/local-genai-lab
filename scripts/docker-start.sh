@@ -34,7 +34,7 @@ printf '%s\n' 'note: keep Ollama running on the host for the default Ollama prov
 
 if ! (
   cd "${REPO_ROOT}"
-  docker compose up -d --build
+  docker_compose up -d --build
 ); then
   print_docker_start_failure_summary >&2
   exit 1

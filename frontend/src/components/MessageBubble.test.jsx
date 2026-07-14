@@ -78,6 +78,7 @@ def factorial(n):
                 role="assistant"
                 content="I found recent reports."
                 tool={{used: true, name: 'list_recent_reports', status: 'success', summary: 'Found 2 recent reports.'}}
+                showTechnicalDetails
                 toolResult={{
                     type: 'report_list',
                     reportType: 'all',
@@ -105,12 +106,40 @@ def factorial(n):
         expect(screen.getByRole('button', {name: /copy run directory/i})).toBeInTheDocument();
     });
 
+    it('hides structured tool results when technical details are disabled', () => {
+        render(
+            <MessageBubble
+                role="assistant"
+                content="Audit complete."
+                tool={{used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed.'}}
+                showTechnicalDetails={false}
+                toolResult={{
+                    type: 'audit_summary',
+                    reportType: 'audit',
+                    accountId: '408887463418',
+                    runDir: 'audit/aws-audit-2026-07-14_17-52-30',
+                    successCount: 37,
+                    failureCount: 0,
+                    skippedCount: 0
+                }}
+            />
+        );
+
+        expect(screen.getByText(/tool used/i)).toBeInTheDocument();
+        expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
+        expect(screen.getByText(/^success$/i)).toBeInTheDocument();
+        expect(screen.queryByText('AWS audit result')).not.toBeInTheDocument();
+        expect(screen.queryByText(/Account: 408887463418/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/structured result available below/i)).not.toBeInTheDocument();
+    });
+
     it('does not render missing audit counts as zero', () => {
         render(
             <MessageBubble
                 role="assistant"
                 content="The audit result is incomplete."
                 tool={{used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed with success_count=unknown.'}}
+                showTechnicalDetails
                 toolResult={{
                     type: 'audit_summary',
                     reportType: 'audit'
@@ -153,7 +182,7 @@ def factorial(n):
 
         expect(screen.getByText(/Bedrock · amazon\.nova-lite-v1:0/i)).toBeInTheDocument();
         expect(screen.getByText(/technical details/i)).toBeInTheDocument();
-        expect(screen.getByText(/tool completed successfully; final wording still depends on the selected model/i)).toBeInTheDocument();
+        expect(screen.queryByText(/tool completed successfully; final wording still depends on the selected model/i)).not.toBeInTheDocument();
         expect(screen.getByText(/provider: bedrock/i)).toBeInTheDocument();
         expect(screen.getByText(/model: amazon.nova-lite-v1:0/i)).toBeInTheDocument();
         expect(screen.getByText(/stop reason: end_turn/i)).toBeInTheDocument();

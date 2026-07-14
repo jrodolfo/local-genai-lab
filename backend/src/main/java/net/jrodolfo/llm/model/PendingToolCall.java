@@ -18,6 +18,7 @@ import java.util.List;
  * @param days          the number of days for the report range
  * @param reason        the reason for the tool call or why it's pending
  * @param services      the list of services involved
+ * @param bucketOptions known S3 bucket options that can complete this pending call
  * @param missingFields fields that need to be provided to complete the tool call
  */
 public record PendingToolCall(
@@ -28,6 +29,7 @@ public record PendingToolCall(
         Integer days,
         String reason,
         List<String> services,
+        List<String> bucketOptions,
         List<String> missingFields
 ) {
     /**
@@ -35,6 +37,7 @@ public record PendingToolCall(
      */
     public PendingToolCall {
         services = services == null ? List.of() : List.copyOf(services);
+        bucketOptions = bucketOptions == null ? List.of() : List.copyOf(bucketOptions);
         missingFields = missingFields == null ? List.of() : List.copyOf(missingFields);
     }
 }

@@ -66,6 +66,7 @@ describe('Home integration', () => {
         await user.click(screen.getByRole('button', {name: /send/i}));
 
         expect(await screen.findByText('Audit complete.')).toBeInTheDocument();
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         expect(screen.getByText('AWS audit result')).toBeInTheDocument();
         expect(screen.getByText(/^aws_region_audit$/i)).toBeInTheDocument();
     });
@@ -365,6 +366,7 @@ describe('Home integration', () => {
 
         const sessionTitle = await screen.findByText('run aws audit');
         await user.click(sessionTitle.closest('button'));
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         await user.click(await screen.findByRole('button', {name: /open summary/i}));
 
         expect(await screen.findByText('Summary preview')).toBeInTheDocument();
@@ -427,6 +429,7 @@ describe('Home integration', () => {
 
         const sessionTitle = await screen.findByText('run aws audit');
         await user.click(sessionTitle.closest('button'));
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         await user.click(await screen.findByRole('button', {name: /open summary/i}));
 
         expect(await screen.findByText('Summary preview')).toBeInTheDocument();
@@ -490,6 +493,7 @@ describe('Home integration', () => {
 
         const sessionTitle = await screen.findByText('run aws audit');
         await user.click(sessionTitle.closest('button'));
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         await user.click(await screen.findByRole('button', {name: /show files/i}));
 
         expect(await screen.findByText('Files in run directory')).toBeInTheDocument();
@@ -553,6 +557,7 @@ describe('Home integration', () => {
 
         const sessionTitle = await screen.findByText('run aws audit');
         await user.click(sessionTitle.closest('button'));
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
         await user.click(await screen.findByRole('button', {name: /open summary/i}));
 
         expect(await screen.findByText('Summary preview')).toBeInTheDocument();
