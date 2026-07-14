@@ -64,7 +64,7 @@ class McpServiceTest {
         );
 
         assertEquals(
-                "aws_region_audit failed: Audit script finished but no report directory could be located.",
+                "Audit script finished but no report directory could be located.",
                 error.getMessage()
         );
     }

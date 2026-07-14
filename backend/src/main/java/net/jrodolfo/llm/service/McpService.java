@@ -154,9 +154,7 @@ public class McpService {
             String message = error instanceof String text && !text.isBlank()
                     ? text
                     : "MCP tool returned an error.";
-            Object resultTool = result.get("tool");
-            String actualTool = resultTool instanceof String text && !text.isBlank() ? text : toolName;
-            throw new McpClientException(actualTool + " failed: " + message);
+            throw new McpClientException(message);
         }
         return result;
     }

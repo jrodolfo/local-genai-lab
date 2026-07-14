@@ -157,7 +157,7 @@ class ChatOrchestratorServiceTest {
         );
 
         assertTrue(response.response().contains("I tried to use the local tool `aws_region_audit`, but it failed"));
-        assertTrue(response.response().contains("Audit script finished but no report directory could be located."));
+        assertTrue(response.response().contains("AWS region audit requires aws CLI and jq in the backend runtime."));
         assertNotNull(response.tool());
         assertEquals("failed", response.tool().status());
         assertFalse(chatModelProvider.generateCalled);
@@ -658,7 +658,7 @@ class ChatOrchestratorServiceTest {
     private static class StructuredErrorMcpService extends FakeMcpService {
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
-            throw new McpClientException("aws_region_audit failed: Audit script finished but no report directory could be located.");
+            throw new McpClientException("AWS region audit requires aws CLI and jq in the backend runtime.");
         }
     }
 

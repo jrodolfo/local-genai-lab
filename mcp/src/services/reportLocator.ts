@@ -55,6 +55,74 @@ async function hasReportBundle(runDir: string): Promise<boolean> {
 }
 
 /**
+ * Describes the newest incomplete report directory, if one exists.
+ *
+ * @param reportType - The type of reports to inspect.
+ * @param beforeRunDirectories - Directories that existed before the tool run.
+ * @returns A diagnostic string, or null when no incomplete run is present.
+ */
+async function incompleteRunDiagnostic(
+    reportType: ReportType,
+    beforeRunDirectories: ReadonlySet<string>,
+): Promise<string | null> {
+    const baseDir = getReportsBaseDir(reportType);
+    const entries = await fs.readdir(baseDir, {withFileTypes: true});
+
+    const incomplete = await Promise.all(
+        entries
+            .filter((entry) => entry.isDirectory())
+            .map(async (entry) => {
+                const runDir = path.join(baseDir, entry.name);
+                if (beforeRunDirectories.has(runDir) || await hasReportBundle(runDir)) {
+                    return null;
+                }
+                const [reportExists, summaryExists, stats] = await Promise.all([
+                    fileExists(path.join(runDir, "report.txt")),
+                    fileExists(path.join(runDir, "summary.json")),
+                    fs.stat(runDir),
+                ]);
+                return {
+                    runDir,
+                    reportExists,
+                    summaryExists,
+                    mtimeMs: stats.mtimeMs,
+                };
+            }),
+    );
+
+    const newest = incomplete
+        .filter((directory): directory is NonNullable<typeof directory> => directory !== null)
+        .sort((left, right) => right.mtimeMs - left.mtimeMs)[0];
+
+    if (!newest) {
+        return null;
+    }
+
+    const missing = [
+        newest.reportExists ? null : "report.txt",
+        newest.summaryExists ? null : "summary.json",
+    ].filter(Boolean).join(", ");
+
+    return `Incomplete report bundle found at ${newest.runDir}; missing ${missing}. ` +
+        "The shell script may have failed before writing all artifacts, or jq may be missing from the backend runtime.";
+}
+
+/**
+ * Checks whether a file exists.
+ *
+ * @param filePath - File path to check.
+ * @returns True when the file exists.
+ */
+async function fileExists(filePath: string): Promise<boolean> {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Lists valid report directories for a specific report type.
  *
  * Only complete report bundles are returned, sorted by directory modification
@@ -112,6 +180,39 @@ export async function detectNewRunDirectory(
     const afterRunDirectories = await listReportDirectories(reportType);
     const newDirectory = afterRunDirectories.find((directory) => !beforeRunDirectories.has(directory.runDir));
     return newDirectory?.runDir ?? afterRunDirectories[0]?.runDir ?? null;
+}
+
+/**
+ * Detects the report directory produced by a script invocation or throws with a
+ * diagnostic for incomplete bundles.
+ *
+ * @param reportType - The type of report to look for.
+ * @param beforeRunDirectories - A set of directory paths that existed before the operation.
+ * @param fallbackMessage - Message used when no complete or incomplete run can be found.
+ * @returns A promise that resolves to the path of the detected report directory.
+ */
+export async function requireNewRunDirectory(
+    reportType: ReportType,
+    beforeRunDirectories: ReadonlySet<string>,
+    fallbackMessage: string,
+): Promise<string> {
+    const afterRunDirectories = await listReportDirectories(reportType);
+    const newDirectory = afterRunDirectories.find((directory) => !beforeRunDirectories.has(directory.runDir));
+    if (newDirectory) {
+        return newDirectory.runDir;
+    }
+
+    const diagnostic = await incompleteRunDiagnostic(reportType, beforeRunDirectories);
+    if (diagnostic) {
+        throw new Error(diagnostic);
+    }
+
+    const fallbackDirectory = afterRunDirectories[0];
+    if (fallbackDirectory) {
+        return fallbackDirectory.runDir;
+    }
+
+    throw new Error(fallbackMessage);
 }
 
 /**

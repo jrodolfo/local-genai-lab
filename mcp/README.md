@@ -29,6 +29,12 @@ Formal input/output contracts for these tools are documented in [TOOL_CONTRACTS.
 
 The server also depends on the existing sibling [`../agents`](../agents) directory.
 
+AWS report tools require `aws` and `jq` in the same runtime that launches the
+MCP server. In the default host-run workflow, that means the developer machine.
+In the default Docker workflow, the backend container does not include AWS CLI,
+does not mount host AWS credentials, and is not intended to run AWS account
+audit tools unless Docker AWS tooling is explicitly added and configured.
+
 ## Install
 
 ```bash
