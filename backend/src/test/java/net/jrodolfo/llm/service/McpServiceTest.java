@@ -2,6 +2,7 @@ package net.jrodolfo.llm.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.client.McpClient;
+import net.jrodolfo.llm.client.McpClientException;
 import net.jrodolfo.llm.config.McpProperties;
 import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ListReportsRequest;
@@ -45,6 +46,27 @@ class McpServiceTest {
         assertEquals("aws_region_audit", fakeClient.lastToolName);
         assertEquals(List.of("us-east-2"), fakeClient.lastArguments.get("regions"));
         assertEquals(List.of("sts", "s3"), fakeClient.lastArguments.get("services"));
+    }
+
+    @Test
+    void runAwsRegionAuditRejectsStructuredToolError() {
+        FakeMcpClient fakeClient = new FakeMcpClient();
+        fakeClient.nextCallToolResult = Map.of(
+                "ok", false,
+                "tool", "aws_region_audit",
+                "error", "Audit script finished but no report directory could be located."
+        );
+        McpService service = new McpService(fakeClient, properties(true));
+
+        McpClientException error = assertThrows(
+                McpClientException.class,
+                () -> service.runAwsRegionAudit(new AwsRegionAuditToolRequest(null, null))
+        );
+
+        assertEquals(
+                "aws_region_audit failed: Audit script finished but no report directory could be located.",
+                error.getMessage()
+        );
     }
 
     @Test

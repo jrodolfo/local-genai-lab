@@ -105,6 +105,25 @@ def factorial(n):
         expect(screen.getByRole('button', {name: /copy run directory/i})).toBeInTheDocument();
     });
 
+    it('does not render missing audit counts as zero', () => {
+        render(
+            <MessageBubble
+                role="assistant"
+                content="The audit result is incomplete."
+                tool={{used: true, name: 'aws_region_audit', status: 'success', summary: 'AWS audit completed with success_count=unknown.'}}
+                toolResult={{
+                    type: 'audit_summary',
+                    reportType: 'audit'
+                }}
+            />
+        );
+
+        expect(screen.getByText('AWS audit result')).toBeInTheDocument();
+        expect(screen.queryByText(/^Success: 0$/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^Failures: 0$/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/^Skipped: 0$/i)).not.toBeInTheDocument();
+    });
+
     it('renders provider metadata for assistant messages', () => {
         render(
             <MessageBubble

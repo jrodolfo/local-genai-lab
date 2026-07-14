@@ -759,21 +759,21 @@ public class ChatOrchestratorService {
                 Map<String, Object> summary = result.get("summary") instanceof Map<?, ?> map
                         ? (Map<String, Object>) map
                         : Map.of();
-                yield Map.ofEntries(
-                        Map.entry("type", "audit_summary"),
-                        Map.entry("reportType", String.valueOf(result.getOrDefault("report_type", "audit"))),
-                        Map.entry("runDir", artifactRelativePath(result.getOrDefault("run_dir", ""), reportsDirectory)),
-                        Map.entry("summaryPath", artifactPath(result.get("run_dir"), "summary.json", reportsDirectory)),
-                        Map.entry("reportPath", artifactPath(result.get("run_dir"), "report.txt", reportsDirectory)),
-                        Map.entry("accountId", String.valueOf(result.getOrDefault("account_id", ""))),
-                        Map.entry("selectedRegions", result.getOrDefault("selected_regions", List.of())),
-                        Map.entry("selectedServices", result.getOrDefault("selected_services", List.of())),
-                        Map.entry("bucketNames", result.getOrDefault("bucketNames", List.of())),
-                        Map.entry("successCount", summary.getOrDefault("success_count", 0)),
-                        Map.entry("failureCount", summary.getOrDefault("failure_count", 0)),
-                        Map.entry("skippedCount", summary.getOrDefault("skipped_count", 0)),
-                        Map.entry("failedSteps", relativizeFailedSteps(result.getOrDefault("failed_steps", List.of()), reportsDirectory))
-                );
+                Map<String, Object> structured = new LinkedHashMap<>();
+                structured.put("type", "audit_summary");
+                structured.put("reportType", String.valueOf(result.getOrDefault("report_type", "audit")));
+                structured.put("runDir", artifactRelativePath(result.getOrDefault("run_dir", ""), reportsDirectory));
+                structured.put("summaryPath", artifactPath(result.get("run_dir"), "summary.json", reportsDirectory));
+                structured.put("reportPath", artifactPath(result.get("run_dir"), "report.txt", reportsDirectory));
+                structured.put("accountId", String.valueOf(summary.getOrDefault("account_id", result.getOrDefault("account_id", ""))));
+                structured.put("selectedRegions", summary.getOrDefault("selected_regions", result.getOrDefault("selected_regions", List.of())));
+                structured.put("selectedServices", summary.getOrDefault("selected_services", result.getOrDefault("selected_services", List.of())));
+                structured.put("bucketNames", result.getOrDefault("bucketNames", List.of()));
+                putIfPresent(structured, "successCount", summary.get("success_count"));
+                putIfPresent(structured, "failureCount", summary.get("failure_count"));
+                putIfPresent(structured, "skippedCount", summary.get("skipped_count"));
+                structured.put("failedSteps", relativizeFailedSteps(summary.getOrDefault("failed_commands", result.getOrDefault("failed_steps", List.of())), reportsDirectory));
+                yield structured;
             }
             case "s3_cloudwatch_report" -> {
                 Map<String, Object> summary = result.get("summary") instanceof Map<?, ?> map
@@ -793,6 +793,19 @@ public class ChatOrchestratorService {
             }
             default -> null;
         };
+    }
+
+    /**
+     * Adds a structured field only when the source value is present.
+     *
+     * @param target target map
+     * @param key    target key
+     * @param value  value to add
+     */
+    private static void putIfPresent(Map<String, Object> target, String key, Object value) {
+        if (value != null) {
+            target.put(key, value);
+        }
     }
 
     /**

@@ -144,6 +144,27 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void structuredMcpToolErrorReturnsFailureInsteadOfProviderPrompt() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new StructuredErrorMcpService(), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertTrue(response.response().contains("I tried to use the local tool `aws_region_audit`, but it failed"));
+        assertTrue(response.response().contains("Audit script finished but no report directory could be located."));
+        assertNotNull(response.tool());
+        assertEquals("failed", response.tool().status());
+        assertFalse(chatModelProvider.generateCalled);
+        assertNull(response.toolResult());
+    }
+
+    @Test
     void clarificationRequestReturnsImmediateClarificationResponse() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -631,6 +652,13 @@ class ChatOrchestratorServiceTest {
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
             throw new McpClientException("simulated failure");
+        }
+    }
+
+    private static class StructuredErrorMcpService extends FakeMcpService {
+        @Override
+        public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            throw new McpClientException("aws_region_audit failed: Audit script finished but no report directory could be located.");
         }
     }
 

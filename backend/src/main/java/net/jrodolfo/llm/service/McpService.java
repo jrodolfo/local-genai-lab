@@ -1,6 +1,7 @@
 package net.jrodolfo.llm.service;
 
 import net.jrodolfo.llm.client.McpClient;
+import net.jrodolfo.llm.client.McpClientException;
 import net.jrodolfo.llm.config.McpProperties;
 import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ListReportsRequest;
@@ -74,7 +75,7 @@ public class McpService {
         if (request.services() != null && !request.services().isEmpty()) {
             arguments.put("services", request.services());
         }
-        return new McpToolInvocationResponse("aws_region_audit", mcpClient.callTool("aws_region_audit", arguments));
+        return new McpToolInvocationResponse("aws_region_audit", requireSuccessfulResult("aws_region_audit", mcpClient.callTool("aws_region_audit", arguments)));
     }
 
     /**
@@ -92,7 +93,7 @@ public class McpService {
         if (request.days() != null) {
             arguments.put("days", request.days());
         }
-        return new McpToolInvocationResponse("s3_cloudwatch_report", mcpClient.callTool("s3_cloudwatch_report", arguments));
+        return new McpToolInvocationResponse("s3_cloudwatch_report", requireSuccessfulResult("s3_cloudwatch_report", mcpClient.callTool("s3_cloudwatch_report", arguments)));
     }
 
     /**
@@ -105,7 +106,7 @@ public class McpService {
         Map<String, Object> arguments = new LinkedHashMap<>();
         arguments.put("report_type", normalizeReportType(request.reportType()));
         arguments.put("limit", request.limit() != null ? request.limit() : 10);
-        return new McpToolInvocationResponse("list_recent_reports", mcpClient.callTool("list_recent_reports", arguments));
+        return new McpToolInvocationResponse("list_recent_reports", requireSuccessfulResult("list_recent_reports", mcpClient.callTool("list_recent_reports", arguments)));
     }
 
     /**
@@ -118,7 +119,7 @@ public class McpService {
         Map<String, Object> arguments = new LinkedHashMap<>();
         arguments.put("run_dir", request.runDir().trim());
         arguments.put("preview_lines", request.previewLines() != null ? request.previewLines() : 20);
-        return new McpToolInvocationResponse("read_report_summary", mcpClient.callTool("read_report_summary", arguments));
+        return new McpToolInvocationResponse("read_report_summary", requireSuccessfulResult("read_report_summary", mcpClient.callTool("read_report_summary", arguments)));
     }
 
     /**
@@ -137,5 +138,26 @@ public class McpService {
             case "audit", "s3_cloudwatch", "all" -> normalized;
             default -> throw new IllegalArgumentException("Unsupported reportType: " + reportType);
         };
+    }
+
+    /**
+     * Converts structured MCP tool errors into backend exceptions so callers do
+     * not treat failed tool invocations as successful grounded context.
+     *
+     * @param toolName expected tool name
+     * @param result   structured MCP result payload
+     * @return the result when it is successful
+     */
+    private Map<String, Object> requireSuccessfulResult(String toolName, Map<String, Object> result) {
+        if (Boolean.FALSE.equals(result.get("ok"))) {
+            Object error = result.get("error");
+            String message = error instanceof String text && !text.isBlank()
+                    ? text
+                    : "MCP tool returned an error.";
+            Object resultTool = result.get("tool");
+            String actualTool = resultTool instanceof String text && !text.isBlank() ? text : toolName;
+            throw new McpClientException(actualTool + " failed: " + message);
+        }
+        return result;
     }
 }
