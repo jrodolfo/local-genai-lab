@@ -18,8 +18,7 @@ This repository combines a React frontend, a Spring Boot orchestration backend,
 local and remote model providers, persistent session memory, MCP-backed AWS
 tooling, and a RAG workspace over the project documentation.
 
-> Agent workspace screenshot placeholder: the final Agent page screenshot will
-> go here as a clickable full-size image after it is supplied.
+[![Local GenAI Lab Agent workspace](./docs/images/local-genai-lab-agent.webp)](./docs/images/local-genai-lab-agent.webp)
 
 ## Fastest Path
 
@@ -106,7 +105,7 @@ The RAG workspace is isolated from the normal Agent flow. It does not invoke MCP
 tools or agent routing. It loads the local `docs/` corpus, retrieves relevant
 chunks, and asks the selected provider to answer with citations.
 
-[![Local GenAI Lab RAG workspace](./docs/images/local-genai-lab.webp)](./docs/images/local-genai-lab.webp)
+[![Local GenAI Lab RAG workspace](./docs/images/local-genai-lab-rag.webp)](./docs/images/local-genai-lab-rag.webp)
 
 Current RAG support includes:
 
