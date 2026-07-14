@@ -536,6 +536,7 @@ describe('Home', () => {
     });
 
     it('previews a structured report artifact from a tool result card', async () => {
+        window.localStorage.setItem('local-genai-lab.debug-mode', 'true');
         sendMessage.mockResolvedValue({
             response: 'Audit complete.',
             model: 'llama3:8b',
@@ -578,6 +579,7 @@ describe('Home', () => {
     });
 
     it('lists artifact files from a structured report card', async () => {
+        window.localStorage.setItem('local-genai-lab.debug-mode', 'true');
         listSessions.mockResolvedValue([
             {
                 sessionId: 'session-1',
@@ -603,6 +605,7 @@ describe('Home', () => {
     });
 
     it('shows an empty file-list state when no artifact files are returned', async () => {
+        window.localStorage.setItem('local-genai-lab.debug-mode', 'true');
         listArtifacts.mockResolvedValueOnce([]);
         listSessions.mockResolvedValueOnce([
             {
@@ -833,6 +836,35 @@ describe('Home', () => {
         await user.click(toggle);
         expect(toggle).not.toBeChecked();
         expect(window.localStorage.getItem('local-genai-lab.debug-mode')).toBe('false');
+    });
+
+    it('uses the technical details toggle for structured tool results in loaded sessions', async () => {
+        listSessions.mockResolvedValue([
+            {
+                sessionId: 'session-1',
+                title: 'run aws audit',
+                summary: 'Audit complete.',
+                model: 'llama3:8b',
+                createdAt: '2026-04-10T10:00:00Z',
+                updatedAt: '2026-04-10T10:01:00Z',
+                messageCount: 2
+            }
+        ]);
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        const sessionTitle = await screen.findByText('run aws audit');
+        await user.click(sessionTitle.closest('button'));
+
+        expect(await screen.findByText(/tool used/i)).toBeInTheDocument();
+        expect(screen.queryByText('AWS audit result')).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole('checkbox', {name: /show technical details/i}));
+
+        expect(await screen.findByText('AWS audit result')).toBeInTheDocument();
+        expect(screen.getByText(/Run directory: \/tmp\/audit-1/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', {name: /open summary/i})).toBeInTheDocument();
     });
 
     it('shows pending tool state when a loaded session includes it', async () => {
