@@ -11,12 +11,9 @@
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 ![rag](https://img.shields.io/badge/rag-local%20docs%20corpus-0f766e)
 
-Local-first GenAI lab for building and testing tool-assisted chat workflows.
-Not just a chatbot UI.
+Local-first GenAI lab for building and testing tool-assisted AI workflows.
 
-This repository combines a React frontend, a Spring Boot orchestration backend,
-local and remote model providers, persistent session memory, MCP-backed AWS
-tooling, and a RAG workspace over the project documentation.
+This project goes beyond a chatbot interface by combining a React frontend, a Spring Boot orchestration backend, local and remote model providers, persistent session memory, MCP-backed AWS tooling, and a RAG workspace over the project documentation.
 
 [![Local GenAI Lab Agent workspace](./docs/images/local-genai-lab-agent.webp)](./docs/images/local-genai-lab-agent.webp)
 
@@ -58,7 +55,7 @@ It demonstrates:
 - a separate RAG workspace for questions over the local documentation corpus
 - streaming responses, structured report rendering, and API observability
 
-## Architecture At A Glance
+## Architecture at a Glance
 
 The frontend has two distinct workspaces: Agent and RAG. They share provider
 selection and local session storage, but they do not share request
@@ -99,7 +96,7 @@ see [docs/architecture.md](./docs/architecture.md) and
 - RAG workspace for asking questions against the repository documentation with
   cited source chunks and saved RAG sessions.
 
-## Try These Agent Prompts
+## Example Agent Prompts
 
 The Agent workspace can route natural-language AWS questions to local MCP-backed
 tools when AWS credentials and tool prerequisites are available.
