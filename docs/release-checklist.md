@@ -12,7 +12,7 @@ make test
 make verify
 ```
 
-For final release preparation, prefer the guided wrapper:
+For final release preparation (let's say the version of your release is v0.2.0), prefer the guided wrapper:
 
 ```bash
 make prepare-release VERSION=v0.2.0
