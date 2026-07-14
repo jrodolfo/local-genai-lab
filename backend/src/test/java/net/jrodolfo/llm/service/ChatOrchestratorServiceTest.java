@@ -240,6 +240,60 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void completedS3ReportReplacesContradictoryFutureTenseResponse() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = """
+                Based on the S3 CloudWatch report for your bucket `jrodolfo.net` with success, here's a summary.
+
+                As you've requested, I will proceed with running an S3 report for `jrodolfo.net` for the last month.
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Yes, please, run an S3 report for jrodolfo.net for the last month.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertEquals("jrodolfo.net", mcpService.lastS3Request.bucket());
+        assertEquals(30, mcpService.lastS3Request.days());
+        assertTrue(response.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(response.response().contains("success_count=5"));
+        assertTrue(response.response().contains("failure_count=0"));
+        assertTrue(response.response().contains("s3-cloudwatch/fake-run/report.txt"));
+        assertFalse(response.response().contains("will proceed"));
+
+        var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
+        assertEquals(response.response(), storedSession.messages().get(1).content());
+    }
+
+    @Test
+    void streamedCompletedS3ReportPersistsCorrectedResponse() {
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = newOrchestrator(new FakeChatModelProvider(), new FakeMcpService(), sessionStore, "rules");
+
+        ChatOrchestratorService.PreparedChat preparedChat = orchestrator.prepareChat(
+                "run an S3 report for jrodolfo.net for the last month",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+        var persistedSession = orchestrator.completePreparedChat(
+                preparedChat,
+                "As you've requested, I will proceed with running an S3 report for `jrodolfo.net` for the last month.",
+                new ModelProviderMetadata("ollama", "llama3:8b", null, null, null, null, null, null, null, null)
+        );
+
+        String persistedResponse = persistedSession.messages().get(1).content();
+        assertTrue(persistedResponse.contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(persistedResponse.contains("s3-cloudwatch/fake-run/summary.json"));
+        assertFalse(persistedResponse.contains("will proceed"));
+    }
+
+    @Test
     void allBucketsFollowUpReturnsCurrentBoundaryWithoutCallingProvider() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -715,6 +769,7 @@ class ChatOrchestratorServiceTest {
             this.lastS3Request = request;
             return new McpToolInvocationResponse("s3_cloudwatch_report", Map.of(
                     "ok", true,
+                    "run_dir", "s3-cloudwatch/fake-run",
                     "summary", Map.of(
                             "bucket", request.bucket(),
                             "success_count", 5,

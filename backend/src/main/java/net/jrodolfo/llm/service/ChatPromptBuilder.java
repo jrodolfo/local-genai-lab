@@ -193,6 +193,9 @@ public class ChatPromptBuilder {
         builder.append("- If tool output is present, ground your answer in it.\n");
         builder.append("- If tool output is present, summarize what the tool already completed instead of refusing or redirecting.\n");
         builder.append("- When the tool output includes counts, regions, services, bucket names, or artifact paths, prefer those concrete facts.\n");
+        builder.append("- If tool_name is s3_cloudwatch_report and tool_result_json is present, say the report completed; do not say you will run it, will proceed, or should run it next.\n");
+        builder.append("- If tool_name is s3_cloudwatch_report, include the bucket, success and failure counts, and any runDir, summaryPath, or reportPath values that are present.\n");
+        builder.append("- Do not recommend running the same s3_cloudwatch_report again after the tool has already completed for the current user message.\n");
         builder.append("- If tool_name is aws_region_audit and tool_result_json includes bucketNames, list those bucket names directly.\n");
         builder.append("- If bucketNames are available, suggest this exact next step: `run an S3 report for <bucket-name> for the last month`.\n");
         builder.append("- Do not tell the user to ask for summary.json, report.txt, or an artifact path when bucketNames are already available.\n");

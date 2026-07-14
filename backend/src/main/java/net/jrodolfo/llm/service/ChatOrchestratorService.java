@@ -119,17 +119,22 @@ public class ChatOrchestratorService {
                 preparedChat.session().sessionId(),
                 preparedChat.pendingTool()
         );
-        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(response.response(), preparedChat);
+        String assistantResponse = clarifyCompletedToolResponse(
+                response.response(),
+                preparedChat.toolMetadata(),
+                preparedChat.toolResult()
+        );
+        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(assistantResponse, preparedChat);
         chatMemoryService.finishTurn(
                 preparedChat.session(),
-                response.response(),
+                assistantResponse,
                 response.tool(),
                 response.toolResult(),
                 response.metadata(),
                 pendingToolCall
         );
         return new ChatResponse(
-                response.response(),
+                assistantResponse,
                 response.model(),
                 response.tool(),
                 response.toolResult(),
@@ -348,10 +353,15 @@ public class ChatOrchestratorService {
                 providerMetadata != null ? providerMetadata.provider() : null,
                 preparedChat.model()
         );
-        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(assistantResponse, preparedChat);
+        String finalAssistantResponse = clarifyCompletedToolResponse(
+                assistantResponse,
+                preparedChat.toolMetadata(),
+                preparedChat.toolResult()
+        );
+        PendingToolCall pendingToolCall = inferPendingToolCallFromAssistantResponse(finalAssistantResponse, preparedChat);
         return chatMemoryService.finishTurn(
                 preparedChat.session(),
-                assistantResponse,
+                finalAssistantResponse,
                 preparedChat.toolMetadata(),
                 preparedChat.toolResult(),
                 providerMetadata,
@@ -571,6 +581,96 @@ public class ChatOrchestratorService {
      */
     private String buildFailureMessage(ChatToolRouterService.ToolDecision decision, String errorMessage) {
         return "I tried to use the local tool `" + toolNameForDecision(decision) + "`, but it failed: " + errorMessage;
+    }
+
+    /**
+     * Replaces contradictory model prose when a tool already completed successfully.
+     *
+     * <p>Streaming responses depend primarily on prompt rules because tokens are already emitted.
+     * This guardrail keeps non-streaming responses and persisted session text from saying that a
+     * completed S3 report will be run in the future.
+     *
+     * @param assistantResponse provider-generated assistant text
+     * @param toolMetadata      metadata for the tool used in this turn
+     * @param toolResult        structured tool result
+     * @return original text, or a deterministic completion message for contradictory S3 text
+     */
+    private String clarifyCompletedToolResponse(
+            String assistantResponse,
+            ChatToolMetadata toolMetadata,
+            Map<String, Object> toolResult
+    ) {
+        if (toolMetadata == null
+                || toolResult == null
+                || !"s3_cloudwatch_report".equals(toolMetadata.name())
+                || !"success".equals(toolMetadata.status())
+                || !hasContradictoryS3CompletionWording(assistantResponse)) {
+            return assistantResponse;
+        }
+
+        return buildS3CompletionMessage(toolResult);
+    }
+
+    /**
+     * Detects future-tense or repeat-recommendation wording after a completed S3 report.
+     *
+     * @param assistantResponse provider-generated assistant text
+     * @return true when the response contradicts the completed tool state
+     */
+    private boolean hasContradictoryS3CompletionWording(String assistantResponse) {
+        if (assistantResponse == null || assistantResponse.isBlank()) {
+            return true;
+        }
+
+        String normalized = assistantResponse.toLowerCase(Locale.ROOT);
+        return normalized.contains("will proceed")
+                || normalized.contains("will run")
+                || normalized.contains("will now run")
+                || normalized.contains("should run")
+                || normalized.contains("should provide more granular")
+                || normalized.contains("suggest running an s3 report")
+                || normalized.contains("recommend running an s3 report")
+                || normalized.contains("next step by running an s3 report");
+    }
+
+    /**
+     * Builds a deterministic S3 report completion message from structured tool output.
+     *
+     * @param toolResult structured S3 report result
+     * @return user-facing completion message
+     */
+    private String buildS3CompletionMessage(Map<String, Object> toolResult) {
+        String bucket = String.valueOf(toolResult.getOrDefault("bucket", "unknown"));
+        String successCount = String.valueOf(toolResult.getOrDefault("successCount", "unknown"));
+        String failureCount = String.valueOf(toolResult.getOrDefault("failureCount", "unknown"));
+        String skippedCount = String.valueOf(toolResult.getOrDefault("skippedCount", "unknown"));
+        String runDir = String.valueOf(toolResult.getOrDefault("runDir", ""));
+        String summaryPath = String.valueOf(toolResult.getOrDefault("summaryPath", ""));
+        String reportPath = String.valueOf(toolResult.getOrDefault("reportPath", ""));
+
+        StringBuilder message = new StringBuilder();
+        message.append("S3 CloudWatch report completed for bucket `").append(bucket).append("`.\n\n");
+        message.append("Results: success_count=").append(successCount)
+                .append(", failure_count=").append(failureCount)
+                .append(", skipped_count=").append(skippedCount)
+                .append(".");
+
+        List<String> artifacts = new ArrayList<>();
+        if (!runDir.isBlank()) {
+            artifacts.add("- Run directory: `" + runDir + "`");
+        }
+        if (!summaryPath.isBlank()) {
+            artifacts.add("- Summary: `" + summaryPath + "`");
+        }
+        if (!reportPath.isBlank()) {
+            artifacts.add("- Report: `" + reportPath + "`");
+        }
+        if (!artifacts.isEmpty()) {
+            message.append("\n\nArtifacts:\n");
+            message.append(String.join("\n", artifacts));
+        }
+
+        return message.toString();
     }
 
     /**
