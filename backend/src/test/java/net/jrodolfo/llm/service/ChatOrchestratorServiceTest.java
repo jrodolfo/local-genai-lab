@@ -103,6 +103,30 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void awsAccountAnalysisRequestUsesAuditToolWithoutClarification() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertNotNull(response.tool());
+        assertEquals("aws_region_audit", response.tool().name());
+        assertEquals("success", response.tool().status());
+        assertNotNull(mcpService.lastAuditRequest);
+        assertNull(mcpService.lastAuditRequest.services());
+        assertTrue(chatModelProvider.lastPrompt.contains("<tool_context>"));
+        assertTrue(chatModelProvider.lastPrompt.contains("tool_name: aws_region_audit"));
+        assertFalse(response.response().toLowerCase().contains("account id"));
+    }
+
+    @Test
     void toolFailureReturnsExplicitFailureResponseAndPersistsIt() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -117,6 +141,27 @@ class ChatOrchestratorServiceTest {
 
         var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
         assertEquals("failed", storedSession.messages().get(1).tool().status());
+    }
+
+    @Test
+    void structuredMcpToolErrorReturnsFailureInsteadOfProviderPrompt() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new StructuredErrorMcpService(), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertTrue(response.response().contains("I tried to use the local tool `aws_region_audit`, but it failed"));
+        assertTrue(response.response().contains("AWS region audit requires aws CLI and jq in the backend runtime."));
+        assertNotNull(response.tool());
+        assertEquals("failed", response.tool().status());
+        assertFalse(chatModelProvider.generateCalled);
+        assertNull(response.toolResult());
     }
 
     @Test
@@ -536,6 +581,7 @@ class ChatOrchestratorServiceTest {
     }
 
     private static class FakeMcpService extends McpService {
+        private AwsRegionAuditToolRequest lastAuditRequest;
         private S3CloudwatchReportToolRequest lastS3Request;
         private ListReportsRequest lastListReportsRequest;
         private ReadReportSummaryToolRequest lastReadReportSummaryRequest;
@@ -552,6 +598,7 @@ class ChatOrchestratorServiceTest {
 
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            this.lastAuditRequest = request;
             Map<String, Object> result = new java.util.LinkedHashMap<>();
             result.put("ok", true);
             result.put("summary", Map.of(
@@ -605,6 +652,13 @@ class ChatOrchestratorServiceTest {
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
             throw new McpClientException("simulated failure");
+        }
+    }
+
+    private static class StructuredErrorMcpService extends FakeMcpService {
+        @Override
+        public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            throw new McpClientException("AWS region audit requires aws CLI and jq in the backend runtime.");
         }
     }
 

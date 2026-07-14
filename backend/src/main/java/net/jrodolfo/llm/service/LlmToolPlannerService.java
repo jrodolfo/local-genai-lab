@@ -583,7 +583,32 @@ public class LlmToolPlannerService {
         }
 
         String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
-        return !normalizedMessage.contains("audit");
+        return !normalizedMessage.contains("audit") && !mentionsAwsAccountAnalysis(normalizedMessage);
+    }
+
+    /**
+     * Checks if the user is asking to inspect AWS account inventory or service
+     * usage without necessarily using the word "audit".
+     *
+     * @param normalizedMessage the normalized user message
+     * @return true if this is a bounded AWS account analysis request
+     */
+    private boolean mentionsAwsAccountAnalysis(String normalizedMessage) {
+        boolean mentionsAws = normalizedMessage.contains("aws");
+        boolean mentionsAccountOrInventory = normalizedMessage.contains("account")
+                || normalizedMessage.contains("services")
+                || normalizedMessage.contains("resources")
+                || normalizedMessage.contains("using");
+        boolean mentionsAnalysisIntent = normalizedMessage.contains("analyze")
+                || normalizedMessage.contains("analyse")
+                || normalizedMessage.contains("review")
+                || normalizedMessage.contains("summarize")
+                || normalizedMessage.contains("summary")
+                || normalizedMessage.contains("highlight")
+                || normalizedMessage.contains("unusual")
+                || normalizedMessage.contains("worth reviewing");
+
+        return mentionsAws && mentionsAccountOrInventory && mentionsAnalysisIntent;
     }
 
     /**

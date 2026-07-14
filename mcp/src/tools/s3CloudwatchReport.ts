@@ -2,8 +2,9 @@ import type {S3CloudwatchReportInput} from "../schemas/toolSchemas.js";
 import {s3CloudwatchReportResultSchema} from "../schemas/toolContracts.js";
 import {config} from "../config.js";
 import {runCommand} from "../services/processRunner.js";
-import {detectNewRunDirectory, listReportDirectories} from "../services/reportLocator.js";
+import {listReportDirectories, requireNewRunDirectory} from "../services/reportLocator.js";
 import {parseReportBundle} from "../services/reportParser.js";
+import {assertAwsReportPrerequisites} from "../services/toolPrerequisites.js";
 
 /**
  * Builds the command line arguments for the S3 CloudWatch report script based on user input.
@@ -37,6 +38,8 @@ function buildArgs(input: S3CloudwatchReportInput): string[] {
  * @throws {Error} If the report script fails to produce a report directory.
  */
 export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
+    await assertAwsReportPrerequisites("S3 CloudWatch report");
+
     const beforeRunDirectories = new Set(
         (await listReportDirectories("s3_cloudwatch")).map((directory) => directory.runDir),
     );
@@ -48,10 +51,11 @@ export async function handleS3CloudwatchReport(input: S3CloudwatchReportInput) {
         timeoutMs: config.s3TimeoutMs,
     });
 
-    const runDir = await detectNewRunDirectory("s3_cloudwatch", beforeRunDirectories);
-    if (!runDir) {
-        throw new Error("S3 CloudWatch script finished but no report directory could be located.");
-    }
+    const runDir = await requireNewRunDirectory(
+        "s3_cloudwatch",
+        beforeRunDirectories,
+        "S3 CloudWatch script finished but no complete report directory could be located.",
+    );
 
     const parsedReport = await parseReportBundle(runDir);
     const summary = parsedReport.summary as Record<string, unknown>;

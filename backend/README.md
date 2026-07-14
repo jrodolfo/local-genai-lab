@@ -200,6 +200,12 @@ and uses `RAG_VECTOR_STORE` to choose `in-memory` or `qdrant`.
 
 The backend resolves the MCP working directory from the repository root so it remains stable even when the JVM starts from `backend/`.
 
+MCP-backed AWS tools run in the backend runtime. In host-run mode, they use the
+host `aws`, `jq`, and AWS credential configuration. In the default Docker mode,
+the backend container does not include AWS CLI or host AWS credentials, so AWS
+audit and S3 CloudWatch tools fail with a prerequisite message unless Docker
+AWS tooling is explicitly added and configured.
+
 ## RAG API
 
 `GET /api/rag/status` returns RAG readiness, corpus/index status, default

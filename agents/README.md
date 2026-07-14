@@ -109,6 +109,11 @@ Key files:
 - `jq`
 - valid AWS credentials
 
+When these scripts are called through MCP, the prerequisites must exist in the
+runtime that starts MCP. Host-run mode uses the developer machine. The default
+Docker backend image does not include AWS CLI or host AWS credentials, so Docker
+AWS tool execution is not supported unless explicitly configured.
+
 ## Usage
 
 Run the audit:

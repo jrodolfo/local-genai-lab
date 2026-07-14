@@ -2,8 +2,9 @@ import type {AwsRegionAuditInput} from "../schemas/toolSchemas.js";
 import {awsRegionAuditResultSchema} from "../schemas/toolContracts.js";
 import {config} from "../config.js";
 import {runCommand} from "../services/processRunner.js";
-import {detectNewRunDirectory, listReportDirectories} from "../services/reportLocator.js";
+import {listReportDirectories, requireNewRunDirectory} from "../services/reportLocator.js";
 import {parseReportBundle} from "../services/reportParser.js";
+import {assertAwsReportPrerequisites} from "../services/toolPrerequisites.js";
 
 /**
  * Builds the command line arguments for the AWS region audit script based on user input.
@@ -38,6 +39,8 @@ function buildArgs(input: AwsRegionAuditInput): string[] {
  * @throws {Error} If the audit script fails to produce a report directory.
  */
 export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
+    await assertAwsReportPrerequisites("AWS region audit");
+
     const beforeRunDirectories = new Set(
         (await listReportDirectories("audit")).map((directory) => directory.runDir),
     );
@@ -49,10 +52,11 @@ export async function handleAwsRegionAudit(input: AwsRegionAuditInput) {
         timeoutMs: config.auditTimeoutMs,
     });
 
-    const runDir = await detectNewRunDirectory("audit", beforeRunDirectories);
-    if (!runDir) {
-        throw new Error("Audit script finished but no report directory could be located.");
-    }
+    const runDir = await requireNewRunDirectory(
+        "audit",
+        beforeRunDirectories,
+        "Audit script finished but no complete report directory could be located.",
+    );
 
     const parsedReport = await parseReportBundle(runDir);
     const summary = parsedReport.summary as Record<string, unknown>;
