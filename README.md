@@ -111,6 +111,23 @@ Examples:
 For the scripts behind these prompts and more examples, see
 [agents/README.md](./agents/README.md).
 
+## Example RAG Prompts
+
+The RAG workspace answers questions against the local `docs/` corpus with cited
+source chunks. It does not run Agent tools or MCP-backed scripts.
+
+Examples:
+
+- `How do I run the project locally?`
+- `What is the difference between the Agent workspace and the RAG workspace?`
+- `How does RAG retrieval work in this project?`
+- `When should I use lexical retrieval versus vector retrieval?`
+- `How do I troubleshoot Qdrant-backed RAG?`
+- `What release checks should I run before publishing a release?`
+
+Try the same prompt with `Lexical`, `Vector - In Memory`, and
+`Vector - Qdrant` to compare retrieved sources and answer quality.
+
 ## RAG Workspace
 
 The RAG workspace is isolated from the normal Agent flow. It does not invoke MCP
