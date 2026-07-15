@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app docker-sanity-check docker-start docker-stop docker-restart docker-status docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app docker-sanity-check docker-start docker-stop docker-restart docker-status docker-logs docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -16,6 +16,7 @@ help:
 		'  make docker-stop            Stop the Docker Compose stack' \
 		'  make docker-restart         Restart the Docker Compose stack' \
 		'  make docker-status          Show Docker Compose service status' \
+		'  make docker-logs            Follow Docker Compose service logs' \
 		'  make docker-check           Smoke-check the running Docker Compose stack' \
 		'  make docker-verify          Restart, inspect, and smoke-check Docker mode' \
 		'  make docker-scan            Scan Docker images for known vulnerabilities' \
@@ -68,6 +69,9 @@ docker-restart:
 
 docker-status:
 	@./scripts/docker-status.sh
+
+docker-logs:
+	@./scripts/docker-logs.sh
 
 docker-check:
 	@./scripts/docker-check.sh

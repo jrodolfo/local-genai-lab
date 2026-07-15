@@ -66,9 +66,9 @@ printf '%s\n' 'local-genai-lab Docker Compose status'
 )
 
 printf '%s\n' 'Readiness:'
-check_http_endpoint '  backend health' 'http://localhost:8080/actuator/health' 'inspect backend logs with: docker compose logs -f backend'
-check_http_endpoint '  frontend http' 'http://localhost:3000' 'inspect frontend logs with: docker compose logs -f frontend'
-check_http_endpoint '  qdrant http' 'http://localhost:6333/healthz' 'inspect qdrant logs with: docker compose logs -f qdrant'
+check_http_endpoint '  backend health' 'http://localhost:8080/actuator/health' 'inspect backend logs with: ./scripts/docker-logs.sh backend'
+check_http_endpoint '  frontend http' 'http://localhost:3000' 'inspect frontend logs with: ./scripts/docker-logs.sh frontend'
+check_http_endpoint '  qdrant http' 'http://localhost:6333/healthz' 'inspect qdrant logs with: ./scripts/docker-logs.sh qdrant'
 
 if [ "${#next_actions[@]}" -gt 0 ]; then
   printf '%s\n' 'Next actions:'
@@ -79,5 +79,6 @@ fi
 
 print_docker_urls
 print_docker_log_commands
+print_docker_desktop_guidance
 print_docker_port_checks
 print_docker_free_ports_guidance

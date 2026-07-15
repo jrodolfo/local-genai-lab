@@ -27,6 +27,7 @@ Docker lifecycle:
 ./scripts/docker-stop.sh
 ./scripts/docker-restart.sh
 ./scripts/docker-status.sh
+./scripts/docker-logs.sh
 ./scripts/docker-check.sh
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
@@ -53,6 +54,17 @@ container, use:
 
 ```bash
 DOCKER_SANITY_RUN_HELLO_WORLD=true ./scripts/docker-sanity-check.sh
+```
+
+`docker-start.sh` prints the runtime URLs, log commands, smoke-check commands,
+and Docker Desktop paths after the stack starts. Use `docker-logs.sh` to follow
+logs without remembering Compose service names:
+
+```bash
+./scripts/docker-logs.sh
+./scripts/docker-logs.sh backend
+./scripts/docker-logs.sh frontend
+./scripts/docker-logs.sh qdrant
 ```
 
 Release validation:

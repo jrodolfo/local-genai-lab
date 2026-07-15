@@ -116,24 +116,33 @@ docker_compose() {
 
 print_docker_urls() {
   printf '%s\n' \
-    'URLs:' \
-    '  frontend: http://localhost:3000' \
-    '  backend: http://localhost:8080' \
-    '  qdrant: http://localhost:6333'
+    'urls:' \
+    '  frontend:       http://localhost:3000' \
+    '  backend health: http://localhost:8080/actuator/health' \
+    '  backend api:    http://localhost:8080' \
+    '  qdrant:         http://localhost:6333'
 }
 
 print_docker_log_commands() {
   printf '%s\n' \
-    'Logs:' \
-    '  all services: docker compose logs -f' \
-    '  backend: docker compose logs -f backend' \
-    '  frontend: docker compose logs -f frontend' \
-    '  qdrant: docker compose logs -f qdrant'
+    'logs:' \
+    '  backend:  ./scripts/docker-logs.sh backend' \
+    '  frontend: ./scripts/docker-logs.sh frontend' \
+    '  qdrant:   ./scripts/docker-logs.sh qdrant' \
+    '  all:      ./scripts/docker-logs.sh'
+}
+
+print_docker_desktop_guidance() {
+  printf '%s\n' \
+    'docker desktop:' \
+    '  containers > local-genai-lab > llm-backend > logs' \
+    '  containers > local-genai-lab > llm-frontend > logs' \
+    '  containers > local-genai-lab > llm-qdrant > logs'
 }
 
 print_docker_port_checks() {
   printf '%s\n' \
-    'Port checks:' \
+    'port checks:' \
     '  backend: lsof -nP -iTCP:8080 -sTCP:LISTEN' \
     '  frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN' \
     '  qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
@@ -141,7 +150,7 @@ print_docker_port_checks() {
 
 print_docker_free_ports_guidance() {
   printf '%s\n' \
-    'Free ports:' \
+    'free ports:' \
     '  1. Run the port checks above and note the PID using the blocked port.' \
     '  2. If the PID belongs to this repo host-run app, run: ./scripts/stop.sh --all' \
     '  3. If the PID belongs to another app, stop that app normally.' \
@@ -152,23 +161,32 @@ print_docker_free_ports_guidance() {
 
 print_docker_status_command() {
   printf '%s\n' \
-    'Status:' \
+    'status:' \
     '  ./scripts/docker-status.sh'
 }
 
 print_docker_runtime_summary() {
+  printf '%s\n' '' 'docker runtime started' ''
   if docker_aws_tools_enabled; then
-    printf '%s\n' "Docker AWS tools: enabled with LOCAL_GENAI_LAB_AWS_DIR=${LOCAL_GENAI_LAB_AWS_DIR}"
+    printf '%s\n' \
+      'aws tools:' \
+      "  enabled with LOCAL_GENAI_LAB_AWS_DIR=${LOCAL_GENAI_LAB_AWS_DIR}"
   else
-    printf '%s\n' 'Docker AWS tools: disabled; copy .env.docker-aws-tools.example to .env.docker-aws-tools to enable AWS-backed Agent tools.'
+    printf '%s\n' \
+      'aws tools:' \
+      '  disabled; copy .env.docker-aws-tools.example to .env.docker-aws-tools to enable AWS-backed Agent tools.'
   fi
+  printf '%s\n' ''
   print_docker_urls
-  print_docker_status_command
+  printf '%s\n' ''
   print_docker_log_commands
+  printf '%s\n' ''
   printf '%s\n' \
-    'Next step:' \
+    'checks:' \
     '  ./scripts/docker-check.sh' \
-    '  verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
+    '  ./scripts/docker-status.sh'
+  printf '%s\n' ''
+  print_docker_desktop_guidance
 }
 
 print_docker_start_failure_summary() {
@@ -183,4 +201,5 @@ print_docker_start_failure_summary() {
   print_docker_port_checks
   print_docker_free_ports_guidance
   print_docker_log_commands
+  print_docker_desktop_guidance
 }

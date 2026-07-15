@@ -40,5 +40,4 @@ if ! (
   exit 1
 fi
 
-printf '%s\n' 'Docker stack started.'
 print_docker_runtime_summary

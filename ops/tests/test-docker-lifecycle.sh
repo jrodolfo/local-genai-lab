@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck shell=bash disable=SC1003,SC2016
 #
 # test-docker-lifecycle.sh
 #
@@ -176,6 +177,20 @@ run_script() {
     bash "${REPO_ROOT}/scripts/${script_name}"
 }
 
+run_script_with_args() {
+  local tmp_dir="$1"
+  local script_name="$2"
+  shift 2
+
+  env -i \
+    HOME="${HOME:-}" \
+    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    MOCK_DOCKER_LOG="${tmp_dir}/docker.log" \
+    MOCK_CURL_STATE_DIR="${tmp_dir}" \
+    DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/missing-docker-aws-tools.env" \
+    bash "${REPO_ROOT}/scripts/${script_name}" "$@"
+}
+
 write_mock_verify_scripts() {
   local tmp_dir="$1"
   local bin_dir="${tmp_dir}/repo"
@@ -253,20 +268,24 @@ test_docker_start_runs_compose_up_build() {
   output="$(run_script "${tmp_dir}" docker-start.sh)"
 
   assert_contains "${output}" 'Starting local-genai-lab with Docker Compose'
-  assert_contains "${output}" 'Docker stack started.'
-  assert_contains "${output}" 'URLs:'
-  assert_contains "${output}" 'frontend: http://localhost:3000'
-  assert_contains "${output}" 'backend: http://localhost:8080'
-  assert_contains "${output}" 'qdrant: http://localhost:6333'
-  assert_contains "${output}" 'Status:'
-  assert_contains "${output}" './scripts/docker-status.sh'
-  assert_contains "${output}" 'Logs:'
-  assert_contains "${output}" 'all services: docker compose logs -f'
-  assert_contains "${output}" 'backend: docker compose logs -f backend'
-  assert_contains "${output}" 'Next step:'
+  assert_contains "${output}" 'docker runtime started'
+  assert_contains "${output}" 'aws tools:'
+  assert_contains "${output}" 'disabled; copy .env.docker-aws-tools.example to .env.docker-aws-tools to enable AWS-backed Agent tools.'
+  assert_contains "${output}" 'urls:'
+  assert_contains "${output}" 'frontend:       http://localhost:3000'
+  assert_contains "${output}" 'backend health: http://localhost:8080/actuator/health'
+  assert_contains "${output}" 'backend api:    http://localhost:8080'
+  assert_contains "${output}" 'qdrant:         http://localhost:6333'
+  assert_contains "${output}" 'logs:'
+  assert_contains "${output}" 'backend:  ./scripts/docker-logs.sh backend'
+  assert_contains "${output}" 'frontend: ./scripts/docker-logs.sh frontend'
+  assert_contains "${output}" 'qdrant:   ./scripts/docker-logs.sh qdrant'
+  assert_contains "${output}" 'all:      ./scripts/docker-logs.sh'
+  assert_contains "${output}" 'checks:'
   assert_contains "${output}" './scripts/docker-check.sh'
-  assert_contains "${output}" 'verifies backend, frontend, Qdrant, /api/models, and /api/rag/status'
-  assert_contains "${output}" 'Docker AWS tools: disabled'
+  assert_contains "${output}" './scripts/docker-status.sh'
+  assert_contains "${output}" 'docker desktop:'
+  assert_contains "${output}" 'containers > local-genai-lab > llm-backend > logs'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
 }
@@ -288,7 +307,8 @@ EOF
 
   output="$(run_script "${tmp_dir}" docker-start.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env")"
 
-  assert_contains "${output}" 'Docker AWS tools: enabled'
+  assert_contains "${output}" 'aws tools:'
+  assert_contains "${output}" "enabled with LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws"
   assert_file_contains "${tmp_dir}/docker.log" "compose -f ${REPO_ROOT}/docker-compose.yml -f ${REPO_ROOT}/docker-compose.aws-tools.yml up -d --build"
   rm -rf "${tmp_dir}"
 }
@@ -316,12 +336,13 @@ test_docker_start_failure_prints_actionable_summary() {
   assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
-  assert_contains "${output}" 'Free ports:'
+  assert_contains "${output}" 'free ports:'
   assert_contains "${output}" 'If the PID belongs to this repo host-run app, run: ./scripts/stop.sh --all'
   assert_contains "${output}" 'If needed, stop a specific process with: kill <pid>'
   assert_contains "${output}" 'Last resort only: kill -9 <pid>'
   assert_contains "${output}" 'Retry Docker startup with: ./scripts/docker-start.sh'
-  assert_contains "${output}" 'backend: docker compose logs -f backend'
+  assert_contains "${output}" 'backend:  ./scripts/docker-logs.sh backend'
+  assert_contains "${output}" 'docker desktop:'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
 }
@@ -410,7 +431,7 @@ test_docker_stop_runs_compose_down() {
   assert_contains "${output}" 'Current Docker Compose services:'
   assert_contains "${output}" 'Remaining Docker Compose services after stop:'
   assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
-  assert_contains "${output}" 'Status:'
+  assert_contains "${output}" 'status:'
   assert_contains "${output}" './scripts/docker-status.sh'
   assert_file_contains "${tmp_dir}/docker.log" 'compose ps -a'
   assert_file_contains "${tmp_dir}/docker.log" 'compose down --remove-orphans'
@@ -430,8 +451,8 @@ test_docker_restart_runs_down_then_up() {
   actual_log="$(cat "${tmp_dir}/docker.log")"
 
   assert_contains "${output}" 'Docker stack stopped. Named volumes such as qdrant_data are preserved.'
-  assert_contains "${output}" 'Docker stack started.'
-  assert_contains "${output}" 'Next step:'
+  assert_contains "${output}" 'docker runtime started'
+  assert_contains "${output}" 'checks:'
   assert_contains "${output}" './scripts/docker-check.sh'
   if [ "${actual_log}" != "${expected_log}" ]; then
     printf 'expected docker calls:\n%s\nactual docker calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
@@ -456,15 +477,18 @@ test_docker_status_runs_compose_ps() {
   assert_contains "${output}" 'backend health: ok'
   assert_contains "${output}" 'frontend http: ok'
   assert_contains "${output}" 'qdrant http: ok'
-  assert_contains "${output}" 'URLs:'
-  assert_contains "${output}" 'frontend: http://localhost:3000'
-  assert_contains "${output}" 'Logs:'
-  assert_contains "${output}" 'all services: docker compose logs -f'
-  assert_contains "${output}" 'Port checks:'
+  assert_contains "${output}" 'urls:'
+  assert_contains "${output}" 'frontend:       http://localhost:3000'
+  assert_contains "${output}" 'backend health: http://localhost:8080/actuator/health'
+  assert_contains "${output}" 'logs:'
+  assert_contains "${output}" 'all:      ./scripts/docker-logs.sh'
+  assert_contains "${output}" 'docker desktop:'
+  assert_contains "${output}" 'containers > local-genai-lab > llm-qdrant > logs'
+  assert_contains "${output}" 'port checks:'
   assert_contains "${output}" 'backend: lsof -nP -iTCP:8080 -sTCP:LISTEN'
   assert_contains "${output}" 'frontend: lsof -nP -iTCP:3000 -sTCP:LISTEN'
   assert_contains "${output}" 'qdrant: lsof -nP -iTCP:6333 -sTCP:LISTEN'
-  assert_contains "${output}" 'Free ports:'
+  assert_contains "${output}" 'free ports:'
   assert_contains "${output}" './scripts/stop.sh --all'
   assert_contains "${output}" 'kill <pid>'
   assert_contains "${output}" './scripts/docker-start.sh'
@@ -486,9 +510,38 @@ test_docker_status_reports_unavailable_services_with_next_actions() {
   assert_contains "${output}" 'frontend http: unavailable'
   assert_contains "${output}" 'qdrant http: unavailable'
   assert_contains "${output}" 'Next actions:'
-  assert_contains "${output}" 'inspect backend logs with: docker compose logs -f backend'
-  assert_contains "${output}" 'inspect frontend logs with: docker compose logs -f frontend'
-  assert_contains "${output}" 'inspect qdrant logs with: docker compose logs -f qdrant'
+  assert_contains "${output}" 'inspect backend logs with: ./scripts/docker-logs.sh backend'
+  assert_contains "${output}" 'inspect frontend logs with: ./scripts/docker-logs.sh frontend'
+  assert_contains "${output}" 'inspect qdrant logs with: ./scripts/docker-logs.sh qdrant'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_logs_follows_all_services_by_default() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  output="$(run_script "${tmp_dir}" docker-logs.sh)"
+
+  assert_file_contains "${tmp_dir}/docker.log" 'compose logs -f'
+  [ -z "${output}" ] || assert_contains "${output}" 'NAME'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_logs_follows_named_service() {
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  run_script_with_args "${tmp_dir}" docker-logs.sh backend >/dev/null
+
+  assert_file_contains "${tmp_dir}/docker.log" 'compose logs -f backend'
   rm -rf "${tmp_dir}"
 }
 
@@ -623,6 +676,8 @@ main() {
   test_docker_restart_runs_down_then_up
   test_docker_status_runs_compose_ps
   test_docker_status_reports_unavailable_services_with_next_actions
+  test_docker_logs_follows_all_services_by_default
+  test_docker_logs_follows_named_service
   test_docker_check_passes_when_all_endpoints_respond
   test_docker_check_retries_until_backend_health_is_ready
   test_docker_check_fails_with_actionable_output
