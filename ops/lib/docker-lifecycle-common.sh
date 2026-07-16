@@ -140,6 +140,15 @@ print_docker_desktop_guidance() {
     '  containers > local-genai-lab > llm-qdrant > logs'
 }
 
+print_docker_tunnel_guidance() {
+  local ssh_host="${DOCKER_TUNNEL_HOST:-my-ec2-1}"
+
+  printf '%s\n' \
+    'remote access:' \
+    "  ./scripts/docker-tunnel-info.sh ${ssh_host}" \
+    "  ./scripts/docker-tunnel-info.sh --include-qdrant ${ssh_host}"
+}
+
 print_docker_port_checks() {
   printf '%s\n' \
     'port checks:' \
@@ -187,6 +196,8 @@ print_docker_runtime_summary() {
     '  ./scripts/docker-status.sh'
   printf '%s\n' ''
   print_docker_desktop_guidance
+  printf '%s\n' ''
+  print_docker_tunnel_guidance
 }
 
 print_docker_start_failure_summary() {

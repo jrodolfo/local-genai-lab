@@ -28,6 +28,7 @@ Docker lifecycle:
 ./scripts/docker-restart.sh
 ./scripts/docker-status.sh
 ./scripts/docker-logs.sh
+./scripts/docker-tunnel-info.sh
 ./scripts/docker-check.sh
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
@@ -65,6 +66,15 @@ logs without remembering Compose service names:
 ./scripts/docker-logs.sh backend
 ./scripts/docker-logs.sh frontend
 ./scripts/docker-logs.sh qdrant
+```
+
+When the Docker stack runs on a remote machine, such as an EC2 instance,
+`docker-tunnel-info.sh` prints copy-paste SSH tunnel commands and the local Mac
+URLs to open:
+
+```bash
+./scripts/docker-tunnel-info.sh my-ec2-1
+./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
 ```
 
 Release validation:
