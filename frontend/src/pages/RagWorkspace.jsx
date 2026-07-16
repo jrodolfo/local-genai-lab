@@ -19,6 +19,7 @@ import './RagWorkspace.css';
  */
 function RagWorkspace() {
     const importInputRef = useRef(null);
+    const preserveProviderWarningRef = useRef(false);
     const [ragStatus, setRagStatus] = useState(null);
     const [availableProviders, setAvailableProviders] = useState([]);
     const [availableModels, setAvailableModels] = useState([]);
@@ -37,6 +38,7 @@ function RagWorkspace() {
     const [comparisonResult, setComparisonResult] = useState(null);
     const [rebuilding, setRebuilding] = useState(false);
     const [error, setError] = useState('');
+    const [providerWarning, setProviderWarning] = useState('');
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
 
     useEffect(() => {
@@ -59,15 +61,15 @@ function RagWorkspace() {
         try {
             setLoading(true);
             setError('');
-            const [statusPayload, modelsPayload, sessionsPayload] = await Promise.all([
+            setProviderWarning('');
+            const [statusPayload, sessionsPayload] = await Promise.all([
                 retryAsync(() => getRagStatus(), {retries: 8, delayMs: 500}),
-                retryAsync(() => listAvailableModels(), {retries: 8, delayMs: 500}),
                 retryAsync(() => listSessions({mode: 'rag'}), {retries: 8, delayMs: 500})
             ]);
             setRagStatus(statusPayload);
             setSelectedRetrievalTarget(defaultRetrievalTarget(statusPayload));
-            hydrateProviders(modelsPayload);
             setSessions(sessionsPayload);
+            await loadModelsForProvider();
         } catch (err) {
             setError(err.message || 'Failed to load the RAG workspace.');
         } finally {
@@ -87,7 +89,16 @@ function RagWorkspace() {
 
     async function loadModelsForProvider(provider) {
         try {
+            const preserveProviderWarning = preserveProviderWarningRef.current;
+            preserveProviderWarningRef.current = false;
+            if (!preserveProviderWarning) {
+                setProviderWarning('');
+            }
             const payload = await retryAsync(() => listAvailableModels(provider), {retries: 4, delayMs: 500});
+            if (!provider) {
+                hydrateProviders(payload);
+                return;
+            }
             setAvailableModels(Array.isArray(payload.models) ? payload.models : []);
             setSelectedModel((current) => {
                 if (current && payload.models.includes(current)) {
@@ -99,7 +110,27 @@ function RagWorkspace() {
                 return payload.models[0] || '';
             });
         } catch (err) {
-            setError(err.message || 'Failed to load available models.');
+            const warning = err.message || 'Failed to load available models.';
+            setProviderWarning(warning);
+            setAvailableModels([]);
+            setSelectedModel('');
+            if (!provider) {
+                await hydrateFirstAvailableFallbackProvider(warning);
+            }
+        }
+    }
+
+    async function hydrateFirstAvailableFallbackProvider(warning) {
+        for (const fallbackProvider of ['bedrock', 'huggingface']) {
+            try {
+                const payload = await retryAsync(() => listAvailableModels(fallbackProvider), {retries: 1, delayMs: 250});
+                preserveProviderWarningRef.current = true;
+                hydrateProviders(payload);
+                setProviderWarning(warning);
+                return;
+            } catch {
+                // Keep trying configured alternatives before leaving the selector empty.
+            }
         }
     }
 
@@ -231,6 +262,7 @@ function RagWorkspace() {
         setQuestion('');
         setComparisonResult(null);
         setError('');
+        setProviderWarning('');
     }
 
     function requestSessionDeletion(targetSession) {
@@ -365,6 +397,7 @@ function RagWorkspace() {
                                 selectedProvider={selectedProvider}
                                 selectedModel={selectedModel}
                                 selectedRetrievalTarget={selectedRetrievalTarget}
+                                providerWarning={providerWarning}
                                 ragStatus={ragStatus}
                                 question={question}
                                 querying={querying}
@@ -588,6 +621,7 @@ function RagQueryCard({
                           selectedProvider,
                           selectedModel,
                           selectedRetrievalTarget,
+                          providerWarning,
                           ragStatus,
                           question,
                           querying,
@@ -636,6 +670,8 @@ function RagQueryCard({
                     </select>
                 </label>
             </div>
+
+            {providerWarning ? <p className="rag-query-card__readiness rag-query-card__readiness-warning">{providerWarning}</p> : null}
 
             <label className="rag-query-card__question">
                 Question
