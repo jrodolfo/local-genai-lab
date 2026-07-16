@@ -191,6 +191,20 @@ run_script_with_args() {
     bash "${REPO_ROOT}/scripts/${script_name}" "$@"
 }
 
+run_tunnel_info_with_qdrant_env() {
+  local tmp_dir="$1"
+  shift
+
+  env -i \
+    HOME="${HOME:-}" \
+    PATH="${tmp_dir}/bin:/usr/bin:/bin" \
+    MOCK_DOCKER_LOG="${tmp_dir}/docker.log" \
+    MOCK_CURL_STATE_DIR="${tmp_dir}" \
+    DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/missing-docker-aws-tools.env" \
+    DOCKER_TUNNEL_INCLUDE_QDRANT=true \
+    bash "${REPO_ROOT}/scripts/docker-tunnel-info.sh" "$@"
+}
+
 write_mock_verify_scripts() {
   local tmp_dir="$1"
   local bin_dir="${tmp_dir}/repo"
@@ -609,8 +623,65 @@ test_docker_tunnel_info_prints_help() {
   output="$(run_script_with_args "${tmp_dir}" docker-tunnel-info.sh --help)"
 
   assert_contains "${output}" 'Usage:'
-  assert_contains "${output}" './scripts/docker-tunnel-info.sh [--include-qdrant] [ssh-host]'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh [--include-qdrant|--no-qdrant] [ssh-host]'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1'
   assert_contains "${output}" 'DOCKER_TUNNEL_HOST'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_tunnel_info_no_qdrant_overrides_environment() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+
+  output="$(run_tunnel_info_with_qdrant_env "${tmp_dir}" --no-qdrant lab-host)"
+
+  assert_contains "${output}" '  lab-host'
+  if [[ "${output}" == *'6333:localhost:6333'* ]]; then
+    printf '%s\n' 'expected --no-qdrant to suppress qdrant tunnel' >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_tunnel_info_reports_unknown_option() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+
+  set +e
+  output="$(run_script_with_args "${tmp_dir}" docker-tunnel-info.sh --banana 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-tunnel-info.sh to fail for unknown option' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Error: unknown option: --banana'
+  assert_contains "${output}" 'Usage:'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_tunnel_info_reports_duplicate_host() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+
+  set +e
+  output="$(run_script_with_args "${tmp_dir}" docker-tunnel-info.sh first-host second-host 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-tunnel-info.sh to fail for duplicate host arguments' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Error: only one ssh-host may be specified.'
+  assert_contains "${output}" 'Usage:'
   rm -rf "${tmp_dir}"
 }
 

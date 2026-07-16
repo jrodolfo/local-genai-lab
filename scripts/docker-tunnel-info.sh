@@ -10,6 +10,7 @@
 #   ./scripts/docker-tunnel-info.sh
 #   ./scripts/docker-tunnel-info.sh my-ec2-1
 #   ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
+#   ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1
 #
 # Environment:
 #   DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-1
@@ -24,12 +25,13 @@ set -euo pipefail
 usage() {
   cat <<EOF
 Usage:
-  ./scripts/docker-tunnel-info.sh [--include-qdrant] [ssh-host]
+  ./scripts/docker-tunnel-info.sh [--include-qdrant|--no-qdrant] [ssh-host]
 
 Examples:
   ./scripts/docker-tunnel-info.sh
   ./scripts/docker-tunnel-info.sh my-ec2-1
   ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
+  ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1
 
 Environment:
   DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-1
@@ -68,11 +70,13 @@ while [ "$#" -gt 0 ]; do
       include_qdrant='false'
       ;;
     -*)
+      printf 'Error: unknown option: %s\n\n' "$1" >&2
       usage >&2
       exit 1
       ;;
     *)
       if [ "${ssh_host_source:-default}" = 'argument' ]; then
+        printf '%s\n\n' 'Error: only one ssh-host may be specified.' >&2
         usage >&2
         exit 1
       fi
