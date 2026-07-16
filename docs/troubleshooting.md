@@ -39,6 +39,82 @@ ollama pull llama3:8b
 
 Then refresh the UI.
 
+## Ollama Warning in Docker on Linux or EC2
+
+Symptoms:
+- UI says `Ollama is not available. Start the Ollama service or select another provider such as Amazon Bedrock or Hugging Face.`
+- provider or model selectors are empty in Docker mode
+- the host can run `ollama`, but the backend container cannot reach it
+
+Verify that Docker resolves the Linux host alias:
+
+```bash
+docker exec llm-backend getent hosts host.docker.internal
+```
+
+Verify that the backend container can reach the Ollama API:
+
+```bash
+docker exec llm-backend curl -sS http://host.docker.internal:11434/api/tags
+```
+
+The response should include the locally installed Ollama models.
+
+Verify that the expected provider settings reached the backend container
+without printing secret token values:
+
+```bash
+docker exec llm-backend sh -c '
+  printf "APP_MODEL_PROVIDER=%s\n" "${APP_MODEL_PROVIDER:-missing}"
+  printf "OLLAMA_BASE_URL=%s\n" "${OLLAMA_BASE_URL:-missing}"
+  printf "OLLAMA_DEFAULT_MODEL=%s\n" "${OLLAMA_DEFAULT_MODEL:-missing}"
+  printf "BEDROCK_REGION=%s\n" "${BEDROCK_REGION:-missing}"
+
+  if [ -n "${HUGGINGFACE_API_TOKEN:-}" ]; then
+    echo "HUGGINGFACE_API_TOKEN=set"
+  else
+    echo "HUGGINGFACE_API_TOKEN=missing"
+  fi
+'
+```
+
+Do not print secret token values when troubleshooting.
+
+If the hostname does not resolve, confirm your local `docker-compose.yml`
+includes:
+
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+```
+
+If the hostname resolves but the connection is refused, Ollama is probably
+listening only on the host loopback interface. On a Linux host or EC2 instance,
+configure the Ollama systemd service to listen on host interfaces:
+
+```bash
+sudo systemctl edit ollama
+```
+
+Add:
+
+```ini
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+```
+
+Then restart Ollama:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+sudo ss -lntp | grep 11434
+```
+
+Keep port `11434` closed in the EC2 security group or any Internet-facing
+firewall. Docker needs host-local access to Ollama; the public Internet does
+not.
+
 ## Bedrock Model Validation Error
 
 Symptoms:
