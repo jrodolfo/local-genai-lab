@@ -57,7 +57,7 @@ describe('RagWorkspace', () => {
                 embeddingModel: 'nomic-embed-text'
             })),
             http.get('/api/models', () => HttpResponse.json({
-                error: 'Ollama is not available. Start the Ollama service or select another provider such as Amazon Bedrock or Hugging Face.'
+                error: 'Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.'
             }, {status: 502})),
             http.get('/api/sessions', () => HttpResponse.json([]))
         );
@@ -69,8 +69,12 @@ describe('RagWorkspace', () => {
         await waitFor(() => {
             expect(within(statusRegion).getByText('ready')).toBeInTheDocument();
         });
-        expect(screen.getByText(/Ollama is not available\. Start the Ollama service/i)).toBeInTheDocument();
+        expect(screen.getByText(/Ollama is configured but currently unreachable/i)).toBeInTheDocument();
         expect(screen.getByRole('form', {name: /rag query/i})).toBeInTheDocument();
+        expect(screen.getByRole('option', {name: 'ollama (unreachable)'})).toBeDisabled();
+        expect(screen.getByRole('combobox', {name: /provider/i})).toHaveValue('ollama');
+        expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('');
+        expect(screen.getByRole('button', {name: 'Ask Docs Corpus'})).toBeDisabled();
         expect(screen.getByText(/No saved RAG sessions yet/i)).toBeInTheDocument();
     });
 
@@ -97,7 +101,7 @@ describe('RagWorkspace', () => {
                     });
                 }
                 return HttpResponse.json({
-                    error: 'Ollama is not available. Start the Ollama service or select another provider such as Amazon Bedrock or Hugging Face.'
+                    error: 'Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.'
                 }, {status: 502});
             }),
             http.get('/api/sessions', () => HttpResponse.json([]))
@@ -105,10 +109,11 @@ describe('RagWorkspace', () => {
 
         render(<RagWorkspace/>);
 
-        expect(await screen.findByText(/Ollama is not available\. Start the Ollama service/i)).toBeInTheDocument();
+        expect(await screen.findByText(/Ollama is configured but currently unreachable/i)).toBeInTheDocument();
         await waitFor(() => {
             expect(screen.getByRole('combobox', {name: /provider/i})).toHaveValue('bedrock');
         });
+        expect(screen.getByRole('option', {name: 'ollama (unreachable)'})).toBeDisabled();
         expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
     });
 

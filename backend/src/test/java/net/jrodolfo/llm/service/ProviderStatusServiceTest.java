@@ -48,7 +48,7 @@ class ProviderStatusServiceTest {
         ProviderStatusResponse response = service.getProviderStatus("ollama");
 
         assertEquals("unreachable", response.status());
-        assertEquals("Ollama is not available. Start the Ollama service or select another provider such as Amazon Bedrock or Hugging Face.", response.message());
+        assertEquals("Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.", response.message());
         assertEquals("2026-04-19T00:00:00Z", response.refreshedAt());
     }
 

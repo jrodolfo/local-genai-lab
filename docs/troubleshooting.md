@@ -42,7 +42,7 @@ Then refresh the UI.
 ## Ollama Warning in Docker on Linux or EC2
 
 Symptoms:
-- UI says `Ollama is not available. Start the Ollama service or select another provider such as Amazon Bedrock or Hugging Face.`
+- UI says `Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.`
 - provider or model selectors are empty in Docker mode
 - the host can run `ollama`, but the backend container cannot reach it
 

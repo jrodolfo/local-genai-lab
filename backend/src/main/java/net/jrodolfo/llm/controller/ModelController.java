@@ -31,8 +31,9 @@ import java.util.Map;
 public class ModelController {
 
     private static final Logger log = LoggerFactory.getLogger(ModelController.class);
-    private static final String OLLAMA_UNAVAILABLE_MESSAGE = "Ollama is not available. Start the Ollama service "
-            + "or select another provider such as Amazon Bedrock or Hugging Face.";
+    private static final String OLLAMA_UNAVAILABLE_MESSAGE = "Ollama is configured but currently unreachable. "
+            + "To use Ollama, make sure it is running and reachable from the backend; otherwise select "
+            + "Bedrock or Hugging Face.";
 
     private final AvailableModelsService availableModelsService;
     private final ProviderStatusService providerStatusService;
