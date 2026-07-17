@@ -34,6 +34,7 @@ class McpToolControllerTest {
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new McpToolController(new FakeMcpService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .setValidator(validator)
                 .build();
@@ -72,6 +73,7 @@ class McpToolControllerTest {
     void mcpClientExceptionIsMappedToBadGateway() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new McpToolController(new ErrorThrowingMcpService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .build();
 

@@ -9,6 +9,7 @@ import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
+import net.jrodolfo.llm.util.StringUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
@@ -109,7 +110,7 @@ public class AvailableModelsService {
                 "ollama",
                 chatModelProviderRegistry.defaultProvider(),
                 availableProviders,
-                normalizeModel(ollamaProperties.defaultModel()),
+                StringUtils.normalizeModel(ollamaProperties.defaultModel()),
                 models
         );
     }
@@ -133,11 +134,11 @@ public class AvailableModelsService {
      */
     private boolean isProviderAvailable(String provider) {
         return switch (provider) {
-            case "bedrock" -> normalizeModel(bedrockProperties.region()) != null
-                    && normalizeModel(bedrockProperties.modelId()) != null;
-            case "huggingface" -> normalizeModel(huggingFaceProperties.apiToken()) != null
-                    && normalizeModel(huggingFaceProperties.baseUrl()) != null
-                    && normalizeModel(huggingFaceProperties.defaultModel()) != null;
+            case "bedrock" -> StringUtils.normalizeModel(bedrockProperties.region()) != null
+                    && StringUtils.normalizeModel(bedrockProperties.modelId()) != null;
+            case "huggingface" -> StringUtils.normalizeModel(huggingFaceProperties.apiToken()) != null
+                    && StringUtils.normalizeModel(huggingFaceProperties.baseUrl()) != null
+                    && StringUtils.normalizeModel(huggingFaceProperties.defaultModel()) != null;
             case "ollama" -> true;
             default -> false;
         };
@@ -149,7 +150,7 @@ public class AvailableModelsService {
      * @return a list of Bedrock model IDs
      */
     private List<String> resolveBedrockModels() {
-        String configuredModelId = normalizeModel(bedrockProperties.modelId());
+        String configuredModelId = StringUtils.normalizeModel(bedrockProperties.modelId());
         LinkedHashSet<String> models = new LinkedHashSet<>();
         try {
             if (bedrockCatalogClient != null) {
@@ -176,7 +177,7 @@ public class AvailableModelsService {
      * @return the default model ID
      */
     private String resolveDefaultBedrockModel(List<String> models) {
-        String configuredModelId = normalizeModel(bedrockProperties.modelId());
+        String configuredModelId = StringUtils.normalizeModel(bedrockProperties.modelId());
         if (configuredModelId != null && models.contains(configuredModelId)) {
             return configuredModelId;
         }
@@ -195,13 +196,13 @@ public class AvailableModelsService {
         LinkedHashSet<String> models = new LinkedHashSet<>();
         if (huggingFaceProperties.models() != null) {
             for (String model : huggingFaceProperties.models()) {
-                String normalized = normalizeModel(model);
+                String normalized = StringUtils.normalizeModel(model);
                 if (normalized != null) {
                     models.add(normalized);
                 }
             }
         }
-        String configuredModelId = normalizeModel(huggingFaceProperties.defaultModel());
+        String configuredModelId = StringUtils.normalizeModel(huggingFaceProperties.defaultModel());
         if (configuredModelId != null) {
             models.add(configuredModelId);
         }
@@ -225,7 +226,7 @@ public class AvailableModelsService {
      * @return the default model ID
      */
     private String resolveDefaultHuggingFaceModel(List<String> models) {
-        String configuredModelId = normalizeModel(huggingFaceProperties.defaultModel());
+        String configuredModelId = StringUtils.normalizeModel(huggingFaceProperties.defaultModel());
         if (configuredModelId != null && models.contains(configuredModelId)) {
             return configuredModelId;
         }
@@ -233,18 +234,5 @@ public class AvailableModelsService {
             return models.getFirst();
         }
         return configuredModelId;
-    }
-
-    /**
-     * Normalizes a model name by trimming whitespace and returning null if blank.
-     *
-     * @param model the model name to normalize
-     * @return the normalized model name, or null if blank
-     */
-    private String normalizeModel(String model) {
-        if (model == null || model.isBlank()) {
-            return null;
-        }
-        return model.trim();
     }
 }

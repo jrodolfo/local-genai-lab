@@ -26,6 +26,7 @@ class ModelControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new ModelController(new FakeAvailableModelsService(), new FakeProviderStatusService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .build();
     }
@@ -47,6 +48,7 @@ class ModelControllerTest {
     void ollamaDiscoveryErrorsMapToBadGateway() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new ModelController(new ErrorAvailableModelsService(), new FakeProviderStatusService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .build();
 
@@ -59,6 +61,7 @@ class ModelControllerTest {
     void invalidProviderMapsToBadRequest() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new ModelController(new InvalidProviderAvailableModelsService(), new FakeProviderStatusService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .build();
 
@@ -71,6 +74,7 @@ class ModelControllerTest {
     void bedrockDiscoveryErrorsMapToBadGateway() throws Exception {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new ModelController(new BedrockErrorAvailableModelsService(), new FakeProviderStatusService()))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(new ObjectMapper()))
                 .build();
 

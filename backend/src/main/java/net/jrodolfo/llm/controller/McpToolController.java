@@ -114,34 +114,4 @@ public class McpToolController {
     public McpToolInvocationResponse readReportSummary(@Valid @RequestBody ReadReportSummaryToolRequest request) {
         return mcpService.readReportSummary(request);
     }
-
-    /**
-     * Exception handler for McpClientException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(McpClientException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleMcpError(McpClientException ex) {
-        HttpStatus status = "MCP integration is disabled.".equals(ex.getMessage())
-                ? HttpStatus.SERVICE_UNAVAILABLE
-                : HttpStatus.BAD_GATEWAY;
-
-        return ResponseEntity.status(status)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for IllegalArgumentException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleInvalidInput(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest()
-                .body(Map.of("error", ex.getMessage()));
-    }
 }

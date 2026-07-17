@@ -9,8 +9,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import net.jrodolfo.llm.client.ModelProviderException;
-import net.jrodolfo.llm.client.OllamaClientException;
 import net.jrodolfo.llm.config.ChatProperties;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
@@ -19,6 +17,7 @@ import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.service.ChatOrchestratorService;
 import net.jrodolfo.llm.service.InvalidProviderException;
 import net.jrodolfo.llm.service.InvalidSessionIdException;
+import net.jrodolfo.llm.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -115,7 +114,7 @@ public class ChatController {
                 request.sessionId(),
                 requestId
         );
-        long backendDurationMs = elapsedMillis(startedAt);
+        long backendDurationMs = TimeUtils.elapsedMillis(startedAt);
         log.info(
                 "requestId={} chat_request_complete provider={} model={} sessionId={} streaming=false backendDurationMs={}",
                 requestId,
@@ -261,7 +260,7 @@ public class ChatController {
                 }
 
                 if (preparedChat.immediateResponse() != null) {
-                    long backendDurationMs = elapsedMillis(startedAt);
+        long backendDurationMs = TimeUtils.elapsedMillis(startedAt);
                     if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(preparedChat.immediateResponse().response()))) {
                         streamAborted.set(true);
                         return;
@@ -310,7 +309,7 @@ public class ChatController {
                     return;
                 }
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString(), providerMetadata, requestId);
-                long backendDurationMs = elapsedMillis(startedAt);
+                long backendDurationMs = TimeUtils.elapsedMillis(startedAt);
                 if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
                         preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
@@ -359,62 +358,6 @@ public class ChatController {
             }
         }, chatStreamingExecutor);
         taskReference.set(task);
-    }
-
-    /**
-     * Exception handler for OllamaClientException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(OllamaClientException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleOllamaError(OllamaClientException ex) {
-        log.warn("Ollama request failed: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for ModelProviderException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(ModelProviderException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleModelProviderError(ModelProviderException ex) {
-        log.warn("Model provider request failed: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for InvalidSessionIdException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(InvalidSessionIdException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
-        log.warn("Invalid session id", ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for InvalidProviderException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(InvalidProviderException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleInvalidProvider(InvalidProviderException ex) {
-        log.warn("Invalid provider", ex);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", ex.getMessage()));
     }
 
     private String resolveRequestId(String requestIdHeader) {
@@ -475,10 +418,6 @@ public class ChatController {
                 backendDurationMs,
                 metadata.uiWaitMs()
         );
-    }
-
-    private long elapsedMillis(long startedAt) {
-        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 
     private static final class StreamAbortedException extends RuntimeException {

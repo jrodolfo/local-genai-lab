@@ -77,16 +77,4 @@ public class ArtifactController {
     ) {
         return chatArtifactService.previewFile(path);
     }
-
-    /**
-     * Exception handler for ArtifactAccessException.
-     *
-     * @param ex the exception being handled.
-     * @return a ResponseEntity containing the error message and appropriate HTTP status.
-     */
-    @ExceptionHandler(ArtifactAccessException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleArtifactAccess(ArtifactAccessException ex) {
-        return ResponseEntity.status(ex.status()).body(Map.of("error", ex.getMessage()));
-    }
 }

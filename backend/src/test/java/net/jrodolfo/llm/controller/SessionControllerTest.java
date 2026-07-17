@@ -59,6 +59,7 @@ class SessionControllerTest {
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new SessionController(sessionService, exportService, importService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(
                         new ResourceHttpMessageConverter(),
                         new ByteArrayHttpMessageConverter(),

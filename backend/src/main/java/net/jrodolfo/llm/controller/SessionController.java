@@ -181,40 +181,4 @@ public class SessionController {
     public ChatSessionImportResponse importSession(@RequestParam("file") MultipartFile file) {
         return chatSessionImportService.importSession(file);
     }
-
-    /**
-     * Exception handler for ChatSessionNotFoundException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(ChatSessionNotFoundException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleChatSessionNotFound(ChatSessionNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for ChatSessionImportException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(ChatSessionImportException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleChatSessionImport(ChatSessionImportException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for InvalidSessionIdException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(InvalidSessionIdException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleInvalidSessionId(InvalidSessionIdException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
-    }
 }

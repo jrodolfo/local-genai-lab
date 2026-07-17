@@ -8,6 +8,7 @@ import net.jrodolfo.llm.dto.ChatSessionDetailResponse;
 import net.jrodolfo.llm.dto.ChatSessionMessageResponse;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import net.jrodolfo.llm.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +69,7 @@ public class ChatSessionExportService {
         StringBuilder markdown = new StringBuilder();
         markdown.append("# ").append(valueOrFallback(exportSession.title(), "Untitled session")).append("\n\n");
 
-        if (hasText(exportSession.summary())) {
+        if (StringUtils.hasText(exportSession.summary())) {
             markdown.append("## summary\n\n");
             markdown.append(exportSession.summary()).append("\n\n");
         }
@@ -89,10 +90,10 @@ public class ChatSessionExportService {
 
             if (message.tool() != null && message.tool().used()) {
                 markdown.append("- tool: ").append(valueOrFallback(message.tool().name(), "unknown")).append("\n");
-                if (hasText(message.tool().status())) {
+                if (StringUtils.hasText(message.tool().status())) {
                     markdown.append("- tool status: ").append(message.tool().status()).append("\n");
                 }
-                if (hasText(message.tool().summary())) {
+                if (StringUtils.hasText(message.tool().summary())) {
                     markdown.append("- tool summary: ").append(message.tool().summary()).append("\n");
                 }
             }
@@ -140,7 +141,7 @@ public class ChatSessionExportService {
 
         for (int index = messages.size() - 1; index >= 0; index--) {
             ChatSessionMessageResponse message = messages.get(index);
-            if ("assistant".equals(message.role()) && hasText(message.content())) {
+            if ("assistant".equals(message.role()) && StringUtils.hasText(message.content())) {
                 return List.of(normalizeWhitespace(message.content()));
             }
         }
@@ -149,7 +150,7 @@ public class ChatSessionExportService {
     }
 
     private boolean isTruncated(String value) {
-        return hasText(value) && value.endsWith("…");
+        return StringUtils.hasText(value) && value.endsWith("…");
     }
 
     /**
@@ -165,7 +166,7 @@ public class ChatSessionExportService {
 
         markdown.append("## pending tool\n\n");
         markdown.append("- awaiting tool: ").append(valueOrFallback(pendingTool.toolName(), "unknown")).append("\n");
-        if (hasText(pendingTool.reason())) {
+        if (StringUtils.hasText(pendingTool.reason())) {
             markdown.append("- reason: ").append(pendingTool.reason()).append("\n");
         }
         if (pendingTool.missingFields() != null && !pendingTool.missingFields().isEmpty()) {
@@ -185,13 +186,13 @@ public class ChatSessionExportService {
             return;
         }
 
-        if (hasText(metadata.provider())) {
+        if (StringUtils.hasText(metadata.provider())) {
             markdown.append("- provider: ").append(metadata.provider()).append("\n");
         }
-        if (hasText(metadata.modelId())) {
+        if (StringUtils.hasText(metadata.modelId())) {
             markdown.append("- provider model: ").append(metadata.modelId()).append("\n");
         }
-        if (hasText(metadata.stopReason())) {
+        if (StringUtils.hasText(metadata.stopReason())) {
             markdown.append("- stop reason: ").append(metadata.stopReason()).append("\n");
         }
         if (metadata.inputTokens() != null || metadata.outputTokens() != null || metadata.totalTokens() != null) {
@@ -227,25 +228,25 @@ public class ChatSessionExportService {
         if (ragRetrieval == null) {
             return;
         }
-        if (hasText(ragRetrieval.retrievalMode())) {
+        if (StringUtils.hasText(ragRetrieval.retrievalMode())) {
             markdown.append("- rag retrieval mode: ").append(ragRetrieval.retrievalMode()).append("\n");
         }
-        if (hasText(ragRetrieval.retrievalStore())) {
+        if (StringUtils.hasText(ragRetrieval.retrievalStore())) {
             markdown.append("- rag retrieval store: ").append(ragRetrieval.retrievalStore()).append("\n");
         }
-        if (hasText(ragRetrieval.vectorStore())) {
+        if (StringUtils.hasText(ragRetrieval.vectorStore())) {
             markdown.append("- rag vector store: ").append(ragRetrieval.vectorStore()).append("\n");
         }
-        if (hasText(ragRetrieval.retrievalTarget())) {
+        if (StringUtils.hasText(ragRetrieval.retrievalTarget())) {
             markdown.append("- rag retrieval target: ").append(ragRetrieval.retrievalTarget()).append("\n");
         }
         if (ragRetrieval.topK() != null) {
             markdown.append("- rag top k: ").append(ragRetrieval.topK()).append("\n");
         }
-        if (hasText(ragRetrieval.embeddingProvider())) {
+        if (StringUtils.hasText(ragRetrieval.embeddingProvider())) {
             markdown.append("- rag embedding provider: ").append(ragRetrieval.embeddingProvider()).append("\n");
         }
-        if (hasText(ragRetrieval.embeddingModel())) {
+        if (StringUtils.hasText(ragRetrieval.embeddingModel())) {
             markdown.append("- rag embedding model: ").append(ragRetrieval.embeddingModel()).append("\n");
         }
     }
@@ -327,20 +328,11 @@ public class ChatSessionExportService {
      * @return the value or the fallback
      */
     private String valueOrFallback(String value, String fallback) {
-        return hasText(value) ? value : fallback;
+        return StringUtils.hasText(value) ? value : fallback;
     }
 
     private String normalizeWhitespace(String value) {
         return value == null ? "" : value.trim().replaceAll("\\s+", " ");
     }
 
-    /**
-     * Checks if a string has text (not null and not blank).
-     *
-     * @param value the string value
-     * @return true if it has text, false otherwise
-     */
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
 }
