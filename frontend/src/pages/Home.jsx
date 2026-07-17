@@ -249,6 +249,15 @@ function Home() {
         try {
             const payload = await retryAsync(() => listSessions(filters), {retries: 4, delayMs: 500});
             setSessions(payload);
+            if (sessionId && !payload.some((session) => session.sessionId === sessionId)) {
+                setSessionId(null);
+                setPendingTool(null);
+                setMessages([]);
+                setArtifactFiles([]);
+                setArtifactPreview(null);
+                resetArtifactPanel();
+                setStatusNotice('The active session is no longer available from the backend. The view was reset.');
+            }
             if (!filters.provider) {
                 setSessionProviderOptions(providerOptionsFromSessions(payload));
             }
@@ -415,6 +424,10 @@ function Home() {
                 }))
             );
         } catch (err) {
+            if (err?.status === 404) {
+                startNewChat();
+                setStatusNotice('That saved session is no longer available from the backend.');
+            }
             setError(err.message || 'Failed to load session.');
         } finally {
             setLoading(false);

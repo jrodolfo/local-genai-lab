@@ -16,6 +16,12 @@ async function parseJson(response) {
     }
 }
 
+function buildApiError(response, fallbackMessage, payload = {}) {
+    const error = new Error(payload.error || fallbackMessage);
+    error.status = response.status;
+    return error;
+}
+
 /**
  * Fetches persisted session summaries, with optional filtering.
  *
@@ -50,7 +56,7 @@ export async function listSessions({query = '', provider = '', toolUsage = '', p
     const response = await fetch(`/api/sessions${search}`);
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to load sessions.');
+        throw buildApiError(response, 'Failed to load sessions.', payload);
     }
     return response.json();
 }
@@ -66,7 +72,7 @@ export async function getSession(sessionId) {
     const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to load session.');
+        throw buildApiError(response, 'Failed to load session.', payload);
     }
     return response.json();
 }
@@ -84,7 +90,7 @@ export async function deleteSession(sessionId) {
     });
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to delete session.');
+        throw buildApiError(response, 'Failed to delete session.', payload);
     }
 }
 
@@ -117,7 +123,7 @@ export async function exportSession(sessionId, format = 'json') {
     const response = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}/export?format=${encodeURIComponent(format)}`);
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to export session.');
+        throw buildApiError(response, 'Failed to export session.', payload);
     }
 
     const contentType = response.headers.get('Content-Type') || 'application/octet-stream';
@@ -146,7 +152,7 @@ export async function importSession(file) {
     });
     if (!response.ok) {
         const payload = await parseJson(response);
-        throw new Error(payload.error || 'Failed to import session.');
+        throw buildApiError(response, 'Failed to import session.', payload);
     }
     return response.json();
 }
