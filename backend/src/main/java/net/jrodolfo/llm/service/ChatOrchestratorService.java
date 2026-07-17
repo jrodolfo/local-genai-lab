@@ -1016,50 +1016,37 @@ public class ChatOrchestratorService {
 
     private String buildImmediateAwsAuditSummary(Map<String, Object> toolResult) {
         StringBuilder response = new StringBuilder();
-        response.append("I analyzed your AWS account using the audit results.\n\n");
+        boolean hasFailures = numericValue(toolResult.get("failureCount")) > 0;
+        response.append(hasFailures
+                ? "AWS account audit completed with partial failures.\n\n"
+                : "AWS account audit completed successfully.\n\n");
 
-        List<String> services = stringList(toolResult.get("selectedServices"));
-        if (!services.isEmpty()) {
-            response.append("Services in scope: ").append(String.join(", ", services)).append(".\n\n");
-        }
-
-        Object factualSummary = toolResult.get("factualSummary");
-        if (factualSummary instanceof String summary && !summary.isBlank()) {
-            response.append("Summary: ").append(summary).append("\n\n");
+        List<String> regions = stringList(toolResult.get("selectedRegions"));
+        if (!regions.isEmpty()) {
+            appendSection(response, "Regions checked", regions);
         }
 
         List<Map<String, Object>> highSignalResources = mapList(toolResult.get("highSignalResources"));
         if (!highSignalResources.isEmpty()) {
-            response.append("Resources with non-zero counts:\n");
-            for (Map<String, Object> resource : highSignalResources.stream().limit(8).toList()) {
-                response.append("- ")
-                        .append(resource.get("title"))
-                        .append(" in ")
-                        .append(resource.get("scope"))
-                        .append(": ")
-                        .append(asInt(resource.get("count")))
-                        .append("\n");
-            }
-            response.append("\n");
+            appendSection(response, "Resources found", summarizeResourceCategories(highSignalResources));
         }
 
         List<String> reviewCandidates = stringList(toolResult.get("reviewCandidates"));
         if (!reviewCandidates.isEmpty()) {
-            response.append("Items worth reviewing:\n");
-            for (String candidate : reviewCandidates) {
-                response.append("- ").append(candidate).append("\n");
-            }
-            response.append("\n");
+            appendSection(response, "Resource categories you may want to inspect", reviewCandidates);
         }
 
         List<String> buckets = stringList(toolResult.get("bucketNames"));
         if (!buckets.isEmpty()) {
-            response.append("S3 buckets found: ").append(String.join(", ", buckets)).append(".\n\n");
-            response.append("If you want, I can run an S3 report for one bucket for the last month. ");
-            response.append(buckets.size() == 1
-                    ? "Say `yes` to continue."
-                    : "Reply with one bucket name to continue.");
+            appendSection(response, "S3 buckets", buckets);
         }
+
+        List<String> auditChecks = List.of(
+                "Successful: " + valueOrUnknown(toolResult, "successCount"),
+                "Failed: " + valueOrUnknown(toolResult, "failureCount"),
+                "Skipped: " + valueOrUnknown(toolResult, "skippedCount")
+        );
+        appendSection(response, "Audit checks", auditChecks);
 
         return response.toString().trim();
     }
@@ -1215,14 +1202,15 @@ public class ChatOrchestratorService {
         List<String> candidates = new ArrayList<>();
         for (Map<String, Object> resource : highSignalResources) {
             String title = String.valueOf(resource.getOrDefault("title", ""));
-            String scope = String.valueOf(resource.getOrDefault("scope", ""));
-            int count = asInt(resource.get("count"));
             String normalizedTitle = title.toLowerCase(Locale.ROOT);
-            if (normalizedTitle.contains("elastic ip")
-                    || normalizedTitle.contains("secrets manager")
-                    || normalizedTitle.contains("cloudwatch log groups")
-                    || normalizedTitle.contains("security groups")) {
-                candidates.add("%s in %s: %d".formatted(title, scope, count));
+            if (normalizedTitle.contains("elastic ip")) {
+                candidates.add("Elastic IP usage");
+            } else if (normalizedTitle.contains("cloudwatch log groups")) {
+                candidates.add("CloudWatch log-group retention");
+            } else if (normalizedTitle.contains("secrets manager")) {
+                candidates.add("Secrets Manager secret lifecycle");
+            } else if (normalizedTitle.contains("security groups")) {
+                candidates.add("Security group inventory");
             }
         }
         return candidates.stream().distinct().limit(4).toList();
@@ -1290,6 +1278,56 @@ public class ChatOrchestratorService {
             summary.append("Review candidates: ").append(String.join("; ", reviewCandidates)).append(".");
         }
         return summary.toString().trim();
+    }
+
+    private void appendSection(StringBuilder response, String title, List<String> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        response.append(title).append("\n");
+        for (String item : items) {
+            response.append("- ").append(item).append("\n");
+        }
+        response.append("\n");
+    }
+
+    private List<String> summarizeResourceCategories(List<Map<String, Object>> highSignalResources) {
+        Map<String, Integer> totals = new LinkedHashMap<>();
+        for (Map<String, Object> resource : highSignalResources) {
+            String label = normalizeResourceCategoryLabel(String.valueOf(resource.getOrDefault("title", "")));
+            if (label.isBlank()) {
+                continue;
+            }
+            totals.merge(label, asInt(resource.get("count")), Integer::sum);
+        }
+        return totals.entrySet().stream()
+                .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
+                        .thenComparing(Map.Entry::getKey))
+                .limit(8)
+                .map(entry -> "%s: %d".formatted(entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    private String normalizeResourceCategoryLabel(String title) {
+        String normalized = title.replaceAll("\\s+-\\s+us-[a-z0-9-]+$", "").trim();
+        return switch (normalized) {
+            case "STS caller identity" -> "";
+            case "S3 buckets" -> "S3 buckets";
+            case "EC2 instances" -> "EC2 instances";
+            case "EBS volumes" -> "EBS volumes";
+            case "Elastic IPs" -> "Elastic IPs";
+            case "Load balancers v2" -> "Load balancers";
+            case "RDS DB instances" -> "RDS DB instances";
+            case "Lambda functions" -> "Lambda functions";
+            case "ECS clusters" -> "ECS clusters";
+            case "EKS clusters" -> "EKS clusters";
+            case "SageMaker domains" -> "SageMaker domains";
+            case "SageMaker notebook instances" -> "SageMaker notebook instances";
+            case "OpenSearch domains" -> "OpenSearch domains";
+            case "Secrets Manager secrets" -> "Secrets Manager secrets";
+            case "CloudWatch log groups" -> "CloudWatch log groups";
+            default -> normalized;
+        };
     }
 
     /**

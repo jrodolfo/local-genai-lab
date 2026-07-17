@@ -123,7 +123,8 @@ class ChatOrchestratorServiceTest {
         assertNull(mcpService.lastAuditRequest.services());
         assertFalse(chatModelProvider.generateCalled);
         assertNull(chatModelProvider.lastPrompt);
-        assertTrue(response.response().contains("I analyzed your AWS account using the audit results."));
+        assertTrue(response.response().contains("AWS account audit completed successfully."));
+        assertTrue(response.response().contains("Audit checks"));
         assertFalse(response.response().toLowerCase().contains("account id"));
     }
 
@@ -436,8 +437,15 @@ class ChatOrchestratorServiceTest {
         assertEquals("aws_region_audit", response.tool().name());
         assertFalse(chatModelProvider.generateCalled);
         assertNull(chatModelProvider.lastPrompt);
-        assertTrue(response.response().contains("EC2 instances - us-east-2"));
-        assertTrue(response.response().contains("Elastic IPs - us-east-2"));
+        assertTrue(response.response().contains("Resources found"));
+        assertTrue(response.response().contains("Lambda functions: 6"));
+        assertTrue(response.response().contains("S3 buckets: 6"));
+        assertTrue(response.response().contains("EC2 instances: 3"));
+        assertTrue(response.response().contains("Elastic IPs: 1"));
+        assertTrue(response.response().contains("S3 buckets"));
+        assertTrue(response.response().contains("first-bucket"));
+        assertTrue(response.response().contains("Resource categories you may want to inspect"));
+        assertTrue(response.response().contains("Elastic IP usage"));
         assertEquals(List.of("first-bucket"), response.toolResult().get("bucketNames"));
         assertTrue(((String) response.toolResult().get("factualSummary")).contains("Review candidates"));
     }
