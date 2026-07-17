@@ -4,6 +4,7 @@
  * and artifact inspection.
  */
 import {useEffect, useRef, useState} from 'react';
+import {flushSync} from 'react-dom';
 import {listArtifacts, previewArtifact} from '../api/artifactApi';
 import {sendMessage, streamMessage} from '../api/chatApi';
 import {getProviderStatus, listAvailableModels} from '../api/modelApi';
@@ -146,8 +147,9 @@ function Home() {
      * @param {Object} [toolResult=null] - Tool execution result.
      * @param {Object} [metadata=null] - Technical metadata.
      */
-    const addMessage = (role, content, tool = null, toolResult = null, metadata = null) => {
-        setMessages((current) => [...current, {id: crypto.randomUUID(), role, content, tool, toolResult, metadata}]);
+    const addMessage = (role, content, tool = null, toolResult = null, metadata = null, id = crypto.randomUUID()) => {
+        setMessages((current) => [...current, {id, role, content, tool, toolResult, metadata}]);
+        return id;
     };
 
     /**
@@ -155,10 +157,10 @@ function Home() {
      *
      * @param {(content: string) => string} updater - Function that receives the current assistant text.
      */
-    const updateLastAssistant = (updater) => {
+    const updateAssistantById = (messageId, updater) => {
         setMessages((current) =>
-            current.map((message, index) => {
-                if (index !== current.length - 1 || message.role !== 'assistant') {
+            current.map((message) => {
+                if (message.id !== messageId || message.role !== 'assistant') {
                     return message;
                 }
                 return {...message, content: updater(message.content)};
@@ -177,10 +179,10 @@ function Home() {
      * @param {Object|null} [details.toolResult] - Structured tool result.
      * @param {Object|null} [details.metadata] - Provider metadata.
      */
-    const updateLastAssistantDetails = ({tool, toolResult, metadata}) => {
+    const updateAssistantDetailsById = (messageId, {tool, toolResult, metadata}) => {
         setMessages((current) =>
-            current.map((message, index) => {
-                if (index !== current.length - 1 || message.role !== 'assistant') {
+            current.map((message) => {
+                if (message.id !== messageId || message.role !== 'assistant') {
                     return message;
                 }
                 return {
@@ -193,10 +195,10 @@ function Home() {
         );
     };
 
-    const replaceLastAssistant = (updater) => {
+    const replaceAssistantById = (messageId, updater) => {
         setMessages((current) =>
-            current.map((message, index) => {
-                if (index !== current.length - 1 || message.role !== 'assistant') {
+            current.map((message) => {
+                if (message.id !== messageId || message.role !== 'assistant') {
                     return message;
                 }
                 return updater(message);
@@ -661,7 +663,10 @@ function Home() {
                 });
                 applyUiWaitToLastAssistant(Date.now() - requestStartedAt);
             } else {
-                addMessage('assistant', '');
+                const assistantMessageId = crypto.randomUUID();
+                flushSync(() => {
+                    addMessage('assistant', '', null, null, null, assistantMessageId);
+                });
                 await streamMessage({
                     message,
                     provider,
@@ -677,7 +682,7 @@ function Home() {
                         if (event.type === 'start' || event.type === 'complete') {
                             setSessionId((current) => event?.sessionId || current);
                             setPendingTool(event?.pendingTool || null);
-                            updateLastAssistantDetails({
+                            updateAssistantDetailsById(assistantMessageId, {
                                 tool: event?.tool || null,
                                 toolResult: event?.toolResult || null,
                                 metadata: event?.metadata || null
@@ -685,7 +690,7 @@ function Home() {
                             if (event.type === 'complete') {
                                 const completionOverride = toolCompletionMessageOverride(event?.tool, event?.toolResult);
                                 if (completionOverride) {
-                                    replaceLastAssistant((messageRecord) => ({
+                                    replaceAssistantById(assistantMessageId, (messageRecord) => ({
                                         ...messageRecord,
                                         content: completionOverride
                                     }));
@@ -695,7 +700,7 @@ function Home() {
                         }
 
                         if (event.type === 'delta') {
-                            updateLastAssistant((current) => current + (event.text || ''));
+                            updateAssistantById(assistantMessageId, (current) => current + (event.text || ''));
                         }
                     }
                 });

@@ -841,7 +841,6 @@ describe('Home', () => {
         const user = userEvent.setup();
 
         await waitForSelectValue({name: /model/i}, 'llama3:8b');
-        await user.click(screen.getByLabelText(/Streaming/i));
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run an s3 report for jrodolfo.net');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
@@ -852,6 +851,123 @@ describe('Home', () => {
         expect(screen.getByText(/Results: success_count=20, failure_count=0, skipped_count=0\./i)).toBeInTheDocument();
         expect(screen.queryByText(/Based on the S3 CloudWatch report/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/recommend reviewing the report/i)).not.toBeInTheDocument();
+    });
+
+    it('keeps the prior assistant turn intact when a streamed follow-up starts immediately', async () => {
+        getSession.mockResolvedValue({
+            sessionId: 'session-aws',
+            title: 'aws follow-up',
+            summary: 'Initial audit summary.',
+            pendingTool: null,
+            messages: [
+                {role: 'user', content: 'Analyze my AWS account.', tool: null, timestamp: '2026-07-17T16:30:00Z'},
+                {
+                    role: 'assistant',
+                    content: 'I have analyzed your AWS account and found the audit completed successfully.',
+                    tool: {
+                        used: true,
+                        name: 'aws_region_audit',
+                        status: 'success',
+                        summary: 'AWS audit completed.'
+                    },
+                    toolResult: {
+                        type: 'audit_summary',
+                        runDir: 'audit/run-1',
+                        summaryPath: 'audit/run-1/summary.json',
+                        reportPath: 'audit/run-1/report.txt',
+                        successCount: 37,
+                        failureCount: 0,
+                        skippedCount: 0
+                    },
+                    metadata: {provider: 'ollama', modelId: 'llama3:8b'},
+                    timestamp: '2026-07-17T16:30:05Z'
+                }
+            ]
+        });
+        listSessions.mockResolvedValue([
+            {
+                sessionId: 'session-aws',
+                title: 'aws follow-up',
+                summary: 'Initial audit summary.',
+                model: 'llama3:8b',
+                createdAt: '2026-07-17T16:30:00Z',
+                updatedAt: '2026-07-17T16:30:05Z',
+                messageCount: 2
+            }
+        ]);
+        streamMessage.mockImplementation(async ({onEvent}) => {
+            onEvent({
+                type: 'start',
+                sessionId: 'session-aws',
+                pendingTool: null,
+                tool: {
+                    used: true,
+                    name: 's3_cloudwatch_report',
+                    status: 'success',
+                    summary: 'S3 report completed.'
+                },
+                toolResult: {
+                    type: 's3_report_summary',
+                    bucket: 'jrodolfo.net',
+                    runDir: 's3-cloudwatch/run-1',
+                    summaryPath: 's3-cloudwatch/run-1/summary.json',
+                    reportPath: 's3-cloudwatch/run-1/report.txt',
+                    successCount: 20,
+                    failureCount: 0,
+                    skippedCount: 0
+                },
+                metadata: null
+            });
+            onEvent({type: 'delta', text: 'This should not replace the previous audit summary.'});
+            onEvent({
+                type: 'complete',
+                sessionId: 'session-aws',
+                pendingTool: null,
+                tool: {
+                    used: true,
+                    name: 's3_cloudwatch_report',
+                    status: 'success',
+                    summary: 'S3 report completed.'
+                },
+                toolResult: {
+                    type: 's3_report_summary',
+                    bucket: 'jrodolfo.net',
+                    runDir: 's3-cloudwatch/run-1',
+                    summaryPath: 's3-cloudwatch/run-1/summary.json',
+                    reportPath: 's3-cloudwatch/run-1/report.txt',
+                    successCount: 20,
+                    failureCount: 0,
+                    skippedCount: 0
+                },
+                metadata: {
+                    provider: 'ollama',
+                    modelId: 'llama3:8b',
+                    durationMs: 412
+                }
+            });
+        });
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        const sessionTitle = await screen.findByText('aws follow-up');
+        await user.click(sessionTitle.closest('button'));
+        await waitFor(() => {
+            expect(screen.getByText(/I have analyzed your AWS account and found the audit completed successfully\./i)).toBeInTheDocument();
+        });
+        await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Please run an S3 report for the jrodolfo.net bucket for the last month.');
+        await user.click(screen.getByRole('button', {name: /send/i}));
+
+        await waitFor(() => {
+            expect(screen.getAllByText((_, element) =>
+                element?.classList?.contains('message-markdown')
+                && element.textContent?.includes('S3 CloudWatch report completed for bucket jrodolfo.net.')
+            )).toHaveLength(1);
+        });
+
+        expect(screen.getByText(/I have analyzed your AWS account and found the audit completed successfully\./i)).toBeInTheDocument();
+        expect(screen.getByText(/Results: success_count=20, failure_count=0, skipped_count=0\./i)).toBeInTheDocument();
+        expect(screen.queryByText(/This should not replace the previous audit summary\./i)).not.toBeInTheDocument();
     });
 
     it('shows provider metadata when technical details are enabled', async () => {
