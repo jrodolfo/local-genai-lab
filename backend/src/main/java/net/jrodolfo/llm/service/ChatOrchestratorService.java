@@ -1092,13 +1092,13 @@ public class ChatOrchestratorService {
         }
         Path candidate = Path.of(rawPath);
         if (!candidate.isAbsolute()) {
-            return candidate.normalize().toString();
+            return candidate.normalize().toString().replace('\\', '/');
         }
         Path normalized = candidate.toAbsolutePath().normalize();
         if (!normalized.startsWith(reportsDirectory)) {
             return "";
         }
-        return reportsDirectory.relativize(normalized).toString();
+        return reportsDirectory.relativize(normalized).toString().replace('\\', '/');
     }
 
     /**

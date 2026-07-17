@@ -61,35 +61,37 @@ Frontend tests are organized into three practical layers:
 
 1. Narrow unit/component tests
    Main files:
-   - `src/components/*.test.jsx`
-   - `src/pages/Home.test.jsx`
-   - `src/pages/RagWorkspace.test.jsx`
+    - `src/components/*.test.jsx`
+    - `src/pages/Home.test.jsx`
+    - `src/pages/RagWorkspace.test.jsx`
 
-   Use these for local UI behavior, conditional rendering, and formatting details.
+    Use these for local UI behavior, conditional rendering, and formatting details.
 
 2. API integration tests
    Main file:
-   - `src/api/api.integration.test.js`
+    - `src/api/api.integration.test.js`
 
-   Use these for request parsing, SSE parsing, and API-level error handling.
+    Use these for request parsing, SSE parsing, and API-level error handling.
 
 3. MSW-backed page integration tests
    Main file:
-   - `src/pages/Home.integration.test.jsx`
+    - `src/pages/Home.integration.test.jsx`
 
-   Use these for backend-shaped user flows such as:
-   - chat success and failure
-   - streaming chat and tool phases
-   - session reopen/export
-   - artifact preview
-   - RAG status, query, and retrieval comparison flows through `RagWorkspace.test.jsx`
+    Use these for backend-shaped user flows such as:
+    - chat success and failure
+    - streaming chat and tool phases
+    - session reopen/export
+    - artifact preview
+    - RAG status, query, and retrieval comparison flows through `RagWorkspace.test.jsx`
 
 Shared test setup lives in:
+
 - `src/test/setup.js`
 - `src/test/mswServer.js`
 - `src/test/mswHandlers.js`
 
 Practical rule:
+
 - if the behavior is a real UI flow through frontend API modules, prefer MSW
 - if the behavior is narrow and local to the component, prefer direct mocks
 

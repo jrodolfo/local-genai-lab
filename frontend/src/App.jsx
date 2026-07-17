@@ -2,9 +2,9 @@
  * @fileoverview Main App component that handles navigation between RAG and Agent modes.
  * It also checks if RAG is enabled in the backend on mount.
  */
-import {useEffect, useState} from 'react';
-import {getRagStatus} from './api/ragApi';
-import {retryAsync} from './api/retry';
+import { useEffect, useState } from 'react';
+import { getRagStatus } from './api/ragApi';
+import { retryAsync } from './api/retry';
 import Home from './pages/Home';
 import RagWorkspace from './pages/RagWorkspace';
 import './App.css';
@@ -23,7 +23,7 @@ function App() {
 
     useEffect(() => {
         let active = true;
-        retryAsync(() => getRagStatus(), {retries: 8, delayMs: 500})
+        retryAsync(() => getRagStatus(), { retries: 8, delayMs: 500 })
             .then((payload) => {
                 if (active) {
                     setRagEnabled(Boolean(payload.enabled));
@@ -46,62 +46,92 @@ function App() {
     }, []);
 
     return (
-        <div className="app-shell">
-            <header className="app-nav">
-                <div className="app-nav__credits" aria-label="Project attribution">
+        <div className='app-shell'>
+            <header className='app-nav'>
+                <div
+                    className='app-nav__credits'
+                    aria-label='Project attribution'>
                     <span>© 2026 </span>
-                    <a href="https://jrodolfo.net/" target="_blank" rel="noreferrer">Rod Oliveira</a>
-                    <span aria-hidden="true"> | </span>
-                    <a href="https://github.com/jrodolfo/local-genai-lab/blob/main/LICENSE" target="_blank" rel="noreferrer">
+                    <a
+                        // href='https://jrodolfo.net/'
+                        href='https://www.hamzamissaoui.dev'
+                        target='_blank'
+                        rel='noreferrer'>
+                        {/* Rod Oliveira */}
+                        Hamza Missaoui
+                    </a>
+                    <span aria-hidden='true'> | </span>
+                    {/* <a href="https://github.com/jrodolfo/local-genai-lab/blob/main/LICENSE" target="_blank" rel="noreferrer"> */}
+                    <a
+                        href='https://github.com/hamzaMissewi/local-genai-lab-spring/blob/main/LICENSE'
+                        target='_blank'
+                        rel='noreferrer'>
                         MIT License
                     </a>
-                    <span aria-hidden="true"> | </span>
-                    <a href="https://github.com/jrodolfo/local-genai-lab" target="_blank" rel="noreferrer">
+                    <span aria-hidden='true'> | </span>
+                    <a
+                        href='https://github.com/hamzaMissewi/local-genai-lab-spring'
+                        target='_blank'
+                        rel='noreferrer'>
                         GitHub Repo
                     </a>
                 </div>
-                <div className="app-nav__brand">Local GenAI Lab</div>
-                <div className="app-nav__tabs" role="tablist" aria-label="Application modes">
+                <div className='app-nav__brand'>Local GenAI Lab</div>
+                <div
+                    className='app-nav__tabs'
+                    role='tablist'
+                    aria-label='Application modes'>
                     <button
-                        type="button"
-                        role="tab"
+                        type='button'
+                        role='tab'
                         aria-selected={mode === 'rag'}
                         aria-current={mode === 'rag' ? 'page' : undefined}
                         aria-disabled={!ragEnabled}
-                        disabled={!ragStatusLoaded || mode === 'rag' || !ragEnabled}
+                        disabled={
+                            !ragStatusLoaded || mode === 'rag' || !ragEnabled
+                        }
                         className={`${mode === 'rag' ? 'app-nav__tab--active' : ''} ${!ragEnabled ? 'app-nav__tab--disabled' : ''}`.trim()}
                         onClick={() => {
                             if (!ragEnabled) {
                                 return;
                             }
                             setMode('rag');
-                        }}
-                    >
+                        }}>
                         RAG
                     </button>
                     <button
-                        type="button"
-                        role="tab"
+                        type='button'
+                        role='tab'
                         aria-selected={mode === 'chat'}
                         aria-current={mode === 'chat' ? 'page' : undefined}
                         disabled={!ragStatusLoaded || mode === 'chat'}
-                        className={mode === 'chat' ? 'app-nav__tab--active' : ''}
-                        onClick={() => setMode('chat')}
-                    >
+                        className={
+                            mode === 'chat' ? 'app-nav__tab--active' : ''
+                        }
+                        onClick={() => setMode('chat')}>
                         Agent
                     </button>
                 </div>
             </header>
             {ragStatusLoaded && !ragEnabled && ragStatusError ? (
-                <p className="app-nav__hint">RAG status is temporarily unavailable. Refresh after the backend is ready.</p>
+                <p className='app-nav__hint'>
+                    RAG status is temporarily unavailable. Refresh after the
+                    backend is ready.
+                </p>
             ) : null}
             {ragStatusLoaded && !ragEnabled && !ragStatusError ? (
-                <p className="app-nav__hint">Enable `RAG_ENABLED=true` in the backend to use RAG mode.</p>
+                <p className='app-nav__hint'>
+                    Enable `RAG_ENABLED=true` in the backend to use RAG mode.
+                </p>
             ) : null}
             {ragStatusLoaded ? (
-                mode === 'rag' && ragEnabled ? <RagWorkspace/> : <Home/>
+                mode === 'rag' && ragEnabled ? (
+                    <RagWorkspace />
+                ) : (
+                    <Home />
+                )
             ) : (
-                <main className="app-loading" aria-label="Application loading">
+                <main className='app-loading' aria-label='Application loading'>
                     <p>Loading workspace...</p>
                 </main>
             )}
