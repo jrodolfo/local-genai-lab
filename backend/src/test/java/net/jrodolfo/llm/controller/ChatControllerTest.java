@@ -2,6 +2,7 @@ package net.jrodolfo.llm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.jrodolfo.llm.config.AppStorageProperties;
+import net.jrodolfo.llm.config.ChatProperties;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
@@ -37,10 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChatControllerTest {
 
+    private static final ChatProperties DEFAULT_CHAT_PROPERTIES = new ChatProperties(600);
+
     @Test
     void chatPassesRequestProviderFieldsToOrchestrator() {
         TestOrchestrator orchestrator = new TestOrchestrator();
-        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
 
         ResponseEntity<ChatResponse> response = controller.chat(
                 new ChatRequest("hello", "bedrock", "us.amazon.nova-pro-v1:0", "session-9"),
@@ -62,7 +65,7 @@ class ChatControllerTest {
     @Test
     void chatGeneratesRequestIdWhenHeaderMissing() {
         TestOrchestrator orchestrator = new TestOrchestrator();
-        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
 
         ResponseEntity<ChatResponse> response = controller.chat(
                 new ChatRequest("hello", "bedrock", "us.amazon.nova-pro-v1:0", "session-9"),
@@ -75,7 +78,7 @@ class ChatControllerTest {
 
     @Test
     void invalidProviderIsReturnedAsBadRequest() {
-        ChatController controller = new ChatController(new TestOrchestrator(), new ObjectMapper(), Runnable::run);
+        ChatController controller = new ChatController(new TestOrchestrator(), new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
 
         ResponseEntity<Map<String, String>> response = controller.handleInvalidProvider(new InvalidProviderException("unsupported provider"));
 
@@ -86,7 +89,7 @@ class ChatControllerTest {
     @Test
     void failedDeltaSendDoesNotPersistAbortedTurn() {
         TestOrchestrator orchestrator = new TestOrchestrator();
-        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
         FailingEmitter emitter = new FailingEmitter(2);
 
         controller.stream(new ChatRequest("hello", "ollama", "llama3:8b", null), emitter);
@@ -102,7 +105,7 @@ class ChatControllerTest {
         try {
             DelayedStreamingProvider provider = new DelayedStreamingProvider();
             orchestrator.provider = provider;
-            ChatController controller = new ChatController(orchestrator, new ObjectMapper(), executor);
+            ChatController controller = new ChatController(orchestrator, new ObjectMapper(), executor, DEFAULT_CHAT_PROPERTIES);
             CallbackEmitter emitter = new CallbackEmitter();
 
             controller.stream(new ChatRequest("hello", "ollama", "llama3:8b", null), emitter);
@@ -123,7 +126,7 @@ class ChatControllerTest {
     @Test
     void streamSetsRequestIdHeaderAndPassesItToOrchestrator() {
         TestOrchestrator orchestrator = new TestOrchestrator();
-        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         controller.stream(new ChatRequest("hello", "ollama", "llama3:8b", null), "req-stream-7", response);

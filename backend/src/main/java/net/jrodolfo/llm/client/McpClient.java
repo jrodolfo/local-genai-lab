@@ -134,8 +134,8 @@ public class McpClient {
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.directory(properties.resolvedWorkingDirectory().toFile());
 
+        Process process = processBuilder.start();
         try {
-            Process process = processBuilder.start();
             McpSession session = new McpSession(
                     process,
                     Duration.ofSeconds(properties.startupTimeoutSeconds()),
@@ -143,7 +143,8 @@ public class McpClient {
             );
             session.initialize();
             return session;
-        } catch (IOException | RuntimeException ex) {
+        } catch (RuntimeException ex) {
+            process.destroyForcibly();
             throw new McpClientException("Failed to start MCP process.", ex);
         }
     }

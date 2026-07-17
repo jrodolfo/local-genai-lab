@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import net.jrodolfo.llm.client.ModelProviderException;
 import net.jrodolfo.llm.client.OllamaClientException;
+import net.jrodolfo.llm.config.ChatProperties;
 import net.jrodolfo.llm.dto.ChatRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatStreamEvent;
@@ -52,29 +53,32 @@ import java.util.concurrent.atomic.AtomicReference;
 @Tag(name = "chat", description = "Normal and streaming chat endpoints.")
 public class ChatController {
 
-    private static final long STREAM_TIMEOUT_MS = 10 * 60 * 1000L;
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
 
     private final ChatOrchestratorService chatOrchestratorService;
     private final ObjectMapper objectMapper;
     private final Executor chatStreamingExecutor;
+    private final long streamTimeoutMs;
 
     /**
-     * Constructs a new ChatController with the specified orchestrator, mapper, and executor.
+     * Constructs a new ChatController with the specified orchestrator, mapper, executor, and properties.
      *
      * @param chatOrchestratorService the service that orchestrates chat interactions.
      * @param objectMapper            the Jackson mapper for JSON serialization/deserialization.
      * @param chatStreamingExecutor   the executor for managing streaming tasks.
+     * @param chatProperties          the chat configuration properties.
      */
     public ChatController(
             ChatOrchestratorService chatOrchestratorService,
             ObjectMapper objectMapper,
-            @Qualifier("chatStreamingExecutor") Executor chatStreamingExecutor
+            @Qualifier("chatStreamingExecutor") Executor chatStreamingExecutor,
+            ChatProperties chatProperties
     ) {
         this.chatOrchestratorService = chatOrchestratorService;
         this.objectMapper = objectMapper;
         this.chatStreamingExecutor = chatStreamingExecutor;
+        this.streamTimeoutMs = chatProperties.streamTimeoutSeconds() * 1000L;
     }
 
     /**
@@ -163,7 +167,7 @@ public class ChatController {
     ) {
         String requestId = resolveRequestId(requestIdHeader);
         response.setHeader(REQUEST_ID_HEADER, requestId);
-        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MS);
+        SseEmitter emitter = new SseEmitter(streamTimeoutMs);
         stream(request, emitter, requestId);
         return emitter;
     }

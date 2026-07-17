@@ -22,6 +22,10 @@ management:
 app:
   model:
     provider: ${APP_MODEL_PROVIDER:ollama}
+  chat:
+    stream-timeout-seconds: ${APP_CHAT_STREAM_TIMEOUT_SECONDS:600}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000}
   tools:
     routing-mode: ${APP_TOOLS_ROUTING_MODE:hybrid}
     log-planner: ${APP_TOOLS_LOG_PLANNER:false}
