@@ -377,7 +377,9 @@ class ChatOrchestratorServiceTest {
         assertEquals(List.of("first-bucket", "second-bucket"), response.toolResult().get("bucketNames"));
         assertTrue(chatModelProvider.lastPrompt.contains("\"bucketNames\""));
         assertTrue(chatModelProvider.lastPrompt.contains("first-bucket"));
-        assertTrue(chatModelProvider.lastPrompt.contains("run an S3 report for <bucket-name> for the last month"));
+        assertTrue(chatModelProvider.lastPrompt.contains("run an S3 report for ACTUAL_BUCKET_NAME for the last month"));
+        assertTrue(chatModelProvider.lastPrompt.contains("Never emit placeholders such as `<bucket-name>`"));
+        assertFalse(chatModelProvider.lastPrompt.contains("run an S3 report for <bucket-name> for the last month"));
     }
 
     @Test

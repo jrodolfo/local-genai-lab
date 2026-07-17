@@ -201,7 +201,8 @@ public class ChatPromptBuilder {
         builder.append("- Do not recommend running the same s3_cloudwatch_report again after the tool has already completed for the current user message.\n");
         builder.append("- If tool_name is aws_region_audit, interpret the results as an account or service summary instead of repeating raw execution mechanics.\n");
         builder.append("- If tool_name is aws_region_audit and tool_result_json includes bucketNames, list those bucket names directly.\n");
-        builder.append("- If bucketNames are available, suggest this exact next step: `run an S3 report for <bucket-name> for the last month`.\n");
+        builder.append("- If bucketNames are available and you suggest a next step, pick one real bucket from bucketNames and phrase it as `run an S3 report for ACTUAL_BUCKET_NAME for the last month`.\n");
+        builder.append("- Never emit placeholders such as `<bucket-name>`, `ACTUAL_BUCKET_NAME`, or similar template tokens in the final answer.\n");
         builder.append("- Do not tell the user to ask for summary.json, report.txt, or an artifact path when bucketNames are already available.\n");
         builder.append("- Do not claim inability or lack of access when tool output is already available in the prompt.\n");
         builder.append("- Do not mention generic safety, privacy, or policy concerns unless the tool output itself requires it.\n");
