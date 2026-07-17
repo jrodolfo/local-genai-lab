@@ -187,6 +187,14 @@ installed:
 make release-check-docker
 ```
 
+On Amazon Linux / EC2 hosts, Trivy is commonly missing by default. One working
+install pattern is:
+
+```bash
+sudo rpm -ivh https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.66.0_Linux-64bit.rpm
+trivy --version
+```
+
 For Docker-based AWS Agent tools, copy `.env.docker-aws-tools.example` to
 `.env.docker-aws-tools`. The file is ignored by Git and lets the normal Docker
 scripts mount your local AWS configuration read-only into the backend container.

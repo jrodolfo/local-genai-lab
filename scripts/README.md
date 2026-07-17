@@ -57,6 +57,17 @@ container, use:
 DOCKER_SANITY_RUN_HELLO_WORLD=true ./scripts/docker-sanity-check.sh
 ```
 
+`docker-scan.sh` and `docker-full-check.sh` require Trivy on `PATH`. On Amazon
+Linux EC2 hosts, one working install pattern is:
+
+```bash
+sudo rpm -ivh https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.66.0_Linux-64bit.rpm
+trivy --version
+```
+
+If Trivy is missing, `docker-full-check.sh` still reports whether functional
+Docker verification passed before failing the image-scan step.
+
 `docker-start.sh` prints the runtime URLs, log commands, smoke-check commands,
 and Docker Desktop paths after the stack starts. Use `docker-logs.sh` to follow
 logs without remembering Compose service names:

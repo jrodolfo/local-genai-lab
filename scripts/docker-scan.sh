@@ -32,12 +32,20 @@
 
 set -euo pipefail
 
+trivy_install_hint() {
+  printf '%s\n' \
+    'Install Trivy for your operating system and confirm trivy is on PATH.' \
+    'Installation guide: https://trivy.dev/latest/getting-started/installation/' \
+    'Amazon Linux / EC2 example:' \
+    '  sudo rpm -ivh https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.66.0_Linux-64bit.rpm' \
+    'Then retry: ./scripts/docker-scan.sh'
+}
+
 if ! command -v trivy >/dev/null 2>&1; then
   printf '%s\n' \
     'Error: trivy was not found.' \
-    'Install Trivy for your operating system and confirm trivy is on PATH.' \
-    'Installation guide: https://trivy.dev/latest/getting-started/installation/' \
-    'Then retry: ./scripts/docker-scan.sh' >&2
+    'Docker image scanning cannot run until Trivy is installed.' >&2
+  trivy_install_hint >&2
   exit 1
 fi
 

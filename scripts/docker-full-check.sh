@@ -36,7 +36,14 @@ printf '%s\n' \
   ''
 
 "${SCRIPT_DIR}/docker-verify.sh"
-"${SCRIPT_DIR}/docker-scan.sh"
+if ! "${SCRIPT_DIR}/docker-scan.sh"; then
+  printf '%s\n' \
+    '' \
+    'Docker verification completed successfully.' \
+    'Docker image security scan did not complete.' \
+    'If the error above says Trivy is missing, install Trivy and rerun: ./scripts/docker-scan.sh' >&2
+  exit 1
+fi
 
 printf '%s\n' \
   '' \
