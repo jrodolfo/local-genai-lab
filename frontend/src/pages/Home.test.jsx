@@ -783,6 +783,77 @@ describe('Home', () => {
         expect(screen.getByText('Bedrock · us.amazon.nova-pro-v1:0')).toBeInTheDocument();
     });
 
+    it('replaces streamed s3 completion prose with the deterministic tool completion message', async () => {
+        streamMessage.mockImplementation(async ({onEvent}) => {
+            onEvent({
+                type: 'start',
+                sessionId: 'session-123',
+                pendingTool: null,
+                tool: {
+                    used: true,
+                    name: 's3_cloudwatch_report',
+                    status: 'success',
+                    summary: 'S3 report completed.'
+                },
+                toolResult: {
+                    type: 's3_report_summary',
+                    bucket: 'jrodolfo.net',
+                    runDir: 's3-cloudwatch/run-1',
+                    summaryPath: 's3-cloudwatch/run-1/summary.json',
+                    reportPath: 's3-cloudwatch/run-1/report.txt',
+                    successCount: 20,
+                    failureCount: 0,
+                    skippedCount: 0
+                },
+                metadata: null
+            });
+            onEvent({type: 'delta', text: 'Based on the S3 CloudWatch report for bucket jrodolfo.net, '});
+            onEvent({type: 'delta', text: 'I can summarize the findings and recommend reviewing the report.'});
+            onEvent({
+                type: 'complete',
+                sessionId: 'session-123',
+                pendingTool: null,
+                tool: {
+                    used: true,
+                    name: 's3_cloudwatch_report',
+                    status: 'success',
+                    summary: 'S3 report completed.'
+                },
+                toolResult: {
+                    type: 's3_report_summary',
+                    bucket: 'jrodolfo.net',
+                    runDir: 's3-cloudwatch/run-1',
+                    summaryPath: 's3-cloudwatch/run-1/summary.json',
+                    reportPath: 's3-cloudwatch/run-1/report.txt',
+                    successCount: 20,
+                    failureCount: 0,
+                    skippedCount: 0
+                },
+                metadata: {
+                    provider: 'ollama',
+                    modelId: 'llama3:8b',
+                    durationMs: 412
+                }
+            });
+        });
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        await waitForSelectValue({name: /model/i}, 'llama3:8b');
+        await user.click(screen.getByLabelText(/Streaming/i));
+        await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'run an s3 report for jrodolfo.net');
+        await user.click(screen.getByRole('button', {name: /send/i}));
+
+        await waitFor(() => {
+            expect(screen.getByText(/S3 CloudWatch report completed for bucket/i)).toBeInTheDocument();
+        });
+
+        expect(screen.getByText(/Results: success_count=20, failure_count=0, skipped_count=0\./i)).toBeInTheDocument();
+        expect(screen.queryByText(/Based on the S3 CloudWatch report/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/recommend reviewing the report/i)).not.toBeInTheDocument();
+    });
+
     it('shows provider metadata when technical details are enabled', async () => {
         window.localStorage.setItem('local-genai-lab.debug-mode', 'true');
         sendMessage.mockResolvedValue({

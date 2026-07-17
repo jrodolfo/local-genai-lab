@@ -193,6 +193,17 @@ function Home() {
         );
     };
 
+    const replaceLastAssistant = (updater) => {
+        setMessages((current) =>
+            current.map((message, index) => {
+                if (index !== current.length - 1 || message.role !== 'assistant') {
+                    return message;
+                }
+                return updater(message);
+            })
+        );
+    };
+
     /**
      * Marks a partial streamed answer as canceled, or removes it if no tokens arrived.
      */
@@ -671,6 +682,15 @@ function Home() {
                                 toolResult: event?.toolResult || null,
                                 metadata: event?.metadata || null
                             });
+                            if (event.type === 'complete') {
+                                const completionOverride = toolCompletionMessageOverride(event?.tool, event?.toolResult);
+                                if (completionOverride) {
+                                    replaceLastAssistant((messageRecord) => ({
+                                        ...messageRecord,
+                                        content: completionOverride
+                                    }));
+                                }
+                            }
                             return;
                         }
 
@@ -1137,6 +1157,30 @@ function resolveToolLifecycleMessage({tool, pendingTool}) {
         return 'Preparing the final answer from tool results...';
     }
     return `Running tool: ${tool.name}`;
+}
+
+function toolCompletionMessageOverride(tool, toolResult) {
+    if (!tool?.used || tool?.name !== 's3_cloudwatch_report' || tool?.status !== 'success') {
+        return '';
+    }
+    if (!toolResult || toolResult.type !== 's3_report_summary') {
+        return '';
+    }
+    return buildS3ToolCompletionMessage(toolResult);
+}
+
+function buildS3ToolCompletionMessage(toolResult = {}) {
+    const bucket = toolResult.bucket || 'unknown';
+    const successCount = toolResult.successCount ?? 'unknown';
+    const failureCount = toolResult.failureCount ?? 'unknown';
+    const skippedCount = toolResult.skippedCount ?? 'unknown';
+    const hasArtifacts = Boolean(toolResult.runDir || toolResult.summaryPath || toolResult.reportPath);
+    return [
+        `S3 CloudWatch report completed for bucket \`${bucket}\`.`,
+        '',
+        `Results: success_count=${successCount}, failure_count=${failureCount}, skipped_count=${skippedCount}.`,
+        hasArtifacts ? '\nArtifacts are available in the tool result card.' : ''
+    ].join('\n').trim();
 }
 
 function mergeProviderMetadata(existingMetadata, updates) {

@@ -293,7 +293,7 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
-    void streamedCompletedS3ReportPersistsCorrectedResponse() {
+    void prepareChatReturnsImmediateResponseForCompletedS3Report() {
         FileChatSessionStore sessionStore = newSessionStore();
         ChatOrchestratorService orchestrator = newOrchestrator(new FakeChatModelProvider(), new FakeMcpService(), sessionStore, "rules");
 
@@ -303,16 +303,10 @@ class ChatOrchestratorServiceTest {
                 "llama3:8b",
                 null
         );
-        var persistedSession = orchestrator.completePreparedChat(
-                preparedChat,
-                "As you've requested, I will proceed with running an S3 report for `jrodolfo.net` for the last month.",
-                new ModelProviderMetadata("ollama", "llama3:8b", null, null, null, null, null, null, null, null)
-        );
-
-        String persistedResponse = persistedSession.messages().get(1).content();
-        assertTrue(persistedResponse.contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
-        assertTrue(persistedResponse.contains("Artifacts are available in the tool result card."));
-        assertFalse(persistedResponse.contains("will proceed"));
+        assertNotNull(preparedChat.immediateResponse());
+        assertTrue(preparedChat.immediateResponse().response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(preparedChat.immediateResponse().response().contains("Artifacts are available in the tool result card."));
+        assertNull(preparedChat.session());
     }
 
     @Test
@@ -622,7 +616,7 @@ class ChatOrchestratorServiceTest {
         assertNotNull(response.tool());
         assertEquals("aws_region_audit", response.tool().name());
         assertEquals(1, chatModelProvider.plannerCalls);
-        assertEquals(List.of(), mcpService.lastAuditRequest.services());
+        assertNull(mcpService.lastAuditRequest.services());
     }
 
     @Test

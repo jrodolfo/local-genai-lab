@@ -629,8 +629,7 @@ public class ChatOrchestratorService {
         if (toolMetadata == null
                 || toolResult == null
                 || !"s3_cloudwatch_report".equals(toolMetadata.name())
-                || !"success".equals(toolMetadata.status())
-                || !hasContradictoryS3CompletionWording(assistantResponse)) {
+                || !"success".equals(toolMetadata.status())) {
             return assistantResponse;
         }
 
