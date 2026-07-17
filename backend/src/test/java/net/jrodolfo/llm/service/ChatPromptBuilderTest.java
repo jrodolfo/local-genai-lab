@@ -56,6 +56,8 @@ class ChatPromptBuilderTest {
         assertTrue(prompt.contains("Focus on findings and conclusions, not on tool mechanics."));
         assertTrue(prompt.contains("Do not expose internal container or filesystem paths such as /app/... unless the user explicitly asks for artifact locations."));
         assertTrue(prompt.contains("Do not claim inability or lack of access when tool output is already available in the prompt."));
+        assertTrue(prompt.contains("use AWS service names exactly as provided"));
+        assertTrue(prompt.contains("do not infer monitoring, security incidents, or unusual behavior unless the tool output provides concrete evidence"));
     }
 
     @Test

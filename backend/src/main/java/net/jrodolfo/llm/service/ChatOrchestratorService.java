@@ -24,10 +24,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Coordinates the backend lifecycle for one Agent chat turn.
@@ -296,8 +298,17 @@ public class ChatOrchestratorService {
                             execution.toolName(),
                             decision.reason(),
                             execution.summary(),
-                            execution.result()
+                            modelToolContextResult(execution.toolName(), execution.result(), structuredToolResult)
                     )
+            );
+            log.info(
+                    "requestId={} tool_prompt_ready sessionId={} provider={} model={} tool={} promptChars={}",
+                    requestId,
+                    clearedSession.sessionId(),
+                    resolvedProvider,
+                    resolvedModel,
+                    execution.toolName(),
+                    augmentedPrompt.prompt() != null ? augmentedPrompt.prompt().length() : 0
             );
             return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, structuredToolResult, clearedSession);
         } catch (IllegalArgumentException | McpClientException ex) {
@@ -854,6 +865,37 @@ public class ChatOrchestratorService {
         return enriched;
     }
 
+    private Map<String, Object> modelToolContextResult(String toolName, Map<String, Object> rawResult, Map<String, Object> structuredToolResult) {
+        if (!"aws_region_audit".equals(toolName) || structuredToolResult == null) {
+            return rawResult;
+        }
+
+        Map<String, Object> compact = new LinkedHashMap<>();
+        compact.put("type", structuredToolResult.getOrDefault("type", "audit_summary"));
+        copyIfPresent(structuredToolResult, compact, "accountId");
+        copyIfPresent(structuredToolResult, compact, "status");
+        copyIfPresent(structuredToolResult, compact, "successCount");
+        copyIfPresent(structuredToolResult, compact, "failureCount");
+        copyIfPresent(structuredToolResult, compact, "skippedCount");
+        copyIfPresent(structuredToolResult, compact, "selectedRegions");
+        copyIfPresent(structuredToolResult, compact, "selectedServices");
+        copyIfPresent(structuredToolResult, compact, "bucketNames");
+        List<Map<String, Object>> highSignalResources = readHighSignalAuditResources(rawResult.get("run_dir"));
+        if (!highSignalResources.isEmpty()) {
+            compact.put("highSignalResources", highSignalResources);
+        }
+        List<String> reviewCandidates = deriveAuditReviewCandidates(highSignalResources);
+        if (!reviewCandidates.isEmpty()) {
+            compact.put("reviewCandidates", reviewCandidates);
+        }
+        List<Map<String, Object>> failedSteps = compactAuditFailedSteps(structuredToolResult.get("failedSteps"));
+        if (!failedSteps.isEmpty()) {
+            compact.put("failedSteps", failedSteps);
+        }
+        compact.put("factualSummary", buildAuditFactualSummary(compact, highSignalResources, reviewCandidates));
+        return compact;
+    }
+
     /**
      * Reads S3 bucket names from the standard audit artifact.
      *
@@ -926,6 +968,144 @@ public class ChatOrchestratorService {
         return null;
     }
 
+    private List<Map<String, Object>> readHighSignalAuditResources(Object runDirValue) {
+        if (!(runDirValue instanceof String runDir) || runDir.isBlank()) {
+            return List.of();
+        }
+
+        Path artifactPath = resolveReportPath(runDir, "meta/status.tsv");
+        if (artifactPath == null || !Files.isRegularFile(artifactPath)) {
+            return List.of();
+        }
+
+        try {
+            return Files.readAllLines(artifactPath).stream()
+                    .map(this::parseAuditStatusRow)
+                    .filter(Objects::nonNull)
+                    .filter(row -> "success".equals(row.get("status")))
+                    .filter(row -> asInt(row.get("count")) > 0)
+                    .sorted(Comparator
+                            .comparing((Map<String, Object> row) -> !Boolean.TRUE.equals(row.get("billable")))
+                            .thenComparing((Map<String, Object> row) -> asInt(row.get("count")), Comparator.reverseOrder())
+                            .thenComparing(row -> String.valueOf(row.get("title"))))
+                    .limit(12)
+                    .toList();
+        } catch (IOException ex) {
+            log.warn("Could not read audit status artifact path={}", artifactPath, ex);
+            return List.of();
+        }
+    }
+
+    private Map<String, Object> parseAuditStatusRow(String line) {
+        if (line == null || line.isBlank()) {
+            return null;
+        }
+
+        String[] fields = line.split("\u001c", -1);
+        if (fields.length < 8) {
+            return null;
+        }
+
+        Integer count = parseNullableInt(fields[7]);
+        if (count == null) {
+            return null;
+        }
+
+        return Map.of(
+                "scope", fields[0],
+                "service", fields[1],
+                "title", fields[2],
+                "billable", "yes".equalsIgnoreCase(fields[4]),
+                "status", fields[5],
+                "count", count
+        );
+    }
+
+    private List<String> deriveAuditReviewCandidates(List<Map<String, Object>> highSignalResources) {
+        if (highSignalResources.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> candidates = new ArrayList<>();
+        for (Map<String, Object> resource : highSignalResources) {
+            String title = String.valueOf(resource.getOrDefault("title", ""));
+            String scope = String.valueOf(resource.getOrDefault("scope", ""));
+            int count = asInt(resource.get("count"));
+            String normalizedTitle = title.toLowerCase(Locale.ROOT);
+            if (normalizedTitle.contains("elastic ip")
+                    || normalizedTitle.contains("secrets manager")
+                    || normalizedTitle.contains("cloudwatch log groups")
+                    || normalizedTitle.contains("security groups")) {
+                candidates.add("%s in %s: %d".formatted(title, scope, count));
+            }
+        }
+        return candidates.stream().distinct().limit(4).toList();
+    }
+
+    private List<Map<String, Object>> compactAuditFailedSteps(Object value) {
+        if (!(value instanceof List<?> failedSteps)) {
+            return List.of();
+        }
+        return failedSteps.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(step -> {
+                    Map<String, Object> compact = new LinkedHashMap<>();
+                    copyIfPresent(step, compact, "step");
+                    copyIfPresent(step, compact, "scope");
+                    copyIfPresent(step, compact, "service");
+                    return compact;
+                })
+                .filter(step -> !step.isEmpty())
+                .limit(6)
+                .toList();
+    }
+
+    private String buildAuditFactualSummary(
+            Map<String, Object> compact,
+            List<Map<String, Object>> highSignalResources,
+            List<String> reviewCandidates
+    ) {
+        List<String> regions = stringList(compact.get("selectedRegions"));
+        List<String> services = stringList(compact.get("selectedServices"));
+        List<String> buckets = stringList(compact.get("bucketNames"));
+        StringBuilder summary = new StringBuilder();
+        summary.append("Audit status: ").append(String.valueOf(compact.getOrDefault("status", "success"))).append(". ");
+        summary.append("Counts: success=")
+                .append(valueOrUnknown(compact, "successCount"))
+                .append(", failures=")
+                .append(valueOrUnknown(compact, "failureCount"))
+                .append(", skipped=")
+                .append(valueOrUnknown(compact, "skippedCount"))
+                .append(". ");
+        if (!regions.isEmpty()) {
+            summary.append("Regions: ").append(String.join(", ", regions)).append(". ");
+        }
+        if (!services.isEmpty()) {
+            summary.append("Selected services: ").append(String.join(", ", services)).append(". ");
+        }
+        if (!highSignalResources.isEmpty()) {
+            summary.append("Non-zero resources: ");
+            summary.append(highSignalResources.stream()
+                    .map(resource -> "%s (%s: %d)".formatted(
+                            String.valueOf(resource.get("title")),
+                            String.valueOf(resource.get("scope")),
+                            asInt(resource.get("count"))
+                    ))
+                    .limit(8)
+                    .reduce((left, right) -> left + "; " + right)
+                    .orElse(""));
+            summary.append(". ");
+        }
+        if (!buckets.isEmpty()) {
+            summary.append("S3 buckets: ").append(String.join(", ", buckets)).append(". ");
+        }
+        if (!reviewCandidates.isEmpty()) {
+            summary.append("Review candidates: ").append(String.join("; ", reviewCandidates)).append(".");
+        }
+        return summary.toString().trim();
+    }
+
     /**
      * Converts a list-like value into strings.
      *
@@ -940,6 +1120,34 @@ public class ChatOrchestratorService {
                 .filter(String.class::isInstance)
                 .map(String.class::cast)
                 .toList();
+    }
+
+    private void copyIfPresent(Map<String, Object> source, Map<String, Object> target, String key) {
+        if (source.containsKey(key) && source.get(key) != null) {
+            target.put(key, source.get(key));
+        }
+    }
+
+    private Integer parseNullableInt(String value) {
+        if (value == null || value.isBlank() || "n/a".equalsIgnoreCase(value)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private int asInt(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text) {
+            Integer parsed = parseNullableInt(text);
+            return parsed != null ? parsed : 0;
+        }
+        return 0;
     }
 
     /**

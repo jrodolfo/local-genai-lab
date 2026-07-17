@@ -411,6 +411,39 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void awsAuditPromptUsesCompactHighSignalDigestInsteadOfRawRunDirectory() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        Path runDir = auditRunDirWithAuditStatus("""
+                global\u001csts\u001cSTS caller identity\u001cjson\u001cno\u001csuccess\u001c0\u001c0\u001cstdout\u001c\u001ccommand
+                global\u001cs3\u001cS3 buckets\u001cjson\u001cyes\u001csuccess\u001c0\u001c6\u001cstdout\u001c\u001ccommand
+                us-east-1\u001clambda\u001cLambda functions - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c6\u001cstdout\u001c\u001ccommand
+                us-east-2\u001cec2\u001cEC2 instances - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c3\u001cstdout\u001c\u001ccommand
+                us-east-2\u001cec2\u001cElastic IPs - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
+                us-east-2\u001csecretsmanager\u001cSecrets Manager secrets - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
+                us-east-2\u001clogs\u001cCloudWatch log groups - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
+                """);
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new RichAuditMcpService(runDir.toString()), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertEquals("aws_region_audit", response.tool().name());
+        assertTrue(chatModelProvider.lastPrompt.contains("\"factualSummary\""));
+        assertTrue(chatModelProvider.lastPrompt.contains("\"highSignalResources\""));
+        assertTrue(chatModelProvider.lastPrompt.contains("EC2 instances - us-east-2"));
+        assertTrue(chatModelProvider.lastPrompt.contains("Elastic IPs - us-east-2"));
+        assertTrue(chatModelProvider.lastPrompt.contains("Review candidates"));
+        assertFalse(chatModelProvider.lastPrompt.contains("\"run_dir\""));
+        assertFalse(chatModelProvider.lastPrompt.contains("\"reportPath\""));
+        assertFalse(chatModelProvider.lastPrompt.contains("\"summaryPath\""));
+    }
+
+    @Test
     void affirmativeFollowUpToRecommendedS3ReportWithMultipleBucketsAsksForBucketSelection() throws Exception {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         chatModelProvider.nextAssistantResponse = "I recommend taking the next step by running an S3 report for one of your bucket names for the last month. Please let me know if you'd like to proceed.";
@@ -735,6 +768,19 @@ class ChatOrchestratorServiceTest {
         return runDir;
     }
 
+    private Path auditRunDirWithAuditStatus(String statusTsv) throws Exception {
+        Path runDir = tempDir.resolve("reports").resolve("audit").resolve("aws-audit-test-" + System.nanoTime());
+        Files.createDirectories(runDir.resolve("json"));
+        Files.createDirectories(runDir.resolve("meta"));
+        Files.writeString(runDir.resolve("json").resolve("s3_list_buckets.json"), """
+                [
+                  {"Name": "first-bucket", "CreationDate": "2026-01-01T00:00:00Z"}
+                ]
+                """);
+        Files.writeString(runDir.resolve("meta").resolve("status.tsv"), statusTsv);
+        return runDir;
+    }
+
     private ChatOrchestratorService newOrchestrator(
             ChatModelProvider chatModelProvider,
             McpService mcpService,
@@ -816,11 +862,11 @@ class ChatOrchestratorServiceTest {
     }
 
     private static class FakeMcpService extends McpService {
-        private AwsRegionAuditToolRequest lastAuditRequest;
-        private S3CloudwatchReportToolRequest lastS3Request;
-        private ListReportsRequest lastListReportsRequest;
-        private ReadReportSummaryToolRequest lastReadReportSummaryRequest;
-        private final String auditRunDir;
+        protected AwsRegionAuditToolRequest lastAuditRequest;
+        protected S3CloudwatchReportToolRequest lastS3Request;
+        protected ListReportsRequest lastListReportsRequest;
+        protected ReadReportSummaryToolRequest lastReadReportSummaryRequest;
+        protected final String auditRunDir;
 
         private FakeMcpService() {
             this(null);
@@ -888,6 +934,29 @@ class ChatOrchestratorServiceTest {
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
             throw new McpClientException("simulated failure");
+        }
+    }
+
+    private static final class RichAuditMcpService extends FakeMcpService {
+        private RichAuditMcpService(String auditRunDir) {
+            super(auditRunDir);
+        }
+
+        @Override
+        public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            this.lastAuditRequest = request;
+            return new McpToolInvocationResponse("aws_region_audit", Map.of(
+                    "ok", true,
+                    "run_dir", auditRunDir,
+                    "summary", Map.of(
+                            "account_id", "408887463418",
+                            "selected_regions", List.of("us-east-1", "us-east-2"),
+                            "selected_services", List.of("sts", "s3", "ec2", "lambda", "secretsmanager", "logs"),
+                            "success_count", 37,
+                            "failure_count", 0,
+                            "skipped_count", 0
+                    )
+            ));
         }
     }
 
