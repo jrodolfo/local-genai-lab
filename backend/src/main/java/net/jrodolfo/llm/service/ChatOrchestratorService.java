@@ -396,6 +396,48 @@ public class ChatOrchestratorService {
     }
 
     /**
+     * Returns an immediate response for prepared chats that should not continue into provider
+     * generation.
+     *
+     * <p>This protects streaming transports from emitting model-generated follow-up prose after a
+     * successful local tool already produced the final user-facing result.
+     *
+     * @param preparedChat prepared chat returned by {@code prepareChat}
+     * @return existing or synthesized immediate response, or {@code null} when provider generation should continue
+     */
+    public ChatResponse materializeImmediateResponse(PreparedChat preparedChat) {
+        if (preparedChat == null) {
+            return null;
+        }
+        if (preparedChat.immediateResponse() != null) {
+            return preparedChat.immediateResponse();
+        }
+        if (!shouldReturnImmediateToolResponse(preparedChat.toolMetadata(), preparedChat.toolResult())
+                || preparedChat.session() == null) {
+            return null;
+        }
+
+        String assistantResponse = buildS3CompletionMessage(preparedChat.toolResult());
+        ChatSession persistedSession = chatMemoryService.finishTurn(
+                preparedChat.session(),
+                assistantResponse,
+                preparedChat.toolMetadata(),
+                preparedChat.toolResult(),
+                null,
+                null
+        );
+        return new ChatResponse(
+                assistantResponse,
+                preparedChat.model(),
+                preparedChat.toolMetadata(),
+                preparedChat.toolResult(),
+                persistedSession.sessionId(),
+                null,
+                null
+        );
+    }
+
+    /**
      * Resolves whether the new user message completes a pending tool request.
      *
      * <p>Pending tool calls take precedence over fresh routing only when the new

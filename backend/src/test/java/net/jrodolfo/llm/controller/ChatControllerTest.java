@@ -155,11 +155,37 @@ class ChatControllerTest {
         assertFalse(emitter.completedWithError);
     }
 
+    @Test
+    void streamUsesMaterializedImmediateResponseWithoutStartingProviderStream() {
+        TestOrchestrator orchestrator = new TestOrchestrator();
+        orchestrator.materializedImmediateResponse = new ChatResponse(
+                "S3 CloudWatch report completed for bucket `jrodolfo.net`.\n\nResults: success_count=5, failure_count=0, skipped_count=0.",
+                "llama3:8b",
+                new ChatToolMetadata(true, "s3_cloudwatch_report", "success", "S3 report completed."),
+                Map.of("type", "s3_report_summary", "bucket", "jrodolfo.net"),
+                "session-s3-materialized",
+                null,
+                null
+        );
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        CallbackEmitter emitter = new CallbackEmitter();
+
+        controller.stream(new ChatRequest("run an s3 report", "ollama", "llama3:8b", null), emitter);
+
+        assertEquals(1, orchestrator.materializeImmediateResponseCalls);
+        assertEquals(0, orchestrator.completePreparedChatCalls);
+        assertEquals(0, orchestrator.streamCalls);
+        assertTrue(emitter.completed);
+        assertFalse(emitter.completedWithError);
+    }
+
     private static final class TestOrchestrator extends ChatOrchestratorService {
         private int streamCalls;
         private ChatModelProvider provider = new SynchronousStreamingProvider(() -> streamCalls++);
         private final PreparedChat preparedChat;
         private ChatResponse immediateResponse;
+        private ChatResponse materializedImmediateResponse;
+        private int materializeImmediateResponseCalls;
         private int completePreparedChatCalls;
         private String lastMessage;
         private String lastProvider;
@@ -230,6 +256,15 @@ class ChatControllerTest {
         ) {
             this.lastRequestId = requestId;
             return prepareChat(message, provider, model, sessionId);
+        }
+
+        @Override
+        public ChatResponse materializeImmediateResponse(PreparedChat preparedChat) {
+            materializeImmediateResponseCalls++;
+            if (immediateResponse != null) {
+                return immediateResponse;
+            }
+            return materializedImmediateResponse;
         }
 
         @Override

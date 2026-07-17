@@ -231,8 +231,9 @@ public class ChatController {
                             }
                         }
                 );
+                ChatResponse immediateResponse = chatOrchestratorService.materializeImmediateResponse(preparedChat);
 
-                if (preparedChat.immediateResponse() == null
+                if (immediateResponse == null
                         && preparedChat.toolMetadata() != null
                         && preparedChat.toolMetadata().used()
                         && "success".equals(preparedChat.toolMetadata().status())) {
@@ -246,28 +247,28 @@ public class ChatController {
                 }
 
                 if (!sendEvent(emitter, streamClosed, ChatStreamEvent.start(
-                        preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().sessionId() : preparedChat.session().sessionId(),
+                        immediateResponse != null ? immediateResponse.sessionId() : preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
-                        preparedChat.immediateResponse() != null ? preparedChat.immediateResponse().metadata() : null
+                        immediateResponse != null ? immediateResponse.metadata() : null
                 ))) {
                     streamAborted.set(true);
                     return;
                 }
 
-                if (preparedChat.immediateResponse() != null) {
+                if (immediateResponse != null) {
                     long backendDurationMs = elapsedMillis(startedAt);
-                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(preparedChat.immediateResponse().response()))) {
+                    if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(immediateResponse.response()))) {
                         streamAborted.set(true);
                         return;
                     }
                     if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
-                            preparedChat.immediateResponse().sessionId(),
-                            preparedChat.immediateResponse().tool(),
-                            preparedChat.immediateResponse().toolResult(),
-                            preparedChat.immediateResponse().pendingTool(),
-                            withBackendDuration(preparedChat.immediateResponse().metadata(), backendDurationMs)
+                            immediateResponse.sessionId(),
+                            immediateResponse.tool(),
+                            immediateResponse.toolResult(),
+                            immediateResponse.pendingTool(),
+                            withBackendDuration(immediateResponse.metadata(), backendDurationMs)
                     ))) {
                         streamAborted.set(true);
                         return;
@@ -276,8 +277,8 @@ public class ChatController {
                             "requestId={} chat_request_complete provider={} model={} sessionId={} streaming=true backendDurationMs={} immediateResponse=true",
                             requestId,
                             request.provider(),
-                            preparedChat.immediateResponse().model(),
-                            preparedChat.immediateResponse().sessionId(),
+                            immediateResponse.model(),
+                            immediateResponse.sessionId(),
                             backendDurationMs
                     );
                     completeEmitter(emitter, streamClosed);
