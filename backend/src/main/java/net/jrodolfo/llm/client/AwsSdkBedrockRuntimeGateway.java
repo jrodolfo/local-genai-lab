@@ -168,6 +168,7 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                             System.currentTimeMillis() - startedAt,
                             finalMetrics != null ? finalMetrics.latencyMs() : null,
                             null,
+                            null,
                             null
                     ));
                 })
@@ -313,6 +314,7 @@ public class AwsSdkBedrockRuntimeGateway implements BedrockRuntimeGateway {
                 response.usage() != null ? response.usage().totalTokens() : null,
                 System.currentTimeMillis() - startedAt,
                 response.metrics() != null ? response.metrics().latencyMs() : null,
+                null,
                 null,
                 null
         );

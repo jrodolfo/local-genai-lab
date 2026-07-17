@@ -91,6 +91,9 @@ function MessageBubble({
                         {metadata.backendDurationMs != null ?
                             <span>backend total: {formatDuration(metadata.backendDurationMs)}</span> : null}
                         {metadata.uiWaitMs != null ? <span>ui wait: {formatDuration(metadata.uiWaitMs)}</span> : null}
+                        {phaseTimingEntries(metadata).map(([key, value]) => (
+                            <span key={key}>{formatPhaseTimingLabel(key)}: {formatDuration(value)}</span>
+                        ))}
                     </div>
                 ) : null}
             </div>
@@ -120,6 +123,33 @@ function formatDuration(totalMs) {
     parts.push(`${milliseconds} ms`);
 
     return parts.join(' ');
+}
+
+function phaseTimingEntries(metadata) {
+    if (!metadata?.phaseTimingsMs || typeof metadata.phaseTimingsMs !== 'object') {
+        return [];
+    }
+    return Object.entries(metadata.phaseTimingsMs)
+        .filter(([, value]) => Number.isFinite(value) && value >= 0);
+}
+
+function formatPhaseTimingLabel(key) {
+    switch (key) {
+        case 'toolDecisionMs':
+            return 'tool decision';
+        case 'toolExecutionMs':
+            return 'tool execution';
+        case 'promptBuildMs':
+            return 'prompt build';
+        case 'prepareMs':
+            return 'prepare total';
+        case 'timeToFirstTokenMs':
+            return 'time to first token';
+        case 'persistenceMs':
+            return 'session persistence';
+        default:
+            return key;
+    }
 }
 
 /**

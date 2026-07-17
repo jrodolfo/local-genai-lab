@@ -8,6 +8,7 @@ import net.jrodolfo.llm.dto.AwsRegionAuditToolRequest;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ListReportsRequest;
+import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
 import net.jrodolfo.llm.dto.ReadReportSummaryToolRequest;
 import net.jrodolfo.llm.dto.S3CloudwatchReportToolRequest;
@@ -25,11 +26,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Coordinates the backend lifecycle for one Agent chat turn.
@@ -197,12 +200,16 @@ public class ChatOrchestratorService {
             String requestId,
             ToolPhaseListener toolPhaseListener
     ) {
+        long prepareStartedAt = System.nanoTime();
         ChatModelProvider chatModelProvider = chatModelProviderRegistry.get(provider);
         String resolvedModel = chatModelProvider.resolveModel(model);
         ChatSession session = chatMemoryService.startTurn(sessionId, model, resolvedModel, message);
         String resolvedProvider = chatModelProviderRegistry.resolveProviderName(provider);
+        long routingStartedAt = System.nanoTime();
         ChatToolRouterService.ToolDecision routedDecision = toolDecisionService.route(message, resolvedProvider, resolvedModel);
         ChatToolRouterService.ToolDecision decision = resolveDecision(session, message, resolvedProvider, resolvedModel, routedDecision);
+        Map<String, Long> phaseTimings = new LinkedHashMap<>();
+        phaseTimings.put("toolDecisionMs", elapsedMillis(routingStartedAt));
         log.info(
                 "requestId={} chat_prepare sessionId={} provider={} model={} decisionType={} needsClarification={} usesTool={}",
                 requestId,
@@ -225,6 +232,7 @@ public class ChatOrchestratorService {
             );
             PendingToolCall pendingToolCall = pendingToolCallForDecision(decision);
             ChatSession persistedSession = chatMemoryService.finishTurn(session, decision.clarification(), metadata, null, null, pendingToolCall);
+            phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
             return PreparedChat.forImmediateResponse(new ChatResponse(
                     decision.clarification(),
                     resolvedModel,
@@ -233,12 +241,16 @@ public class ChatOrchestratorService {
                     persistedSession.sessionId(),
                     toPendingToolResponse(pendingToolCall),
                     null
-            ));
+            ), phaseTimings);
         }
 
         if (!decision.shouldUseTool()) {
             ChatSession clearedSession = session.withPendingToolCall(null);
-            return PreparedChat.forPrompt(chatModelProvider, buildConversationPrompt(clearedSession, message, null), resolvedModel, null, null, clearedSession);
+            long promptStartedAt = System.nanoTime();
+            ProviderPrompt prompt = buildConversationPrompt(clearedSession, message, null);
+            phaseTimings.put("promptBuildMs", elapsedMillis(promptStartedAt));
+            phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
+            return PreparedChat.forPrompt(chatModelProvider, prompt, resolvedModel, null, null, clearedSession, phaseTimings);
         }
 
         try {
@@ -252,7 +264,9 @@ public class ChatOrchestratorService {
                     toolNameForDecision(decision),
                     decision.reason()
             );
+            long toolStartedAt = System.nanoTime();
             ToolExecution execution = executeTool(decision);
+            phaseTimings.put("toolExecutionMs", elapsedMillis(toolStartedAt));
             toolPhaseListener.onPhase("tool-execution-completed", execution.toolName());
             log.info(
                     "requestId={} tool_execution_complete sessionId={} provider={} model={} tool={} summary={}",
@@ -271,6 +285,54 @@ public class ChatOrchestratorService {
                     execution.summary()
             );
             Map<String, Object> structuredToolResult = execution.toolResult(reportsDirectory);
+            enrichStructuredAuditToolResult(execution.toolName(), execution.result(), structuredToolResult);
+            if (shouldReturnImmediateAwsAuditSummary(message, resolvedProvider, resolvedModel, metadata, structuredToolResult)) {
+                String assistantResponse = buildImmediateAwsAuditSummary(structuredToolResult);
+                PendingToolCall recommendedFollowUp = pendingToolCallForAuditSummary(structuredToolResult);
+                ModelProviderMetadata deterministicMetadata = new ModelProviderMetadata(
+                        resolvedProvider,
+                        resolvedModel,
+                        "backend_deterministic_audit_summary",
+                        null,
+                        null,
+                        null,
+                        0L,
+                        null,
+                        null,
+                        null,
+                        Collections.unmodifiableMap(new LinkedHashMap<>(phaseTimings))
+                );
+                ChatSession persistedSession = chatMemoryService.finishTurn(
+                        clearedSession,
+                        assistantResponse,
+                        metadata,
+                        structuredToolResult,
+                        deterministicMetadata,
+                        recommendedFollowUp
+                );
+                phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
+                return PreparedChat.forImmediateResponse(new ChatResponse(
+                        assistantResponse,
+                        resolvedModel,
+                        metadata,
+                        structuredToolResult,
+                        persistedSession.sessionId(),
+                        toPendingToolResponse(recommendedFollowUp),
+                        new ModelProviderMetadata(
+                                resolvedProvider,
+                                resolvedModel,
+                                "backend_deterministic_audit_summary",
+                                null,
+                                null,
+                                null,
+                                0L,
+                                null,
+                                null,
+                                null,
+                                Collections.unmodifiableMap(new LinkedHashMap<>(phaseTimings))
+                        )
+                ), phaseTimings);
+            }
             if (shouldReturnImmediateToolResponse(metadata, structuredToolResult)) {
                 String assistantResponse = buildS3CompletionMessage(structuredToolResult);
                 ChatSession persistedSession = chatMemoryService.finishTurn(
@@ -281,6 +343,7 @@ public class ChatOrchestratorService {
                         null,
                         null
                 );
+                phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
                 return PreparedChat.forImmediateResponse(new ChatResponse(
                         assistantResponse,
                         resolvedModel,
@@ -289,8 +352,9 @@ public class ChatOrchestratorService {
                         persistedSession.sessionId(),
                         null,
                         null
-                ));
+                ), phaseTimings);
             }
+            long promptStartedAt = System.nanoTime();
             ProviderPrompt augmentedPrompt = buildConversationPrompt(
                     clearedSession,
                     message,
@@ -301,6 +365,8 @@ public class ChatOrchestratorService {
                             modelToolContextResult(execution.toolName(), execution.result(), structuredToolResult)
                     )
             );
+            phaseTimings.put("promptBuildMs", elapsedMillis(promptStartedAt));
+            phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
             log.info(
                     "requestId={} tool_prompt_ready sessionId={} provider={} model={} tool={} promptChars={}",
                     requestId,
@@ -310,7 +376,7 @@ public class ChatOrchestratorService {
                     execution.toolName(),
                     augmentedPrompt.prompt() != null ? augmentedPrompt.prompt().length() : 0
             );
-            return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, structuredToolResult, clearedSession);
+            return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, structuredToolResult, clearedSession, phaseTimings);
         } catch (IllegalArgumentException | McpClientException ex) {
             log.warn(
                     "requestId={} tool_execution_failed sessionId={} provider={} model={} tool={} message={}",
@@ -344,7 +410,8 @@ public class ChatOrchestratorService {
                     null,
                     null
             );
-            return PreparedChat.forImmediateResponse(fallbackResponse);
+            phaseTimings.put("prepareMs", elapsedMillis(prepareStartedAt));
+            return PreparedChat.forImmediateResponse(fallbackResponse, phaseTimings);
         }
     }
 
@@ -896,6 +963,125 @@ public class ChatOrchestratorService {
         return compact;
     }
 
+    private void enrichStructuredAuditToolResult(String toolName, Map<String, Object> rawResult, Map<String, Object> structuredToolResult) {
+        if (!"aws_region_audit".equals(toolName) || structuredToolResult == null) {
+            return;
+        }
+        List<Map<String, Object>> highSignalResources = readHighSignalAuditResources(rawResult.get("run_dir"));
+        if (!highSignalResources.isEmpty()) {
+            structuredToolResult.put("highSignalResources", highSignalResources);
+        }
+        List<String> reviewCandidates = deriveAuditReviewCandidates(highSignalResources);
+        if (!reviewCandidates.isEmpty()) {
+            structuredToolResult.put("reviewCandidates", reviewCandidates);
+        }
+        structuredToolResult.put("factualSummary", buildAuditFactualSummary(structuredToolResult, highSignalResources, reviewCandidates));
+    }
+
+    private boolean shouldReturnImmediateAwsAuditSummary(
+            String currentUserMessage,
+            String resolvedProvider,
+            String resolvedModel,
+            ChatToolMetadata metadata,
+            Map<String, Object> structuredToolResult
+    ) {
+        return metadata != null
+                && structuredToolResult != null
+                && "aws_region_audit".equals(metadata.name())
+                && isCompletedAwsAuditStatus(metadata.status())
+                && (isBroadAwsAccountSummaryRequest(currentUserMessage)
+                || isSmallLocalOllamaModel(resolvedProvider, resolvedModel));
+    }
+
+    private boolean isBroadAwsAccountSummaryRequest(String currentUserMessage) {
+        if (currentUserMessage == null || currentUserMessage.isBlank()) {
+            return false;
+        }
+        String normalized = currentUserMessage.toLowerCase(Locale.ROOT);
+        return normalized.contains("analyze my aws account")
+                || (normalized.contains("summarize") && normalized.contains("services i am using"))
+                || normalized.contains("worth reviewing");
+    }
+
+    private boolean isSmallLocalOllamaModel(String resolvedProvider, String resolvedModel) {
+        if (!"ollama".equalsIgnoreCase(resolvedProvider) || resolvedModel == null) {
+            return false;
+        }
+        String normalized = resolvedModel.toLowerCase(Locale.ROOT);
+        return normalized.contains(":1b")
+                || normalized.contains(":0.5b")
+                || normalized.contains(":2b")
+                || normalized.contains(":3b");
+    }
+
+    private String buildImmediateAwsAuditSummary(Map<String, Object> toolResult) {
+        StringBuilder response = new StringBuilder();
+        response.append("I analyzed your AWS account using the audit results.\n\n");
+
+        List<String> services = stringList(toolResult.get("selectedServices"));
+        if (!services.isEmpty()) {
+            response.append("Services in scope: ").append(String.join(", ", services)).append(".\n\n");
+        }
+
+        Object factualSummary = toolResult.get("factualSummary");
+        if (factualSummary instanceof String summary && !summary.isBlank()) {
+            response.append("Summary: ").append(summary).append("\n\n");
+        }
+
+        List<Map<String, Object>> highSignalResources = mapList(toolResult.get("highSignalResources"));
+        if (!highSignalResources.isEmpty()) {
+            response.append("Resources with non-zero counts:\n");
+            for (Map<String, Object> resource : highSignalResources.stream().limit(8).toList()) {
+                response.append("- ")
+                        .append(resource.get("title"))
+                        .append(" in ")
+                        .append(resource.get("scope"))
+                        .append(": ")
+                        .append(asInt(resource.get("count")))
+                        .append("\n");
+            }
+            response.append("\n");
+        }
+
+        List<String> reviewCandidates = stringList(toolResult.get("reviewCandidates"));
+        if (!reviewCandidates.isEmpty()) {
+            response.append("Items worth reviewing:\n");
+            for (String candidate : reviewCandidates) {
+                response.append("- ").append(candidate).append("\n");
+            }
+            response.append("\n");
+        }
+
+        List<String> buckets = stringList(toolResult.get("bucketNames"));
+        if (!buckets.isEmpty()) {
+            response.append("S3 buckets found: ").append(String.join(", ", buckets)).append(".\n\n");
+            response.append("If you want, I can run an S3 report for one bucket for the last month. ");
+            response.append(buckets.size() == 1
+                    ? "Say `yes` to continue."
+                    : "Reply with one bucket name to continue.");
+        }
+
+        return response.toString().trim();
+    }
+
+    private PendingToolCall pendingToolCallForAuditSummary(Map<String, Object> structuredToolResult) {
+        List<String> bucketOptions = extractBucketOptions(structuredToolResult);
+        if (bucketOptions.isEmpty()) {
+            return null;
+        }
+        return new PendingToolCall(
+                ChatToolRouterService.DecisionType.S3_CLOUDWATCH_REPORT,
+                null,
+                null,
+                null,
+                30,
+                "assistant recommended s3 cloudwatch report",
+                List.of(),
+                bucketOptions,
+                bucketOptions.size() == 1 ? List.of("confirmation") : List.of("bucket")
+        );
+    }
+
     /**
      * Reads S3 bucket names from the standard audit artifact.
      *
@@ -1122,6 +1308,18 @@ public class ChatOrchestratorService {
                 .toList();
     }
 
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> mapList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+                .filter(Map.class::isInstance)
+                .map(Map.class::cast)
+                .map(map -> (Map<String, Object>) map)
+                .toList();
+    }
+
     private void copyIfPresent(Map<String, Object> source, Map<String, Object> target, String key) {
         if (source.containsKey(key) && source.get(key) != null) {
             target.put(key, source.get(key));
@@ -1148,6 +1346,10 @@ public class ChatOrchestratorService {
             return parsed != null ? parsed : 0;
         }
         return 0;
+    }
+
+    private long elapsedMillis(long startedAt) {
+        return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 
     /**
@@ -1461,8 +1663,22 @@ public class ChatOrchestratorService {
             Map<String, Object> toolResult,
             PendingToolCallResponse pendingTool,
             ChatSession session,
-            ChatResponse immediateResponse
+            ChatResponse immediateResponse,
+            Map<String, Long> phaseTimings
     ) {
+        public PreparedChat(
+                ChatModelProvider provider,
+                ProviderPrompt prompt,
+                String model,
+                ChatToolMetadata toolMetadata,
+                Map<String, Object> toolResult,
+                PendingToolCallResponse pendingTool,
+                ChatSession session,
+                ChatResponse immediateResponse
+        ) {
+            this(provider, prompt, model, toolMetadata, toolResult, pendingTool, session, immediateResponse, Map.of());
+        }
+
         /**
          * Creates a PreparedChat for a prompt-based continuation.
          *
@@ -1480,9 +1696,10 @@ public class ChatOrchestratorService {
                 String model,
                 ChatToolMetadata toolMetadata,
                 Map<String, Object> toolResult,
-                ChatSession session
+                ChatSession session,
+                Map<String, Long> phaseTimings
         ) {
-            return new PreparedChat(provider, prompt, model, toolMetadata, toolResult, null, session, null);
+            return new PreparedChat(provider, prompt, model, toolMetadata, toolResult, null, session, null, Collections.unmodifiableMap(new LinkedHashMap<>(phaseTimings)));
         }
 
         /**
@@ -1491,8 +1708,12 @@ public class ChatOrchestratorService {
          * @param response the immediate chat response
          * @return a PreparedChat instance
          */
-        static PreparedChat forImmediateResponse(ChatResponse response) {
-            return new PreparedChat(null, null, response.model(), response.tool(), response.toolResult(), response.pendingTool(), null, response);
+        static PreparedChat forImmediateResponse(ChatResponse response, Map<String, Long> phaseTimings) {
+            return new PreparedChat(null, null, response.model(), response.tool(), response.toolResult(), response.pendingTool(), null, response, Collections.unmodifiableMap(new LinkedHashMap<>(phaseTimings)));
+        }
+
+        PreparedChat withPhaseTimings(Map<String, Long> updatedPhaseTimings) {
+            return new PreparedChat(provider, prompt, model, toolMetadata, toolResult, pendingTool, session, immediateResponse, Collections.unmodifiableMap(new LinkedHashMap<>(updatedPhaseTimings)));
         }
     }
 

@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -259,6 +260,10 @@ public class ChatController {
 
                 if (immediateResponse != null) {
                     long backendDurationMs = elapsedMillis(startedAt);
+                    ModelProviderMetadata metadata = withBackendDuration(
+                            withPhaseTimings(immediateResponse.metadata(), preparedChat.phaseTimings()),
+                            backendDurationMs
+                    );
                     if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(immediateResponse.response()))) {
                         streamAborted.set(true);
                         return;
@@ -268,7 +273,7 @@ public class ChatController {
                             immediateResponse.tool(),
                             immediateResponse.toolResult(),
                             immediateResponse.pendingTool(),
-                            withBackendDuration(immediateResponse.metadata(), backendDurationMs)
+                            metadata
                     ))) {
                         streamAborted.set(true);
                         return;
@@ -286,9 +291,17 @@ public class ChatController {
                 }
 
                 StringBuilder responseBuffer = new StringBuilder();
+                long streamStartedAt = System.nanoTime();
+                AtomicBoolean firstTokenSeen = new AtomicBoolean(false);
+                AtomicReference<Map<String, Long>> phaseTimingsReference = new AtomicReference<>(new LinkedHashMap<>(preparedChat.phaseTimings()));
                 var streamingResult = preparedChat.provider().streamChat(preparedChat.prompt(), preparedChat.model(), token -> {
                     if (streamClosed.get()) {
                         throw new StreamAbortedException();
+                    }
+                    if (firstTokenSeen.compareAndSet(false, true)) {
+                        Map<String, Long> updatedPhaseTimings = new LinkedHashMap<>(phaseTimingsReference.get());
+                        updatedPhaseTimings.put("timeToFirstTokenMs", elapsedMillis(streamStartedAt));
+                        phaseTimingsReference.set(updatedPhaseTimings);
                     }
                     responseBuffer.append(token);
                     if (!sendEvent(emitter, streamClosed, ChatStreamEvent.delta(token))) {
@@ -306,14 +319,17 @@ public class ChatController {
                     streamAborted.set(true);
                     return;
                 }
+                long persistenceStartedAt = System.nanoTime();
                 chatOrchestratorService.completePreparedChat(preparedChat, responseBuffer.toString(), providerMetadata, requestId);
+                Map<String, Long> finalPhaseTimings = new LinkedHashMap<>(phaseTimingsReference.get());
+                finalPhaseTimings.put("persistenceMs", elapsedMillis(persistenceStartedAt));
                 long backendDurationMs = elapsedMillis(startedAt);
                 if (!sendEvent(emitter, streamClosed, ChatStreamEvent.complete(
                         preparedChat.session().sessionId(),
                         preparedChat.toolMetadata(),
                         preparedChat.toolResult(),
                         preparedChat.pendingTool(),
-                        withBackendDuration(providerMetadata, backendDurationMs)
+                        withBackendDuration(withPhaseTimings(providerMetadata, finalPhaseTimings), backendDurationMs)
                 ))) {
                     streamAborted.set(true);
                     return;
@@ -470,7 +486,27 @@ public class ChatController {
                 metadata.durationMs(),
                 metadata.providerLatencyMs(),
                 backendDurationMs,
-                metadata.uiWaitMs()
+                metadata.uiWaitMs(),
+                metadata.phaseTimingsMs()
+        );
+    }
+
+    private ModelProviderMetadata withPhaseTimings(ModelProviderMetadata metadata, Map<String, Long> phaseTimings) {
+        if (metadata == null) {
+            return null;
+        }
+        return new ModelProviderMetadata(
+                metadata.provider(),
+                metadata.modelId(),
+                metadata.stopReason(),
+                metadata.inputTokens(),
+                metadata.outputTokens(),
+                metadata.totalTokens(),
+                metadata.durationMs(),
+                metadata.providerLatencyMs(),
+                metadata.backendDurationMs(),
+                metadata.uiWaitMs(),
+                phaseTimings
         );
     }
 

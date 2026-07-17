@@ -145,6 +145,7 @@ public class HuggingFaceClient {
                             TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
                             null,
                             null,
+                            null,
                             null
                     )
             );

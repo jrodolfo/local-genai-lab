@@ -175,7 +175,12 @@ def factorial(n):
                     durationMs: 412,
                     providerLatencyMs: 321,
                     backendDurationMs: 450,
-                    uiWaitMs: 490
+                    uiWaitMs: 490,
+                    phaseTimingsMs: {
+                        toolExecutionMs: 120,
+                        promptBuildMs: 35,
+                        timeToFirstTokenMs: 280
+                    }
                 }}
             />
         );
@@ -191,6 +196,9 @@ def factorial(n):
         expect(screen.getByText(/provider latency: 321 ms/i)).toBeInTheDocument();
         expect(screen.getByText(/backend total: 450 ms/i)).toBeInTheDocument();
         expect(screen.getByText(/ui wait: 490 ms/i)).toBeInTheDocument();
+        expect(screen.getByText(/tool execution: 120 ms/i)).toBeInTheDocument();
+        expect(screen.getByText(/prompt build: 35 ms/i)).toBeInTheDocument();
+        expect(screen.getByText(/time to first token: 280 ms/i)).toBeInTheDocument();
     });
 
     it('formats longer timing values into minutes, seconds, and milliseconds', () => {

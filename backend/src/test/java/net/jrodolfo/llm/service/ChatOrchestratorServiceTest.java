@@ -121,8 +121,9 @@ class ChatOrchestratorServiceTest {
         assertEquals("success", response.tool().status());
         assertNotNull(mcpService.lastAuditRequest);
         assertNull(mcpService.lastAuditRequest.services());
-        assertTrue(chatModelProvider.lastPrompt.contains("<tool_context>"));
-        assertTrue(chatModelProvider.lastPrompt.contains("tool_name: aws_region_audit"));
+        assertFalse(chatModelProvider.generateCalled);
+        assertNull(chatModelProvider.lastPrompt);
+        assertTrue(response.response().contains("I analyzed your AWS account using the audit results."));
         assertFalse(response.response().toLowerCase().contains("account id"));
     }
 
@@ -433,14 +434,12 @@ class ChatOrchestratorServiceTest {
         );
 
         assertEquals("aws_region_audit", response.tool().name());
-        assertTrue(chatModelProvider.lastPrompt.contains("\"factualSummary\""));
-        assertTrue(chatModelProvider.lastPrompt.contains("\"highSignalResources\""));
-        assertTrue(chatModelProvider.lastPrompt.contains("EC2 instances - us-east-2"));
-        assertTrue(chatModelProvider.lastPrompt.contains("Elastic IPs - us-east-2"));
-        assertTrue(chatModelProvider.lastPrompt.contains("Review candidates"));
-        assertFalse(chatModelProvider.lastPrompt.contains("\"run_dir\""));
-        assertFalse(chatModelProvider.lastPrompt.contains("\"reportPath\""));
-        assertFalse(chatModelProvider.lastPrompt.contains("\"summaryPath\""));
+        assertFalse(chatModelProvider.generateCalled);
+        assertNull(chatModelProvider.lastPrompt);
+        assertTrue(response.response().contains("EC2 instances - us-east-2"));
+        assertTrue(response.response().contains("Elastic IPs - us-east-2"));
+        assertEquals(List.of("first-bucket"), response.toolResult().get("bucketNames"));
+        assertTrue(((String) response.toolResult().get("factualSummary")).contains("Review candidates"));
     }
 
     @Test
@@ -481,7 +480,6 @@ class ChatOrchestratorServiceTest {
     @Test
     void topicChangeAfterRecommendedS3ReportFallsBackToRegularChat() throws Exception {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
-        chatModelProvider.nextAssistantResponse = "I recommend taking the next step by running an S3 report for one of your bucket names for the last month. Please let me know if you'd like to proceed.";
         FileChatSessionStore sessionStore = newSessionStore();
         FakeMcpService mcpService = new FakeMcpService(auditRunDirWithBuckets("first-bucket", "second-bucket").toString());
         ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
