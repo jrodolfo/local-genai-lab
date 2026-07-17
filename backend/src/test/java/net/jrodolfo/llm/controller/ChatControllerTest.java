@@ -132,10 +132,35 @@ class ChatControllerTest {
         assertEquals("req-stream-7", orchestrator.lastRequestId);
     }
 
+    @Test
+    void streamUsesImmediateResponseWithoutStartingProviderStream() {
+        TestOrchestrator orchestrator = new TestOrchestrator();
+        orchestrator.immediateResponse = new ChatResponse(
+                "S3 CloudWatch report completed for bucket `jrodolfo.net`.\n\nResults: success_count=5, failure_count=0, skipped_count=0.",
+                "llama3:8b",
+                new ChatToolMetadata(true, "s3_cloudwatch_report", "success", "S3 report completed."),
+                Map.of("type", "s3_report_summary", "bucket", "jrodolfo.net"),
+                "session-s3",
+                null,
+                null
+        );
+        ChatController controller = new ChatController(orchestrator, new ObjectMapper(), Runnable::run);
+        CallbackEmitter emitter = new CallbackEmitter();
+
+        controller.stream(new ChatRequest("run an s3 report", "ollama", "llama3:8b", null), emitter);
+
+        assertEquals(0, orchestrator.completePreparedChatCalls);
+        assertEquals(0, orchestrator.streamCalls);
+        assertTrue(emitter.completed);
+        assertFalse(emitter.completedWithError);
+    }
+
     private static final class TestOrchestrator extends ChatOrchestratorService {
-        private ChatModelProvider provider = new SynchronousStreamingProvider();
+        private ChatModelProvider provider = new SynchronousStreamingProvider(() -> streamCalls++);
         private final PreparedChat preparedChat;
+        private ChatResponse immediateResponse;
         private int completePreparedChatCalls;
+        private int streamCalls;
         private String lastMessage;
         private String lastProvider;
         private String lastModel;
@@ -143,7 +168,7 @@ class ChatControllerTest {
         private String lastRequestId;
 
         private TestOrchestrator() {
-            super(new ChatModelProviderRegistry(new net.jrodolfo.llm.config.AppModelProperties("ollama"), java.util.Map.of("ollama", new SynchronousStreamingProvider())), null, null, null, null, null, new AppStorageProperties("data/sessions", "agents/reports"));
+            super(new ChatModelProviderRegistry(new net.jrodolfo.llm.config.AppModelProperties("ollama"), java.util.Map.of("ollama", new SynchronousStreamingProvider(() -> { }))), null, null, null, null, null, new AppStorageProperties("data/sessions", "agents/reports"));
             ChatSession session = ChatSession.create("session-1", "llama3:8b", Instant.parse("2026-04-12T00:00:00Z"));
             this.preparedChat = new PreparedChat(provider, ProviderPrompt.forPrompt("prompt"), "llama3:8b", null, null, null, session, null);
         }
@@ -173,6 +198,9 @@ class ChatControllerTest {
 
         @Override
         public PreparedChat prepareChat(String message, String provider, String model, String sessionId) {
+            if (immediateResponse != null) {
+                return PreparedChat.forImmediateResponse(immediateResponse);
+            }
             return new PreparedChat(this.provider, preparedChat.prompt(), preparedChat.model(), preparedChat.toolMetadata(), preparedChat.toolResult(), preparedChat.pendingTool(), preparedChat.session(), preparedChat.immediateResponse());
         }
 
@@ -215,6 +243,12 @@ class ChatControllerTest {
     }
 
     private static final class SynchronousStreamingProvider implements ChatModelProvider {
+        private final Runnable onStream;
+
+        private SynchronousStreamingProvider(Runnable onStream) {
+            this.onStream = onStream;
+        }
+
         @Override
         public ChatResponse chat(ProviderPrompt message, String model, ChatToolMetadata toolMetadata, Map<String, Object> toolResult, String sessionId, PendingToolCallResponse pendingTool) {
             throw new UnsupportedOperationException();
@@ -222,6 +256,7 @@ class ChatControllerTest {
 
         @Override
         public StreamingChatResult streamChat(ProviderPrompt message, String model, Consumer<String> tokenConsumer) {
+            onStream.run();
             tokenConsumer.accept("chunk-1");
             return new StreamingChatResult(
                     CompletableFuture.completedFuture(new ModelProviderMetadata("ollama", model, null, null, null, null, null, null, null, null)),

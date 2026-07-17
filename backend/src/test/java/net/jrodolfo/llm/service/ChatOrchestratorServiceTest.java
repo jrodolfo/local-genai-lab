@@ -255,11 +255,12 @@ class ChatOrchestratorServiceTest {
         assertEquals(7, mcpService.lastS3Request.days());
         assertEquals("success", followUp.tool().status());
         assertNull(sessionStore.findById(followUp.sessionId()).orElseThrow().pendingToolCall());
-        assertTrue(chatModelProvider.lastPrompt.contains("tool_name: s3_cloudwatch_report"));
+        assertFalse(chatModelProvider.generateCalled);
+        assertTrue(followUp.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
     }
 
     @Test
-    void completedS3ReportReplacesContradictoryFutureTenseResponse() {
+    void completedS3ReportUsesDeterministicImmediateResponse() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         chatModelProvider.nextAssistantResponse = """
                 Based on the S3 CloudWatch report for your bucket `jrodolfo.net` with success, here's a summary.
@@ -279,6 +280,7 @@ class ChatOrchestratorServiceTest {
 
         assertEquals("jrodolfo.net", mcpService.lastS3Request.bucket());
         assertEquals(30, mcpService.lastS3Request.days());
+        assertFalse(chatModelProvider.generateCalled);
         assertTrue(response.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
         assertTrue(response.response().contains("success_count=5"));
         assertTrue(response.response().contains("failure_count=0"));

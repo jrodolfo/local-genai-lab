@@ -262,6 +262,33 @@ public class ChatOrchestratorService {
                     execution.summary()
             );
             ChatSession clearedSession = session.withPendingToolCall(null);
+            ChatToolMetadata metadata = new ChatToolMetadata(
+                    true,
+                    execution.toolName(),
+                    toolStatusForExecution(execution),
+                    execution.summary()
+            );
+            Map<String, Object> structuredToolResult = execution.toolResult(reportsDirectory);
+            if (shouldReturnImmediateToolResponse(metadata, structuredToolResult)) {
+                String assistantResponse = buildS3CompletionMessage(structuredToolResult);
+                ChatSession persistedSession = chatMemoryService.finishTurn(
+                        clearedSession,
+                        assistantResponse,
+                        metadata,
+                        structuredToolResult,
+                        null,
+                        null
+                );
+                return PreparedChat.forImmediateResponse(new ChatResponse(
+                        assistantResponse,
+                        resolvedModel,
+                        metadata,
+                        structuredToolResult,
+                        persistedSession.sessionId(),
+                        null,
+                        null
+                ));
+            }
             ProviderPrompt augmentedPrompt = buildConversationPrompt(
                     clearedSession,
                     message,
@@ -272,13 +299,7 @@ public class ChatOrchestratorService {
                             execution.result()
                     )
             );
-            ChatToolMetadata metadata = new ChatToolMetadata(
-                    true,
-                    execution.toolName(),
-                    toolStatusForExecution(execution),
-                    execution.summary()
-            );
-            return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, execution.toolResult(reportsDirectory), clearedSession);
+            return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, structuredToolResult, clearedSession);
         } catch (IllegalArgumentException | McpClientException ex) {
             log.warn(
                     "requestId={} tool_execution_failed sessionId={} provider={} model={} tool={} message={}",
@@ -672,6 +693,13 @@ public class ChatOrchestratorService {
         }
 
         return message.toString();
+    }
+
+    private boolean shouldReturnImmediateToolResponse(ChatToolMetadata metadata, Map<String, Object> toolResult) {
+        return metadata != null
+                && toolResult != null
+                && "s3_cloudwatch_report".equals(metadata.name())
+                && "success".equals(metadata.status());
     }
 
     /**
