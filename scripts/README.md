@@ -77,6 +77,14 @@ URLs to open:
 ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
 ```
 
+On Linux Docker hosts, the backend container reaches host-run Ollama through
+`host.docker.internal`, which is mapped to Docker's host gateway by
+`docker-compose.yml`. Keep `DOCKER_OLLAMA_BASE_URL` as
+`http://host.docker.internal:11434` unless your host exposes Ollama somewhere
+else. If the backend can resolve `host.docker.internal` but cannot connect,
+configure the host Ollama service to listen on `0.0.0.0:11434`; do not expose
+port `11434` in the EC2 security group or other Internet-facing firewall.
+
 Release validation:
 
 ```bash

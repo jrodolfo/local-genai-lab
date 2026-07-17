@@ -31,6 +31,9 @@ import java.util.Map;
 public class ModelController {
 
     private static final Logger log = LoggerFactory.getLogger(ModelController.class);
+    private static final String OLLAMA_UNAVAILABLE_MESSAGE = "Ollama is configured but currently unreachable. "
+            + "To use Ollama, make sure it is running and reachable from the backend; otherwise select "
+            + "Bedrock or Hugging Face.";
 
     private final AvailableModelsService availableModelsService;
     private final ProviderStatusService providerStatusService;
@@ -86,7 +89,7 @@ public class ModelController {
     @Operation(hidden = true)
     public ResponseEntity<Map<String, String>> handleOllamaClientException(OllamaClientException ex) {
         log.warn("Ollama model discovery failed: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", OLLAMA_UNAVAILABLE_MESSAGE));
     }
 
     /**

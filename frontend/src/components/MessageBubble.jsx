@@ -165,6 +165,9 @@ function formatToolStatus(status) {
     if (normalized === 'clarification-needed') {
         return 'Needs input';
     }
+    if (normalized === 'partial-success') {
+        return 'Completed with errors';
+    }
     if (normalized === 'failed') {
         return 'Failed';
     }

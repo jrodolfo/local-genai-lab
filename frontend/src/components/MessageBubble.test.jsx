@@ -321,4 +321,34 @@ def factorial(n):
         expect(screen.getByText(/needs input/i)).toBeInTheDocument();
         expect(screen.getByText(/Need a bucket before running the tool./i)).toBeInTheDocument();
     });
+
+    it('renders partial-success tool status and legacy failed step titles clearly', () => {
+        render(
+            <MessageBubble
+                role="assistant"
+                content="The audit completed with some failures."
+                tool={{
+                    used: true,
+                    name: 'aws_region_audit',
+                    status: 'partial-success',
+                    summary: 'AWS audit completed with failures: success_count=1, failure_count=2, skipped_count=0.'
+                }}
+                showTechnicalDetails
+                toolResult={{
+                    type: 'audit_summary',
+                    status: 'partial-success',
+                    failureCount: 2,
+                    failedSteps: [
+                        {
+                            title: 'EC2 instances - us-east-1',
+                            stderr_path: 'audit/aws-audit-run/stderr/ec2.stderr'
+                        }
+                    ]
+                }}
+            />
+        );
+
+        expect(screen.getByText(/completed with errors/i)).toBeInTheDocument();
+        expect(screen.getByText(/EC2 instances - us-east-1/i)).toBeInTheDocument();
+    });
 });

@@ -128,8 +128,8 @@ function ToolResultCard({toolResult, onPreviewArtifact, onListArtifacts, onCopyP
                     <div className="tool-result-item">
                         <span className="tool-result-item-title">Failed steps</span>
                         {failedSteps.map((step) => (
-                            <div key={step.step || step.stderr_path} className="tool-result-item">
-                                <span>{step.step || 'unknown step'}</span>
+                            <div key={step.step || step.title || step.stderr_path} className="tool-result-item">
+                                <span>{step.step || step.title || 'unknown step'}</span>
                                 {step.stderr_path ? (
                                     actionButton(step.stderr_path, 'Open stderr', () => onPreviewArtifact?.(step.stderr_path, 'failed step stderr'))
                                 ) : null}

@@ -19,9 +19,11 @@ import './RagWorkspace.css';
  */
 function RagWorkspace() {
     const importInputRef = useRef(null);
+    const preserveProviderWarningRef = useRef(false);
     const [ragStatus, setRagStatus] = useState(null);
     const [availableProviders, setAvailableProviders] = useState([]);
     const [availableModels, setAvailableModels] = useState([]);
+    const [unavailableProviders, setUnavailableProviders] = useState([]);
     const [selectedProvider, setSelectedProvider] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
     const [selectedRetrievalTarget, setSelectedRetrievalTarget] = useState('lexical');
@@ -37,6 +39,7 @@ function RagWorkspace() {
     const [comparisonResult, setComparisonResult] = useState(null);
     const [rebuilding, setRebuilding] = useState(false);
     const [error, setError] = useState('');
+    const [providerWarning, setProviderWarning] = useState('');
     const [pendingDeleteSession, setPendingDeleteSession] = useState(null);
 
     useEffect(() => {
@@ -59,15 +62,16 @@ function RagWorkspace() {
         try {
             setLoading(true);
             setError('');
-            const [statusPayload, modelsPayload, sessionsPayload] = await Promise.all([
+            setProviderWarning('');
+            setUnavailableProviders([]);
+            const [statusPayload, sessionsPayload] = await Promise.all([
                 retryAsync(() => getRagStatus(), {retries: 8, delayMs: 500}),
-                retryAsync(() => listAvailableModels(), {retries: 8, delayMs: 500}),
                 retryAsync(() => listSessions({mode: 'rag'}), {retries: 8, delayMs: 500})
             ]);
             setRagStatus(statusPayload);
             setSelectedRetrievalTarget(defaultRetrievalTarget(statusPayload));
-            hydrateProviders(modelsPayload);
             setSessions(sessionsPayload);
+            await loadModelsForProvider();
         } catch (err) {
             setError(err.message || 'Failed to load the RAG workspace.');
         } finally {
@@ -87,7 +91,17 @@ function RagWorkspace() {
 
     async function loadModelsForProvider(provider) {
         try {
+            const preserveProviderWarning = preserveProviderWarningRef.current;
+            preserveProviderWarningRef.current = false;
+            if (!preserveProviderWarning) {
+                setProviderWarning('');
+            }
             const payload = await retryAsync(() => listAvailableModels(provider), {retries: 4, delayMs: 500});
+            if (!provider) {
+                hydrateProviders(payload);
+                return;
+            }
+            setUnavailableProviders((current) => current.filter((unavailableProvider) => unavailableProvider !== provider));
             setAvailableModels(Array.isArray(payload.models) ? payload.models : []);
             setSelectedModel((current) => {
                 if (current && payload.models.includes(current)) {
@@ -99,8 +113,39 @@ function RagWorkspace() {
                 return payload.models[0] || '';
             });
         } catch (err) {
-            setError(err.message || 'Failed to load available models.');
+            const warning = err.message || 'Failed to load available models.';
+            setProviderWarning(warning);
+            setAvailableModels([]);
+            setSelectedModel('');
+            if (!provider) {
+                const unavailableProviderIds = isOllamaUnreachableWarning(warning) ? ['ollama'] : [];
+                const fallbackHydrated = await hydrateFirstAvailableFallbackProvider(warning, unavailableProviderIds);
+                if (!fallbackHydrated && unavailableProviderIds.length > 0) {
+                    hydrateProviders({
+                        provider: 'ollama',
+                        defaultProvider: 'ollama',
+                        providers: ['ollama'],
+                        models: [],
+                        defaultModel: ''
+                    }, unavailableProviderIds);
+                }
+            }
         }
+    }
+
+    async function hydrateFirstAvailableFallbackProvider(warning, unavailableProviderIds = []) {
+        for (const fallbackProvider of ['bedrock', 'huggingface']) {
+            try {
+                const payload = await retryAsync(() => listAvailableModels(fallbackProvider), {retries: 1, delayMs: 250});
+                preserveProviderWarningRef.current = true;
+                hydrateProviders(payload, unavailableProviderIds);
+                setProviderWarning(warning);
+                return true;
+            } catch {
+                // Keep trying configured alternatives before leaving the selector empty.
+            }
+        }
+        return false;
     }
 
     /**
@@ -113,12 +158,19 @@ function RagWorkspace() {
      * @param {string} [payload.defaultProvider] fallback provider when no active provider is present
      * @param {string} [payload.defaultModel] preferred model for the selected provider
      */
-    function hydrateProviders(payload) {
+    function hydrateProviders(payload, unavailableProviderIds = unavailableProviders) {
+        const unavailableProviderSet = new Set(unavailableProviderIds);
         const providers = Array.isArray(payload.providers) ? payload.providers : [];
         const models = Array.isArray(payload.models) ? payload.models : [];
-        setAvailableProviders(providers);
+        const providerOptions = uniqueValues([...providers, ...unavailableProviderSet]);
+        const preferredProvider = payload.provider || payload.defaultProvider || providerOptions[0] || '';
+        const selectedAvailableProvider = unavailableProviderSet.has(preferredProvider)
+            ? providerOptions.find((provider) => !unavailableProviderSet.has(provider)) || preferredProvider
+            : preferredProvider;
+        setUnavailableProviders([...unavailableProviderSet]);
+        setAvailableProviders(providerOptions);
         setAvailableModels(models);
-        setSelectedProvider(payload.provider || payload.defaultProvider || providers[0] || '');
+        setSelectedProvider(selectedAvailableProvider);
         setSelectedModel(payload.defaultModel || models[0] || '');
     }
 
@@ -231,6 +283,7 @@ function RagWorkspace() {
         setQuestion('');
         setComparisonResult(null);
         setError('');
+        setProviderWarning('');
     }
 
     function requestSessionDeletion(targetSession) {
@@ -362,9 +415,11 @@ function RagWorkspace() {
                             <RagQueryCard
                                 availableProviders={availableProviders}
                                 availableModels={availableModels}
+                                unavailableProviders={unavailableProviders}
                                 selectedProvider={selectedProvider}
                                 selectedModel={selectedModel}
                                 selectedRetrievalTarget={selectedRetrievalTarget}
+                                providerWarning={providerWarning}
                                 ragStatus={ragStatus}
                                 question={question}
                                 querying={querying}
@@ -585,9 +640,11 @@ function RagStatusStrip({loading, ragStatus, rebuilding, onRebuildIndex}) {
 function RagQueryCard({
                           availableProviders,
                           availableModels,
+                          unavailableProviders,
                           selectedProvider,
                           selectedModel,
                           selectedRetrievalTarget,
+                          providerWarning,
                           ragStatus,
                           question,
                           querying,
@@ -599,6 +656,10 @@ function RagQueryCard({
                           onSubmit,
                           onCompare
                       }) {
+    const unavailableProviderSet = new Set(unavailableProviders);
+    const providerUnavailable = unavailableProviderSet.has(selectedProvider);
+    const queryDisabled = querying || comparing || !question.trim() || providerUnavailable || !selectedProvider || !selectedModel;
+
     return (
         <form className="rag-query-card" aria-label="RAG query" onSubmit={onSubmit}>
             <div className="rag-query-card__controls">
@@ -607,8 +668,8 @@ function RagQueryCard({
                     <select value={selectedProvider}
                             onChange={(event) => onProviderChange(event.target.value)}>
                         {availableProviders.map((provider) => (
-                            <option key={provider} value={provider}>
-                                {provider}
+                            <option key={provider} value={provider} disabled={unavailableProviderSet.has(provider)}>
+                                {formatProviderOptionLabel(provider, unavailableProviderSet)}
                             </option>
                         ))}
                     </select>
@@ -617,6 +678,11 @@ function RagQueryCard({
                     Model
                     <select value={selectedModel}
                             onChange={(event) => onModelChange(event.target.value)}>
+                        {availableModels.length === 0 ? (
+                            <option value="" disabled>
+                                No models available
+                            </option>
+                        ) : null}
                         {availableModels.map((model) => (
                             <option key={model} value={model}>
                                 {model}
@@ -637,6 +703,8 @@ function RagQueryCard({
                 </label>
             </div>
 
+            {providerWarning ? <p className="rag-query-card__readiness rag-query-card__readiness-warning">{providerWarning}</p> : null}
+
             <label className="rag-query-card__question">
                 Question
                 <textarea
@@ -649,11 +717,11 @@ function RagQueryCard({
 
             <div className="rag-query-card__actions">
                 <button type="submit" className="rag-action-button rag-primary-button"
-                        disabled={querying || comparing || !question.trim()}>
+                        disabled={queryDisabled}>
                     {querying ? 'Querying...' : 'Ask Docs Corpus'}
                 </button>
                 <button type="button" className="rag-action-button rag-primary-button"
-                        disabled={querying || comparing || !question.trim()}
+                        disabled={queryDisabled}
                         onClick={onCompare}>
                     {comparing ? 'Comparing...' : 'Compare Retrieval Targets'}
                 </button>
@@ -765,6 +833,18 @@ function formatRagStatusValue(value) {
         return '';
     }
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function uniqueValues(values) {
+    return [...new Set(values.filter(Boolean))];
+}
+
+function isOllamaUnreachableWarning(message) {
+    return String(message || '').toLowerCase().includes('ollama is configured but currently unreachable');
+}
+
+function formatProviderOptionLabel(provider, unavailableProviderSet) {
+    return unavailableProviderSet.has(provider) ? `${provider} (unreachable)` : provider;
 }
 
 function isVectorRetrieval(status) {
