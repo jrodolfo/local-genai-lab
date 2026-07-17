@@ -156,11 +156,11 @@ class ChatControllerTest {
     }
 
     private static final class TestOrchestrator extends ChatOrchestratorService {
+        private int streamCalls;
         private ChatModelProvider provider = new SynchronousStreamingProvider(() -> streamCalls++);
         private final PreparedChat preparedChat;
         private ChatResponse immediateResponse;
         private int completePreparedChatCalls;
-        private int streamCalls;
         private String lastMessage;
         private String lastProvider;
         private String lastModel;
@@ -199,7 +199,16 @@ class ChatControllerTest {
         @Override
         public PreparedChat prepareChat(String message, String provider, String model, String sessionId) {
             if (immediateResponse != null) {
-                return PreparedChat.forImmediateResponse(immediateResponse);
+                return new PreparedChat(
+                        null,
+                        null,
+                        immediateResponse.model(),
+                        immediateResponse.tool(),
+                        immediateResponse.toolResult(),
+                        immediateResponse.pendingTool(),
+                        null,
+                        immediateResponse
+                );
             }
             return new PreparedChat(this.provider, preparedChat.prompt(), preparedChat.model(), preparedChat.toolMetadata(), preparedChat.toolResult(), preparedChat.pendingTool(), preparedChat.session(), preparedChat.immediateResponse());
         }
