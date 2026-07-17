@@ -53,6 +53,8 @@ class ChatPromptBuilderTest {
         assertTrue(prompt.contains("\"success_count\" : 3"));
         assertTrue(prompt.contains("<response_rules>"));
         assertTrue(prompt.contains("summarize what the tool already completed instead of refusing or redirecting"));
+        assertTrue(prompt.contains("Focus on findings and conclusions, not on tool mechanics."));
+        assertTrue(prompt.contains("Do not expose internal container or filesystem paths such as /app/... unless the user explicitly asks for artifact locations."));
         assertTrue(prompt.contains("Do not claim inability or lack of access when tool output is already available in the prompt."));
     }
 
@@ -113,6 +115,7 @@ class ChatPromptBuilderTest {
         assertTrue(prompt.contains("If tool_name is s3_cloudwatch_report and tool_result_json is present, say the report completed"));
         assertTrue(prompt.contains("do not say you will run it, will proceed, or should run it next"));
         assertTrue(prompt.contains("Do not recommend running the same s3_cloudwatch_report again after the tool has already completed"));
+        assertTrue(prompt.contains("Mention runDir, summaryPath, or reportPath only if the user asked for artifacts or file locations."));
         assertTrue(prompt.contains("\"bucket\" : \"jrodolfo.net\""));
         assertTrue(prompt.contains("\"reportPath\" : \"s3-cloudwatch/s3-cloudwatch-2026-07-14_17-22-52/report.txt\""));
     }

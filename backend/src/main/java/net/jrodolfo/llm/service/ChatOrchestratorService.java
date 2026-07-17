@@ -632,9 +632,14 @@ public class ChatOrchestratorService {
                 || normalized.contains("will run")
                 || normalized.contains("will now run")
                 || normalized.contains("should run")
+                || normalized.contains("already been completed")
+                || normalized.contains("has already been completed")
+                || normalized.contains("you can view the report in /app/")
+                || normalized.contains("you can view the report in the /app/")
                 || normalized.contains("should provide more granular")
                 || normalized.contains("suggest running an s3 report")
                 || normalized.contains("recommend running an s3 report")
+                || normalized.contains("suggest that you run an s3 report")
                 || normalized.contains("next step by running an s3 report");
     }
 
@@ -660,19 +665,10 @@ public class ChatOrchestratorService {
                 .append(", skipped_count=").append(skippedCount)
                 .append(".");
 
-        List<String> artifacts = new ArrayList<>();
-        if (!runDir.isBlank()) {
-            artifacts.add("- Run directory: `" + runDir + "`");
-        }
-        if (!summaryPath.isBlank()) {
-            artifacts.add("- Summary: `" + summaryPath + "`");
-        }
-        if (!reportPath.isBlank()) {
-            artifacts.add("- Report: `" + reportPath + "`");
-        }
-        if (!artifacts.isEmpty()) {
-            message.append("\n\nArtifacts:\n");
-            message.append(String.join("\n", artifacts));
+        // Keep the deterministic fallback concise; the structured tool result card
+        // already exposes artifact paths and file actions when the user needs them.
+        if (!runDir.isBlank() || !summaryPath.isBlank() || !reportPath.isBlank()) {
+            message.append("\n\nArtifacts are available in the tool result card.");
         }
 
         return message.toString();

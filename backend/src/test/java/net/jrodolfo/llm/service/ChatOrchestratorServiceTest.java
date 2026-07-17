@@ -282,8 +282,9 @@ class ChatOrchestratorServiceTest {
         assertTrue(response.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
         assertTrue(response.response().contains("success_count=5"));
         assertTrue(response.response().contains("failure_count=0"));
-        assertTrue(response.response().contains("s3-cloudwatch/fake-run/report.txt"));
+        assertTrue(response.response().contains("Artifacts are available in the tool result card."));
         assertFalse(response.response().contains("will proceed"));
+        assertFalse(response.response().contains("/app/"));
 
         var storedSession = sessionStore.findById(response.sessionId()).orElseThrow();
         assertEquals(response.response(), storedSession.messages().get(1).content());
@@ -308,8 +309,35 @@ class ChatOrchestratorServiceTest {
 
         String persistedResponse = persistedSession.messages().get(1).content();
         assertTrue(persistedResponse.contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
-        assertTrue(persistedResponse.contains("s3-cloudwatch/fake-run/summary.json"));
+        assertTrue(persistedResponse.contains("Artifacts are available in the tool result card."));
         assertFalse(persistedResponse.contains("will proceed"));
+    }
+
+    @Test
+    void completedS3ReportReplacesAwkwardPathHeavyResponse() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextAssistantResponse = """
+                The S3 CloudWatch report for the jrodolfo.net bucket has already been completed with success.
+                Additionally, you can view the report in the /app/agents/reports/s3-cloudwatch/s3-cloudwatch-2026-07-17_12-23-36/report.txt file.
+
+                Considering this, I suggest that you run an S3 report for one of these buckets, such as jrodolfo-audio, for the last month.
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Please run an S3 report for the jrodolfo.net bucket.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertTrue(response.response().contains("S3 CloudWatch report completed for bucket `jrodolfo.net`."));
+        assertTrue(response.response().contains("Artifacts are available in the tool result card."));
+        assertFalse(response.response().contains("already been completed"));
+        assertFalse(response.response().contains("/app/"));
+        assertFalse(response.response().contains("suggest that you run an S3 report"));
     }
 
     @Test
