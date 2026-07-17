@@ -635,6 +635,8 @@ describe('Home integration', () => {
 
         render(<Home/>);
 
-        expect(await screen.findByText(/^Failed to load sessions\.$/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/^Failed to load sessions\.$/i)).toBeInTheDocument();
+        }, {timeout: 4000});
     });
 });

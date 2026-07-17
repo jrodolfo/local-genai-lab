@@ -434,7 +434,8 @@ describe('Home', () => {
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Check S3 CloudWatch metrics.');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
-        expect(await screen.findByText(/awaiting input for tool:/i)).toBeInTheDocument();
+        expect(await screen.findByText('S3 report is ready.')).toBeInTheDocument();
+        expect(screen.getByText('Please provide one S3 bucket name to continue.')).toBeInTheDocument();
         expect(screen.queryByText(/Awaiting additional tool input/i)).not.toBeInTheDocument();
     });
 
@@ -730,8 +731,8 @@ describe('Home', () => {
         expect(screen.getAllByText(/^read_report_summary$/i).length).toBeGreaterThan(0);
         expect(screen.getByText('Bedrock · amazon.nova-lite-v1:0')).toBeInTheDocument();
         expect(screen.queryByText(/provider: bedrock/i)).not.toBeInTheDocument();
-        expect(screen.getByText(/awaiting input for tool:/i)).toBeInTheDocument();
-        expect(screen.getByText(/missing: reportType/i)).toBeInTheDocument();
+        expect(screen.getByText('More information is needed.')).toBeInTheDocument();
+        expect(screen.getByText('Please provide: report type.')).toBeInTheDocument();
     });
 
     it('renders mixed-provider assistant turns when reopening a saved session', async () => {
@@ -1100,8 +1101,8 @@ describe('Home', () => {
         const sessionTitle = await screen.findByText('check bucket metrics');
         await user.click(sessionTitle.closest('button'));
 
-        expect(await screen.findByText(/awaiting input for tool:/i)).toBeInTheDocument();
-        expect(screen.getByText(/missing: bucket/i)).toBeInTheDocument();
+        expect(await screen.findByText('S3 report is ready.')).toBeInTheDocument();
+        expect(screen.getByText('Please provide one S3 bucket name to continue.')).toBeInTheDocument();
     });
 
     it('starts a new chat by clearing the current conversation', async () => {

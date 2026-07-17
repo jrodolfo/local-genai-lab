@@ -917,10 +917,8 @@ function Home() {
 
                     {pendingTool ? (
                         <div className="pending-tool-banner">
-                            <strong>awaiting input for tool:</strong> {pendingTool.toolName}
-                            {pendingTool.missingFields?.length ? (
-                                <span>missing: {pendingTool.missingFields.join(', ')}</span>
-                            ) : null}
+                            <strong>{formatPendingToolTitle(pendingTool)}</strong>
+                            <span>{formatPendingToolDetail(pendingTool)}</span>
                         </div>
                     ) : null}
 
@@ -1162,6 +1160,32 @@ function resolveToolLifecycleMessage({tool, pendingTool}) {
         return 'Preparing the final answer from tool results...';
     }
     return `Running tool: ${tool.name}`;
+}
+
+function formatPendingToolTitle(pendingTool) {
+    if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
+        return 'S3 report is ready.';
+    }
+    return 'More information is needed.';
+}
+
+function formatPendingToolDetail(pendingTool) {
+    if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
+        return 'Please provide one S3 bucket name to continue.';
+    }
+    const missingFields = Array.isArray(pendingTool?.missingFields) ? pendingTool.missingFields : [];
+    if (missingFields.length === 0) {
+        return 'Please reply with the requested information to continue.';
+    }
+    return `Please provide: ${missingFields.map(formatMissingFieldLabel).join(', ')}.`;
+}
+
+function formatMissingFieldLabel(field) {
+    const labels = {
+        bucket: 'S3 bucket name',
+        reportType: 'report type'
+    };
+    return labels[field] || String(field || '').replaceAll(/[-_]/g, ' ');
 }
 
 function toolCompletionMessageOverride(tool, toolResult) {
