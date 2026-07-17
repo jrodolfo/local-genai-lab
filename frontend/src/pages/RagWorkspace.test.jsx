@@ -43,6 +43,80 @@ describe('RagWorkspace', () => {
         expect(within(sidebar).queryByRole('button', {name: 'Import Session'})).not.toBeInTheDocument();
     });
 
+    it('keeps the rag workspace visible when ollama model discovery is unavailable', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory',
+                embeddingProvider: 'ollama',
+                embeddingModel: 'nomic-embed-text'
+            })),
+            http.get('/api/models', () => HttpResponse.json({
+                error: 'Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.'
+            }, {status: 502})),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByRole('heading', {name: /^rag$/i})).toBeInTheDocument();
+        const statusRegion = screen.getByRole('region', {name: /rag index status/i});
+        await waitFor(() => {
+            expect(within(statusRegion).getByText('ready')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Ollama is configured but currently unreachable/i)).toBeInTheDocument();
+        expect(screen.getByRole('form', {name: /rag query/i})).toBeInTheDocument();
+        expect(screen.getByRole('option', {name: 'ollama (unreachable)'})).toBeDisabled();
+        expect(screen.getByRole('combobox', {name: /provider/i})).toHaveValue('ollama');
+        expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('');
+        expect(screen.getByRole('button', {name: 'Ask Docs Corpus'})).toBeDisabled();
+        expect(screen.getByText(/No saved RAG sessions yet/i)).toBeInTheDocument();
+    });
+
+    it('falls back to a configured remote provider when default ollama model discovery fails', async () => {
+        server.use(
+            http.get('/api/rag/status', () => HttpResponse.json({
+                enabled: true,
+                indexed: true,
+                corpusRoot: '/repo/docs',
+                documentCount: 12,
+                chunkCount: 48,
+                retrievalMode: 'lexical',
+                retrievalStore: 'in-memory'
+            })),
+            http.get('/api/models', ({request}) => {
+                const provider = new URL(request.url).searchParams.get('provider');
+                if (provider === 'bedrock') {
+                    return HttpResponse.json({
+                        provider: 'bedrock',
+                        defaultProvider: 'ollama',
+                        providers: ['bedrock', 'ollama'],
+                        defaultModel: 'us.amazon.nova-pro-v1:0',
+                        models: ['us.amazon.nova-pro-v1:0']
+                    });
+                }
+                return HttpResponse.json({
+                    error: 'Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face.'
+                }, {status: 502});
+            }),
+            http.get('/api/sessions', () => HttpResponse.json([]))
+        );
+
+        render(<RagWorkspace/>);
+
+        expect(await screen.findByText(/Ollama is configured but currently unreachable/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByRole('combobox', {name: /provider/i})).toHaveValue('bedrock');
+        });
+        expect(screen.getByRole('option', {name: 'ollama (unreachable)'})).toBeDisabled();
+        expect(screen.getByRole('combobox', {name: /model/i})).toHaveValue('us.amazon.nova-pro-v1:0');
+    });
+
     it('loads status, submits a docs query, and renders cited sources from the saved rag session', async () => {
         server.use(
             http.get('/api/rag/status', () => HttpResponse.json({

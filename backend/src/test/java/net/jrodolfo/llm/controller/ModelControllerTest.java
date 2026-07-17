@@ -54,7 +54,7 @@ class ModelControllerTest {
 
         mockMvc.perform(get("/api/models"))
                 .andExpect(status().isBadGateway())
-                .andExpect(jsonPath("$.error").value("ollama unavailable"));
+                .andExpect(jsonPath("$.error").value("Ollama is configured but currently unreachable. To use Ollama, make sure it is running and reachable from the backend; otherwise select Bedrock or Hugging Face."));
     }
 
     @Test

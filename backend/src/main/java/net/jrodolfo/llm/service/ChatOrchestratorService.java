@@ -272,7 +272,12 @@ public class ChatOrchestratorService {
                             execution.result()
                     )
             );
-            ChatToolMetadata metadata = new ChatToolMetadata(true, execution.toolName(), "success", execution.summary());
+            ChatToolMetadata metadata = new ChatToolMetadata(
+                    true,
+                    execution.toolName(),
+                    toolStatusForExecution(execution),
+                    execution.summary()
+            );
             return PreparedChat.forPrompt(chatModelProvider, augmentedPrompt, resolvedModel, metadata, execution.toolResult(reportsDirectory), clearedSession);
         } catch (IllegalArgumentException | McpClientException ex) {
             log.warn(
@@ -459,7 +464,7 @@ public class ChatOrchestratorService {
         if (assistantResponse == null || preparedChat == null || preparedChat.toolMetadata() == null || preparedChat.toolResult() == null) {
             return null;
         }
-        if (!"aws_region_audit".equals(preparedChat.toolMetadata().name()) || !"success".equals(preparedChat.toolMetadata().status())) {
+        if (!"aws_region_audit".equals(preparedChat.toolMetadata().name()) || !isCompletedAwsAuditStatus(preparedChat.toolMetadata().status())) {
             return null;
         }
 
@@ -755,7 +760,10 @@ public class ChatOrchestratorService {
             return "S3 bucket discovery completed with bucket_count=%s.".formatted(bucketNames.size());
         }
 
-        return "AWS audit completed with success_count=%s, failure_count=%s, skipped_count=%s.".formatted(
+        String template = hasAuditFailures(summary)
+                ? "AWS audit completed with failures: success_count=%s, failure_count=%s, skipped_count=%s."
+                : "AWS audit completed with success_count=%s, failure_count=%s, skipped_count=%s.";
+        return template.formatted(
                 valueOrUnknown(summary, "success_count"),
                 valueOrUnknown(summary, "failure_count"),
                 valueOrUnknown(summary, "skipped_count")
@@ -794,6 +802,14 @@ public class ChatOrchestratorService {
 
         Path artifactPath = resolveReportPath(runDir, "json/s3_list_buckets.json");
         if (artifactPath == null || !Files.isRegularFile(artifactPath)) {
+            return List.of();
+        }
+        try {
+            if (Files.size(artifactPath) == 0) {
+                return List.of();
+            }
+        } catch (IOException ex) {
+            log.warn("Could not inspect S3 bucket audit artifact path={}", artifactPath, ex);
             return List.of();
         }
 
@@ -967,6 +983,7 @@ public class ChatOrchestratorService {
                 structured.put("selectedRegions", summary.getOrDefault("selected_regions", result.getOrDefault("selected_regions", List.of())));
                 structured.put("selectedServices", summary.getOrDefault("selected_services", result.getOrDefault("selected_services", List.of())));
                 structured.put("bucketNames", result.getOrDefault("bucketNames", List.of()));
+                structured.put("status", hasAuditFailures(summary) ? "partial-success" : "success");
                 putIfPresent(structured, "successCount", summary.get("success_count"));
                 putIfPresent(structured, "failureCount", summary.get("failure_count"));
                 putIfPresent(structured, "skippedCount", summary.get("skipped_count"));
@@ -1068,15 +1085,62 @@ public class ChatOrchestratorService {
                         return step;
                     }
                     Map<String, Object> stepMap = (Map<String, Object>) map;
-                    return stepMap.entrySet().stream()
-                            .collect(java.util.stream.Collectors.toMap(
-                                    Map.Entry::getKey,
-                                    entry -> "stderr_path".equals(entry.getKey())
-                                            ? artifactRelativePath(entry.getValue(), reportsDirectory)
-                                            : entry.getValue()
-                            ));
+                    Map<String, Object> normalized = new LinkedHashMap<>();
+                    Object title = stepMap.get("title");
+                    Object stepName = stepMap.getOrDefault("step", title);
+                    if (stepName != null) {
+                        normalized.put("step", stepName);
+                    }
+                    if (title != null) {
+                        normalized.put("title", title);
+                    }
+                    stepMap.forEach((key, value) -> {
+                        if ("step".equals(key) || "title".equals(key)) {
+                            return;
+                        }
+                        normalized.put(
+                                key,
+                                "stderr_path".equals(key)
+                                        ? artifactRelativePath(value, reportsDirectory)
+                                        : value
+                        );
+                    });
+                    return normalized;
                 })
                 .toList();
+    }
+
+    @SuppressWarnings("unchecked")
+    private String toolStatusForExecution(ToolExecution execution) {
+        if (!"aws_region_audit".equals(execution.toolName())) {
+            return "success";
+        }
+        Map<String, Object> summary = execution.result().get("summary") instanceof Map<?, ?> map
+                ? (Map<String, Object>) map
+                : Map.of();
+        return hasAuditFailures(summary) ? "partial-success" : "success";
+    }
+
+    private boolean isCompletedAwsAuditStatus(String status) {
+        return "success".equals(status) || "partial-success".equals(status);
+    }
+
+    private static boolean hasAuditFailures(Map<String, Object> summary) {
+        return numericValue(summary.get("failure_count")) > 0;
+    }
+
+    private static long numericValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String text) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                return 0L;
+            }
+        }
+        return 0L;
     }
 
     /**
@@ -1092,13 +1156,13 @@ public class ChatOrchestratorService {
         }
         Path candidate = Path.of(rawPath);
         if (!candidate.isAbsolute()) {
-            return candidate.normalize().toString().replace('\\', '/');
+            return candidate.normalize().toString();
         }
         Path normalized = candidate.toAbsolutePath().normalize();
         if (!normalized.startsWith(reportsDirectory)) {
             return "";
         }
-        return reportsDirectory.relativize(normalized).toString().replace('\\', '/');
+        return reportsDirectory.relativize(normalized).toString();
     }
 
     /**

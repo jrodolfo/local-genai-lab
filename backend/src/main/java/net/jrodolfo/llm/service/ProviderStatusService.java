@@ -160,7 +160,8 @@ public class ProviderStatusService {
             return new ProviderStatusResponse(
                     "ollama",
                     "unreachable",
-                    "Ollama is not reachable. Check that the local Ollama service is running.",
+                    "Ollama is configured but currently unreachable. To use Ollama, make sure it is running "
+                            + "and reachable from the backend; otherwise select Bedrock or Hugging Face.",
                     now.toString()
             );
         }

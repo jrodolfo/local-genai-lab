@@ -507,6 +507,11 @@
     color: #166534;
 }
 
+.tool-status-partial-success {
+    background: #fef3c7;
+    color: #92400e;
+}
+
 .tool-status-failed {
     background: #fee2e2;
     color: #991b1b;
@@ -520,6 +525,11 @@
 .tool-provenance-success {
     border-color: #bbf7d0;
     background: #f0fdf4;
+}
+
+.tool-provenance-partial-success {
+    border-color: #fcd34d;
+    background: #fffbeb;
 }
 
 .tool-provenance-failed {

@@ -26,6 +26,12 @@ cp .env.example .env
 ./scripts/start.sh
 ```
 
+Confirm the local environment file is ignored before adding provider tokens:
+
+```bash
+git check-ignore -v .env
+```
+
 Then open:
 
 - frontend: `http://localhost:5173`

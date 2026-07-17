@@ -5,10 +5,20 @@ services:
       dockerfile: backend/Dockerfile
     container_name: llm-backend
     environment:
+      APP_MODEL_PROVIDER: ${APP_MODEL_PROVIDER:-ollama}
       OLLAMA_BASE_URL: ${DOCKER_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_DEFAULT_MODEL: ${OLLAMA_DEFAULT_MODEL:-llama3:8b}
       OLLAMA_CONNECT_TIMEOUT_SECONDS: ${OLLAMA_CONNECT_TIMEOUT_SECONDS:-10}
       OLLAMA_READ_TIMEOUT_SECONDS: ${OLLAMA_READ_TIMEOUT_SECONDS:-300}
+      BEDROCK_REGION: ${BEDROCK_REGION:-us-east-2}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-}
+      HUGGINGFACE_BASE_URL: ${HUGGINGFACE_BASE_URL:-https://router.huggingface.co/v1/chat/completions}
+      HUGGINGFACE_API_TOKEN: ${HUGGINGFACE_API_TOKEN:-}
+      HUGGINGFACE_DEFAULT_MODEL: ${HUGGINGFACE_DEFAULT_MODEL:-}
+      HUGGINGFACE_MODELS: ${HUGGINGFACE_MODELS:-}
+      MCP_ENABLED: ${MCP_ENABLED:-true}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8080:8080"
     restart: unless-stopped
