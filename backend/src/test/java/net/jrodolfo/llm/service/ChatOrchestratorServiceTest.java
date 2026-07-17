@@ -444,10 +444,9 @@ class ChatOrchestratorServiceTest {
         assertTrue(response.response().contains("Elastic IPs: 1"));
         assertTrue(response.response().contains("S3 buckets"));
         assertTrue(response.response().contains("first-bucket"));
-        assertTrue(response.response().contains("Resource categories you may want to inspect"));
-        assertTrue(response.response().contains("Elastic IP usage"));
+        assertFalse(response.response().contains("Resource categories you may want to inspect"));
         assertEquals(List.of("first-bucket"), response.toolResult().get("bucketNames"));
-        assertTrue(((String) response.toolResult().get("factualSummary")).contains("Review candidates"));
+        assertFalse(((String) response.toolResult().get("factualSummary")).contains("Review candidates"));
     }
 
     @Test
@@ -474,9 +473,34 @@ class ChatOrchestratorServiceTest {
 
         String text = response.response();
         assertTrue(text.contains("Audit results"));
-        assertTrue(text.contains("Tagged AWS resources: 29"));
         assertTrue(text.indexOf("EC2 instances: 3") < text.indexOf("CloudWatch log groups: 9"));
-        assertTrue(text.indexOf("CloudWatch log groups: 9") < text.indexOf("Tagged AWS resources: 29"));
+        assertTrue(text.contains("Security groups: 19"));
+        assertFalse(text.contains("Tagged AWS resources: 29"));
+    }
+
+    @Test
+    void awsAuditSummaryShowsInspectSectionOnlyForExplicitConditions() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        Path runDir = auditRunDirWithAuditStatus("""
+                global\u001cs3\u001cS3 buckets\u001cjson\u001cyes\u001csuccess\u001c0\u001c6\u001cstdout\u001c\u001ccommand
+                us-east-1\u001cec2\u001cUnattached Elastic IPs - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
+                us-east-1\u001clogs\u001cCloudWatch log groups without retention - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c2\u001cstdout\u001c\u001ccommand
+                """);
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new RichAuditMcpService(runDir.toString()), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:1b",
+                null
+        );
+
+        String text = response.response();
+        assertTrue(text.contains("Resource categories you may want to inspect"));
+        assertTrue(text.contains("Unattached Elastic IPs"));
+        assertTrue(text.contains("CloudWatch log groups without retention"));
+        assertTrue(text.indexOf("S3 buckets\n- first-bucket") < text.indexOf("Resource categories you may want to inspect"));
     }
 
     @Test

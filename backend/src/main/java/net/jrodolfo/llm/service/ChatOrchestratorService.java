@@ -1031,14 +1031,14 @@ public class ChatOrchestratorService {
             appendSection(response, "Resources found", summarizeResourceCategories(highSignalResources));
         }
 
-        List<String> reviewCandidates = stringList(toolResult.get("reviewCandidates"));
-        if (!reviewCandidates.isEmpty()) {
-            appendSection(response, "Resource categories you may want to inspect", reviewCandidates);
-        }
-
         List<String> buckets = stringList(toolResult.get("bucketNames"));
         if (!buckets.isEmpty()) {
             appendSection(response, "S3 buckets", buckets);
+        }
+
+        List<String> reviewCandidates = stringList(toolResult.get("reviewCandidates"));
+        if (!reviewCandidates.isEmpty()) {
+            appendSection(response, "Resource categories you may want to inspect", reviewCandidates);
         }
 
         List<String> auditChecks = List.of(
@@ -1203,14 +1203,16 @@ public class ChatOrchestratorService {
         for (Map<String, Object> resource : highSignalResources) {
             String title = String.valueOf(resource.getOrDefault("title", ""));
             String normalizedTitle = title.toLowerCase(Locale.ROOT);
-            if (normalizedTitle.contains("elastic ip")) {
-                candidates.add("Elastic IP usage");
-            } else if (normalizedTitle.contains("cloudwatch log groups")) {
-                candidates.add("CloudWatch log-group retention");
-            } else if (normalizedTitle.contains("secrets manager")) {
-                candidates.add("Secrets Manager secret lifecycle");
-            } else if (normalizedTitle.contains("security groups")) {
-                candidates.add("Security group inventory");
+            if (normalizedTitle.contains("unattached elastic ip")) {
+                candidates.add("Unattached Elastic IPs");
+            } else if (normalizedTitle.contains("public s3 bucket")) {
+                candidates.add("Public S3 buckets");
+            } else if (normalizedTitle.contains("log groups without retention")) {
+                candidates.add("CloudWatch log groups without retention");
+            } else if (normalizedTitle.contains("unused secret")
+                    || normalizedTitle.contains("stale secret")
+                    || normalizedTitle.contains("secret scheduled for deletion")) {
+                candidates.add("Secrets Manager secrets with lifecycle concerns");
             }
         }
         return candidates.stream().distinct().limit(4).toList();
@@ -1305,7 +1307,7 @@ public class ChatOrchestratorService {
                         .comparingInt((Map.Entry<String, Integer> entry) -> resourceCategoryPriority(entry.getKey()))
                         .thenComparing(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
                         .thenComparing(Map.Entry::getKey))
-                .limit(8)
+                .limit(6)
                 .map(entry -> "%s: %d".formatted(entry.getKey(), entry.getValue()))
                 .toList();
     }
