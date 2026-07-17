@@ -114,18 +114,31 @@ test: test-ops test-backend test-frontend
 verify: test build-frontend test-mcp build-mcp test-scripts
 
 test-ops:
+	@printf '%s\n' 'running: ./ops/tests/test-root-layout.sh'
 	@bash ./ops/tests/test-root-layout.sh
+	@printf '%s\n' 'running: ./ops/tests/test-doc-privacy.sh'
 	@bash ./ops/tests/test-doc-privacy.sh
+	@printf '%s\n' 'running: ./ops/tests/test-local-verify.sh'
 	@bash ./ops/tests/test-local-verify.sh
+	@printf '%s\n' 'running: ./ops/tests/test-start.sh'
 	@bash ./ops/tests/test-start.sh
+	@printf '%s\n' 'running: ./ops/tests/test-restart.sh'
 	@bash ./ops/tests/test-restart.sh
+	@printf '%s\n' 'running: ./ops/tests/test-start-backend-helper.sh'
 	@bash ./ops/tests/test-start-backend-helper.sh
+	@printf '%s\n' 'running: ./ops/tests/test-build.sh'
 	@bash ./ops/tests/test-build.sh
+	@printf '%s\n' 'running: ./ops/tests/test-status.sh'
 	@bash ./ops/tests/test-status.sh
+	@printf '%s\n' 'running: ./ops/tests/test-docker-lifecycle.sh'
 	@bash ./ops/tests/test-docker-lifecycle.sh
+	@printf '%s\n' 'running: ./ops/tests/test-docker-scan.sh'
 	@bash ./ops/tests/test-docker-scan.sh
+	@printf '%s\n' 'running: ./ops/tests/test-release-check.sh'
 	@bash ./ops/tests/test-release-check.sh
+	@printf '%s\n' 'running: ./ops/tests/test-prepare-release.sh'
 	@bash ./ops/tests/test-prepare-release.sh
+	@printf '%s\n' 'running: ./ops/tests/test-stop.sh'
 	@bash ./ops/tests/test-stop.sh
 
 test-backend:

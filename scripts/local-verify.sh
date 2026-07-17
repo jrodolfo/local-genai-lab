@@ -35,6 +35,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS="${LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS:-5}"
 
 print_usage() {
   printf '%s\n' \
@@ -64,6 +65,17 @@ require_command() {
     printf 'Error: required command not found: %s\n' "${command_name}" >&2
     exit 1
   fi
+}
+
+is_positive_integer() {
+  case "$1" in
+    ''|*[!0-9]*)
+      return 1
+      ;;
+    *)
+      [ "$1" -gt 0 ]
+      ;;
+  esac
 }
 
 major_version() {
@@ -104,18 +116,45 @@ validate_versions() {
     printf 'Error: Node.js 20 or newer is required, found: %s\n' "$(node --version)" >&2
     exit 1
   fi
+
+  if ! is_positive_integer "${LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS}"; then
+    printf 'Error: LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS must be a positive integer, got: %s\n' "${LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS}" >&2
+    exit 1
+  fi
 }
 
 run_step() {
   local step_name="$1"
   local log_path="$2"
+  local step_pid heartbeat_pid step_status
   shift 2
 
   printf 'running: %s\n' "${step_name}"
-  if (
+  (
     cd "${REPO_ROOT}"
     "$@"
-  ) >"${log_path}" 2>&1; then
+  ) >"${log_path}" 2>&1 &
+  step_pid=$!
+
+  (
+    while kill -0 "${step_pid}" >/dev/null 2>&1; do
+      sleep "${LOCAL_VERIFY_PROGRESS_INTERVAL_SECONDS}"
+      if kill -0 "${step_pid}" >/dev/null 2>&1; then
+        printf '.'
+      fi
+    done
+  ) &
+  heartbeat_pid=$!
+
+  set +e
+  wait "${step_pid}"
+  step_status=$?
+  set -e
+
+  wait "${heartbeat_pid}" 2>/dev/null || true
+  printf '\n'
+
+  if [ "${step_status}" -eq 0 ]; then
     printf 'pass: %s\n' "${step_name}"
     printf '  log: %s\n' "${log_path}"
     return 0
