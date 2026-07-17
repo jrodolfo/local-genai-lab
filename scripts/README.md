@@ -17,7 +17,18 @@ Host-run app lifecycle:
 ./scripts/restart.sh
 ./scripts/status.sh
 ./scripts/build.sh
+./scripts/local-verify.sh
 ```
+
+`local-verify.sh` is the human-facing local verification wrapper for Linux or
+EC2 development hosts. It prints the detected Java, Maven, Node, npm, and make
+versions, then runs either:
+
+- `--quick`: backend tests, frontend tests, and frontend build
+- `--full` or default: `make verify`
+
+Each step writes its full output to `/tmp/local-genai-lab-*.txt`, which makes
+remote troubleshooting easier than relying on terminal scrollback alone.
 
 Docker lifecycle:
 

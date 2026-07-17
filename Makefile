@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app docker-sanity-check docker-start docker-stop docker-restart docker-status docker-logs docker-tunnel-info docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app local-verify docker-sanity-check docker-start docker-stop docker-restart docker-status docker-logs docker-tunnel-info docker-check docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -11,6 +11,7 @@ help:
 		'  make status                 Show process, URL, and log status' \
 		'  make build                  Build backend, frontend, and MCP artifacts' \
 		'  make check-app              Run the local stack smoke check' \
+		'  make local-verify           Run explicit local verification with /tmp logs' \
 		'  make docker-sanity-check    Check Docker daemon and Compose availability' \
 		'  make docker-start           Start backend, frontend, and Qdrant with Docker Compose' \
 		'  make docker-stop            Stop the Docker Compose stack' \
@@ -55,6 +56,9 @@ build:
 
 check-app:
 	@./ops/check-app.sh
+
+local-verify:
+	@./scripts/local-verify.sh
 
 docker-sanity-check:
 	@./scripts/docker-sanity-check.sh
@@ -112,6 +116,7 @@ verify: test build-frontend test-mcp build-mcp test-scripts
 test-ops:
 	@bash ./ops/tests/test-root-layout.sh
 	@bash ./ops/tests/test-doc-privacy.sh
+	@bash ./ops/tests/test-local-verify.sh
 	@bash ./ops/tests/test-start.sh
 	@bash ./ops/tests/test-restart.sh
 	@bash ./ops/tests/test-start-backend-helper.sh

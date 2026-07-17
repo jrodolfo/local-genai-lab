@@ -8,6 +8,7 @@ For the normal local pre-commit suite, run from the repository root:
 
 ```bash
 make test
+make verify
 ```
 
 This runs operational helper tests, backend tests, and frontend tests. MCP
@@ -23,6 +24,35 @@ This runs `make test`, frontend build, MCP tests/build, and MCP tool script
 lint/tests. Use it before larger pushes or changes that touch multiple project
 areas.
 
+For remote Linux or EC2 development hosts, use the explicit verification
+wrapper when you want toolchain preflight plus `/tmp` log files for each step:
+
+```bash
+make local-verify
+./scripts/local-verify.sh --quick
+./scripts/local-verify.sh --full
+```
+
+`local-verify.sh` checks for:
+
+- Java 21 or newer
+- Maven on `PATH`
+- Node.js 20 or newer
+- npm on `PATH`
+- make on `PATH`
+
+Quick mode runs:
+
+- `make test-backend`
+- `make test-frontend`
+- `make build-frontend`
+
+Full mode runs:
+
+- `make verify`
+
+Each command writes full output to `/tmp/local-genai-lab-*.txt`.
+
 ### Command Selection
 
 | Command | Purpose | Prerequisites | CI status |
@@ -34,6 +64,7 @@ areas.
 | `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
 | `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files. | Local workspace only. | Not a CI target. |
+| `make local-verify` | Human-facing verification wrapper with toolchain preflight and `/tmp` logs. | Java 21, Maven 3.9+, Node 20.19+, npm, make. | Not a CI target. |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | Java 21, Node 20.19+ dependencies installed as needed. | Covered through separate CI jobs. |
 | `make verify` | Broader CI-aligned local verification. | Same as `make test`, plus MCP dependencies and script tooling. | Mirrors the CI job set locally. |
 | `make test-ops` | Operational shell helper tests. | Bash and standard shell utilities. | CI `ops` job. |
@@ -111,7 +142,7 @@ The current GitHub CI workflow does not provision Qdrant, install Ollama, or
 pull the `nomic-embed-text` embedding model. Keep this target out of default CI
 unless the workflow is later updated to provide those runtime dependencies.
 
-### Backend
+## Java and Maven Baseline
 
 The backend targets Java 21 and Maven 3.9+. Maven Enforcer checks this at the
 start of the backend build, so tests fail early when the local toolchain is out

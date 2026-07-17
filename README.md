@@ -175,10 +175,16 @@ Common commands:
 make help
 make start
 make status
+make local-verify
 make test
 make verify
 make release-check
 ```
+
+For remote Linux or EC2 development, `make local-verify` is the most explicit
+local validation entry point. It checks the Java/Maven/Node/npm toolchain,
+runs the supported verification flow, and writes long command output to
+`/tmp/local-genai-lab-*.txt` so failures are easier to inspect over SSH.
 
 Docker-inclusive release validation is available when Docker and Trivy are
 installed:
