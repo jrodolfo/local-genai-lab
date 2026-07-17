@@ -434,8 +434,8 @@ describe('Home', () => {
         await user.type(screen.getByPlaceholderText(/Type your prompt/i), 'Check S3 CloudWatch metrics.');
         await user.click(screen.getByRole('button', {name: /send/i}));
 
-        expect(await screen.findByText('S3 report is ready.')).toBeInTheDocument();
-        expect(screen.getByText('Please provide one S3 bucket name to continue.')).toBeInTheDocument();
+        expect(await screen.findByText('Generate an S3 report')).toBeInTheDocument();
+        expect(screen.getByText('Choose one S3 bucket to continue.')).toBeInTheDocument();
         expect(screen.queryByText(/Awaiting additional tool input/i)).not.toBeInTheDocument();
     });
 
@@ -1101,8 +1101,8 @@ describe('Home', () => {
         const sessionTitle = await screen.findByText('check bucket metrics');
         await user.click(sessionTitle.closest('button'));
 
-        expect(await screen.findByText('S3 report is ready.')).toBeInTheDocument();
-        expect(screen.getByText('Please provide one S3 bucket name to continue.')).toBeInTheDocument();
+        expect(await screen.findByText('Generate an S3 report')).toBeInTheDocument();
+        expect(screen.getByText('Choose one S3 bucket to continue.')).toBeInTheDocument();
     });
 
     it('starts a new chat by clearing the current conversation', async () => {

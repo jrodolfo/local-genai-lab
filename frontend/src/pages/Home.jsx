@@ -1164,14 +1164,14 @@ function resolveToolLifecycleMessage({tool, pendingTool}) {
 
 function formatPendingToolTitle(pendingTool) {
     if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
-        return 'S3 report is ready.';
+        return 'Generate an S3 report';
     }
     return 'More information is needed.';
 }
 
 function formatPendingToolDetail(pendingTool) {
     if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
-        return 'Please provide one S3 bucket name to continue.';
+        return 'Choose one S3 bucket to continue.';
     }
     const missingFields = Array.isArray(pendingTool?.missingFields) ? pendingTool.missingFields : [];
     if (missingFields.length === 0) {
