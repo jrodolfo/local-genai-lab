@@ -1117,6 +1117,9 @@ function resolveToolLifecycleMessage({tool, pendingTool}) {
     if (tool.status === 'failed') {
         return 'Tool execution failed before the final answer was generated.';
     }
+    if (tool.status === 'partial-success') {
+        return 'Tool results include failures; preparing the final answer from partial results.';
+    }
     if (tool.status === 'success') {
         return 'Preparing the final answer from tool results...';
     }

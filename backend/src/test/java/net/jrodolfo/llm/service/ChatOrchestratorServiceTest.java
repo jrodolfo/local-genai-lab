@@ -127,6 +127,25 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void auditRequestMarksPartialSuccessWhenAuditSummaryContainsFailures() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new PartialAuditMcpService(), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertEquals("partial-success", response.tool().status());
+        assertEquals("partial-success", response.toolResult().get("status"));
+        assertEquals("EC2 instances - us-east-1", ((Map<?, ?>) ((List<?>) response.toolResult().get("failedSteps")).get(0)).get("step"));
+        assertTrue(response.tool().summary().contains("completed with failures"));
+    }
+
+    @Test
     void toolFailureReturnsExplicitFailureResponseAndPersistsIt() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         FileChatSessionStore sessionStore = newSessionStore();
@@ -652,6 +671,13 @@ class ChatOrchestratorServiceTest {
         return runDir;
     }
 
+    private Path auditRunDirWithEmptyBucketArtifact() throws Exception {
+        Path runDir = tempDir.resolve("reports").resolve("audit").resolve("aws-audit-test-" + System.nanoTime());
+        Files.createDirectories(runDir.resolve("json"));
+        Files.writeString(runDir.resolve("json").resolve("s3_list_buckets.json"), "");
+        return runDir;
+    }
+
     private ChatOrchestratorService newOrchestrator(
             ChatModelProvider chatModelProvider,
             McpService mcpService,
@@ -812,6 +838,39 @@ class ChatOrchestratorServiceTest {
         @Override
         public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
             throw new McpClientException("AWS region audit requires aws CLI and jq in the backend runtime.");
+        }
+    }
+
+    private final class PartialAuditMcpService extends FakeMcpService {
+        private PartialAuditMcpService() {
+            super();
+        }
+
+        @Override
+        public McpToolInvocationResponse runAwsRegionAudit(AwsRegionAuditToolRequest request) {
+            Path runDir;
+            try {
+                runDir = auditRunDirWithEmptyBucketArtifact();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+            return new McpToolInvocationResponse("aws_region_audit", Map.of(
+                    "ok", true,
+                    "run_dir", runDir.toString(),
+                    "summary", Map.of(
+                            "success_count", 1,
+                            "failure_count", 2,
+                            "skipped_count", 0,
+                            "failed_commands", List.of(
+                                    Map.of(
+                                            "scope", "us-east-1",
+                                            "service", "ec2",
+                                            "title", "EC2 instances - us-east-1",
+                                            "stderr_path", tempDir.resolve("reports").resolve("audit").resolve("stderr").resolve("ec2.stderr").toString()
+                                    )
+                            )
+                    )
+            ));
         }
     }
 
