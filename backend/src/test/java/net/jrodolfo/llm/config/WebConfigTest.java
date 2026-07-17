@@ -6,6 +6,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 import java.lang.reflect.Field;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WebConfigTest {
@@ -27,5 +28,6 @@ class WebConfigTest {
         var config = (org.springframework.web.cors.CorsConfiguration) configField.get(registrations.getFirst());
 
         assertTrue(config.getAllowedMethods() != null && config.getAllowedMethods().contains("DELETE"));
+        assertEquals(java.util.List.of("http://localhost:*", "http://127.0.0.1:*"), config.getAllowedOriginPatterns());
     }
 }
