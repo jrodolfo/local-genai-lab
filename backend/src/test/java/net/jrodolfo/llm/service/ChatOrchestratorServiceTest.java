@@ -565,6 +565,37 @@ class ChatOrchestratorServiceTest {
     }
 
     @Test
+    void hybridModeClearsPlannerInventedServiceSubsetForBroadAwsAccountAnalysis() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        chatModelProvider.nextPlannerResponse = """
+                {
+                  "action": "use_tool",
+                  "toolName": "aws_region_audit",
+                  "arguments": {
+                    "services": ["sts", "ec2"]
+                  },
+                  "missingFields": [],
+                  "reason": "Broad AWS account analysis request."
+                }
+                """;
+        FileChatSessionStore sessionStore = newSessionStore();
+        FakeMcpService mcpService = new FakeMcpService();
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "hybrid");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b",
+                null
+        );
+
+        assertNotNull(response.tool());
+        assertEquals("aws_region_audit", response.tool().name());
+        assertEquals(1, chatModelProvider.plannerCalls);
+        assertEquals(List.of(), mcpService.lastAuditRequest.services());
+    }
+
+    @Test
     void hybridModeUsesPlannerForPendingClarificationFollowUp() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
         chatModelProvider.nextPlannerResponse = """

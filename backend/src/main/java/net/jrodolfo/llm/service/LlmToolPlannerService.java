@@ -102,6 +102,7 @@ public class LlmToolPlannerService {
                 For "read the latest report" ambiguity, use toolName "read_report_summary" and missingFields ["reportType"].
                 For report listings, use toolName "list_recent_reports".
                 For latest report reading, use toolName "read_report_summary".
+                For broad AWS account analysis requests such as analyzing an account, summarizing active services, or highlighting unusual findings, do not invent a narrow services subset. Omit "services" unless the user explicitly named specific AWS services.
                 For aws audits, services must be from this allowlist:
                 %s
                 
@@ -506,6 +507,19 @@ public class LlmToolPlannerService {
             );
         }
 
+        if (shouldClearAuditServiceFilter(decision, originalMessage)) {
+            return new ChatToolRouterService.ToolDecision(
+                    ChatToolRouterService.DecisionType.AWS_REGION_AUDIT,
+                    decision.reportType(),
+                    decision.bucket(),
+                    decision.region(),
+                    decision.days(),
+                    decision.reason(),
+                    List.of(),
+                    decision.clarification()
+            );
+        }
+
         return decision;
     }
 
@@ -609,6 +623,41 @@ public class LlmToolPlannerService {
                 || normalizedMessage.contains("worth reviewing");
 
         return mentionsAws && mentionsAccountOrInventory && mentionsAnalysisIntent;
+    }
+
+    /**
+     * Clears accidental planner narrowing for broad AWS account analysis prompts.
+     *
+     * <p>For broad account-level analysis requests we want the audit tool's
+     * default full-service coverage unless the user explicitly named services.
+     */
+    private boolean shouldClearAuditServiceFilter(
+            ChatToolRouterService.ToolDecision decision,
+            String originalMessage
+    ) {
+        if (decision.type() != ChatToolRouterService.DecisionType.AWS_REGION_AUDIT || decision.services().isEmpty()) {
+            return false;
+        }
+
+        String normalizedMessage = originalMessage.toLowerCase(Locale.ROOT);
+        return mentionsAwsAccountAnalysis(normalizedMessage)
+                && !normalizedMessage.contains("sts")
+                && !normalizedMessage.contains("ec2")
+                && !normalizedMessage.contains("aws-config")
+                && !normalizedMessage.contains("aws config")
+                && !normalizedMessage.contains("s3")
+                && !normalizedMessage.contains("elb")
+                && !normalizedMessage.contains("load balancer")
+                && !normalizedMessage.contains("rds")
+                && !normalizedMessage.contains("lambda")
+                && !normalizedMessage.contains("ecs")
+                && !normalizedMessage.contains("eks")
+                && !normalizedMessage.contains("sagemaker")
+                && !normalizedMessage.contains("opensearch")
+                && !normalizedMessage.contains("secrets")
+                && !normalizedMessage.contains("log groups")
+                && !normalizedMessage.contains("cloudwatch")
+                && !normalizedMessage.contains("tagging");
     }
 
     /**

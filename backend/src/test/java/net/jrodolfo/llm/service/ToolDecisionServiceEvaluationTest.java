@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ToolDecisionServiceEvaluationTest {
 
@@ -70,6 +71,39 @@ class ToolDecisionServiceEvaluationTest {
         }
 
         assertFalse(matchedCases.isEmpty());
+    }
+
+    @Test
+    void broadAwsAccountAnalysisClearsPlannerInventedServiceSubset() {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider("""
+                {
+                  "action": "use_tool",
+                  "toolName": "aws_region_audit",
+                  "arguments": {
+                    "services": ["sts", "ec2"]
+                  },
+                  "missingFields": [],
+                  "reason": "Broad AWS account analysis request."
+                }
+                """);
+        ChatModelProviderRegistry registry = new ChatModelProviderRegistry(
+                new net.jrodolfo.llm.config.AppModelProperties("ollama"),
+                java.util.Map.of("ollama", chatModelProvider)
+        );
+        ToolDecisionService service = new ToolDecisionService(
+                new AppToolsProperties("hybrid", false),
+                new LlmToolPlannerService(registry, objectMapper),
+                new ChatToolRouterService()
+        );
+
+        ToolDecisionService.DecisionTrace trace = service.routeDetailed(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:8b"
+        );
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, trace.finalDecision().type());
+        assertTrue(trace.finalDecision().services().isEmpty());
     }
 
     private PendingToolCall toPendingToolCall(PendingToolFixture pendingToolFixture) {
