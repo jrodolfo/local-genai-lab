@@ -1046,7 +1046,7 @@ public class ChatOrchestratorService {
                 "Failed: " + valueOrUnknown(toolResult, "failureCount"),
                 "Skipped: " + valueOrUnknown(toolResult, "skippedCount")
         );
-        appendSection(response, "Audit checks", auditChecks);
+        appendSection(response, "Audit results", auditChecks);
 
         return response.toString().trim();
     }
@@ -1301,7 +1301,9 @@ public class ChatOrchestratorService {
             totals.merge(label, asInt(resource.get("count")), Integer::sum);
         }
         return totals.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder())
+                .sorted(Comparator
+                        .comparingInt((Map.Entry<String, Integer> entry) -> resourceCategoryPriority(entry.getKey()))
+                        .thenComparing(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
                         .thenComparing(Map.Entry::getKey))
                 .limit(8)
                 .map(entry -> "%s: %d".formatted(entry.getKey(), entry.getValue()))
@@ -1326,7 +1328,30 @@ public class ChatOrchestratorService {
             case "OpenSearch domains" -> "OpenSearch domains";
             case "Secrets Manager secrets" -> "Secrets Manager secrets";
             case "CloudWatch log groups" -> "CloudWatch log groups";
+            case "Tagged resources via Resource Groups Tagging API" -> "Tagged AWS resources";
             default -> normalized;
+        };
+    }
+
+    private int resourceCategoryPriority(String label) {
+        return switch (label) {
+            case "EC2 instances" -> 0;
+            case "EBS volumes" -> 1;
+            case "S3 buckets" -> 2;
+            case "Lambda functions" -> 3;
+            case "RDS DB instances" -> 4;
+            case "ECS clusters" -> 5;
+            case "EKS clusters" -> 6;
+            case "Load balancers" -> 7;
+            case "Elastic IPs" -> 8;
+            case "SageMaker domains" -> 9;
+            case "SageMaker notebook instances" -> 10;
+            case "OpenSearch domains" -> 11;
+            case "Secrets Manager secrets" -> 12;
+            case "CloudWatch log groups" -> 13;
+            case "Security groups" -> 14;
+            case "Tagged AWS resources" -> 15;
+            default -> 100;
         };
     }
 

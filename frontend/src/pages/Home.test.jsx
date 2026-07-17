@@ -435,7 +435,7 @@ describe('Home', () => {
         await user.click(screen.getByRole('button', {name: /send/i}));
 
         expect(await screen.findByText('Generate an S3 report')).toBeInTheDocument();
-        expect(screen.getByText('Choose one S3 bucket to continue.')).toBeInTheDocument();
+        expect(screen.getByText('Choose one S3 bucket to continue, then generate the report.')).toBeInTheDocument();
         expect(screen.queryByText(/Awaiting additional tool input/i)).not.toBeInTheDocument();
     });
 
@@ -1066,7 +1066,9 @@ describe('Home', () => {
             pendingTool: {
                 toolName: 's3_cloudwatch_report',
                 reason: 's3 cloudwatch metrics request',
-                missingFields: ['bucket']
+                missingFields: ['bucket'],
+                bucketOptions: ['jrodolfo.net', 'www.jrodolfo.net'],
+                days: 30
             },
             messages: [
                 {role: 'user', content: 'check bucket metrics', tool: null, timestamp: '2026-04-10T10:00:00Z'},
@@ -1102,7 +1104,85 @@ describe('Home', () => {
         await user.click(sessionTitle.closest('button'));
 
         expect(await screen.findByText('Generate an S3 report')).toBeInTheDocument();
-        expect(screen.getByText('Choose one S3 bucket to continue.')).toBeInTheDocument();
+        expect(screen.getByText('Choose one S3 bucket to continue, then generate the report.')).toBeInTheDocument();
+        expect(screen.getByRole('combobox', {name: /s3 bucket/i})).toHaveValue('jrodolfo.net');
+        expect(screen.getByRole('button', {name: /generate report/i})).toBeInTheDocument();
+    });
+
+    it('submits the selected pending S3 bucket as a follow-up request', async () => {
+        getSession.mockResolvedValue({
+            sessionId: 'session-1',
+            title: 'check bucket metrics',
+            summary: 'Waiting for bucket name.',
+            model: 'llama3:8b',
+            createdAt: '2026-04-10T10:00:00Z',
+            updatedAt: '2026-04-10T10:01:00Z',
+            pendingTool: {
+                toolName: 's3_cloudwatch_report',
+                reason: 's3 cloudwatch metrics request',
+                missingFields: ['bucket'],
+                bucketOptions: ['jrodolfo.net', 'www.jrodolfo.net'],
+                days: 30
+            },
+            messages: [
+                {role: 'user', content: 'check bucket metrics', tool: null, timestamp: '2026-04-10T10:00:00Z'},
+                {
+                    role: 'assistant',
+                    content: 'Choose one S3 bucket to continue.',
+                    tool: {
+                        used: true,
+                        name: 's3_cloudwatch_report',
+                        status: 'clarification-needed',
+                        summary: 'Need bucket.'
+                    },
+                    timestamp: '2026-04-10T10:01:00Z'
+                }
+            ]
+        });
+        sendMessage.mockResolvedValue({
+            sessionId: 'session-1',
+            response: 'Report generated.',
+            tool: {
+                used: true,
+                name: 's3_cloudwatch_report',
+                status: 'success',
+                summary: 'done'
+            },
+            toolResult: {
+                type: 's3_report_summary'
+            },
+            pendingTool: null,
+            metadata: null
+        });
+        listSessions.mockResolvedValue([
+            {
+                sessionId: 'session-1',
+                title: 'check bucket metrics',
+                summary: 'Waiting for bucket name.',
+                model: 'llama3:8b',
+                createdAt: '2026-04-10T10:00:00Z',
+                updatedAt: '2026-04-10T10:01:00Z',
+                messageCount: 2
+            }
+        ]);
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        const sessionTitle = await screen.findByText('check bucket metrics');
+        await user.click(sessionTitle.closest('button'));
+        await user.click(screen.getByRole('checkbox', {name: /streaming/i}));
+        await user.selectOptions(screen.getByRole('combobox', {name: /s3 bucket/i}), 'www.jrodolfo.net');
+        await user.click(screen.getByRole('button', {name: /generate report/i}));
+
+        await waitFor(() => {
+            expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({
+                message: 'Please run an S3 report for the www.jrodolfo.net bucket for the last 30 days.',
+                provider: 'ollama',
+                model: 'llama3:8b',
+                sessionId: 'session-1'
+            }));
+        });
     });
 
     it('starts a new chat by clearing the current conversation', async () => {

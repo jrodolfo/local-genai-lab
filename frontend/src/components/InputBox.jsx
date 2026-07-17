@@ -20,6 +20,8 @@ import {useState} from 'react';
  * @param {string[]} [props.models=[]] - List of available model IDs for the selected provider.
  * @param {string} [props.selectedModel=''] - Currently selected model ID.
  * @param {Function} props.onModelChange - Callback when the model selection changes.
+ * @param {boolean} [props.streaming=true] - Whether streaming mode is enabled.
+ * @param {Function} props.onStreamingChange - Callback when the streaming toggle changes.
  * @param {Function} props.onSend - Callback when the user submits a message.
  * @param {Function} props.onCancel - Callback when the user cancels a loading request.
  * @returns {React.JSX.Element} The rendered InputBox component.
@@ -37,11 +39,12 @@ function InputBox({
                       models = [],
                       selectedModel = '',
                       onModelChange,
+                      streaming = true,
+                      onStreamingChange,
                       onSend,
                       onCancel
                   }) {
     const [message, setMessage] = useState('');
-    const [streaming, setStreaming] = useState(true);
     const controlsDisabled = disabled || loading;
     const sendDisabled = controlsDisabled || !selectedModel;
 
@@ -95,7 +98,7 @@ function InputBox({
                     <input
                         type="checkbox"
                         checked={streaming}
-                        onChange={(event) => setStreaming(event.target.checked)}
+                        onChange={(event) => onStreamingChange(event.target.checked)}
                         disabled={sendDisabled}
                     />
                     Streaming

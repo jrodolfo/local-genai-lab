@@ -124,7 +124,7 @@ class ChatOrchestratorServiceTest {
         assertFalse(chatModelProvider.generateCalled);
         assertNull(chatModelProvider.lastPrompt);
         assertTrue(response.response().contains("AWS account audit completed successfully."));
-        assertTrue(response.response().contains("Audit checks"));
+        assertTrue(response.response().contains("Audit results"));
         assertFalse(response.response().toLowerCase().contains("account id"));
     }
 
@@ -448,6 +448,35 @@ class ChatOrchestratorServiceTest {
         assertTrue(response.response().contains("Elastic IP usage"));
         assertEquals(List.of("first-bucket"), response.toolResult().get("bucketNames"));
         assertTrue(((String) response.toolResult().get("factualSummary")).contains("Review candidates"));
+    }
+
+    @Test
+    void awsAuditSummaryPrioritizesCoreResourcesAndUsesShorterLabels() throws Exception {
+        FakeChatModelProvider chatModelProvider = new FakeChatModelProvider();
+        FileChatSessionStore sessionStore = newSessionStore();
+        Path runDir = auditRunDirWithAuditStatus("""
+                global\u001cs3\u001cS3 buckets\u001cjson\u001cyes\u001csuccess\u001c0\u001c6\u001cstdout\u001c\u001ccommand
+                us-east-1\u001cec2\u001cEC2 instances - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c3\u001cstdout\u001c\u001ccommand
+                us-east-1\u001cec2\u001cEBS volumes - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c3\u001cstdout\u001c\u001ccommand
+                us-east-1\u001clambda\u001cLambda functions - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c6\u001cstdout\u001c\u001ccommand
+                us-east-1\u001clogs\u001cCloudWatch log groups - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c9\u001cstdout\u001c\u001ccommand
+                us-east-1\u001cec2\u001cSecurity groups - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c19\u001cstdout\u001c\u001ccommand
+                us-east-1\u001ctagging\u001cTagged resources via Resource Groups Tagging API - us-east-1\u001cjson\u001cyes\u001csuccess\u001c0\u001c29\u001cstdout\u001c\u001ccommand
+                """);
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new RichAuditMcpService(runDir.toString()), sessionStore, "rules");
+
+        ChatResponse response = orchestrator.chat(
+                "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
+                "ollama",
+                "llama3:1b",
+                null
+        );
+
+        String text = response.response();
+        assertTrue(text.contains("Audit results"));
+        assertTrue(text.contains("Tagged AWS resources: 29"));
+        assertTrue(text.indexOf("EC2 instances: 3") < text.indexOf("CloudWatch log groups: 9"));
+        assertTrue(text.indexOf("CloudWatch log groups: 9") < text.indexOf("Tagged AWS resources: 29"));
     }
 
     @Test

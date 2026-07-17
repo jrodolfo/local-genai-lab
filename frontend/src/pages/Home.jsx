@@ -31,6 +31,7 @@ function Home() {
     const [messages, setMessages] = useState([]);
     const [sessionId, setSessionId] = useState(null);
     const [pendingTool, setPendingTool] = useState(null);
+    const [pendingBucketSelection, setPendingBucketSelection] = useState('');
     const [sessions, setSessions] = useState([]);
     const [showSessionsSidebar, setShowSessionsSidebar] = useState(true);
     const [sessionSearch, setSessionSearch] = useState('');
@@ -47,6 +48,7 @@ function Home() {
     const [selectedProvider, setSelectedProvider] = useState('');
     const [availableModels, setAvailableModels] = useState([]);
     const [selectedModel, setSelectedModel] = useState('');
+    const [streamingEnabled, setStreamingEnabled] = useState(true);
     const [providerStatus, setProviderStatus] = useState(null);
     const [providerStatusRefreshing, setProviderStatusRefreshing] = useState(false);
     const [modelsLoading, setModelsLoading] = useState(true);
@@ -133,6 +135,15 @@ function Home() {
             behavior: 'auto'
         });
     }, [messages, loading, loadingMessage]);
+
+    useEffect(() => {
+        if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
+            const bucketOptions = Array.isArray(pendingTool.bucketOptions) ? pendingTool.bucketOptions : [];
+            setPendingBucketSelection(bucketOptions[0] || '');
+            return;
+        }
+        setPendingBucketSelection('');
+    }, [pendingTool]);
 
     /**
      * Appends a local message to the current conversation view.
@@ -606,6 +617,19 @@ function Home() {
         activeRequestControllerRef.current?.abort();
     };
 
+    const handlePendingBucketSubmit = async () => {
+        const bucket = pendingBucketSelection.trim();
+        if (!bucket || !selectedProvider || !selectedModel || loading) {
+            return;
+        }
+        await handleSend({
+            message: buildPendingS3ReportPrompt(bucket, pendingTool?.days),
+            provider: selectedProvider,
+            model: selectedModel,
+            streaming: streamingEnabled
+        });
+    };
+
     /**
      * Sends one Agent message through the selected backend mode.
      *
@@ -917,8 +941,37 @@ function Home() {
 
                     {pendingTool ? (
                         <div className="pending-tool-banner">
-                            <strong>{formatPendingToolTitle(pendingTool)}</strong>
-                            <span>{formatPendingToolDetail(pendingTool)}</span>
+                            <div className="pending-tool-copy">
+                                <strong>{formatPendingToolTitle(pendingTool)}</strong>
+                                <span>{formatPendingToolDetail(pendingTool)}</span>
+                            </div>
+                            {shouldRenderPendingBucketPicker(pendingTool) ? (
+                                <div className="pending-tool-actions">
+                                    <label className="pending-tool-field">
+                                        <span className="sr-only">S3 bucket</span>
+                                        <select
+                                            aria-label="S3 bucket"
+                                            value={pendingBucketSelection}
+                                            onChange={(event) => setPendingBucketSelection(event.target.value)}
+                                            disabled={loading || !pendingTool.bucketOptions?.length}
+                                        >
+                                            {(pendingTool.bucketOptions || []).map((bucket) => (
+                                                <option key={bucket} value={bucket}>
+                                                    {bucket}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        className="page-action-button"
+                                        onClick={handlePendingBucketSubmit}
+                                        disabled={loading || !pendingBucketSelection.trim() || !selectedModel}
+                                    >
+                                        Generate report
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
                     ) : null}
 
@@ -1031,6 +1084,8 @@ function Home() {
                         models={availableModels}
                         selectedModel={selectedModel}
                         onModelChange={setSelectedModel}
+                        streaming={streamingEnabled}
+                        onStreamingChange={setStreamingEnabled}
                         onSend={handleSend}
                         onCancel={handleCancelRequest}
                     />
@@ -1171,13 +1226,26 @@ function formatPendingToolTitle(pendingTool) {
 
 function formatPendingToolDetail(pendingTool) {
     if (pendingTool?.toolName === 's3_cloudwatch_report' && pendingTool?.missingFields?.includes('bucket')) {
-        return 'Choose one S3 bucket to continue.';
+        return 'Choose one S3 bucket to continue, then generate the report.';
     }
     const missingFields = Array.isArray(pendingTool?.missingFields) ? pendingTool.missingFields : [];
     if (missingFields.length === 0) {
         return 'Please reply with the requested information to continue.';
     }
     return `Please provide: ${missingFields.map(formatMissingFieldLabel).join(', ')}.`;
+}
+
+function shouldRenderPendingBucketPicker(pendingTool) {
+    return pendingTool?.toolName === 's3_cloudwatch_report'
+        && pendingTool?.missingFields?.includes('bucket')
+        && Array.isArray(pendingTool?.bucketOptions)
+        && pendingTool.bucketOptions.length > 0;
+}
+
+function buildPendingS3ReportPrompt(bucket, days) {
+    const normalizedBucket = String(bucket || '').trim();
+    const normalizedDays = Number.isFinite(days) && days > 0 ? days : 30;
+    return `Please run an S3 report for the ${normalizedBucket} bucket for the last ${normalizedDays} days.`;
 }
 
 function formatMissingFieldLabel(field) {
