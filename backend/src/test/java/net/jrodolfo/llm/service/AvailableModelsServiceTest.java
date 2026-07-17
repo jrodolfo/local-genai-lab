@@ -12,6 +12,7 @@ import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.List;
 
@@ -32,7 +33,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of()),
                 () -> List.of("us.amazon.nova-pro-v1:0", "us.amazon.nova-lite-v1:0"),
-                null
+                null,
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("bedrock");
@@ -56,7 +58,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of()),
                 () -> { throw new ModelDiscoveryException("bedrock unavailable"); },
-                null
+                null,
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("bedrock");
@@ -78,7 +81,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of()),
                 () -> { throw new ModelDiscoveryException("bedrock unavailable"); },
-                null
+                null,
+                new MockEnvironment()
         );
 
         ModelDiscoveryException exception = assertThrows(ModelDiscoveryException.class, () -> service.getAvailableModels("bedrock"));
@@ -98,7 +102,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of("llama3:8b", "mistral:7b")),
                 null,
-                null
+                null,
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -120,7 +125,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of("gemma3:1b")),
                 null,
-                null
+                null,
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -142,7 +148,8 @@ class AvailableModelsServiceTest {
                 new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
                 new FakeOllamaClient(List.of()),
                 null,
-                null
+                null,
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -171,7 +178,8 @@ class AvailableModelsServiceTest {
                 ),
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
-                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct"))
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -201,7 +209,8 @@ class AvailableModelsServiceTest {
                 ),
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
-                new FakeHuggingFaceClient(List.of("Qwen/Qwen2.5-72B-Instruct"))
+                new FakeHuggingFaceClient(List.of("Qwen/Qwen2.5-72B-Instruct")),
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -230,7 +239,8 @@ class AvailableModelsServiceTest {
                 ),
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
-                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct"))
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -257,7 +267,8 @@ class AvailableModelsServiceTest {
                 ),
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
-                new FailingHuggingFaceClient()
+                new FailingHuggingFaceClient(),
+                new MockEnvironment()
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");

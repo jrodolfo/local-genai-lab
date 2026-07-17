@@ -10,6 +10,7 @@ import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import org.springframework.lang.Nullable;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class AvailableModelsService {
     private final OllamaClient ollamaClient;
     private final BedrockCatalogClient bedrockCatalogClient;
     private final HuggingFaceClient huggingFaceClient;
+    private final Environment environment;
 
     /**
      * Constructs a new AvailableModelsService.
@@ -59,7 +61,8 @@ public class AvailableModelsService {
             HuggingFaceProperties huggingFaceProperties,
             OllamaClient ollamaClient,
             @Nullable BedrockCatalogClient bedrockCatalogClient,
-            @Nullable HuggingFaceClient huggingFaceClient
+            @Nullable HuggingFaceClient huggingFaceClient,
+            Environment environment
     ) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.ollamaProperties = ollamaProperties;
@@ -68,6 +71,7 @@ public class AvailableModelsService {
         this.ollamaClient = ollamaClient;
         this.bedrockCatalogClient = bedrockCatalogClient;
         this.huggingFaceClient = huggingFaceClient;
+        this.environment = environment;
     }
 
     /**
@@ -89,6 +93,7 @@ public class AvailableModelsService {
                     "bedrock",
                     chatModelProviderRegistry.defaultProvider(),
                     availableProviders,
+                    resolveInstanceName(),
                     modelId,
                     models
             );
@@ -99,6 +104,7 @@ public class AvailableModelsService {
                     "huggingface",
                     chatModelProviderRegistry.defaultProvider(),
                     availableProviders,
+                    resolveInstanceName(),
                     resolveDefaultHuggingFaceModel(models),
                     models
             );
@@ -109,9 +115,14 @@ public class AvailableModelsService {
                 "ollama",
                 chatModelProviderRegistry.defaultProvider(),
                 availableProviders,
+                resolveInstanceName(),
                 resolveDefaultOllamaModel(models),
                 models
         );
+    }
+
+    private String resolveInstanceName() {
+        return normalizeModel(environment.getProperty("app.instance-name"));
     }
 
     /**

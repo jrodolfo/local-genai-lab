@@ -15,6 +15,8 @@ public record AvailableModelsResponse(
         String defaultProvider,
         @Schema(description = "Provider options the UI can offer for runtime switching.")
         List<String> providers,
+        @Schema(description = "Optional short environment label for this running app instance.", example = "AWS EC2")
+        String instanceName,
         @Schema(description = "Configured default model for the active provider, when applicable.", example = "llama3:8b")
         String defaultModel,
         @Schema(description = "Safe model options the UI can offer for the active provider.")

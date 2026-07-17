@@ -26,6 +26,7 @@ export function defaultRuntimeHandlers(overrides = {}) {
             provider: 'ollama',
             defaultProvider: 'ollama',
             providers: ['ollama'],
+            instanceName: 'Test Environment',
             defaultModel: 'llama3:8b',
             models: ['llama3:8b']
         })),

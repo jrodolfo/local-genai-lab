@@ -59,6 +59,37 @@
     padding-top: 0.1rem;
 }
 
+.app-nav__actions {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+.app-nav__instance {
+    align-items: center;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(15, 63, 127, 0.12);
+    border-radius: 999px;
+    color: var(--ink-700);
+    display: inline-flex;
+    gap: 0.45rem;
+    margin: 0;
+    padding: 0.38rem 0.72rem;
+    white-space: nowrap;
+}
+
+.app-nav__instance span {
+    font-size: 0.73rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.app-nav__instance strong {
+    color: var(--blue-900);
+    font-size: 0.82rem;
+}
+
 .app-nav__tabs button {
     background: rgba(255, 255, 255, 0.78);
     border: 1px solid var(--border-blue);
@@ -139,6 +170,11 @@
         padding-top: 0.35rem;
     }
 
+    .app-nav__actions {
+        flex-direction: column;
+        order: 2;
+    }
+
     .app-nav__credits {
         justify-content: center;
         order: 3;
@@ -151,5 +187,9 @@
 
     .app-nav__tabs {
         order: 2;
+    }
+
+    .app-nav__instance {
+        justify-content: center;
     }
 }

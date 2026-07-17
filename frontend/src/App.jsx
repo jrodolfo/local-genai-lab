@@ -3,6 +3,7 @@
  * It also checks if RAG is enabled in the backend on mount.
  */
 import {useEffect, useState} from 'react';
+import {listAvailableModels} from './api/modelApi';
 import {getRagStatus} from './api/ragApi';
 import {retryAsync} from './api/retry';
 import Home from './pages/Home';
@@ -17,12 +18,24 @@ import './App.css';
  */
 function App() {
     const [mode, setMode] = useState(null);
+    const [instanceName, setInstanceName] = useState('');
     const [ragEnabled, setRagEnabled] = useState(false);
     const [ragStatusLoaded, setRagStatusLoaded] = useState(false);
     const [ragStatusError, setRagStatusError] = useState(false);
 
     useEffect(() => {
         let active = true;
+        listAvailableModels()
+            .then((payload) => {
+                if (active) {
+                    setInstanceName(normalizeInstanceName(payload.instanceName));
+                }
+            })
+            .catch(() => {
+                if (active) {
+                    setInstanceName('');
+                }
+            });
         retryAsync(() => getRagStatus(), {retries: 8, delayMs: 500})
             .then((payload) => {
                 if (active) {
@@ -61,35 +74,43 @@ function App() {
                     </a>
                 </div>
                 <div className="app-nav__brand">Local GenAI Lab</div>
-                <div className="app-nav__tabs" role="tablist" aria-label="Application modes">
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={mode === 'rag'}
-                        aria-current={mode === 'rag' ? 'page' : undefined}
-                        aria-disabled={!ragEnabled}
-                        disabled={!ragStatusLoaded || mode === 'rag' || !ragEnabled}
-                        className={`${mode === 'rag' ? 'app-nav__tab--active' : ''} ${!ragEnabled ? 'app-nav__tab--disabled' : ''}`.trim()}
-                        onClick={() => {
-                            if (!ragEnabled) {
-                                return;
-                            }
-                            setMode('rag');
-                        }}
-                    >
-                        RAG
-                    </button>
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={mode === 'chat'}
-                        aria-current={mode === 'chat' ? 'page' : undefined}
-                        disabled={!ragStatusLoaded || mode === 'chat'}
-                        className={mode === 'chat' ? 'app-nav__tab--active' : ''}
-                        onClick={() => setMode('chat')}
-                    >
-                        Agent
-                    </button>
+                <div className="app-nav__actions">
+                    {instanceName ? (
+                        <p className="app-nav__instance" aria-label={`Instance: ${instanceName}`}>
+                            <span>Instance</span>
+                            <strong>{instanceName}</strong>
+                        </p>
+                    ) : null}
+                    <div className="app-nav__tabs" role="tablist" aria-label="Application modes">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === 'rag'}
+                            aria-current={mode === 'rag' ? 'page' : undefined}
+                            aria-disabled={!ragEnabled}
+                            disabled={!ragStatusLoaded || mode === 'rag' || !ragEnabled}
+                            className={`${mode === 'rag' ? 'app-nav__tab--active' : ''} ${!ragEnabled ? 'app-nav__tab--disabled' : ''}`.trim()}
+                            onClick={() => {
+                                if (!ragEnabled) {
+                                    return;
+                                }
+                                setMode('rag');
+                            }}
+                        >
+                            RAG
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === 'chat'}
+                            aria-current={mode === 'chat' ? 'page' : undefined}
+                            disabled={!ragStatusLoaded || mode === 'chat'}
+                            className={mode === 'chat' ? 'app-nav__tab--active' : ''}
+                            onClick={() => setMode('chat')}
+                        >
+                            Agent
+                        </button>
+                    </div>
                 </div>
             </header>
             {ragStatusLoaded && !ragEnabled && ragStatusError ? (
@@ -107,6 +128,10 @@ function App() {
             )}
         </div>
     );
+}
+
+function normalizeInstanceName(value) {
+    return typeof value === 'string' ? value.trim() : '';
 }
 
 export default App;

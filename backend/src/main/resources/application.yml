@@ -20,6 +20,7 @@ management:
       enabled: false
 
 app:
+  instance-name: ${APP_INSTANCE_NAME:}
   model:
     provider: ${APP_MODEL_PROVIDER:ollama}
   tools:

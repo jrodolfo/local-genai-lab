@@ -38,6 +38,7 @@ class ModelControllerTest {
                 .andExpect(jsonPath("$.defaultProvider").value("ollama"))
                 .andExpect(jsonPath("$.providers[0]").value("bedrock"))
                 .andExpect(jsonPath("$.providers[1]").value("ollama"))
+                .andExpect(jsonPath("$.instanceName").value("AWS EC2"))
                 .andExpect(jsonPath("$.defaultModel").value("llama3:8b"))
                 .andExpect(jsonPath("$.models[0]").value("llama3:8b"))
                 .andExpect(jsonPath("$.models[1]").value("mistral:7b"));
@@ -90,12 +91,12 @@ class ModelControllerTest {
 
     private static final class FakeAvailableModelsService extends AvailableModelsService {
         private FakeAvailableModelsService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null);
         }
 
         @Override
         public AvailableModelsResponse getAvailableModels(String provider) {
-            return new AvailableModelsResponse("ollama", "ollama", List.of("bedrock", "ollama"), "llama3:8b", List.of("llama3:8b", "mistral:7b"));
+            return new AvailableModelsResponse("ollama", "ollama", List.of("bedrock", "ollama"), "AWS EC2", "llama3:8b", List.of("llama3:8b", "mistral:7b"));
         }
     }
 
@@ -112,7 +113,7 @@ class ModelControllerTest {
 
     private static final class ErrorAvailableModelsService extends AvailableModelsService {
         private ErrorAvailableModelsService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null);
         }
 
         @Override
@@ -123,7 +124,7 @@ class ModelControllerTest {
 
     private static final class BedrockErrorAvailableModelsService extends AvailableModelsService {
         private BedrockErrorAvailableModelsService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null);
         }
 
         @Override
@@ -134,7 +135,7 @@ class ModelControllerTest {
 
     private static final class InvalidProviderAvailableModelsService extends AvailableModelsService {
         private InvalidProviderAvailableModelsService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null);
         }
 
         @Override

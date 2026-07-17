@@ -30,6 +30,7 @@ describe('App mode navigation', () => {
                 provider: 'ollama',
                 defaultProvider: 'ollama',
                 providers: ['ollama'],
+                instanceName: 'AWS EC2',
                 defaultModel: 'llama3:8b',
                 models: ['llama3:8b']
             })),
@@ -56,6 +57,7 @@ describe('App mode navigation', () => {
             'href',
             'https://github.com/jrodolfo/local-genai-lab'
         );
+        expect(screen.getByLabelText(/instance: aws ec2/i)).toBeInTheDocument();
         expect(agentTab).toBeDisabled();
         expect(agentTab).toHaveAttribute('aria-selected', 'true');
         expect(ragTab).toBeDisabled();
@@ -80,6 +82,7 @@ describe('App mode navigation', () => {
                     provider: provider || 'ollama',
                     defaultProvider: 'ollama',
                     providers: ['ollama'],
+                    instanceName: 'AWS EC2',
                     defaultModel: 'llama3:8b',
                     models: ['llama3:8b']
                 });
@@ -133,6 +136,7 @@ describe('App mode navigation', () => {
                 provider: 'ollama',
                 defaultProvider: 'ollama',
                 providers: ['ollama'],
+                instanceName: 'AWS EC2',
                 defaultModel: 'llama3:8b',
                 models: ['llama3:8b']
             })),
@@ -162,6 +166,7 @@ describe('App mode navigation', () => {
                 provider: 'ollama',
                 defaultProvider: 'ollama',
                 providers: ['ollama'],
+                instanceName: 'AWS EC2',
                 defaultModel: 'llama3:8b',
                 models: ['llama3:8b']
             })),

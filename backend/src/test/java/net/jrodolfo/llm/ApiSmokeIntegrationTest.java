@@ -88,6 +88,7 @@ class ApiSmokeIntegrationTest {
                         "ollama",
                         "ollama",
                         List.of("ollama", "bedrock"),
+                        "AWS EC2",
                         "llama3:8b",
                         List.of("llama3:8b", "mistral:7b")
                 );
@@ -358,7 +359,7 @@ class ApiSmokeIntegrationTest {
         private AvailableModelsResponse response;
 
         FakeAvailableModelsService() {
-            super(null, null, null, null, null, null, null);
+            super(null, null, null, null, null, null, null, null);
         }
 
         @Override
