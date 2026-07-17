@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: local-genai-lab-backend
+    runtime: docker
+    dockerContext: .
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: APP_MODEL_PROVIDER
+        value: huggingface
+      - key: HUGGINGFACE_API_TOKEN
+        sync: false
+      - key: HUGGINGFACE_BASE_URL
+        value: https://router.huggingface.co/v1/chat/completions
+      - key: HUGGINGFACE_DEFAULT_MODEL
+        value: meta-llama/Llama-3.1-8B-Instruct
+      - key: HUGGINGFACE_MODELS
+        value: meta-llama/Llama-3.1-8B-Instruct,Qwen/Qwen2.5-72B-Instruct,mistralai/Mistral-7B-Instruct-v0.3
+      - key: MCP_ENABLED
+        value: "false"
+      - key: RAG_ENABLED
+        value: "true"
+      - key: RAG_RETRIEVAL_MODE
+        value: lexical
+      - key: RAG_VECTOR_STORE
+        value: in-memory
+      - key: APP_CORS_ALLOWED_ORIGINS
+        value: "*"
