@@ -109,7 +109,7 @@ public class AvailableModelsService {
                 "ollama",
                 chatModelProviderRegistry.defaultProvider(),
                 availableProviders,
-                normalizeModel(ollamaProperties.defaultModel()),
+                resolveDefaultOllamaModel(models),
                 models
         );
     }
@@ -184,6 +184,23 @@ public class AvailableModelsService {
             return models.getFirst();
         }
         return configuredModelId;
+    }
+
+    /**
+     * Resolves the default model for Ollama from the installed model list.
+     *
+     * @param models the installed Ollama models
+     * @return the configured default when installed, otherwise the first installed model, or null when none exist
+     */
+    private String resolveDefaultOllamaModel(List<String> models) {
+        String configuredModelId = normalizeModel(ollamaProperties.defaultModel());
+        if (configuredModelId != null && models.contains(configuredModelId)) {
+            return configuredModelId;
+        }
+        if (!models.isEmpty()) {
+            return models.getFirst();
+        }
+        return null;
     }
 
     /**

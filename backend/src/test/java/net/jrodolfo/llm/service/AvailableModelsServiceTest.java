@@ -109,6 +109,50 @@ class AvailableModelsServiceTest {
     }
 
     @Test
+    void ollamaFallsBackToFirstInstalledModelWhenConfiguredDefaultIsUnavailable() {
+        AvailableModelsService service = new AvailableModelsService(
+                new ChatModelProviderRegistry(new AppModelProperties("ollama"), java.util.Map.of(
+                        "ollama", new FakeProvider(),
+                        "bedrock", new FakeProvider()
+                )),
+                new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
+                new BedrockProperties("us-east-2", "us.amazon.nova-pro-v1:0"),
+                new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
+                new FakeOllamaClient(List.of("gemma3:1b")),
+                null,
+                null
+        );
+
+        AvailableModelsResponse response = service.getAvailableModels("ollama");
+
+        assertEquals("ollama", response.provider());
+        assertEquals("gemma3:1b", response.defaultModel());
+        assertEquals(List.of("gemma3:1b"), response.models());
+    }
+
+    @Test
+    void ollamaReturnsNoDefaultModelWhenNoInstalledModelsExist() {
+        AvailableModelsService service = new AvailableModelsService(
+                new ChatModelProviderRegistry(new AppModelProperties("ollama"), java.util.Map.of(
+                        "ollama", new FakeProvider(),
+                        "bedrock", new FakeProvider()
+                )),
+                new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
+                new BedrockProperties("us-east-2", "us.amazon.nova-pro-v1:0"),
+                new HuggingFaceProperties("https://router.huggingface.co/v1/chat/completions", "token", "meta-llama/Llama-3.1-8B-Instruct", List.of("meta-llama/Llama-3.1-8B-Instruct"), 10, 60),
+                new FakeOllamaClient(List.of()),
+                null,
+                null
+        );
+
+        AvailableModelsResponse response = service.getAvailableModels("ollama");
+
+        assertEquals("ollama", response.provider());
+        assertEquals(null, response.defaultModel());
+        assertEquals(List.of(), response.models());
+    }
+
+    @Test
     void huggingFaceReturnsOnlyUsableConfiguredModels() {
         AvailableModelsService service = new AvailableModelsService(
                 new ChatModelProviderRegistry(new AppModelProperties("huggingface"), java.util.Map.of(
