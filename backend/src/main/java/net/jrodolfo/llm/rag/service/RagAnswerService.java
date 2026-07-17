@@ -8,6 +8,7 @@ import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.provider.ChatModelProvider;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import net.jrodolfo.llm.provider.ProviderPrompt;
+import net.jrodolfo.llm.util.TimeUtils;
 import net.jrodolfo.llm.rag.dto.RagComparisonResponse;
 import net.jrodolfo.llm.rag.dto.RagComparisonTargetResponse;
 import net.jrodolfo.llm.rag.dto.RagQueryResponse;
@@ -95,7 +96,7 @@ public class RagAnswerService {
         long requestStartedAt = System.nanoTime();
         long retrievalStartedAt = System.nanoTime();
         List<RagMatch> matches = ragRetrievalService.retrieve(question, target);
-        long retrievalDurationMs = elapsedMillis(retrievalStartedAt);
+        long retrievalDurationMs = TimeUtils.elapsedMillis(retrievalStartedAt);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
         }
@@ -113,7 +114,7 @@ public class RagAnswerService {
                 session.sessionId(),
                 null
         );
-        long providerDurationMs = elapsedMillis(providerStartedAt);
+        long providerDurationMs = TimeUtils.elapsedMillis(providerStartedAt);
 
         List<RagSourceChunkResponse> sources = matches.stream()
                 .map(match -> new RagSourceChunkResponse(
@@ -130,7 +131,7 @@ public class RagAnswerService {
         RagTimingMetadata ragTiming = new RagTimingMetadata(
                 retrievalDurationMs,
                 providerDurationMs,
-                elapsedMillis(requestStartedAt)
+                TimeUtils.elapsedMillis(requestStartedAt)
         );
         ChatSession persistedSession = ragSessionService.finishTurn(
                 session,
@@ -202,7 +203,7 @@ public class RagAnswerService {
         long requestStartedAt = System.nanoTime();
         long retrievalStartedAt = System.nanoTime();
         List<RagMatch> matches = ragRetrievalService.retrieve(question, target);
-        long retrievalDurationMs = elapsedMillis(retrievalStartedAt);
+        long retrievalDurationMs = TimeUtils.elapsedMillis(retrievalStartedAt);
         if (matches.isEmpty()) {
             throw new IllegalStateException("No relevant source chunks were found in the RAG corpus.");
         }
@@ -219,13 +220,13 @@ public class RagAnswerService {
                 null,
                 null
         );
-        long providerDurationMs = elapsedMillis(providerStartedAt);
+        long providerDurationMs = TimeUtils.elapsedMillis(providerStartedAt);
 
         RagRetrievalMetadata ragRetrieval = ragRetrievalService.activeMetadata(target);
         RagTimingMetadata ragTiming = new RagTimingMetadata(
                 retrievalDurationMs,
                 providerDurationMs,
-                elapsedMillis(requestStartedAt)
+                TimeUtils.elapsedMillis(requestStartedAt)
         );
 
         return new RagComparisonTargetResponse(
@@ -320,15 +321,5 @@ public class RagAnswerService {
      */
     private double roundScore(double value) {
         return Math.round(value * 1000.0d) / 1000.0d;
-    }
-
-    /**
-     * Calculates elapsed milliseconds from a monotonic clock value.
-     *
-     * @param startedAtNanos start time from {@link System#nanoTime()}
-     * @return elapsed milliseconds, never negative
-     */
-    private long elapsedMillis(long startedAtNanos) {
-        return Math.max(0L, (System.nanoTime() - startedAtNanos) / 1_000_000L);
     }
 }

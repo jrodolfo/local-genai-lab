@@ -76,42 +76,4 @@ public class ModelController {
         return providerStatusService.getProviderStatus(provider);
     }
 
-    /**
-     * Exception handler for OllamaClientException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(OllamaClientException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleOllamaClientException(OllamaClientException ex) {
-        log.warn("Ollama model discovery failed: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for ModelDiscoveryException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(ModelDiscoveryException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleModelDiscoveryException(ModelDiscoveryException ex) {
-        log.warn("Model discovery failed: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(Map.of("error", ex.getMessage()));
-    }
-
-    /**
-     * Exception handler for InvalidProviderException.
-     *
-     * @param ex the exception.
-     * @return a ResponseEntity with error details.
-     */
-    @ExceptionHandler(InvalidProviderException.class)
-    @Operation(hidden = true)
-    public ResponseEntity<Map<String, String>> handleInvalidProviderException(InvalidProviderException ex) {
-        log.debug("Invalid provider requested: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
-    }
 }

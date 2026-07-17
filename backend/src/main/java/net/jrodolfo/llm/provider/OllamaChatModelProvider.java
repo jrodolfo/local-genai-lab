@@ -5,6 +5,7 @@ import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.ModelProviderMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import net.jrodolfo.llm.util.TimeUtils;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -43,7 +44,7 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         String response = prompt.hasMessages()
                 ? ollamaClient.chat(prompt.messages(), resolvedModel)
                 : ollamaClient.generate(prompt.prompt().trim(), resolvedModel);
-        long durationMs = elapsedMillis(startedAt);
+        long durationMs = TimeUtils.elapsedMillis(startedAt);
         return new ChatResponse(
                 response,
                 resolvedModel,
@@ -67,7 +68,7 @@ public class OllamaChatModelProvider implements ChatModelProvider {
         } else {
             ollamaClient.streamGenerate(prompt.prompt().trim(), resolvedModel, tokenConsumer);
         }
-        long durationMs = elapsedMillis(startedAt);
+        long durationMs = TimeUtils.elapsedMillis(startedAt);
         return new StreamingChatResult(
                 CompletableFuture.completedFuture(
                         new ModelProviderMetadata("ollama", resolvedModel, null, null, null, null, durationMs, null, null, null)
@@ -83,15 +84,5 @@ public class OllamaChatModelProvider implements ChatModelProvider {
     @Override
     public String resolveModel(String model) {
         return ollamaClient.resolveModel(model);
-    }
-
-    /**
-     * Calculates the elapsed time in milliseconds since the given start time in nanoseconds.
-     *
-     * @param startedAt the start time in nanoseconds (from {@link System#nanoTime()})
-     * @return the elapsed time in milliseconds
-     */
-    private long elapsedMillis(long startedAt) {
-        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt);
     }
 }

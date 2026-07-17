@@ -47,6 +47,7 @@ class ArtifactControllerTest {
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new ArtifactController(chatArtifactService))
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
     }

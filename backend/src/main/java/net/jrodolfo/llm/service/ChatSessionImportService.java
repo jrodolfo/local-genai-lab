@@ -10,6 +10,8 @@ import net.jrodolfo.llm.model.PendingToolCall;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import net.jrodolfo.llm.util.StringUtils;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -80,7 +82,7 @@ public class ChatSessionImportService {
 
         Instant createdAt = imported.createdAt() != null ? imported.createdAt() : messages.getFirst().timestamp();
         Instant updatedAt = imported.updatedAt() != null ? imported.updatedAt() : messages.getLast().timestamp();
-        String model = hasText(imported.model()) ? imported.model().trim() : "llama3:8b";
+        String model = StringUtils.hasText(imported.model()) ? imported.model().trim() : "llama3:8b";
 
         ChatSession session = new ChatSession(
                 storedSessionId,
@@ -91,7 +93,7 @@ public class ChatSessionImportService {
                 toPendingToolCall(imported.pendingTool()),
                 imported.title(),
                 imported.summary(),
-                hasText(imported.mode()) ? imported.mode().trim() : "chat"
+                StringUtils.hasText(imported.mode()) ? imported.mode().trim() : "chat"
         );
 
         ChatSession saved = sessionStore.save(chatSessionMetadataService.enrich(session));
@@ -111,7 +113,7 @@ public class ChatSessionImportService {
      * @return a valid session ID
      */
     private String normalizeImportedSessionId(String importedSessionId) {
-        if (!hasText(importedSessionId)) {
+        if (!StringUtils.hasText(importedSessionId)) {
             return UUID.randomUUID().toString();
         }
         if (!sessionIdPolicy.isValid(importedSessionId)) {
@@ -206,7 +208,7 @@ public class ChatSessionImportService {
      * @return the normalized role name
      */
     private String normalizeRole(String role) {
-        if (!hasText(role)) {
+        if (!StringUtils.hasText(role)) {
             throw new ChatSessionImportException("Imported session message role must not be blank.");
         }
         String normalized = role.trim().toLowerCase(Locale.ROOT);
@@ -223,16 +225,7 @@ public class ChatSessionImportService {
      * @return the normalized tool name
      */
     private String normalizeToolName(String toolName) {
-        return hasText(toolName) ? toolName.trim() : "";
+        return StringUtils.hasText(toolName) ? toolName.trim() : "";
     }
 
-    /**
-     * Checks if a string has text (not null and not blank).
-     *
-     * @param value the string value
-     * @return true if it has text, false otherwise
-     */
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
 }

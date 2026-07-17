@@ -2,6 +2,7 @@ package net.jrodolfo.llm.service;
 
 import net.jrodolfo.llm.model.ChatSession;
 import net.jrodolfo.llm.model.ChatSessionMessage;
+import net.jrodolfo.llm.util.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,8 +23,8 @@ public class ChatSessionMetadataService {
      * @return the enriched chat session
      */
     public ChatSession enrich(ChatSession session) {
-        String title = hasText(session.title()) ? session.title() : generateTitle(session.messages());
-        String summary = hasText(session.summary()) ? session.summary() : generateSummary(session.messages(), title);
+        String title = StringUtils.hasText(session.title()) ? session.title() : generateTitle(session.messages());
+        String summary = StringUtils.hasText(session.summary()) ? session.summary() : generateSummary(session.messages(), title);
         return session.withMetadata(title, summary);
     }
 
@@ -34,7 +35,7 @@ public class ChatSessionMetadataService {
      * @return the title or fallback
      */
     public String fallbackTitle(ChatSession session) {
-        return hasText(session.title()) ? session.title() : generateTitle(session.messages());
+        return StringUtils.hasText(session.title()) ? session.title() : generateTitle(session.messages());
     }
 
     /**
@@ -44,7 +45,7 @@ public class ChatSessionMetadataService {
      * @return the summary or fallback
      */
     public String fallbackSummary(ChatSession session) {
-        return hasText(session.summary()) ? session.summary() : generateSummary(session.messages(), fallbackTitle(session));
+        return StringUtils.hasText(session.summary()) ? session.summary() : generateSummary(session.messages(), fallbackTitle(session));
     }
 
     /**
@@ -58,7 +59,7 @@ public class ChatSessionMetadataService {
                 .filter(message -> "user".equals(message.role()))
                 .map(ChatSessionMessage::content)
                 .map(this::normalizeTitle)
-                .filter(this::hasText)
+                .filter(StringUtils::hasText)
                 .findFirst()
                 .orElse("New chat");
     }
@@ -80,7 +81,7 @@ public class ChatSessionMetadataService {
                 .reduce((first, second) -> second)
                 .map(ChatSessionMessage::content)
                 .map(this::normalizeSummary)
-                .filter(this::hasText)
+                .filter(StringUtils::hasText)
                 .orElse(null);
 
         if (latestAssistant != null) {
@@ -98,7 +99,7 @@ public class ChatSessionMetadataService {
      */
     private String normalizeTitle(String content) {
         String normalized = normalizeWhitespace(content);
-        if (!hasText(normalized)) {
+        if (!StringUtils.hasText(normalized)) {
             return "New chat";
         }
         if (normalized.length() <= TITLE_MAX_LENGTH) {
@@ -115,7 +116,7 @@ public class ChatSessionMetadataService {
      */
     private String normalizeSummary(String content) {
         String normalized = normalizeWhitespace(content);
-        if (!hasText(normalized)) {
+        if (!StringUtils.hasText(normalized)) {
             return "";
         }
         if (normalized.length() <= SUMMARY_MAX_LENGTH) {
@@ -134,13 +135,4 @@ public class ChatSessionMetadataService {
         return content == null ? "" : content.trim().replaceAll("\\s+", " ");
     }
 
-    /**
-     * Checks if a string has text (not null and not blank).
-     *
-     * @param value the string value
-     * @return true if it has text, false otherwise
-     */
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
 }

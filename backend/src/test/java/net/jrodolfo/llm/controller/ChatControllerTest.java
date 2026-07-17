@@ -80,7 +80,8 @@ class ChatControllerTest {
     void invalidProviderIsReturnedAsBadRequest() {
         ChatController controller = new ChatController(new TestOrchestrator(), new ObjectMapper(), Runnable::run, DEFAULT_CHAT_PROPERTIES);
 
-        ResponseEntity<Map<String, String>> response = controller.handleInvalidProvider(new InvalidProviderException("unsupported provider"));
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        ResponseEntity<Map<String, String>> response = handler.handleInvalidProvider(new InvalidProviderException("unsupported provider"));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("unsupported provider", response.getBody().get("error"));

@@ -1,5 +1,6 @@
 package net.jrodolfo.llm.config;
 
+import net.jrodolfo.llm.util.PathUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.nio.file.Path;
@@ -42,43 +43,6 @@ public record McpProperties(
      * @return the resolved {@link Path}
      */
     private Path resolveAgainstProjectRoot(String configuredPath) {
-        if (configuredPath == null || configuredPath.isBlank()) {
-            return findProjectRoot();
-        }
-
-        Path candidate = Path.of(configuredPath);
-        if (candidate.isAbsolute()) {
-            return candidate.toAbsolutePath().normalize();
-        }
-        return findProjectRoot().resolve(candidate).normalize();
-    }
-
-    /**
-     * Traverses up the directory tree to find the project root directory.
-     * The root is identified by the presence of certain markers like backend/pom.xml.
-     *
-     * @return the {@link Path} to the project root
-     */
-    private Path findProjectRoot() {
-        Path current = Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        while (current != null) {
-            if (looksLikeProjectRoot(current)) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        return Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-    }
-
-    /**
-     * Checks if a candidate directory looks like the project root based on expected files.
-     *
-     * @param candidate the directory to check
-     * @return true if the directory contains project markers
-     */
-    private boolean looksLikeProjectRoot(Path candidate) {
-        return candidate.resolve("backend/pom.xml").toFile().isFile()
-                && candidate.resolve("frontend/package.json").toFile().isFile()
-                && candidate.resolve("README.md").toFile().isFile();
+        return PathUtils.resolveAgainstProjectRoot(configuredPath);
     }
 }

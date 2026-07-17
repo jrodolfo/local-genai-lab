@@ -7,6 +7,7 @@ import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.dto.ChatResponse;
 import net.jrodolfo.llm.dto.ChatToolMetadata;
 import net.jrodolfo.llm.dto.PendingToolCallResponse;
+import net.jrodolfo.llm.util.StringUtils;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -71,9 +72,9 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
      */
     @Override
     public String resolveModel(String model) {
-        String resolvedModel = normalizeModel(model);
+        String resolvedModel = StringUtils.normalizeModel(model);
         if (resolvedModel == null) {
-            resolvedModel = normalizeModel(huggingFaceProperties.defaultModel());
+            resolvedModel = StringUtils.normalizeModel(huggingFaceProperties.defaultModel());
         }
         if (resolvedModel == null) {
             throw new ModelProviderException(
@@ -116,29 +117,16 @@ public class HuggingFaceChatModelProvider implements ChatModelProvider {
         LinkedHashSet<String> models = new LinkedHashSet<>();
         if (huggingFaceProperties.models() != null) {
             for (String model : huggingFaceProperties.models()) {
-                String normalized = normalizeModel(model);
+                String normalized = StringUtils.normalizeModel(model);
                 if (normalized != null) {
                     models.add(normalized);
                 }
             }
         }
-        String defaultModel = normalizeModel(huggingFaceProperties.defaultModel());
+        String defaultModel = StringUtils.normalizeModel(huggingFaceProperties.defaultModel());
         if (defaultModel != null) {
             models.add(defaultModel);
         }
         return models;
-    }
-
-    /**
-     * Normalizes a model identifier by trimming it.
-     *
-     * @param model the raw model identifier
-     * @return the normalized model identifier, or null if it was null or blank
-     */
-    private String normalizeModel(String model) {
-        if (model == null || model.isBlank()) {
-            return null;
-        }
-        return model.trim();
     }
 }

@@ -1,5 +1,6 @@
 package net.jrodolfo.llm.rag.config;
 
+import net.jrodolfo.llm.util.PathUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
@@ -138,36 +139,7 @@ public record RagProperties(
         if (candidate.isAbsolute()) {
             return candidate.toAbsolutePath().normalize();
         }
-        return findProjectRoot().resolve(candidate).normalize();
-    }
-
-    /**
-     * Finds the project root directory by searching upwards from the current working directory.
-     * Looks for markers like 'backend/pom.xml' and 'frontend/package.json'.
-     *
-     * @return The Path to the project root directory, or the current directory if not found.
-     */
-    private Path findProjectRoot() {
-        Path current = Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-        while (current != null) {
-            if (looksLikeProjectRoot(current)) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        return Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
-    }
-
-    /**
-     * Checks if the given directory looks like the project root based on its contents.
-     *
-     * @param candidate The directory to check.
-     * @return true if the directory contains the expected project structure, false otherwise.
-     */
-    private boolean looksLikeProjectRoot(Path candidate) {
-        return candidate.resolve("backend/pom.xml").toFile().isFile()
-                && candidate.resolve("frontend/package.json").toFile().isFile()
-                && candidate.resolve("README.md").toFile().isFile();
+        return PathUtils.resolveAgainstProjectRoot(corpusRoot);
     }
 
     private static boolean isBlank(String value) {

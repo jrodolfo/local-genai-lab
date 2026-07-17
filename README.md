@@ -269,7 +269,7 @@ Project governance and release references:
 ## Contact
 
 - Software Developer: Rod Oliveira
-- GitHub: https://github.com/jrodolfo
+- GitHub: https://github.com/hamzaMissewi
 - Webpage: https://jrodolfo.net
 
 ## License
