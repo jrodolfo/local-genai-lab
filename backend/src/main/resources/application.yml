@@ -3,7 +3,7 @@ spring:
     name: local-genai-lab-backend
 
 server:
-  port: 8081
+  port: 8080
 
 management:
   endpoints:
