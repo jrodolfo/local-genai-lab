@@ -15,6 +15,8 @@ Local-first GenAI lab for building and testing tool-assisted AI workflows.
 
 This project goes beyond a chatbot interface by combining a React frontend, a Spring Boot orchestration backend, local and remote model providers, persistent session memory, MCP-backed AWS tooling, and a RAG workspace over the project documentation.
 
+The goal of this project is to explore and demonstrate selected generative AI engineering concepts through a cohesive Java application, rather than to build a feature-complete AI platform.
+
 [![Local GenAI Lab Agent workspace](./docs/images/local-genai-lab-agent.webp)](./docs/images/local-genai-lab-agent.webp)
 
 ## Fastest Path
