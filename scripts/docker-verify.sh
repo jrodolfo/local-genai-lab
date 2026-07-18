@@ -4,8 +4,9 @@
 #
 # Purpose:
 #   Runs the full Docker verification workflow for local-genai-lab. This is not
-#   read-only: it stops host-run processes, restarts the Docker Compose stack,
-#   prints Docker status, and runs the Docker smoke check.
+#   read-only after Docker preflight passes: it stops host-run processes,
+#   restarts the Docker Compose stack, prints Docker status, and runs the Docker
+#   smoke check.
 #
 # Usage:
 #   ./scripts/docker-verify.sh
@@ -16,8 +17,9 @@
 #   - curl
 #
 # Expected Output:
-#   Output from stop.sh, docker-restart.sh, docker-status.sh, and
-#   docker-check.sh, plus a final success message when all steps pass.
+#   Output from docker-sanity-check.sh, stop.sh, docker-restart.sh,
+#   docker-status.sh, and docker-check.sh, plus a final success message when all
+#   steps pass.
 #
 # Exit Behavior:
 #   Exits with the first non-zero status from any step.
@@ -29,12 +31,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 printf '%s\n' \
   'Docker verification will:' \
-  '  1. stop host-run backend/frontend processes' \
-  '  2. restart the Docker Compose stack' \
-  '  3. show Docker Compose status and readiness' \
-  '  4. run Docker smoke checks' \
+  '  1. verify Docker daemon and Compose availability' \
+  '  2. stop host-run backend/frontend processes' \
+  '  3. restart the Docker Compose stack' \
+  '  4. show Docker Compose status and readiness' \
+  '  5. run Docker smoke checks' \
   ''
 
+"${SCRIPT_DIR}/docker-sanity-check.sh"
 "${SCRIPT_DIR}/stop.sh" --all
 "${SCRIPT_DIR}/docker-restart.sh"
 "${SCRIPT_DIR}/docker-status.sh"

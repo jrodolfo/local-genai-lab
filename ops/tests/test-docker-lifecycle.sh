@@ -249,7 +249,7 @@ write_mock_verify_scripts() {
   mkdir -p "${bin_dir}"
   cp "${REPO_ROOT}/scripts/docker-verify.sh" "${bin_dir}/docker-verify.sh"
 
-  for script_name in stop.sh docker-restart.sh docker-status.sh docker-check.sh; do
+  for script_name in docker-sanity-check.sh stop.sh docker-restart.sh docker-status.sh docker-check.sh; do
     cat >"${bin_dir}/${script_name}" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
@@ -1102,10 +1102,11 @@ test_docker_verify_runs_full_workflow_in_order() {
   write_mock_verify_scripts "${tmp_dir}"
 
   output="$(run_verify_script "${tmp_dir}")"
-  expected_log=$'stop.sh --all\ndocker-restart.sh\ndocker-status.sh\ndocker-check.sh'
+  expected_log=$'docker-sanity-check.sh\nstop.sh --all\ndocker-restart.sh\ndocker-status.sh\ndocker-check.sh'
   actual_log="$(cat "${tmp_dir}/verify.log")"
 
   assert_contains "${output}" 'Docker verification will:'
+  assert_contains "${output}" 'verify Docker daemon and Compose availability'
   assert_contains "${output}" 'stop host-run backend/frontend processes'
   assert_contains "${output}" 'restart the Docker Compose stack'
   assert_contains "${output}" 'run Docker smoke checks'
