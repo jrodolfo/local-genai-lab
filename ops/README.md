@@ -98,7 +98,7 @@ make test-ops
 
 What does not belong in `ops/`:
 
-- human-facing lifecycle commands
+- lifecycle commands developers run directly
 - MCP tool scripts
 - AWS audit/report generators
 - MCP-facing report artifacts

@@ -64,7 +64,7 @@ Each command writes full output to `/tmp/local-genai-lab-*.txt`.
 | `make build` | Build backend, frontend, and MCP artifacts without starting the app. | Java, Node, npm dependencies. | Not a direct CI target. |
 | `make check-app` | Live backend/frontend smoke check. | App already running. | Not a CI target. |
 | `make clean-ds-store` | Remove local macOS `.DS_Store` files. | Local workspace only. | Not a CI target. |
-| `make local-verify` | Human-facing verification wrapper with toolchain preflight and `/tmp` logs. | Java 21, Maven 3.9+, Node 20.19+, npm, make. | Not a CI target. |
+| `make local-verify` | Verification wrapper developers run directly, with toolchain preflight and `/tmp` logs. | Java 21, Maven 3.9+, Node 20.19+, npm, make. | Not a CI target. |
 | `make test` | Normal local pre-commit suite for ops, backend, and frontend tests. | Java 21, Node 20.19+ dependencies installed as needed. | Covered through separate CI jobs. |
 | `make verify` | Broader CI-aligned local verification. | Same as `make test`, plus MCP dependencies and script tooling. | Mirrors the CI job set locally. |
 | `make test-ops` | Operational shell helper tests. | Bash and standard shell utilities. | CI `ops` job. |
