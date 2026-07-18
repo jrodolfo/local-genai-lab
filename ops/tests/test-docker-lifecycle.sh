@@ -144,8 +144,7 @@ if [ "${1:-}" = "exec" ]; then
   fi
   if [[ "${command_text}" == *'aws sts get-caller-identity'* ]]; then
     if [ "${MOCK_DOCKER_STS:-true}" = "true" ]; then
-      printf '%s\n' 'account: 123456789012'
-      printf '%s\n' 'arn: arn:aws:iam::123456789012:role/mock-agent'
+      printf '123456789012\tarn:aws:iam::123456789012:role/mock-agent\n'
       exit 0
     fi
     printf '%s\n' 'mock sts failure' >&2
@@ -854,10 +853,15 @@ EOF
   assert_contains "${output}" 'checking: AWS CLI and jq in backend... pass'
   assert_contains "${output}" 'checking: AWS STS identity... pass'
   assert_contains "${output}" 'account: 123456789012'
+  assert_contains "${output}" 'arn: arn:aws:iam::123456789012:role/mock-agent'
   assert_contains "${output}" 'Docker AWS preflight passed.'
   assert_file_contains "${tmp_dir}/docker.log" 'inspect --format {{.State.Running}} llm-backend'
   assert_file_contains "${tmp_dir}/docker.log" 'exec llm-backend sh -lc test -d /root/.aws'
-  assert_file_contains "${tmp_dir}/docker.log" 'exec llm-backend sh -lc aws sts get-caller-identity'
+  assert_file_contains "${tmp_dir}/docker.log" 'exec llm-backend aws sts get-caller-identity --query [Account, Arn] --output text'
+  if grep -F 'jq -r' "${tmp_dir}/docker.log" >/dev/null; then
+    printf '%s\n' 'expected STS identity formatting not to use jq -r' >&2
+    exit 1
+  fi
   rm -rf "${tmp_dir}"
 }
 

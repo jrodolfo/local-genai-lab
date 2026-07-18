@@ -94,10 +94,18 @@ check \
   docker exec llm-backend sh -lc 'command -v aws >/dev/null && command -v jq >/dev/null'
 
 printf 'checking: AWS STS identity... '
-if identity="$(docker exec llm-backend sh -lc 'aws sts get-caller-identity --output json | jq -r '"'"'"account: \(.Account)\narn: \(.Arn)'"'"'' 2>/dev/null)"; then
-  printf '%s\n' 'pass'
-  printf '%s\n' 'AWS authentication is ready:'
-  printf '%s\n' "${identity}"
+if identity="$(docker exec llm-backend aws sts get-caller-identity --query '[Account, Arn]' --output text 2>/dev/null)"; then
+  IFS=$'\t' read -r account arn <<<"${identity}"
+  if [ -n "${account}" ] && [ -n "${arn}" ]; then
+    printf '%s\n' 'pass'
+    printf '%s\n' 'AWS authentication is ready:'
+    printf 'account: %s\n' "${account}"
+    printf 'arn: %s\n' "${arn}"
+  else
+    printf '%s\n' 'fail'
+    printf '%s\n' 'Error: AWS STS returned an incomplete identity in llm-backend.' >&2
+    exit 1
+  fi
 else
   printf '%s\n' 'fail'
   printf '%s\n' \
