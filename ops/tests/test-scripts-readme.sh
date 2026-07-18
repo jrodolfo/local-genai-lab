@@ -29,6 +29,7 @@ contents="$(cat "${README_PATH}")"
 
 assert_contains "${contents}" '## Script Relationships'
 assert_contains "${contents}" '```mermaid'
+assert_contains "${contents}" 'not a script named `verify.sh`'
 assert_contains "${contents}" 'DockerGo --> DockerRestart'
 assert_contains "${contents}" 'DockerGo --> DockerCheck'
 assert_contains "${contents}" 'DockerGo --> DockerAws'

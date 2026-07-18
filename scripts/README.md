@@ -85,12 +85,17 @@ Host-run app lifecycle:
 ./scripts/local-verify.sh
 ```
 
-`local-verify.sh` is the local verification wrapper developers run directly on Linux or
-EC2 development hosts. It prints the detected Java, Maven, Node, npm, and make
-versions, then runs either:
+`local-verify.sh` is the local verification wrapper developers run directly on
+Linux or EC2 development hosts. It prints the detected Java, Maven, Node, npm,
+and make versions, then runs one of these modes:
 
 - `--quick`: backend tests, frontend tests, and frontend build
-- `--full` or default: `make verify`
+- `--full`, or no option: the Makefile verification target, `make verify`
+
+`verify` is a target in the root `Makefile`, not a script named `verify.sh`.
+It runs the normal test suite, builds the frontend, tests and builds the MCP
+server, and checks the agent shell scripts. The normal test suite includes the
+operational shell tests, backend Maven tests, and frontend tests.
 
 Each step writes its full output to `/tmp/local-genai-lab-*.txt`, which makes
 remote troubleshooting easier than relying on terminal scrollback alone.
