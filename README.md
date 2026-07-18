@@ -244,8 +244,9 @@ ssh -N -L 3001:localhost:3000 my-ec2-1
 
 Test the remote deployment at `http://localhost:3001`. Do not use
 `http://localhost:3000` when a separate local Docker deployment may be running.
-Set `DOCKER_GO_TUNNEL_HOST=my-ec2-1` when running `docker-go.sh` on the remote
-host to have it print this tunnel guidance automatically.
+Replace `my-ec2-1` with an SSH alias from the workstation's `~/.ssh/config`, or
+with a full SSH destination such as `ec2-user@ec2.example.com`. Run the `ssh`
+command on the workstation, not on the remote Docker host.
 
 Provider setup details are in [docs/providers.md](./docs/providers.md).
 Testing and release validation details are in [docs/testing.md](./docs/testing.md)

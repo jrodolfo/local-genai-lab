@@ -16,10 +16,6 @@
 #                 running the local build first.
 #   --help        Show usage.
 #
-# Environment:
-#   DOCKER_GO_TUNNEL_HOST  Optional remote SSH host alias. When set, the
-#                          success output includes a tunnel on local port 3001.
-#
 # Exit Behavior:
 #   Exits with 0 only after every selected preparation step passes. Stops at
 #   the first failure so later UI testing does not use an unverified deployment.
@@ -29,10 +25,9 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 skip_build=false
-tunnel_host="${DOCKER_GO_TUNNEL_HOST:-}"
 
 usage() {
-  sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 run_step() {
@@ -96,16 +91,12 @@ printf '%s\n' \
   'For local Docker testing, open: http://localhost:3000' \
   'After frontend changes, use an Incognito window or DevTools Empty Cache and Hard Reload.'
 
-if [ -n "${tunnel_host}" ]; then
-  printf '%s\n' \
-    '' \
-    'For remote Docker testing, create or keep this tunnel open on your workstation:' \
-    "  ssh -N -L 3001:localhost:3000 ${tunnel_host}" \
-    '' \
-    'Then test the remote deployment at: http://localhost:3001' \
-    'Do not use http://localhost:3000 when a separate local Docker deployment may be running.'
-else
-  printf '%s\n' \
-    '' \
-    'For a remote Docker host, set DOCKER_GO_TUNNEL_HOST to print SSH tunnel guidance.'
-fi
+printf '%s\n' \
+  '' \
+  'For remote Docker testing, run this command on your workstation and leave it open:' \
+  '  ssh -N -L 3001:localhost:3000 <ssh-host>' \
+  '' \
+  'Replace <ssh-host> with an SSH alias, user@host name, or user@IP address.' \
+  'Then test the remote deployment at: http://localhost:3001' \
+  'Do not use http://localhost:3000 when a separate local Docker deployment may be running.' \
+  'Do not run the SSH command on this Docker host.'

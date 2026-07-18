@@ -340,7 +340,6 @@ run_docker_go_script() {
     PATH="/usr/bin:/bin" \
     MOCK_DOCKER_GO_LOG="${tmp_dir}/docker-go.log" \
     MOCK_DOCKER_GO_FAIL_SCRIPT="${MOCK_DOCKER_GO_FAIL_SCRIPT:-}" \
-    DOCKER_GO_TUNNEL_HOST="${DOCKER_GO_TUNNEL_HOST:-}" \
     bash "${tmp_dir}/repo/docker-go.sh" "$@"
 }
 
@@ -1009,26 +1008,15 @@ test_docker_go_runs_preparation_in_order() {
   assert_contains "${output}" '==> 4. verify Docker AWS identity'
   assert_contains "${output}" 'Docker deployment is ready for AWS Agent testing.'
   assert_contains "${output}" 'For local Docker testing, open: http://localhost:3000'
-  assert_contains "${output}" 'set DOCKER_GO_TUNNEL_HOST to print SSH tunnel guidance.'
+  assert_contains "${output}" 'For remote Docker testing, run this command on your workstation and leave it open:'
+  assert_contains "${output}" 'ssh -N -L 3001:localhost:3000 <ssh-host>'
+  assert_contains "${output}" 'Replace <ssh-host> with an SSH alias, user@host name, or user@IP address.'
+  assert_contains "${output}" 'Do not run the SSH command on this Docker host.'
   assert_contains "${output}" 'Incognito window or DevTools Empty Cache and Hard Reload.'
   if [ "${actual_log}" != "${expected_log}" ]; then
     printf 'expected docker-go calls:\n%s\nactual docker-go calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
     exit 1
   fi
-  rm -rf "${tmp_dir}"
-}
-
-test_docker_go_prints_optional_remote_tunnel_guidance() {
-  local tmp_dir output
-  tmp_dir="$(mktemp -d)"
-  : >"${tmp_dir}/docker-go.log"
-  write_mock_docker_go_scripts "${tmp_dir}"
-
-  output="$(DOCKER_GO_TUNNEL_HOST=remote-lab run_docker_go_script "${tmp_dir}" --skip-build)"
-
-  assert_contains "${output}" 'ssh -N -L 3001:localhost:3000 remote-lab'
-  assert_contains "${output}" 'Then test the remote deployment at: http://localhost:3001'
-  assert_contains "${output}" 'separate local Docker deployment may be running.'
   rm -rf "${tmp_dir}"
 }
 
@@ -1084,7 +1072,10 @@ test_docker_go_help_and_invalid_options_are_actionable() {
 
   output="$(run_docker_go_script "${tmp_dir}" --help)"
   assert_contains "${output}" './scripts/docker-go.sh --skip-build'
-  assert_contains "${output}" 'DOCKER_GO_TUNNEL_HOST'
+  if [[ "${output}" == *'set -euo pipefail'* ]]; then
+    printf '%s\n' 'expected docker-go.sh help not to include implementation code' >&2
+    exit 1
+  fi
 
   set +e
   output="$(run_docker_go_script "${tmp_dir}" --unknown 2>&1)"
@@ -1174,7 +1165,6 @@ main() {
   test_docker_aws_preflight_reports_missing_backend_utilities
   test_docker_aws_preflight_reports_sts_failure
   test_docker_go_runs_preparation_in_order
-  test_docker_go_prints_optional_remote_tunnel_guidance
   test_docker_go_skip_build_omits_only_build
   test_docker_go_stops_after_failed_step
   test_docker_go_help_and_invalid_options_are_actionable
