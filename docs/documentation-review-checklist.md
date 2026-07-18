@@ -131,7 +131,7 @@ make release-check-docker
 Check that:
 
 - `agents/README.md` documents MCP/tool shell scripts, not app lifecycle
-- `scripts/README.md` documents human-facing lifecycle and Docker commands
+- `scripts/README.md` documents lifecycle and Docker scripts developers run directly
 - `docs/release-checklist.md` documents when to run dependency freshness checks
 - dependency freshness is documented as a maintenance report, not as an app
   lifecycle command

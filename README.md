@@ -257,7 +257,7 @@ local-genai-lab/
 |-- frontend/     React UI for Agent and RAG workspaces
 |-- agents/       MCP-facing shell tools and generated report artifacts
 |-- mcp/          local MCP server
-|-- scripts/      human-facing lifecycle, build, Docker, and release scripts
+|-- scripts/      lifecycle, build, Docker, and release scripts developers run directly
 |-- ops/          local smoke checks and shell test support
 |-- docs/         architecture, testing, troubleshooting, RAG, and ADR docs
 |-- data/         local runtime data, including JSON session storage

@@ -4,7 +4,7 @@
 #
 # Purpose:
 #   Verifies that scripts/README.md retains the execution map for the main
-#   human-facing orchestration scripts.
+#   direct-use orchestration scripts.
 #
 # Usage:
 #   ./ops/tests/test-scripts-readme.sh
@@ -37,6 +37,6 @@ assert_contains "${contents}" 'DockerRestart --> DockerStart'
 assert_contains "${contents}" 'DockerFull --> DockerVerify'
 assert_contains "${contents}" 'DockerFull --> DockerScan'
 assert_contains "${contents}" 'PrepareRelease -.->|make release-check| ReleaseCheck'
-assert_contains "${contents}" 'Update this diagram whenever a human-facing script'
+assert_contains "${contents}" 'Update this diagram whenever a script developers run directly'
 
 printf '%s\n' 'scripts README tests passed'

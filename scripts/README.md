@@ -3,13 +3,13 @@
 Human-facing lifecycle and Docker commands for running Local GenAI Lab from the
 repository root.
 
-This directory owns commands that a developer runs directly to start, stop,
+This directory contains scripts developers run directly to start, stop,
 inspect, build, or validate the app. The root `Makefile` calls these scripts so
 `make start` and `./scripts/start.sh` stay aligned.
 
 ## Script Relationships
 
-This diagram shows execution relationships between human-facing scripts. A
+This diagram shows execution relationships between scripts developers run directly. A
 solid arrow means the source script invokes the destination script. A dashed
 arrow means the relationship goes through a `make` target. Standalone helper
 scripts are shown without arrows because they are run directly when needed.
@@ -68,8 +68,8 @@ flowchart TB
   end
 ```
 
-Update this diagram whenever a human-facing script begins invoking another
-human-facing script or stops doing so. It intentionally omits shared shell
+Update this diagram whenever a script developers run directly begins invoking
+another direct-use script or stops doing so. It intentionally omits shared shell
 libraries under `ops/` and commands merely suggested in output text.
 
 ## Commands
@@ -85,7 +85,7 @@ Host-run app lifecycle:
 ./scripts/local-verify.sh
 ```
 
-`local-verify.sh` is the human-facing local verification wrapper for Linux or
+`local-verify.sh` is the local verification wrapper developers run directly on Linux or
 EC2 development hosts. It prints the detected Java, Maven, Node, npm, and make
 versions, then runs either:
 
@@ -226,7 +226,7 @@ not require a version.
 
 ## Folder Boundaries
 
-- `scripts/`: human-facing lifecycle, build, and Docker commands.
+- `scripts/`: lifecycle, build, and Docker scripts developers run directly.
 - `ops/`: support libraries, local smoke checks, and shell tests behind the lifecycle commands.
 - `agents/`: MCP/agent tool scripts, dependency freshness reporting, and generated report artifacts.
 
