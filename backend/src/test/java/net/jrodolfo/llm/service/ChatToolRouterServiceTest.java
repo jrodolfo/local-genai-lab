@@ -29,6 +29,7 @@ class ChatToolRouterServiceTest {
         assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
         assertTrue(decision.shouldUseTool());
         assertEquals("aws audit request", decision.reason());
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), decision.services());
     }
 
     @Test
@@ -37,6 +38,15 @@ class ChatToolRouterServiceTest {
 
         assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
         assertTrue(decision.shouldUseTool());
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), decision.services());
+    }
+
+    @Test
+    void keepsExplicitServiceScopedAuditNarrowForBroadReviewPrompt() {
+        var decision = router.route("Review my AWS account and focus on Lambda and ECS services.");
+
+        assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, decision.type());
+        assertEquals(List.of("lambda", "ecs"), decision.services());
     }
 
     @Test

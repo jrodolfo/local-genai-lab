@@ -31,6 +31,7 @@ public class LlmToolPlannerService {
 
     private final ChatModelProviderRegistry chatModelProviderRegistry;
     private final ObjectMapper objectMapper;
+    private final ChatToolRouterService chatToolRouterService;
 
     /**
      * Constructs a new LlmToolPlannerService.
@@ -41,6 +42,7 @@ public class LlmToolPlannerService {
     public LlmToolPlannerService(ChatModelProviderRegistry chatModelProviderRegistry, ObjectMapper objectMapper) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.objectMapper = objectMapper;
+        this.chatToolRouterService = new ChatToolRouterService();
     }
 
     /**
@@ -507,7 +509,7 @@ public class LlmToolPlannerService {
             );
         }
 
-        if (shouldClearAuditServiceFilter(decision, originalMessage)) {
+        if (shouldApplyAccountOverviewAuditScope(decision, originalMessage)) {
             return new ChatToolRouterService.ToolDecision(
                     ChatToolRouterService.DecisionType.AWS_REGION_AUDIT,
                     decision.reportType(),
@@ -515,7 +517,7 @@ public class LlmToolPlannerService {
                     decision.region(),
                     decision.days(),
                     decision.reason(),
-                    List.of(),
+                    chatToolRouterService.defaultAccountOverviewAuditServices(),
                     decision.clarification()
             );
         }
@@ -626,16 +628,16 @@ public class LlmToolPlannerService {
     }
 
     /**
-     * Clears accidental planner narrowing for broad AWS account analysis prompts.
+     * Applies the curated account-overview audit scope for broad AWS account analysis prompts.
      *
-     * <p>For broad account-level analysis requests we want the audit tool's
-     * default full-service coverage unless the user explicitly named services.
+     * <p>For broad account-level analysis requests we want a bounded overview
+     * scope unless the user explicitly named services.
      */
-    private boolean shouldClearAuditServiceFilter(
+    private boolean shouldApplyAccountOverviewAuditScope(
             ChatToolRouterService.ToolDecision decision,
             String originalMessage
     ) {
-        if (decision.type() != ChatToolRouterService.DecisionType.AWS_REGION_AUDIT || decision.services().isEmpty()) {
+        if (decision.type() != ChatToolRouterService.DecisionType.AWS_REGION_AUDIT) {
             return false;
         }
 

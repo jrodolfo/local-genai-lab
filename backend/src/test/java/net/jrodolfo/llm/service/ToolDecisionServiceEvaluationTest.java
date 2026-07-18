@@ -74,7 +74,7 @@ class ToolDecisionServiceEvaluationTest {
     }
 
     @Test
-    void broadAwsAccountAnalysisClearsPlannerInventedServiceSubset() {
+    void broadAwsAccountAnalysisUsesBoundedOverviewScopeInsteadOfPlannerSubset() {
         FakeChatModelProvider chatModelProvider = new FakeChatModelProvider("""
                 {
                   "action": "use_tool",
@@ -103,7 +103,7 @@ class ToolDecisionServiceEvaluationTest {
         );
 
         assertEquals(ChatToolRouterService.DecisionType.AWS_REGION_AUDIT, trace.finalDecision().type());
-        assertTrue(trace.finalDecision().services().isEmpty());
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), trace.finalDecision().services());
     }
 
     private PendingToolCall toPendingToolCall(PendingToolFixture pendingToolFixture) {

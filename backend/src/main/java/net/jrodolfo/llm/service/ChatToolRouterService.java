@@ -36,9 +36,9 @@ public class ChatToolRouterService {
     private static final String S3_ALL_BUCKETS_NOT_IMPLEMENTED = "All-bucket S3 CloudWatch reports are not implemented yet. "
             + "Please provide one bucket name. If you are not sure which buckets are available, ask me: \"list my S3 buckets\".";
     private static final String S3_BUCKET_OPTIONS_CLARIFICATION_PREFIX = "I can proceed with the S3 CloudWatch report, but I need one bucket name. Available buckets: ";
-    private static final List<String> AUDIT_SERVICES = List.of(
-            "sts", "aws-config", "s3", "ec2", "elbv2", "rds", "lambda",
-            "ecs", "eks", "sagemaker", "opensearch", "secretsmanager", "logs", "tagging"
+    private static final List<String> ACCOUNT_OVERVIEW_AUDIT_SERVICES = List.of(
+            "sts", "s3", "ec2", "elbv2", "rds", "lambda",
+            "ecs", "eks", "secretsmanager", "logs"
     );
     private static final List<ServiceAlias> SERVICE_ALIASES = List.of(
             new ServiceAlias("aws-config", List.of("aws-config", "aws config", "cli config")),
@@ -219,6 +219,7 @@ public class ChatToolRouterService {
      * @return the tool decision or null
      */
     private ToolDecision matchAwsAudit(String normalized) {
+        List<String> extractedServices = extractServices(normalized);
         if (mentionsS3BucketListing(normalized)) {
             return new ToolDecision(
                     DecisionType.AWS_REGION_AUDIT,
@@ -250,8 +251,12 @@ public class ChatToolRouterService {
                 extractRegion(normalized),
                 null,
                 "aws audit request",
-                extractServices(normalized)
+                defaultAuditServicesForMessage(normalized, extractedServices)
         );
+    }
+
+    List<String> defaultAccountOverviewAuditServices() {
+        return ACCOUNT_OVERVIEW_AUDIT_SERVICES;
     }
 
     /**
@@ -531,6 +536,16 @@ public class ChatToolRouterService {
             }
         }
         return new ArrayList<>(services);
+    }
+
+    private List<String> defaultAuditServicesForMessage(String normalized, List<String> extractedServices) {
+        if (!extractedServices.isEmpty()) {
+            return extractedServices;
+        }
+        if (mentionsAwsAccountAnalysis(normalized)) {
+            return ACCOUNT_OVERVIEW_AUDIT_SERVICES;
+        }
+        return List.of();
     }
 
     /**

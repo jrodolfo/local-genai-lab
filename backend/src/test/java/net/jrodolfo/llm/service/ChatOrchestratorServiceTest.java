@@ -120,7 +120,7 @@ class ChatOrchestratorServiceTest {
         assertEquals("aws_region_audit", response.tool().name());
         assertEquals("success", response.tool().status());
         assertNotNull(mcpService.lastAuditRequest);
-        assertNull(mcpService.lastAuditRequest.services());
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), mcpService.lastAuditRequest.services());
         assertFalse(chatModelProvider.generateCalled);
         assertNull(chatModelProvider.lastPrompt);
         assertTrue(response.response().contains("AWS account audit completed successfully."));
@@ -425,7 +425,8 @@ class ChatOrchestratorServiceTest {
                 us-east-2\u001csecretsmanager\u001cSecrets Manager secrets - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
                 us-east-2\u001clogs\u001cCloudWatch log groups - us-east-2\u001cjson\u001cyes\u001csuccess\u001c0\u001c1\u001cstdout\u001c\u001ccommand
                 """);
-        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, new RichAuditMcpService(runDir.toString()), sessionStore, "rules");
+        RichAuditMcpService mcpService = new RichAuditMcpService(runDir.toString());
+        ChatOrchestratorService orchestrator = newOrchestrator(chatModelProvider, mcpService, sessionStore, "rules");
 
         ChatResponse response = orchestrator.chat(
                 "Analyze my AWS account and summarize the services I am using, highlighting anything unusual or potentially worth reviewing.",
@@ -437,6 +438,7 @@ class ChatOrchestratorServiceTest {
         assertEquals("aws_region_audit", response.tool().name());
         assertFalse(chatModelProvider.generateCalled);
         assertNull(chatModelProvider.lastPrompt);
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), mcpService.lastAuditRequest.services());
         assertTrue(response.response().contains("Resources found"));
         assertTrue(response.response().contains("Lambda functions: 6"));
         assertTrue(response.response().contains("S3 buckets: 6"));
@@ -710,7 +712,7 @@ class ChatOrchestratorServiceTest {
         assertNotNull(response.tool());
         assertEquals("aws_region_audit", response.tool().name());
         assertEquals(1, chatModelProvider.plannerCalls);
-        assertNull(mcpService.lastAuditRequest.services());
+        assertEquals(List.of("sts", "s3", "ec2", "elbv2", "rds", "lambda", "ecs", "eks", "secretsmanager", "logs"), mcpService.lastAuditRequest.services());
     }
 
     @Test
