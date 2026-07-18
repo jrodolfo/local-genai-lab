@@ -126,6 +126,8 @@ test-ops:
 	@bash ./ops/tests/test-root-layout.sh
 	@printf '%s\n' 'running: ./ops/tests/test-doc-privacy.sh'
 	@bash ./ops/tests/test-doc-privacy.sh
+	@printf '%s\n' 'running: ./ops/tests/test-scripts-readme.sh'
+	@bash ./ops/tests/test-scripts-readme.sh
 	@printf '%s\n' 'running: ./ops/tests/test-local-verify.sh'
 	@bash ./ops/tests/test-local-verify.sh
 	@printf '%s\n' 'running: ./ops/tests/test-start.sh'

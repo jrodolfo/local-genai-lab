@@ -7,6 +7,71 @@ This directory owns commands that a developer runs directly to start, stop,
 inspect, build, or validate the app. The root `Makefile` calls these scripts so
 `make start` and `./scripts/start.sh` stay aligned.
 
+## Script Relationships
+
+This diagram shows execution relationships between human-facing scripts. A
+solid arrow means the source script invokes the destination script. A dashed
+arrow means the relationship goes through a `make` target. Standalone helper
+scripts are shown without arrows because they are run directly when needed.
+
+```mermaid
+flowchart TB
+  subgraph Host_Run[Host-run application]
+    Build[build.sh]
+    Start[start.sh]
+    Stop[stop.sh]
+    Restart[restart.sh]
+    Status[status.sh]
+    Restart --> Stop
+    Restart --> Start
+  end
+
+  subgraph Docker[Docker lifecycle and validation]
+    DockerStart[docker-start.sh]
+    DockerStop[docker-stop.sh]
+    DockerRestart[docker-restart.sh]
+    DockerCheck[docker-check.sh]
+    DockerAws[docker-aws-preflight.sh]
+    DockerGo[docker-go.sh]
+    DockerVerify[docker-verify.sh]
+    DockerScan[docker-scan.sh]
+    DockerFull[docker-full-check.sh]
+
+    DockerRestart --> DockerStop
+    DockerRestart --> DockerStart
+    DockerGo -->|default; --skip-build omits| Build
+    DockerGo --> DockerRestart
+    DockerGo --> DockerCheck
+    DockerGo --> DockerAws
+    DockerVerify -->|--all| Stop
+    DockerVerify --> DockerRestart
+    DockerVerify --> Status
+    DockerVerify --> DockerCheck
+    DockerFull --> DockerVerify
+    DockerFull --> DockerScan
+  end
+
+  subgraph Release[Release preparation]
+    ReleaseCheck[release-check.sh]
+    PrepareRelease[prepare-release.sh]
+    PrepareRelease -.->|make release-check| ReleaseCheck
+    PrepareRelease -.->|make release-check-docker| ReleaseCheck
+    ReleaseCheck -.->|when RELEASE_CHECK_DOCKER=true| DockerFull
+  end
+
+  subgraph Direct_Tools[Standalone direct tools]
+    LocalVerify[local-verify.sh]
+    DockerSanity[docker-sanity-check.sh]
+    DockerLogs[docker-logs.sh]
+    DockerTunnel[docker-tunnel-info.sh]
+    DockerPrune[docker-prune.sh]
+  end
+```
+
+Update this diagram whenever a human-facing script begins invoking another
+human-facing script or stops doing so. It intentionally omits shared shell
+libraries under `ops/` and commands merely suggested in output text.
+
 ## Commands
 
 Host-run app lifecycle:
