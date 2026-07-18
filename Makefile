@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: help start stop restart status build check-app local-verify docker-sanity-check docker-start docker-stop docker-restart docker-status docker-logs docker-tunnel-info docker-check docker-aws-preflight docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
+.PHONY: help start stop restart status build check-app local-verify docker-sanity-check docker-start docker-stop docker-restart docker-status docker-logs docker-tunnel-info docker-check docker-aws-preflight docker-go docker-verify docker-scan docker-full-check dependency-freshness release-check release-check-docker prepare-release clean-ds-store test verify test-ops test-backend test-frontend test-rag-qdrant-smoke build-frontend test-mcp build-mcp test-scripts
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,7 @@ help:
 		'  make docker-tunnel-info     Print SSH tunnel commands for remote Docker access' \
 		'  make docker-check           Smoke-check the running Docker Compose stack' \
 		'  make docker-aws-preflight   Verify AWS tools from the Docker backend container' \
+		'  make docker-go              Build, restart, and validate Docker Agent testing' \
 		'  make docker-verify          Restart, inspect, and smoke-check Docker mode' \
 		'  make docker-scan            Scan Docker images for known vulnerabilities' \
 		'  make docker-full-check      Run Docker verification and Docker image scan' \
@@ -87,6 +88,9 @@ docker-check:
 
 docker-aws-preflight:
 	@./scripts/docker-aws-preflight.sh
+
+docker-go:
+	@./scripts/docker-go.sh
 
 docker-verify:
 	@./scripts/docker-verify.sh

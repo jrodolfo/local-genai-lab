@@ -192,6 +192,38 @@ Fix:
   the report as incomplete; common causes are missing `jq`, missing `aws`, or an
   interrupted script run
 
+## Docker Test Environment
+
+Symptoms:
+- a source change appears missing from the browser
+- model lists or settings do not match the intended Docker deployment
+- a test result changes unexpectedly between attempts
+
+Cause:
+- the browser may be using a separate local or remote Docker deployment, an old
+  frontend bundle from cache, or a Docker image that was not rebuilt after
+  source changes
+
+Fix:
+
+```bash
+# Run on the machine that hosts Docker from the repository root.
+./scripts/docker-go.sh
+```
+
+For local Docker, test at `http://localhost:3000`. For a remote Docker host,
+run this on your workstation and leave the terminal open:
+
+```bash
+ssh -N -L 3001:localhost:3000 my-ec2-1
+```
+
+Then test the remote deployment at `http://localhost:3001`. After frontend
+changes, use an Incognito window or DevTools **Empty Cache and Hard Reload**.
+Use `./scripts/docker-go.sh --skip-build` only when deliberately testing an
+unchanged Docker image and configuration. The script runs on macOS and Linux;
+use WSL or Git Bash on Windows 11.
+
 ## Slow Local Models
 
 Symptoms:

@@ -107,6 +107,8 @@ App lifecycle commands run from the repository root are:
 ./scripts/docker-restart.sh
 ./scripts/docker-status.sh
 ./scripts/docker-check.sh
+./scripts/docker-aws-preflight.sh
+./scripts/docker-go.sh
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh

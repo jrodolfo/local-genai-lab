@@ -307,6 +307,44 @@ run_full_check_script() {
     bash "${tmp_dir}/repo/docker-full-check.sh"
 }
 
+write_mock_docker_go_scripts() {
+  local tmp_dir="$1"
+  local bin_dir="${tmp_dir}/repo"
+  local script_name
+
+  mkdir -p "${bin_dir}"
+  cp "${REPO_ROOT}/scripts/docker-go.sh" "${bin_dir}/docker-go.sh"
+
+  for script_name in build.sh docker-restart.sh docker-check.sh docker-aws-preflight.sh; do
+    cat >"${bin_dir}/${script_name}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' '${script_name}' >> "\${MOCK_DOCKER_GO_LOG}"
+if [ "\${MOCK_DOCKER_GO_FAIL_SCRIPT:-}" = '${script_name}' ]; then
+  printf '%s\n' 'mock ${script_name} failure' >&2
+  exit 1
+fi
+printf '%s\n' 'mock ${script_name}'
+EOF
+    chmod +x "${bin_dir}/${script_name}"
+  done
+
+  chmod +x "${bin_dir}/docker-go.sh"
+}
+
+run_docker_go_script() {
+  local tmp_dir="$1"
+  shift
+
+  env -i \
+    HOME="${HOME:-}" \
+    PATH="/usr/bin:/bin" \
+    MOCK_DOCKER_GO_LOG="${tmp_dir}/docker-go.log" \
+    MOCK_DOCKER_GO_FAIL_SCRIPT="${MOCK_DOCKER_GO_FAIL_SCRIPT:-}" \
+    DOCKER_GO_TUNNEL_HOST="${DOCKER_GO_TUNNEL_HOST:-}" \
+    bash "${tmp_dir}/repo/docker-go.sh" "$@"
+}
+
 test_docker_start_runs_compose_up_build() {
   local tmp_dir output
   tmp_dir="$(mktemp -d)"
@@ -952,6 +990,110 @@ EOF
   rm -rf "${tmp_dir}"
 }
 
+test_docker_go_runs_preparation_in_order() {
+  local tmp_dir output expected_log actual_log
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  output="$(run_docker_go_script "${tmp_dir}")"
+  expected_log=$'build.sh\ndocker-restart.sh\ndocker-check.sh\ndocker-aws-preflight.sh'
+  actual_log="$(cat "${tmp_dir}/docker-go.log")"
+
+  assert_contains "${output}" 'Docker Agent preparation'
+  assert_contains "${output}" '==> 1. build local artifacts'
+  assert_contains "${output}" '==> 4. verify Docker AWS identity'
+  assert_contains "${output}" 'Docker deployment is ready for AWS Agent testing.'
+  assert_contains "${output}" 'For local Docker testing, open: http://localhost:3000'
+  assert_contains "${output}" 'set DOCKER_GO_TUNNEL_HOST to print SSH tunnel guidance.'
+  assert_contains "${output}" 'Incognito window or DevTools Empty Cache and Hard Reload.'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected docker-go calls:\n%s\nactual docker-go calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_go_prints_optional_remote_tunnel_guidance() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  output="$(DOCKER_GO_TUNNEL_HOST=remote-lab run_docker_go_script "${tmp_dir}" --skip-build)"
+
+  assert_contains "${output}" 'ssh -N -L 3001:localhost:3000 remote-lab'
+  assert_contains "${output}" 'Then test the remote deployment at: http://localhost:3001'
+  assert_contains "${output}" 'separate local Docker deployment may be running.'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_go_skip_build_omits_only_build() {
+  local tmp_dir output expected_log actual_log
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  output="$(run_docker_go_script "${tmp_dir}" --skip-build)"
+  expected_log=$'docker-restart.sh\ndocker-check.sh\ndocker-aws-preflight.sh'
+  actual_log="$(cat "${tmp_dir}/docker-go.log")"
+
+  assert_contains "${output}" 'skipped: build local artifacts (--skip-build)'
+  assert_contains "${output}" '==> 1. restart Docker Compose stack'
+  if [ "${actual_log}" != "${expected_log}" ]; then
+    printf 'expected docker-go calls:\n%s\nactual docker-go calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_go_stops_after_failed_step() {
+  local tmp_dir output status actual_log
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  set +e
+  output="$(MOCK_DOCKER_GO_FAIL_SCRIPT=docker-check.sh run_docker_go_script "${tmp_dir}" 2>&1)"
+  status=$?
+  set -e
+  actual_log="$(cat "${tmp_dir}/docker-go.log")"
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-go.sh to fail when docker-check.sh fails' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'fail: smoke-check Docker Compose stack'
+  assert_contains "${output}" 'Docker go stopped before the deployment was ready for testing.'
+  if [[ "${actual_log}" == *'docker-aws-preflight.sh'* ]]; then
+    printf '%s\n' 'expected docker-go.sh not to run AWS preflight after docker-check.sh fails' >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_go_help_and_invalid_options_are_actionable() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  output="$(run_docker_go_script "${tmp_dir}" --help)"
+  assert_contains "${output}" './scripts/docker-go.sh --skip-build'
+  assert_contains "${output}" 'DOCKER_GO_TUNNEL_HOST'
+
+  set +e
+  output="$(run_docker_go_script "${tmp_dir}" --unknown 2>&1)"
+  status=$?
+  set -e
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-go.sh to reject an unsupported option' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Error: unsupported option: --unknown'
+  rm -rf "${tmp_dir}"
+}
+
 test_docker_verify_runs_full_workflow_in_order() {
   local tmp_dir output expected_log actual_log
   tmp_dir="$(mktemp -d)"
@@ -1026,6 +1168,11 @@ main() {
   test_docker_aws_preflight_reports_missing_backend_mount
   test_docker_aws_preflight_reports_missing_backend_utilities
   test_docker_aws_preflight_reports_sts_failure
+  test_docker_go_runs_preparation_in_order
+  test_docker_go_prints_optional_remote_tunnel_guidance
+  test_docker_go_skip_build_omits_only_build
+  test_docker_go_stops_after_failed_step
+  test_docker_go_help_and_invalid_options_are_actionable
   test_docker_verify_runs_full_workflow_in_order
   test_docker_full_check_runs_verify_then_scan
   printf 'docker lifecycle tests passed\n'

@@ -210,6 +210,41 @@ After Docker starts, verify the mounted identity before Agent testing:
 ./scripts/docker-aws-preflight.sh
 ```
 
+### Docker Agent Testing
+
+Use the complete preparation workflow rather than restarting containers alone:
+
+```bash
+./scripts/docker-go.sh
+```
+
+It builds the current source, restarts Docker, smoke-checks the running stack,
+and verifies that the backend container can authenticate to AWS. Use
+`./scripts/docker-go.sh --skip-build` only when intentionally validating the
+existing Docker image and configuration without a fresh local build.
+
+`docker-go.sh` works on macOS and Linux wherever Bash and Docker Compose are
+available. On Windows 11, run it from WSL or Git Bash rather than native
+PowerShell.
+
+For a local Docker deployment, test at `http://localhost:3000`. After frontend
+changes, use an Incognito window or DevTools **Empty Cache and Hard Reload**
+before testing.
+
+#### Remote Docker Access
+
+When Docker runs on a remote host such as EC2, create an SSH tunnel from your
+workstation using a separate local port:
+
+```bash
+ssh -N -L 3001:localhost:3000 my-ec2-1
+```
+
+Test the remote deployment at `http://localhost:3001`. Do not use
+`http://localhost:3000` when a separate local Docker deployment may be running.
+Set `DOCKER_GO_TUNNEL_HOST=my-ec2-1` when running `docker-go.sh` on the remote
+host to have it print this tunnel guidance automatically.
+
 Provider setup details are in [docs/providers.md](./docs/providers.md).
 Testing and release validation details are in [docs/testing.md](./docs/testing.md)
 and [docs/release-checklist.md](./docs/release-checklist.md).

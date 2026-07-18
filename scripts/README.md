@@ -42,6 +42,7 @@ Docker lifecycle:
 ./scripts/docker-tunnel-info.sh
 ./scripts/docker-check.sh
 ./scripts/docker-aws-preflight.sh
+./scripts/docker-go.sh
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh
@@ -78,6 +79,21 @@ after Docker startup and before AWS Agent testing:
 ```bash
 ./scripts/docker-aws-preflight.sh
 ```
+
+`docker-go.sh` is the standard Docker preparation workflow for AWS Agent testing.
+It runs `build.sh`, `docker-restart.sh`, `docker-check.sh`, and
+`docker-aws-preflight.sh` in that order, stopping at the first failure. To
+restart and validate the existing image without a local rebuild, use:
+
+```bash
+./scripts/docker-go.sh --skip-build
+```
+
+The script works on macOS and Linux where Bash and Docker Compose are available.
+On Windows 11, use WSL or Git Bash. For local Docker testing, use
+`http://localhost:3000`. Set `DOCKER_GO_TUNNEL_HOST=my-ec2-1` when Docker runs
+on a remote host to print tunnel guidance for `http://localhost:3001`. The
+script always prints browser cache advice.
 
 `docker-scan.sh` and `docker-full-check.sh` require Trivy on `PATH`. On Amazon
 Linux EC2 hosts, one working install pattern is:
