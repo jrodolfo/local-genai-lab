@@ -124,6 +124,34 @@ if [ "${MOCK_DOCKER_FAIL_RUN:-false}" = "true" ] \
   printf '%s\n' 'mock docker run failed' >&2
   exit 1
 fi
+if [ "${1:-}" = "inspect" ]; then
+  if [ "${MOCK_DOCKER_BACKEND_RUNNING:-true}" = "true" ]; then
+    printf '%s\n' 'true'
+    exit 0
+  fi
+  printf '%s\n' 'false'
+  exit 1
+fi
+if [ "${1:-}" = "exec" ]; then
+  command_text="$*"
+  if [[ "${command_text}" == *'test -d /root/.aws'* ]]; then
+    [ "${MOCK_DOCKER_AWS_MOUNT:-true}" = "true" ] && exit 0
+    exit 1
+  fi
+  if [[ "${command_text}" == *'command -v aws'* ]]; then
+    [ "${MOCK_DOCKER_AWS_TOOLS:-true}" = "true" ] && exit 0
+    exit 1
+  fi
+  if [[ "${command_text}" == *'aws sts get-caller-identity'* ]]; then
+    if [ "${MOCK_DOCKER_STS:-true}" = "true" ]; then
+      printf '%s\n' 'account: 123456789012'
+      printf '%s\n' 'arn: arn:aws:iam::123456789012:role/mock-agent'
+      exit 0
+    fi
+    printf '%s\n' 'mock sts failure' >&2
+    exit 1
+  fi
+fi
 EOF
 
   chmod +x "${bin_dir}/docker"
@@ -305,6 +333,7 @@ test_docker_start_runs_compose_up_build() {
   assert_contains "${output}" 'all:      ./scripts/docker-logs.sh'
   assert_contains "${output}" 'checks:'
   assert_contains "${output}" './scripts/docker-check.sh'
+  assert_contains "${output}" './scripts/docker-aws-preflight.sh'
   assert_contains "${output}" './scripts/docker-status.sh'
   assert_contains "${output}" 'docker desktop:'
   assert_contains "${output}" 'containers > local-genai-lab > llm-backend > logs'
@@ -765,6 +794,164 @@ test_docker_check_fails_with_actionable_output() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_aws_preflight_validates_mounted_identity() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/aws"
+  : >"${tmp_dir}/docker.log"
+  : >"${tmp_dir}/aws/config"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws
+EOF
+
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env")"
+
+  assert_contains "${output}" 'Docker AWS preflight'
+  assert_contains "${output}" 'checking: AWS configuration directory on host... pass'
+  assert_contains "${output}" 'checking: backend container is running... pass'
+  assert_contains "${output}" 'checking: AWS directory is mounted in backend... pass'
+  assert_contains "${output}" 'checking: AWS CLI and jq in backend... pass'
+  assert_contains "${output}" 'checking: AWS STS identity... pass'
+  assert_contains "${output}" 'account: 123456789012'
+  assert_contains "${output}" 'Docker AWS preflight passed.'
+  assert_file_contains "${tmp_dir}/docker.log" 'inspect --format {{.State.Running}} llm-backend'
+  assert_file_contains "${tmp_dir}/docker.log" 'exec llm-backend sh -lc test -d /root/.aws'
+  assert_file_contains "${tmp_dir}/docker.log" 'exec llm-backend sh -lc aws sts get-caller-identity'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_aws_preflight_requires_enabled_aws_tools() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-aws-preflight.sh to fail when AWS tools are disabled' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'Docker AWS tools are disabled.'
+  assert_contains "${output}" '.env.docker-aws-tools.example'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_aws_preflight_requires_host_aws_directory() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/missing-aws
+EOF
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env" 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-aws-preflight.sh to fail when the host AWS directory is unavailable' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'AWS configuration directory on host... fail'
+  assert_contains "${output}" 'Verify the path in .env.docker-aws-tools'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_aws_preflight_reports_missing_backend_mount() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/aws"
+  : >"${tmp_dir}/docker.log"
+  : >"${tmp_dir}/aws/config"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws
+EOF
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env" MOCK_DOCKER_AWS_MOUNT=false 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-aws-preflight.sh to fail when the backend AWS mount is unavailable' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'AWS directory is mounted in backend... fail'
+  assert_contains "${output}" 'Verify LOCAL_GENAI_LAB_AWS_DIR and restart Docker'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_aws_preflight_reports_missing_backend_utilities() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/aws"
+  : >"${tmp_dir}/docker.log"
+  : >"${tmp_dir}/aws/config"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws
+EOF
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env" MOCK_DOCKER_AWS_TOOLS=false 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-aws-preflight.sh to fail when the backend utilities are unavailable' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'AWS CLI and jq in backend... fail'
+  assert_contains "${output}" 'Rebuild with ./scripts/build.sh and restart with ./scripts/docker-restart.sh.'
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_aws_preflight_reports_sts_failure() {
+  local tmp_dir output status
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin" "${tmp_dir}/aws"
+  : >"${tmp_dir}/docker.log"
+  : >"${tmp_dir}/aws/config"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws
+EOF
+
+  set +e
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env" MOCK_DOCKER_STS=false 2>&1)"
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-aws-preflight.sh to fail when STS authentication fails' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'checking: AWS STS identity... fail'
+  assert_contains "${output}" 'Verify AWS_PROFILE, credential validity, region settings, and IAM access.'
+  rm -rf "${tmp_dir}"
+}
+
 test_docker_verify_runs_full_workflow_in_order() {
   local tmp_dir output expected_log actual_log
   tmp_dir="$(mktemp -d)"
@@ -833,6 +1020,12 @@ main() {
   test_docker_check_passes_when_all_endpoints_respond
   test_docker_check_retries_until_backend_health_is_ready
   test_docker_check_fails_with_actionable_output
+  test_docker_aws_preflight_validates_mounted_identity
+  test_docker_aws_preflight_requires_enabled_aws_tools
+  test_docker_aws_preflight_requires_host_aws_directory
+  test_docker_aws_preflight_reports_missing_backend_mount
+  test_docker_aws_preflight_reports_missing_backend_utilities
+  test_docker_aws_preflight_reports_sts_failure
   test_docker_verify_runs_full_workflow_in_order
   test_docker_full_check_runs_verify_then_scan
   printf 'docker lifecycle tests passed\n'

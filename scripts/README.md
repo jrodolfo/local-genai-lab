@@ -41,6 +41,7 @@ Docker lifecycle:
 ./scripts/docker-logs.sh
 ./scripts/docker-tunnel-info.sh
 ./scripts/docker-check.sh
+./scripts/docker-aws-preflight.sh
 ./scripts/docker-verify.sh
 ./scripts/docker-scan.sh
 ./scripts/docker-full-check.sh
@@ -66,6 +67,16 @@ container, use:
 
 ```bash
 DOCKER_SANITY_RUN_HELLO_WORLD=true ./scripts/docker-sanity-check.sh
+```
+
+`docker-aws-preflight.sh` verifies the opt-in AWS configuration used by Agent
+tools. It checks the host AWS directory, its read-only mount in `llm-backend`,
+the in-container `aws` and `jq` commands, and `aws sts get-caller-identity`.
+It reports the active AWS account and ARN, but never credential values. Run it
+after Docker startup and before AWS Agent testing:
+
+```bash
+./scripts/docker-aws-preflight.sh
 ```
 
 `docker-scan.sh` and `docker-full-check.sh` require Trivy on `PATH`. On Amazon

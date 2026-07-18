@@ -204,6 +204,11 @@ trivy --version
 For Docker-based AWS Agent tools, copy `.env.docker-aws-tools.example` to
 `.env.docker-aws-tools`. The file is ignored by Git and lets the normal Docker
 scripts mount your local AWS configuration read-only into the backend container.
+After Docker starts, verify the mounted identity before Agent testing:
+
+```bash
+./scripts/docker-aws-preflight.sh
+```
 
 Provider setup details are in [docs/providers.md](./docs/providers.md).
 Testing and release validation details are in [docs/testing.md](./docs/testing.md)

@@ -168,6 +168,18 @@ aws sts get-caller-identity
 jq --version
 ```
 
+For Docker-based Agent tools, run the equivalent safe check from the actual
+backend container:
+
+```bash
+./scripts/docker-aws-preflight.sh
+```
+
+This checks that the host AWS configuration directory is mounted read-only,
+that `aws` and `jq` are available in `llm-backend`, and that the mounted
+identity can call STS. It prints the account and ARN only; it never prints
+credential values.
+
 Fix:
 - verify your AWS credentials or `AWS_PROFILE`
 - confirm the selected Bedrock region and model/profile are enabled for your account

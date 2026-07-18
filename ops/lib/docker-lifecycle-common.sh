@@ -193,6 +193,7 @@ print_docker_runtime_summary() {
   printf '%s\n' \
     'checks:' \
     '  ./scripts/docker-check.sh' \
+    '  ./scripts/docker-aws-preflight.sh' \
     '  ./scripts/docker-status.sh'
   printf '%s\n' ''
   print_docker_desktop_guidance
