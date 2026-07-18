@@ -88,15 +88,18 @@ printf '%s\n' \
   '' \
   'Docker deployment is ready for AWS Agent testing.' \
   '' \
-  'For local Docker testing, open: http://localhost:3000' \
-  'After frontend changes, use an Incognito window or DevTools Empty Cache and Hard Reload.'
-
-printf '%s\n' \
+  'Where to test' \
   '' \
-  'For remote Docker testing, run this command on your workstation and leave it open:' \
-  '  ssh -N -L 3001:localhost:3000 <ssh-host>' \
+  'If Docker runs locally on your Mac or Windows computer:' \
+  '  1. Run docker-go on that computer.' \
+  '  2. Open http://localhost:3000.' \
+  '  3. Do not create an SSH tunnel.' \
+  '' \
+  'If Docker runs on EC2 or another remote host:' \
+  '  1. Run docker-go on the remote Docker host.' \
+  '  2. On your Mac or workstation, run and leave open:' \
+  '     ssh -N -L 3001:localhost:3000 <ssh-host>' \
+  '  3. Open http://localhost:3001 on your Mac or workstation.' \
   '' \
   'Replace <ssh-host> with an SSH alias, user@host name, or user@IP address.' \
-  'Then test the remote deployment at: http://localhost:3001' \
-  'Do not use http://localhost:3000 when a separate local Docker deployment may be running.' \
-  'Do not run the SSH command on this Docker host.'
+  'After frontend changes, use an Incognito window or DevTools Empty Cache and Hard Reload.'

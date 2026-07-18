@@ -229,24 +229,25 @@ existing Docker image and configuration without a fresh local build.
 available. On Windows 11, run it from WSL or Git Bash rather than native
 PowerShell.
 
-For a local Docker deployment, test at `http://localhost:3000`. After frontend
-changes, use an Incognito window or DevTools **Empty Cache and Hard Reload**
-before testing.
+Where to test:
 
-#### Remote Docker Access
-
-When Docker runs on a remote host such as EC2, create an SSH tunnel from your
-workstation using a separate local port:
+1. If Docker runs locally on your Mac or Windows computer, run `docker-go.sh`
+   there and open `http://localhost:3000`. Do not create an SSH tunnel.
+2. If Docker runs on EC2 or another remote host, run `docker-go.sh` on that
+   remote host. Then create an SSH tunnel from your Mac or workstation using a
+   separate local port:
 
 ```bash
 ssh -N -L 3001:localhost:3000 my-ec2-1
 ```
 
-Test the remote deployment at `http://localhost:3001`. Do not use
-`http://localhost:3000` when a separate local Docker deployment may be running.
+   Leave the tunnel open and test the remote deployment at
+   `http://localhost:3001` from your Mac or workstation.
+
 Replace `my-ec2-1` with an SSH alias from the workstation's `~/.ssh/config`, or
-with a full SSH destination such as `ec2-user@ec2.example.com`. Run the `ssh`
-command on the workstation, not on the remote Docker host.
+with a full SSH destination such as `ec2-user@ec2.example.com`. After frontend
+changes, use an Incognito window or DevTools **Empty Cache and Hard Reload**
+before testing.
 
 Provider setup details are in [docs/providers.md](./docs/providers.md).
 Testing and release validation details are in [docs/testing.md](./docs/testing.md)

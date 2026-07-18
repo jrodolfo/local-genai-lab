@@ -160,9 +160,13 @@ restart and validate the existing image without a local rebuild, use:
 ```
 
 The script works on macOS and Linux where Bash and Docker Compose are available.
-On Windows 11, use WSL or Git Bash. For local Docker testing, use
-`http://localhost:3000`. When Docker runs on a remote host, the script prints
-the workstation tunnel pattern for `http://localhost:3001`:
+On Windows 11, use WSL or Git Bash. Its completion output explains both cases:
+
+1. If Docker runs locally on the Mac or Windows computer, run `docker-go.sh`
+   there and open `http://localhost:3000`. Do not create an SSH tunnel.
+2. If Docker runs on EC2 or another remote host, run `docker-go.sh` on the
+   remote Docker host. Then, from the Mac or workstation, create a tunnel for
+   `http://localhost:3001`:
 
 ```bash
 ssh -N -L 3001:localhost:3000 <ssh-host>
@@ -170,8 +174,8 @@ ssh -N -L 3001:localhost:3000 <ssh-host>
 
 Replace `<ssh-host>` with an SSH alias from `~/.ssh/config`, such as
 `my-ec2-1`, a user and host name such as `ec2-user@ec2.example.com`, or a user
-and IP address. Run the SSH command on the workstation, not on the remote
-Docker host. The script always prints browser cache advice.
+and IP address. Leave the tunnel terminal open while testing. The script always
+prints browser cache advice.
 
 `docker-scan.sh` and `docker-full-check.sh` require Trivy on `PATH`. On Amazon
 Linux EC2 hosts, one working install pattern is:

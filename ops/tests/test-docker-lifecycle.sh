@@ -1007,11 +1007,15 @@ test_docker_go_runs_preparation_in_order() {
   assert_contains "${output}" '==> 1. build local artifacts'
   assert_contains "${output}" '==> 4. verify Docker AWS identity'
   assert_contains "${output}" 'Docker deployment is ready for AWS Agent testing.'
-  assert_contains "${output}" 'For local Docker testing, open: http://localhost:3000'
-  assert_contains "${output}" 'For remote Docker testing, run this command on your workstation and leave it open:'
+  assert_contains "${output}" 'Where to test'
+  assert_contains "${output}" 'If Docker runs locally on your Mac or Windows computer:'
+  assert_contains "${output}" 'Open http://localhost:3000.'
+  assert_contains "${output}" 'Do not create an SSH tunnel.'
+  assert_contains "${output}" 'If Docker runs on EC2 or another remote host:'
+  assert_contains "${output}" 'On your Mac or workstation, run and leave open:'
   assert_contains "${output}" 'ssh -N -L 3001:localhost:3000 <ssh-host>'
   assert_contains "${output}" 'Replace <ssh-host> with an SSH alias, user@host name, or user@IP address.'
-  assert_contains "${output}" 'Do not run the SSH command on this Docker host.'
+  assert_contains "${output}" 'Open http://localhost:3001 on your Mac or workstation.'
   assert_contains "${output}" 'Incognito window or DevTools Empty Cache and Hard Reload.'
   if [ "${actual_log}" != "${expected_log}" ]; then
     printf 'expected docker-go calls:\n%s\nactual docker-go calls:\n%s\n' "${expected_log}" "${actual_log}" >&2
