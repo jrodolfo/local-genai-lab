@@ -643,6 +643,7 @@ describe('Home', () => {
         render(<Home/>);
 
         expect(await screen.findByText(/No Ollama models are installed locally/i)).toBeInTheDocument();
+        expect(screen.getByRole('combobox', {name: /model/i})).toHaveDisplayValue('No models available');
         expect(screen.getByRole('button', {name: /send/i})).toBeDisabled();
     });
 

@@ -86,6 +86,11 @@ function InputBox({
                         onChange={(event) => onModelChange(event.target.value)}
                         disabled={sendDisabled}
                     >
+                        {models.length === 0 ? (
+                            <option value="" disabled>
+                                No models available
+                            </option>
+                        ) : null}
                         {models.map((option) => (
                             <option key={option} value={option}>
                                 {option}
