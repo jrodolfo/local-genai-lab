@@ -167,6 +167,7 @@ class McpClientTest {
 
                   if (message.method === 'tools/list') {
                     console.error('bad fake stderr');
+                    await new Promise((resolve) => setTimeout(resolve, 50));
                     console.log('not-json');
                   }
                 }
