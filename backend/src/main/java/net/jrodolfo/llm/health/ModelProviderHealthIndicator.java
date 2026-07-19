@@ -178,7 +178,7 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 boolean modelPresent = ollamaModelPresent(response.body(), defaultModel);
                 if (!modelPresent) {
-                    return Health.status(Status.DOWN)
+                    return Health.up()
                             .withDetail("provider", "ollama")
                             .withDetail("status", "not-ready")
                             .withDetail("baseUrl", baseUrl)
@@ -199,7 +199,7 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                         .withDetail("modelPresent", true)
                         .build();
             }
-            return Health.down()
+            return Health.up()
                     .withDetail("provider", "ollama")
                     .withDetail("status", "unreachable")
                     .withDetail("baseUrl", baseUrl)
@@ -211,7 +211,7 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                     .build();
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            return Health.down()
+            return Health.up()
                     .withDetail("provider", "ollama")
                     .withDetail("status", "interrupted")
                     .withDetail("baseUrl", baseUrl)
@@ -219,7 +219,7 @@ public class ModelProviderHealthIndicator implements HealthIndicator {
                     .withDetail("error", "Ollama reachability check was interrupted.")
                     .build();
         } catch (IOException | IllegalArgumentException ex) {
-            return Health.down()
+            return Health.up()
                     .withDetail("provider", "ollama")
                     .withDetail("status", "unreachable")
                     .withDetail("baseUrl", baseUrl)

@@ -11,7 +11,9 @@
 ![mcp](https://img.shields.io/badge/mcp-local%20tools-0a7ea4)
 ![rag](https://img.shields.io/badge/rag-local%20docs%20corpus-0f766e)
 
-Local-first GenAI lab for building and testing tool-assisted AI workflows.
+Local-first GenAI lab for building and testing tool-assisted AI workflows with
+local Ollama models or remote provider APIs such as Amazon Bedrock and Hugging
+Face.
 
 This project goes beyond a chatbot interface by combining a React frontend, a Spring Boot orchestration backend, local and remote model providers, persistent session memory, MCP-backed AWS tooling, and a RAG workspace over the project documentation.
 

@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ModelProviderHealthIndicatorTest {
 
     @Test
-    void ollamaHealthIsDownWhenDefaultModelIsMissing() {
+    void ollamaHealthStaysUpWhenDefaultModelIsMissing() {
         ModelProviderHealthIndicator indicator = new ModelProviderHealthIndicator(
                 new AppModelProperties("ollama"),
                 new OllamaProperties("http://localhost:11434", "llama3:8b", 1, 1),
@@ -45,7 +45,7 @@ class ModelProviderHealthIndicatorTest {
 
         var health = indicator.health();
 
-        assertEquals(Status.DOWN, health.getStatus());
+        assertEquals(Status.UP, health.getStatus());
         assertEquals("not-ready", health.getDetails().get("status"));
         assertEquals(false, health.getDetails().get("modelPresent"));
         assertEquals(false, health.getDetails().get("ready"));
@@ -104,7 +104,7 @@ class ModelProviderHealthIndicatorTest {
 
         var health = indicator.health();
 
-        assertEquals(Status.DOWN, health.getStatus());
+        assertEquals(Status.UP, health.getStatus());
         assertEquals("unreachable", health.getDetails().get("status"));
         assertEquals("IOException", health.getDetails().get("error"));
     }
