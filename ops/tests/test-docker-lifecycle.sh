@@ -80,7 +80,9 @@ test_docker_aws_tools_override_is_opt_in_and_ignored_locally() {
   assert_file_contains "${REPO_ROOT}/docker-compose.aws-tools.yml" 'LOCAL_GENAI_LAB_AWS_DIR'
   assert_file_contains "${REPO_ROOT}/docker-compose.aws-tools.yml" 'target: /root/.aws'
   assert_file_contains "${REPO_ROOT}/docker-compose.aws-tools.yml" 'read_only: true'
+  assert_file_contains "${REPO_ROOT}/docker-compose.aws-instance-profile.yml" 'AWS_EC2_METADATA_DISABLED'
   assert_file_contains "${REPO_ROOT}/.env.docker-aws-tools.example" 'LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true'
+  assert_file_contains "${REPO_ROOT}/.env.docker-aws-tools.example" 'LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=host-files'
   assert_file_contains "${REPO_ROOT}/.gitignore" '.env.docker-aws-tools'
 }
 
@@ -400,6 +402,28 @@ EOF
   assert_contains "${output}" 'aws tools:'
   assert_contains "${output}" "enabled with LOCAL_GENAI_LAB_AWS_DIR=${tmp_dir}/aws"
   assert_file_contains "${tmp_dir}/docker.log" "compose -f ${REPO_ROOT}/docker-compose.yml -f ${REPO_ROOT}/docker-compose.aws-tools.yml up -d --build"
+  rm -rf "${tmp_dir}"
+}
+
+test_docker_start_uses_instance_profile_override_when_configured() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=instance-profile
+AWS_REGION=us-east-2
+AWS_DEFAULT_REGION=us-east-2
+EOF
+
+  output="$(run_script "${tmp_dir}" docker-start.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env")"
+
+  assert_contains "${output}" 'aws tools:'
+  assert_contains "${output}" 'enabled with EC2 instance profile credentials'
+  assert_file_contains "${tmp_dir}/docker.log" "compose -f ${REPO_ROOT}/docker-compose.yml -f ${REPO_ROOT}/docker-compose.aws-instance-profile.yml up -d --build"
   rm -rf "${tmp_dir}"
 }
 
@@ -864,6 +888,36 @@ EOF
   rm -rf "${tmp_dir}"
 }
 
+test_docker_aws_preflight_validates_instance_profile_identity() {
+  local tmp_dir output
+  tmp_dir="$(mktemp -d)"
+  mkdir -p "${tmp_dir}/bin"
+  : >"${tmp_dir}/docker.log"
+  write_mock_docker "${tmp_dir}/bin"
+  write_mock_curl "${tmp_dir}/bin"
+  cat >"${tmp_dir}/docker-aws-tools.env" <<EOF
+LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true
+LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=instance-profile
+AWS_REGION=us-east-2
+AWS_DEFAULT_REGION=us-east-2
+EOF
+
+  output="$(run_script "${tmp_dir}" docker-aws-preflight.sh DOCKER_AWS_TOOLS_ENV_FILE="${tmp_dir}/docker-aws-tools.env")"
+
+  assert_contains "${output}" 'Docker AWS preflight'
+  assert_contains "${output}" 'credential source: instance-profile'
+  assert_contains "${output}" 'configured profile: EC2 instance profile'
+  assert_contains "${output}" 'checking: backend container is running... pass'
+  assert_contains "${output}" 'checking: AWS CLI and jq in backend... pass'
+  assert_contains "${output}" 'checking: AWS STS identity... pass'
+  assert_contains "${output}" 'Docker AWS preflight passed.'
+  if grep -F 'test -d /root/.aws' "${tmp_dir}/docker.log" >/dev/null; then
+    printf '%s\n' 'expected instance-profile mode not to check /root/.aws mount' >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
 test_docker_aws_preflight_requires_enabled_aws_tools() {
   local tmp_dir output status
   tmp_dir="$(mktemp -d)"
@@ -989,7 +1043,7 @@ EOF
     exit 1
   fi
   assert_contains "${output}" 'checking: AWS STS identity... fail'
-  assert_contains "${output}" 'Verify AWS_PROFILE, credential validity, region settings, and IAM access.'
+  assert_contains "${output}" 'Verify the credential source, region settings, IAM access, and EC2 metadata options.'
   rm -rf "${tmp_dir}"
 }
 
@@ -1145,6 +1199,7 @@ main() {
   test_docker_frontend_proxy_supports_long_llm_requests
   test_docker_start_runs_compose_up_build
   test_docker_start_uses_aws_tools_override_when_enabled
+  test_docker_start_uses_instance_profile_override_when_configured
   test_docker_start_failure_prints_actionable_summary
   test_docker_sanity_check_passes_without_running_container_by_default
   test_docker_sanity_check_can_run_hello_world
@@ -1163,6 +1218,7 @@ main() {
   test_docker_check_retries_until_backend_health_is_ready
   test_docker_check_fails_with_actionable_output
   test_docker_aws_preflight_validates_mounted_identity
+  test_docker_aws_preflight_validates_instance_profile_identity
   test_docker_aws_preflight_requires_enabled_aws_tools
   test_docker_aws_preflight_requires_host_aws_directory
   test_docker_aws_preflight_reports_missing_backend_mount

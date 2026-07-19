@@ -59,6 +59,21 @@ normalize_bool() {
   esac
 }
 
+normalize_aws_credential_source() {
+  case "${1:-}" in
+    host-files|host_files|local-files|local_files|'')
+      printf '%s\n' 'host-files'
+      ;;
+    instance-profile|instance_profile|ec2-instance-profile|ec2_instance_profile)
+      printf '%s\n' 'instance-profile'
+      ;;
+    *)
+      printf 'Error: expected LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE to be host-files or instance-profile, got: %s\n' "$1" >&2
+      exit 1
+      ;;
+  esac
+}
+
 load_docker_aws_tools_env() {
   if [ "${DOCKER_AWS_TOOLS_ENV_LOADED:-false}" = 'true' ]; then
     return 0
@@ -69,7 +84,12 @@ load_docker_aws_tools_env() {
   LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS="$(normalize_bool "${LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS:-false}")"
   export LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS
 
-  if [ "${LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS}" = 'true' ] && [ -z "${LOCAL_GENAI_LAB_AWS_DIR:-}" ]; then
+  LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE="$(normalize_aws_credential_source "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE:-host-files}")"
+  export LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE
+
+  if [ "${LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS}" = 'true' ] \
+    && [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'host-files' ] \
+    && [ -z "${LOCAL_GENAI_LAB_AWS_DIR:-}" ]; then
     if [ -z "${HOME:-}" ]; then
       printf '%s\n' 'Error: LOCAL_GENAI_LAB_AWS_DIR is required when HOME is not set.' >&2
       exit 1
@@ -89,9 +109,13 @@ validate_docker_aws_tools_config() {
     return 0
   fi
 
+  if [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'instance-profile' ]; then
+    return 0
+  fi
+
   if [ ! -d "${LOCAL_GENAI_LAB_AWS_DIR}" ]; then
     printf 'Error: LOCAL_GENAI_LAB_AWS_DIR does not exist: %s\n' "${LOCAL_GENAI_LAB_AWS_DIR}" >&2
-    printf '%s\n' 'Create .env.docker-aws-tools from .env.docker-aws-tools.example, or set LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=false.' >&2
+    printf '%s\n' 'Set LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=instance-profile on EC2, create the host AWS directory, or set LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=false.' >&2
     exit 1
   fi
 }
@@ -104,14 +128,25 @@ docker_aws_tools_enabled() {
 docker_compose() {
   validate_docker_aws_tools_config
 
-  if docker_aws_tools_enabled; then
-    docker compose \
-      -f "${REPO_ROOT}/docker-compose.yml" \
-      -f "${REPO_ROOT}/docker-compose.aws-tools.yml" \
-      "$@"
-  else
+  if ! docker_aws_tools_enabled; then
     docker compose "$@"
+    return
   fi
+
+  case "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" in
+    instance-profile)
+      docker compose \
+        -f "${REPO_ROOT}/docker-compose.yml" \
+        -f "${REPO_ROOT}/docker-compose.aws-instance-profile.yml" \
+        "$@"
+      ;;
+    host-files)
+      docker compose \
+        -f "${REPO_ROOT}/docker-compose.yml" \
+        -f "${REPO_ROOT}/docker-compose.aws-tools.yml" \
+        "$@"
+      ;;
+  esac
 }
 
 print_docker_urls() {
@@ -177,9 +212,15 @@ print_docker_status_command() {
 print_docker_runtime_summary() {
   printf '%s\n' '' 'docker runtime started' ''
   if docker_aws_tools_enabled; then
-    printf '%s\n' \
-      'aws tools:' \
-      "  enabled with LOCAL_GENAI_LAB_AWS_DIR=${LOCAL_GENAI_LAB_AWS_DIR}"
+    if [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'instance-profile' ]; then
+      printf '%s\n' \
+        'aws tools:' \
+        '  enabled with EC2 instance profile credentials'
+    else
+      printf '%s\n' \
+        'aws tools:' \
+        "  enabled with LOCAL_GENAI_LAB_AWS_DIR=${LOCAL_GENAI_LAB_AWS_DIR}"
+    fi
   else
     printf '%s\n' \
       'aws tools:' \

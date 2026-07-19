@@ -175,19 +175,28 @@ backend container:
 ./scripts/docker-aws-preflight.sh
 ```
 
-This checks that the host AWS configuration directory is mounted read-only,
-that `aws` and `jq` are available in `llm-backend`, and that the mounted
-identity can call STS. It prints the account and ARN only; it never prints
-credential values.
+This checks that `aws` and `jq` are available in `llm-backend` and that the
+configured identity can call STS. In host-file mode it also checks that the host
+AWS configuration directory is mounted read-only. It prints the account and ARN
+only; it never prints credential values.
 
 Fix:
 - verify your AWS credentials or `AWS_PROFILE`
 - confirm the selected Bedrock region and model/profile are enabled for your account
-- for Docker-based MCP AWS tools, copy `.env.docker-aws-tools.example` to
-  `.env.docker-aws-tools`, set `LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true`, and
-  confirm `LOCAL_GENAI_LAB_AWS_DIR` points to your local AWS config directory
+- for Docker-based MCP AWS tools on a Mac or workstation, copy
+  `.env.docker-aws-tools.example` to `.env.docker-aws-tools`, set
+  `LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS=true`, keep
+  `LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=host-files`, and confirm
+  `LOCAL_GENAI_LAB_AWS_DIR` points to your local AWS config directory
+- for Docker-based MCP AWS tools on EC2 with an instance profile, set
+  `LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=instance-profile` instead of mounting
+  a host AWS configuration directory
+- if instance-profile mode cannot call STS from the container, confirm the EC2
+  instance has an IAM role and that the instance metadata hop limit allows
+  container access
 - the Docker backend image includes AWS CLI and `jq`, but it does not mount host
-  AWS credentials unless the local AWS tools override is enabled
+  AWS credentials unless the local AWS tools override is enabled in host-file
+  mode
 - if an audit created `report.txt` but not `summary.json`, the MCP server treats
   the report as incomplete; common causes are missing `jq`, missing `aws`, or an
   interrupted script run

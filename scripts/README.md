@@ -119,17 +119,27 @@ Docker lifecycle:
 ./scripts/release-check.sh
 ```
 
-Docker-based AWS Agent tools are opt-in because they mount host AWS
-configuration into the backend container. To enable them for your machine
-without passing flags to every Docker command:
+Docker-based AWS Agent tools are opt-in because they let the backend container
+use AWS credentials. To enable them for your machine without passing flags to
+every Docker command:
 
 ```bash
 cp .env.docker-aws-tools.example .env.docker-aws-tools
 ```
 
-Then edit `AWS_PROFILE`, `AWS_REGION`, and `LOCAL_GENAI_LAB_AWS_DIR` if needed.
+On a Mac or workstation with local AWS config files, keep
+`LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=host-files`, then edit `AWS_PROFILE`,
+`AWS_REGION`, and `LOCAL_GENAI_LAB_AWS_DIR` if needed.
+
+On EC2 with an instance profile, use:
+
+```bash
+LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE=instance-profile
+```
+
 The file is ignored by Git. When enabled, `docker-start.sh` and
-`docker-restart.sh` use the AWS compose override automatically during startup.
+`docker-restart.sh` use the matching AWS compose override automatically during
+startup.
 
 `docker-sanity-check.sh` is the fastest Docker preflight. It verifies that the
 Docker daemon and Compose plugin are reachable before you spend time on image
@@ -141,10 +151,12 @@ DOCKER_SANITY_RUN_HELLO_WORLD=true ./scripts/docker-sanity-check.sh
 ```
 
 `docker-aws-preflight.sh` verifies the opt-in AWS configuration used by Agent
-tools. It checks the host AWS directory, its read-only mount in `llm-backend`,
-the in-container `aws` and `jq` commands, and `aws sts get-caller-identity`.
-It reports the active AWS account and ARN, but never credential values. Run it
-after Docker startup and before AWS Agent testing:
+tools. In host-file mode it checks the host AWS directory and its read-only
+mount in `llm-backend`. In instance-profile mode it skips the mount checks. In
+both modes it checks the in-container `aws` and `jq` commands and
+`aws sts get-caller-identity`. It reports the active AWS account and ARN, but
+never credential values. Run it after Docker startup and before AWS Agent
+testing:
 
 ```bash
 ./scripts/docker-aws-preflight.sh
