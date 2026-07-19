@@ -14,8 +14,9 @@
 #   - docker
 #
 # Expected Output:
-#   Pass/fail lines for the AWS tools configuration, host mount source, backend
-#   container, mounted AWS directory, AWS CLI, jq, and STS identity.
+#   Pass/fail lines for the AWS tools configuration, credential source, backend
+#   container, AWS CLI, jq, and STS identity. Host-file mode also checks the
+#   mounted AWS directory.
 #
 # Exit Behavior:
 #   Exits with 0 only when the running backend container can authenticate with
@@ -65,28 +66,37 @@ if [ "${LOCAL_GENAI_LAB_ENABLE_AWS_TOOLS}" != 'true' ]; then
   exit 1
 fi
 
-printf 'configured profile: %s\n' "${AWS_PROFILE:-default}"
+printf 'credential source: %s\n' "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}"
+if [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'host-files' ]; then
+  printf 'configured profile: %s\n' "${AWS_PROFILE:-default}"
+else
+  printf '%s\n' 'configured profile: EC2 instance profile'
+fi
 printf 'configured region: %s\n' "${AWS_REGION:-${AWS_DEFAULT_REGION:-not set}}"
 
-check \
-  'AWS configuration directory on host' \
-  "Error: LOCAL_GENAI_LAB_AWS_DIR is unavailable: ${LOCAL_GENAI_LAB_AWS_DIR}. Verify the path in .env.docker-aws-tools, then restart Docker." \
-  test -d "${LOCAL_GENAI_LAB_AWS_DIR}"
+if [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'host-files' ]; then
+  check \
+    'AWS configuration directory on host' \
+    "Error: LOCAL_GENAI_LAB_AWS_DIR is unavailable: ${LOCAL_GENAI_LAB_AWS_DIR}. Verify the path in .env.docker-aws-tools, then restart Docker." \
+    test -d "${LOCAL_GENAI_LAB_AWS_DIR}"
 
-check \
-  'AWS configuration material on host' \
-  "Error: ${LOCAL_GENAI_LAB_AWS_DIR} contains neither config nor credentials. Configure AWS locally, then retry." \
-  has_aws_configuration_material
+  check \
+    'AWS configuration material on host' \
+    "Error: ${LOCAL_GENAI_LAB_AWS_DIR} contains neither config nor credentials. Configure AWS locally, then retry." \
+    has_aws_configuration_material
+fi
 
 check \
   'backend container is running' \
   'Error: llm-backend is not running. Run ./scripts/docker-restart.sh, then retry.' \
   backend_container_is_running
 
-check \
-  'AWS directory is mounted in backend' \
-  'Error: /root/.aws is unavailable in llm-backend. Verify LOCAL_GENAI_LAB_AWS_DIR and restart Docker so the AWS Compose override is applied.' \
-  docker exec llm-backend sh -lc 'test -d /root/.aws && { test -f /root/.aws/config || test -f /root/.aws/credentials; }'
+if [ "${LOCAL_GENAI_LAB_AWS_CREDENTIAL_SOURCE}" = 'host-files' ]; then
+  check \
+    'AWS directory is mounted in backend' \
+    'Error: /root/.aws is unavailable in llm-backend. Verify LOCAL_GENAI_LAB_AWS_DIR and restart Docker so the AWS Compose override is applied.' \
+    docker exec llm-backend sh -lc 'test -d /root/.aws && { test -f /root/.aws/config || test -f /root/.aws/credentials; }'
+fi
 
 check \
   'AWS CLI and jq in backend' \
@@ -110,8 +120,8 @@ else
   printf '%s\n' 'fail'
   printf '%s\n' \
     'Error: AWS STS authentication failed in llm-backend.' \
-    'Verify AWS_PROFILE, credential validity, region settings, and IAM access. For details, run: docker exec llm-backend aws sts get-caller-identity' >&2
+    'Verify the credential source, region settings, IAM access, and EC2 metadata options. For details, run: docker exec llm-backend aws sts get-caller-identity' >&2
   exit 1
 fi
 
-printf '%s\n' 'Docker AWS preflight passed. Agent AWS tools can use the mounted AWS identity.'
+printf '%s\n' 'Docker AWS preflight passed. Agent AWS tools can use the configured AWS identity.'
