@@ -1078,6 +1078,7 @@ function Home() {
                                     : ''
                             )
                         }
+                        modelsLoading={modelsLoading}
                         providers={availableProviders}
                         selectedProvider={selectedProvider}
                         onProviderChange={handleProviderChange}

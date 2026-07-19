@@ -14,6 +14,7 @@ import {useState} from 'react';
  * @param {string} [props.loadingDetail=''] - Secondary status detail during loading.
  * @param {string} [props.loadingHint=''] - Hint or action during loading.
  * @param {string} [props.statusMessage=''] - Status message to show when not loading.
+ * @param {boolean} [props.modelsLoading=false] - Whether provider model options are loading.
  * @param {string[]} [props.providers=[]] - List of available provider IDs.
  * @param {string} [props.selectedProvider=''] - Currently selected provider ID.
  * @param {Function} props.onProviderChange - Callback when the provider selection changes.
@@ -33,6 +34,7 @@ function InputBox({
                       loadingDetail = '',
                       loadingHint = '',
                       statusMessage = '',
+                      modelsLoading = false,
                       providers = [],
                       selectedProvider = '',
                       onProviderChange,
@@ -86,7 +88,12 @@ function InputBox({
                         onChange={(event) => onModelChange(event.target.value)}
                         disabled={sendDisabled}
                     >
-                        {models.length === 0 ? (
+                        {modelsLoading ? (
+                            <option value="" disabled>
+                                Loading models...
+                            </option>
+                        ) : null}
+                        {!modelsLoading && models.length === 0 ? (
                             <option value="" disabled>
                                 No models available
                             </option>

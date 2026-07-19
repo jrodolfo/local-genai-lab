@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * <ul>
  *   <li>Ollama returns installed local models.</li>
  *   <li>Bedrock prefers discovered inference profiles but falls back to the configured model id.</li>
- *   <li>Hugging Face starts from configured candidates and validates the usable subset.</li>
+ *   <li>Hugging Face returns configured candidates without blocking on hosted validation.</li>
  * </ul>
  */
 @Service
@@ -277,17 +277,9 @@ public class AvailableModelsService {
         if (configuredModelId != null) {
             models.add(configuredModelId);
         }
-        List<String> configuredCandidates = List.copyOf(new ArrayList<>(models));
-        if (configuredCandidates.isEmpty() || huggingFaceClient == null) {
-            return configuredCandidates;
-        }
-        try {
-            return huggingFaceClient.discoverUsableModels(configuredCandidates);
-        } catch (ModelDiscoveryException ex) {
-            // Keep the selector functional when hosted model validation is temporarily unavailable.
-            // The provider status endpoint can still surface the discovery failure more explicitly.
-            return configuredCandidates;
-        }
+        // Model selection should be fast and based on explicit configuration. The provider status
+        // endpoint performs slower hosted validation and reports usable/rejected models.
+        return List.copyOf(new ArrayList<>(models));
     }
 
     /**

@@ -674,6 +674,43 @@ describe('Home', () => {
         expect(screen.getByRole('button', {name: /send/i})).toBeDisabled();
     });
 
+    it('shows model loading state while switching providers', async () => {
+        let resolveHuggingFaceModels;
+        const huggingFaceModelsPromise = new Promise((resolve) => {
+            resolveHuggingFaceModels = resolve;
+        });
+        listAvailableModels
+            .mockResolvedValueOnce({
+                provider: 'ollama',
+                defaultProvider: 'ollama',
+                providers: ['huggingface', 'ollama'],
+                defaultModel: 'llama3:8b',
+                models: ['llama3:8b']
+            })
+            .mockReturnValueOnce(huggingFaceModelsPromise);
+
+        render(<Home/>);
+        const user = userEvent.setup();
+
+        await waitForSelectValue({name: /chat provider/i}, 'ollama');
+        await user.selectOptions(screen.getByRole('combobox', {name: /chat provider/i}), 'huggingface');
+
+        expect(screen.getByRole('combobox', {name: /model/i})).toHaveDisplayValue('Loading models...');
+        expect(screen.getByRole('button', {name: /send/i})).toBeDisabled();
+
+        await act(async () => {
+            resolveHuggingFaceModels({
+                provider: 'huggingface',
+                defaultProvider: 'ollama',
+                providers: ['huggingface', 'ollama'],
+                defaultModel: 'meta-llama/Llama-3.1-8B-Instruct',
+                models: ['meta-llama/Llama-3.1-8B-Instruct']
+            });
+        });
+
+        expect(await screen.findByDisplayValue('meta-llama/Llama-3.1-8B-Instruct')).toBeInTheDocument();
+    });
+
     it('renders streamed provenance before tokens complete', async () => {
         streamMessage.mockImplementation(async ({onEvent}) => {
             onEvent({

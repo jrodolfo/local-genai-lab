@@ -166,7 +166,7 @@ class AvailableModelsServiceTest {
     }
 
     @Test
-    void huggingFaceReturnsOnlyUsableConfiguredModels() {
+    void huggingFaceReturnsConfiguredModelsWithoutHostedValidation() {
         AvailableModelsService service = new AvailableModelsService(
                 new ChatModelProviderRegistry(new AppModelProperties("huggingface"), java.util.Map.of(
                         "ollama", new FakeProvider(),
@@ -194,11 +194,11 @@ class AvailableModelsServiceTest {
         assertEquals("huggingface", response.provider());
         assertEquals("huggingface", response.defaultProvider());
         assertEquals("meta-llama/Llama-3.1-8B-Instruct", response.defaultModel());
-        assertEquals(List.of("meta-llama/Llama-3.1-8B-Instruct"), response.models());
+        assertEquals(List.of("Qwen/Qwen2.5-72B-Instruct", "meta-llama/Llama-3.1-8B-Instruct"), response.models());
     }
 
     @Test
-    void huggingFaceFallsBackToFirstUsableModelWhenConfiguredDefaultIsUnavailable() {
+    void huggingFaceKeepsConfiguredDefaultWithoutHostedValidation() {
         AvailableModelsService service = new AvailableModelsService(
                 new ChatModelProviderRegistry(new AppModelProperties("huggingface"), java.util.Map.of(
                         "ollama", new FakeProvider(),
@@ -223,8 +223,8 @@ class AvailableModelsServiceTest {
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
 
-        assertEquals("Qwen/Qwen2.5-72B-Instruct", response.defaultModel());
-        assertEquals(List.of("Qwen/Qwen2.5-72B-Instruct"), response.models());
+        assertEquals("meta-llama/Llama-3.1-8B-Instruct", response.defaultModel());
+        assertEquals(List.of("Qwen/Qwen2.5-72B-Instruct", "meta-llama/Llama-3.1-8B-Instruct"), response.models());
     }
 
     @Test
