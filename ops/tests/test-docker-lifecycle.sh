@@ -1123,6 +1123,36 @@ test_docker_go_stops_after_failed_step() {
   rm -rf "${tmp_dir}"
 }
 
+test_docker_go_explains_aws_preflight_failure_without_implying_stack_stop() {
+  local tmp_dir output status actual_log
+  tmp_dir="$(mktemp -d)"
+  : >"${tmp_dir}/docker-go.log"
+  write_mock_docker_go_scripts "${tmp_dir}"
+
+  set +e
+  output="$(MOCK_DOCKER_GO_FAIL_SCRIPT=docker-aws-preflight.sh run_docker_go_script "${tmp_dir}" 2>&1)"
+  status=$?
+  set -e
+  actual_log="$(cat "${tmp_dir}/docker-go.log")"
+
+  if [ "${status}" -eq 0 ]; then
+    printf '%s\n' 'expected docker-go.sh to fail when docker-aws-preflight.sh fails' >&2
+    exit 1
+  fi
+  assert_contains "${output}" 'fail: verify Docker AWS identity'
+  assert_contains "${output}" 'Docker go stopped because AWS identity verification failed.'
+  assert_contains "${output}" 'The Docker stack is still running, but AWS-backed Agent tools are not ready.'
+  assert_contains "${output}" 'You can still open the UI, but AWS-backed Agent tools may not work.'
+  assert_contains "${output}" './scripts/docker-status.sh'
+  assert_contains "${output}" './scripts/docker-aws-preflight.sh'
+  assert_contains "${output}" 'docker exec llm-backend aws sts get-caller-identity'
+  if [ "${actual_log}" != $'build.sh\ndocker-restart.sh\ndocker-check.sh\ndocker-aws-preflight.sh' ]; then
+    printf 'expected docker-go calls through AWS preflight:\n%s\n' "${actual_log}" >&2
+    exit 1
+  fi
+  rm -rf "${tmp_dir}"
+}
+
 test_docker_go_help_and_invalid_options_are_actionable() {
   local tmp_dir output status
   tmp_dir="$(mktemp -d)"
@@ -1228,6 +1258,7 @@ main() {
   test_docker_go_runs_preparation_in_order
   test_docker_go_skip_build_omits_only_build
   test_docker_go_stops_after_failed_step
+  test_docker_go_explains_aws_preflight_failure_without_implying_stack_stop
   test_docker_go_help_and_invalid_options_are_actionable
   test_docker_verify_runs_full_workflow_in_order
   test_docker_full_check_runs_verify_then_scan

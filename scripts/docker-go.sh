@@ -44,7 +44,20 @@ run_step() {
   fi
 
   printf '%s\n' "fail: ${label}" >&2
-  printf '%s\n' 'Docker go stopped before the deployment was ready for testing.' >&2
+  if [ "${label}" = 'verify Docker AWS identity' ]; then
+    printf '%s\n' \
+      'Docker go stopped because AWS identity verification failed.' \
+      'The Docker stack is still running, but AWS-backed Agent tools are not ready.' \
+      '' \
+      'You can still open the UI, but AWS-backed Agent tools may not work.' \
+      '' \
+      'Inspect:' \
+      '  ./scripts/docker-status.sh' \
+      '  ./scripts/docker-aws-preflight.sh' \
+      '  docker exec llm-backend aws sts get-caller-identity' >&2
+  else
+    printf '%s\n' 'Docker go stopped before the deployment was ready for testing.' >&2
+  fi
   exit "${status}"
 }
 
