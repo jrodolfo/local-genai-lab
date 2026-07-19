@@ -376,8 +376,8 @@ test_docker_start_runs_compose_up_build() {
   assert_contains "${output}" 'docker desktop:'
   assert_contains "${output}" 'containers > local-genai-lab > llm-backend > logs'
   assert_contains "${output}" 'remote access:'
-  assert_contains "${output}" './scripts/docker-tunnel-info.sh my-ec2-1'
-  assert_contains "${output}" './scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh --include-qdrant my-ec2-3'
   assert_file_contains "${tmp_dir}/docker.log" 'compose up -d --build'
   rm -rf "${tmp_dir}"
 }
@@ -669,15 +669,15 @@ test_docker_tunnel_info_prints_default_tunnel() {
 
   assert_contains "${output}" 'access from your mac:'
   assert_contains "${output}" 'ssh -N \'
-  assert_contains "${output}" '  -L 3000:localhost:3000 \'
-  assert_contains "${output}" '  -L 8080:localhost:8080 \'
-  assert_contains "${output}" '  my-ec2-1'
+  assert_contains "${output}" '  -L 3001:localhost:3000 \'
+  assert_contains "${output}" '  -L 8081:localhost:8080 \'
+  assert_contains "${output}" '  my-ec2-3'
   assert_contains "${output}" 'frontend:'
-  assert_contains "${output}" 'http://localhost:3000'
+  assert_contains "${output}" 'http://localhost:3001'
   assert_contains "${output}" 'backend:'
-  assert_contains "${output}" 'http://localhost:8080'
+  assert_contains "${output}" 'http://localhost:8081'
   assert_contains "${output}" 'health:'
-  assert_contains "${output}" 'http://localhost:8080/actuator/health'
+  assert_contains "${output}" 'http://localhost:8081/actuator/health'
   assert_contains "${output}" 'tip:'
   assert_contains "${output}" 'leave the SSH tunnel terminal open while using the application.'
   assert_contains "${output}" "press Ctrl+C to close the tunnel when you're finished."
@@ -721,7 +721,8 @@ test_docker_tunnel_info_prints_help() {
 
   assert_contains "${output}" 'Usage:'
   assert_contains "${output}" './scripts/docker-tunnel-info.sh [--include-qdrant|--no-qdrant] [ssh-host]'
-  assert_contains "${output}" './scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh --include-qdrant my-ec2-3'
+  assert_contains "${output}" './scripts/docker-tunnel-info.sh --no-qdrant my-ec2-3'
   assert_contains "${output}" 'DOCKER_TUNNEL_HOST'
   rm -rf "${tmp_dir}"
 }

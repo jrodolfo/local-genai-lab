@@ -176,11 +176,11 @@ print_docker_desktop_guidance() {
 }
 
 print_docker_tunnel_guidance() {
-  local ssh_host="${DOCKER_TUNNEL_HOST:-my-ec2-1}"
+  local ssh_host="${DOCKER_TUNNEL_HOST:-my-ec2-3}"
 
   printf '%s\n' \
     'remote access:' \
-    "  ./scripts/docker-tunnel-info.sh ${ssh_host}" \
+    '  ./scripts/docker-tunnel-info.sh' \
     "  ./scripts/docker-tunnel-info.sh --include-qdrant ${ssh_host}"
 }
 

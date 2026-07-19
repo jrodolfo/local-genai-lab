@@ -57,12 +57,31 @@ class ProviderStatusServiceTest {
         ProviderStatusService service = newService(
                 "bedrock",
                 new FakeOllamaClient(List.of("llama3:8b")),
-                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct"))
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
+                () -> true
         );
 
         ProviderStatusResponse response = service.getProviderStatus("bedrock");
 
         assertEquals("ready", response.status());
+        assertEquals("2026-04-19T00:00:00Z", response.refreshedAt());
+    }
+
+    @Test
+    void bedrockStatusIsUnreachableWhenCredentialsCannotBeResolved() {
+        ProviderStatusService service = newService(
+                "bedrock",
+                new FakeOllamaClient(List.of("llama3:8b")),
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
+                () -> {
+                    throw new IllegalStateException("no credentials");
+                }
+        );
+
+        ProviderStatusResponse response = service.getProviderStatus("bedrock");
+
+        assertEquals("unreachable", response.status());
+        assertEquals("Bedrock is configured, but AWS credentials are not available to the backend.", response.message());
         assertEquals("2026-04-19T00:00:00Z", response.refreshedAt());
     }
 
@@ -76,7 +95,8 @@ class ProviderStatusServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b")),
                 new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
                 Clock.fixed(Instant.parse("2026-04-19T00:00:00Z"), ZoneOffset.UTC),
-                Duration.ofSeconds(15)
+                Duration.ofSeconds(15),
+                () -> true
         );
 
         ProviderStatusResponse response = service.getProviderStatus("huggingface");
@@ -128,7 +148,8 @@ class ProviderStatusServiceTest {
                 ollamaClient,
                 new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
                 clock,
-                Duration.ofSeconds(15)
+                Duration.ofSeconds(15),
+                () -> true
         );
 
         ProviderStatusResponse first = service.getProviderStatus("ollama");
@@ -155,6 +176,15 @@ class ProviderStatusServiceTest {
             OllamaClient ollamaClient,
             HuggingFaceClient huggingFaceClient
     ) {
+        return newService(defaultProvider, ollamaClient, huggingFaceClient, () -> true);
+    }
+
+    private ProviderStatusService newService(
+            String defaultProvider,
+            OllamaClient ollamaClient,
+            HuggingFaceClient huggingFaceClient,
+            java.util.function.Supplier<Boolean> bedrockCredentialsResolver
+    ) {
         return new ProviderStatusService(
                 registry(defaultProvider),
                 new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
@@ -163,7 +193,8 @@ class ProviderStatusServiceTest {
                 ollamaClient,
                 huggingFaceClient,
                 Clock.fixed(Instant.parse("2026-04-19T00:00:00Z"), ZoneOffset.UTC),
-                Duration.ofSeconds(15)
+                Duration.ofSeconds(15),
+                bedrockCredentialsResolver
         );
     }
 

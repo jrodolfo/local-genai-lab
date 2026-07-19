@@ -185,7 +185,7 @@ ssh -N -L 3001:localhost:3000 <ssh-host>
 ```
 
 Replace `<ssh-host>` with an SSH alias from `~/.ssh/config`, such as
-`my-ec2-1`, a user and host name such as `ec2-user@ec2.example.com`, or a user
+`my-ec2-3`, a user and host name such as `ec2-user@ec2.example.com`, or a user
 and IP address. Leave the tunnel terminal open while testing. The script always
 prints browser cache advice.
 
@@ -216,8 +216,17 @@ When the Docker stack runs on a remote machine, such as an EC2 instance,
 URLs to open:
 
 ```bash
-./scripts/docker-tunnel-info.sh my-ec2-1
-./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
+./scripts/docker-tunnel-info.sh
+./scripts/docker-tunnel-info.sh --include-qdrant
+```
+
+By default it prints the tunnel for the current EC2 workflow:
+
+```bash
+ssh -N \
+  -L 3001:localhost:3000 \
+  -L 8081:localhost:8080 \
+  my-ec2-3
 ```
 
 On Linux Docker hosts, the backend container reaches host-run Ollama through

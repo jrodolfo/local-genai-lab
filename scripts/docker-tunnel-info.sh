@@ -8,12 +8,12 @@
 #
 # Usage:
 #   ./scripts/docker-tunnel-info.sh
-#   ./scripts/docker-tunnel-info.sh my-ec2-1
-#   ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
-#   ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1
+#   ./scripts/docker-tunnel-info.sh my-ec2-3
+#   ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-3
+#   ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-3
 #
 # Environment:
-#   DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-1
+#   DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-3
 #   DOCKER_TUNNEL_INCLUDE_QDRANT   Include the Qdrant port when true.
 #
 # Exit Behavior:
@@ -29,12 +29,12 @@ Usage:
 
 Examples:
   ./scripts/docker-tunnel-info.sh
-  ./scripts/docker-tunnel-info.sh my-ec2-1
-  ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-1
-  ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-1
+  ./scripts/docker-tunnel-info.sh my-ec2-3
+  ./scripts/docker-tunnel-info.sh --include-qdrant my-ec2-3
+  ./scripts/docker-tunnel-info.sh --no-qdrant my-ec2-3
 
 Environment:
-  DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-1
+  DOCKER_TUNNEL_HOST             Default SSH host. Default: my-ec2-3
   DOCKER_TUNNEL_INCLUDE_QDRANT   Include the Qdrant port when true.
 EOF
 }
@@ -54,7 +54,7 @@ normalize_bool() {
   esac
 }
 
-ssh_host="${DOCKER_TUNNEL_HOST:-my-ec2-1}"
+ssh_host="${DOCKER_TUNNEL_HOST:-my-ec2-3}"
 include_qdrant="$(normalize_bool "${DOCKER_TUNNEL_INCLUDE_QDRANT:-false}")"
 
 while [ "$#" -gt 0 ]; do
@@ -94,23 +94,23 @@ fi
 
 printf '%s\n' 'access from your mac:' ''
 printf '%s\n' "ssh -N \\"
-printf '%s\n' "  -L 3000:localhost:3000 \\"
-printf '%s\n' "  -L 8080:localhost:8080 \\"
+printf '%s\n' '  -L 3001:localhost:3000 \'
+printf '%s\n' '  -L 8081:localhost:8080 \'
 if [ "${include_qdrant}" = 'true' ]; then
-  printf '%s\n' "  -L 6333:localhost:6333 \\"
+  printf '%s\n' '  -L 6333:localhost:6333 \'
 fi
 printf '%s\n' "  ${ssh_host}"
 
 cat <<EOF
 
 frontend:
-  http://localhost:3000
+  http://localhost:3001
 
 backend:
-  http://localhost:8080
+  http://localhost:8081
 
 health:
-  http://localhost:8080/actuator/health
+  http://localhost:8081/actuator/health
 EOF
 
 if [ "${include_qdrant}" = 'true' ]; then

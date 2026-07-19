@@ -9,13 +9,17 @@ import net.jrodolfo.llm.config.HuggingFaceProperties;
 import net.jrodolfo.llm.config.OllamaProperties;
 import net.jrodolfo.llm.dto.AvailableModelsResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * Resolves provider/model options that the frontend can safely present in the current backend
@@ -42,6 +46,7 @@ public class AvailableModelsService {
     private final BedrockCatalogClient bedrockCatalogClient;
     private final HuggingFaceClient huggingFaceClient;
     private final Environment environment;
+    private final Supplier<Boolean> bedrockCredentialsResolver;
 
     /**
      * Constructs a new AvailableModelsService.
@@ -54,6 +59,7 @@ public class AvailableModelsService {
      * @param bedrockCatalogClient      client for AWS Bedrock catalog
      * @param huggingFaceClient         client for Hugging Face
      */
+    @Autowired
     public AvailableModelsService(
             ChatModelProviderRegistry chatModelProviderRegistry,
             OllamaProperties ollamaProperties,
@@ -64,6 +70,34 @@ public class AvailableModelsService {
             @Nullable HuggingFaceClient huggingFaceClient,
             Environment environment
     ) {
+        this(
+                chatModelProviderRegistry,
+                ollamaProperties,
+                bedrockProperties,
+                huggingFaceProperties,
+                ollamaClient,
+                bedrockCatalogClient,
+                huggingFaceClient,
+                environment,
+                () -> {
+                    AwsCredentialsProvider provider = DefaultCredentialsProvider.create();
+                    provider.resolveCredentials();
+                    return true;
+                }
+        );
+    }
+
+    AvailableModelsService(
+            ChatModelProviderRegistry chatModelProviderRegistry,
+            OllamaProperties ollamaProperties,
+            BedrockProperties bedrockProperties,
+            HuggingFaceProperties huggingFaceProperties,
+            OllamaClient ollamaClient,
+            @Nullable BedrockCatalogClient bedrockCatalogClient,
+            @Nullable HuggingFaceClient huggingFaceClient,
+            Environment environment,
+            Supplier<Boolean> bedrockCredentialsResolver
+    ) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.ollamaProperties = ollamaProperties;
         this.bedrockProperties = bedrockProperties;
@@ -72,6 +106,7 @@ public class AvailableModelsService {
         this.bedrockCatalogClient = bedrockCatalogClient;
         this.huggingFaceClient = huggingFaceClient;
         this.environment = environment;
+        this.bedrockCredentialsResolver = bedrockCredentialsResolver;
     }
 
     /**
@@ -145,13 +180,22 @@ public class AvailableModelsService {
     private boolean isProviderAvailable(String provider) {
         return switch (provider) {
             case "bedrock" -> normalizeModel(bedrockProperties.region()) != null
-                    && normalizeModel(bedrockProperties.modelId()) != null;
+                    && normalizeModel(bedrockProperties.modelId()) != null
+                    && bedrockCredentialsAvailable();
             case "huggingface" -> normalizeModel(huggingFaceProperties.apiToken()) != null
                     && normalizeModel(huggingFaceProperties.baseUrl()) != null
                     && normalizeModel(huggingFaceProperties.defaultModel()) != null;
             case "ollama" -> true;
             default -> false;
         };
+    }
+
+    private boolean bedrockCredentialsAvailable() {
+        try {
+            return Boolean.TRUE.equals(bedrockCredentialsResolver.get());
+        } catch (RuntimeException ex) {
+            return false;
+        }
     }
 
     /**

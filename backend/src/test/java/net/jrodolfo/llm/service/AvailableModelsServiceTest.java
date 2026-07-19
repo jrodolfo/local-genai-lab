@@ -34,7 +34,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of()),
                 () -> List.of("us.amazon.nova-pro-v1:0", "us.amazon.nova-lite-v1:0"),
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("bedrock");
@@ -59,7 +60,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of()),
                 () -> { throw new ModelDiscoveryException("bedrock unavailable"); },
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("bedrock");
@@ -82,7 +84,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of()),
                 () -> { throw new ModelDiscoveryException("bedrock unavailable"); },
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         ModelDiscoveryException exception = assertThrows(ModelDiscoveryException.class, () -> service.getAvailableModels("bedrock"));
@@ -103,7 +106,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b", "mistral:7b")),
                 null,
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -126,7 +130,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("gemma3:1b")),
                 null,
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -149,7 +154,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of()),
                 null,
                 null,
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("ollama");
@@ -179,7 +185,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
                 new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -210,7 +217,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
                 new FakeHuggingFaceClient(List.of("Qwen/Qwen2.5-72B-Instruct")),
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -240,7 +248,40 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
                 new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
+        );
+
+        AvailableModelsResponse response = service.getAvailableModels("huggingface");
+
+        assertEquals(List.of("huggingface", "ollama"), response.providers());
+    }
+
+    @Test
+    void providersListExcludesBedrockWhenCredentialsCannotBeResolved() {
+        AvailableModelsService service = new AvailableModelsService(
+                new ChatModelProviderRegistry(new AppModelProperties("huggingface"), java.util.Map.of(
+                        "ollama", new FakeProvider(),
+                        "bedrock", new FakeProvider(),
+                        "huggingface", new FakeProvider()
+                )),
+                new OllamaProperties("http://localhost:11434", "llama3:8b", 10, 60),
+                new BedrockProperties("us-east-2", "us.amazon.nova-pro-v1:0"),
+                new HuggingFaceProperties(
+                        "https://router.huggingface.co/v1/chat/completions",
+                        "token",
+                        "meta-llama/Llama-3.1-8B-Instruct",
+                        List.of("meta-llama/Llama-3.1-8B-Instruct"),
+                        10,
+                        60
+                ),
+                new FakeOllamaClient(List.of("llama3:8b")),
+                () -> List.of("us.amazon.nova-pro-v1:0"),
+                new FakeHuggingFaceClient(List.of("meta-llama/Llama-3.1-8B-Instruct")),
+                new MockEnvironment(),
+                () -> {
+                    throw new IllegalStateException("no credentials");
+                }
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");
@@ -268,7 +309,8 @@ class AvailableModelsServiceTest {
                 new FakeOllamaClient(List.of("llama3:8b")),
                 null,
                 new FailingHuggingFaceClient(),
-                new MockEnvironment()
+                new MockEnvironment(),
+                () -> true
         );
 
         AvailableModelsResponse response = service.getAvailableModels("huggingface");

@@ -11,6 +11,8 @@ import net.jrodolfo.llm.dto.ProviderStatusResponse;
 import net.jrodolfo.llm.provider.ChatModelProviderRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -18,6 +20,7 @@ import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * Provides a compact provider-level troubleshooting summary for the chat UI.
@@ -40,6 +43,7 @@ public class ProviderStatusService {
     private final HuggingFaceClient huggingFaceClient;
     private final Clock clock;
     private final Duration statusCacheTtl;
+    private final Supplier<Boolean> bedrockCredentialsResolver;
     private final ConcurrentHashMap<String, CachedStatus> cachedStatuses = new ConcurrentHashMap<>();
 
     /**
@@ -69,7 +73,12 @@ public class ProviderStatusService {
                 ollamaClient,
                 huggingFaceClient,
                 Clock.systemUTC(),
-                STATUS_CACHE_TTL
+                STATUS_CACHE_TTL,
+                () -> {
+                    AwsCredentialsProvider provider = DefaultCredentialsProvider.create();
+                    provider.resolveCredentials();
+                    return true;
+                }
         );
     }
 
@@ -93,7 +102,8 @@ public class ProviderStatusService {
             OllamaClient ollamaClient,
             @org.springframework.lang.Nullable HuggingFaceClient huggingFaceClient,
             Clock clock,
-            Duration statusCacheTtl
+            Duration statusCacheTtl,
+            Supplier<Boolean> bedrockCredentialsResolver
     ) {
         this.chatModelProviderRegistry = chatModelProviderRegistry;
         this.ollamaProperties = ollamaProperties;
@@ -103,6 +113,7 @@ public class ProviderStatusService {
         this.huggingFaceClient = huggingFaceClient;
         this.clock = clock;
         this.statusCacheTtl = statusCacheTtl;
+        this.bedrockCredentialsResolver = bedrockCredentialsResolver;
     }
 
     /**
@@ -176,12 +187,29 @@ public class ProviderStatusService {
         Instant now = Instant.now(clock);
         boolean regionConfigured = normalize(bedrockProperties.region()) != null;
         boolean modelConfigured = normalize(bedrockProperties.modelId()) != null;
+        boolean credentialsResolved = false;
+
+        if (regionConfigured && modelConfigured) {
+            try {
+                credentialsResolved = Boolean.TRUE.equals(bedrockCredentialsResolver.get());
+            } catch (RuntimeException ignored) {
+                credentialsResolved = false;
+            }
+        }
 
         if (!regionConfigured || !modelConfigured) {
             return new ProviderStatusResponse(
                     "bedrock",
                     "misconfigured",
                     "Bedrock needs a region and model before requests can succeed.",
+                    now.toString()
+            );
+        }
+        if (!credentialsResolved) {
+            return new ProviderStatusResponse(
+                    "bedrock",
+                    "unreachable",
+                    "Bedrock is configured, but AWS credentials are not available to the backend.",
                     now.toString()
             );
         }
