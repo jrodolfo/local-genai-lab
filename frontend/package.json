@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "test": "vitest run",
-    "build": "vite build",
+    "build": "vite build --clearScreen false --logLevel warn",
     "preview": "vite preview"
   },
   "dependencies": {

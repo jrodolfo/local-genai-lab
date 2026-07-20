@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
     globals: true,
-    pool: 'threads'
+    pool: 'threads',
+    fileParallelism: false,
+    color: false
   }
 });

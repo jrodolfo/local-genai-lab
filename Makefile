@@ -155,7 +155,7 @@ test-backend:
 	@cd backend && mvn test
 
 test-frontend:
-	@cd frontend && npm test -- --run
+	@cd frontend && NO_COLOR=1 FORCE_COLOR=0 npm test -- --run
 
 test-rag-qdrant-smoke:
 	@bash ./ops/tests/test-rag-qdrant-smoke.sh

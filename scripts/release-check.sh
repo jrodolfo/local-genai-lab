@@ -28,6 +28,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 RELEASE_CHECK_DOCKER="${RELEASE_CHECK_DOCKER:-false}"
 
+# Release checks are commonly redirected to /tmp files by prepare-release.sh.
+# Keep child tool output readable in plain text logs without changing CI-sensitive
+# command behavior such as Docker credential handling.
+export NO_COLOR="${NO_COLOR:-1}"
+export FORCE_COLOR=0
+
 require_command() {
   local command_name="$1"
 
